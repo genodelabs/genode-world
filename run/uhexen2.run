@@ -1,0 +1,204 @@
+
+# Build
+#
+
+
+set build_components {
+	core init
+	drivers/timer
+	drivers/audio
+	drivers/usb
+	drivers/framebuffer drivers/input
+	app/uhexen2
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+set usb_only 0
+
+lappend_if [expr !$usb_only] build_components server/input_merger
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+append config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>}
+
+append_if [have_spec sdl] config {
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+	</start>}
+
+append_platform_drv_config
+
+append_if [have_spec vesa] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="16M"/>
+		<provides><service name="Framebuffer"/></provides>
+		<!--
+			Limit the resolution because the software renderer of UHexen2
+			only supports up to 1280x1024 currently.
+		-->
+		<config width="1024" height="768" buffered="yes"/>
+		<route>
+			<service name="PCI"><child name="acpi" /></service>
+			<any-service> <parent /> <any-child /></any-service>
+		</route>
+	</start>}
+
+append_if [have_spec pl11x] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Framebuffer"/></provides>
+	</start>}
+
+append_if [expr [have_spec ps2] && !$usb_only] config {
+	<start name="ps2_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Input"/></provides>
+	</start>}
+
+append config {
+	<start name="usb_drv">
+		<resource name="RAM" quantum="12M"/>
+		<provides><service name="Input"/></provides>
+		<config uhci="yes" ehci="yes" xhci="yes">
+			<hid/>
+		</config>
+		<route>
+			<service name="IRQ"><child name="acpi" /></service>
+			<any-service> <parent /> <any-child /></any-service>
+		</route>
+	</start>}
+
+append_if [expr !$usb_only] config {
+	<start name="input_merger">
+		<resource name="RAM" quantum="1M" />
+		<provides>
+			<service name="Input" />
+		</provides>
+		<config>
+			<input label="ps2" />
+			<input label="usb_hid" />
+		</config>
+		<route>
+			<service name="Input">
+				<if-arg key="label" value="ps2" /> <child name="ps2_drv" />
+			</service>
+			<service name="Input">
+				<if-arg key="label" value="usb_hid" /> <child name="usb_drv" />
+			</service>
+			<any-service> <parent /> <any-child /> </any-service>
+		</route>
+	</start>}
+
+append config {
+	<start name="audio_drv">
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="Audio_out"/></provides>
+	</start>
+	<start name="uhexen2">
+		<resource name="RAM" quantum="128M"/>
+		<config>
+			<sdl_audio_volume value="100"/>
+			<libc stdout="/dev/log" stderr="/dev/log">
+			<vfs>
+				<dir name="dev"> <log/> </dir>
+				<tar name="hexen2demo_data.tar" />
+			</vfs>
+			</libc>
+		</config>
+		<route>}
+
+append_if [expr !$usb_only] config {
+			<service name="Input"><child name="input_merger" /></service>}
+append config {
+			<any-service> <parent /> <any-child /></any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+if {![file exists bin/hexen2demo_data.tar]} {
+	set hexen2demo_dir "hexen2demo_nov1997"
+	set hexen2demo_tgz "hexen2demo_nov1997-linux-i586.tgz"
+	set hexen2demo_url "http://downloads.sourceforge.net/project/uhexen2/Hexen2Demo-Nov.1997/$hexen2demo_tgz"
+
+	if {![file exists bin/hexen2demo_nov1997-linux-i586.tgz]} {
+		puts ""
+		puts "Please download Hexen 2 demo data from '$hexen2demo_url'."
+		puts "Place the archive in './bin' and run this script again."
+		puts ""
+		exit 1
+	}
+
+	exec tar xzf bin/$hexen2demo_tgz -C bin $hexen2demo_dir/data1
+	exec echo showfps 1 >> bin/$hexen2demo_dir/data1/autoexec.cfg
+
+	exec tar cf  bin/hexen2demo_data.tar -C bin/$hexen2demo_dir data1
+	exec rm -rf  bin/$hexen2demo_dir
+}
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init
+	timer
+	audio_drv
+	usb_drv
+	uhexen2
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so lwip.lib.so sdl.lib.so sdl_mixer.lib.so pthread.lib.so
+	hexen2demo_data.tar
+}
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+lappend_if [expr !$usb_only] boot_modules input_merger
+
+lappend_if [have_spec linux] boot_modules fb_sdl
+lappend_if [have_spec vesa]  boot_modules fb_drv
+lappend_if [have_spec ps2]   boot_modules ps2_drv
+lappend_if [have_spec pl11x] boot_modules fb_drv
+
+build_boot_image $boot_modules
+
+append qemu_args " -m 512 -soundhw es1370 "
+
+run_genode_until forever
