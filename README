@@ -1,0 +1,25 @@
+
+               =========================================
+               A collection of software ported to Genode
+               =========================================
+
+
+This repository hosts ports of existing software, which does not fall in the
+narrow scope of the Genode OS framework, e.g., applications and games.
+
+To use it, you first need to obtain a clone of Genode:
+
+! git clone https://github.com/genodelabs/genode.git genode.git
+
+Now, clone the _world.git_ repository to _genode.git/repos/world.git_:
+
+! git clone https://github.com/nfeske/genode-world.git genode.git/repos/world.git
+
+By placing the _world.git_ repository under the _repos/_ directory, Genode's
+tools will automatically incorporate the ports provided by _world.git_.
+
+For building software of the _world.git_ repository, the build-directory
+configuration _etc/build.conf_ must be extended with the following line:
+
+! REPOSITORIES += $(GENODE_DIR)/repos/world.git
+
