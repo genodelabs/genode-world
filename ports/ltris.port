@@ -1,0 +1,7 @@
+LICENSE   := GPLv2
+VERSION   := 1.0.19
+DOWNLOADS := ltris.archive
+
+URL(ltris) := http://downloads.sourceforge.net/project/lgames/ltris/ltris-$(VERSION).tar.gz
+SHA(ltris) := 6f9b0f3ff2de73e55d4e880b502c925f7168b2b6
+DIR(ltris) := src/app/ltris
