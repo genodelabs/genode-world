@@ -1,0 +1,155 @@
+#
+# Build
+#
+
+set build_components {
+	core init
+	drivers/audio
+	drivers/framebuffer
+	drivers/input
+	drivers/timer
+	app/abuse
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+# override default platform driver policy
+proc platform_drv_policy {} {
+	return {
+			<policy label="ps2_drv"> <device name="PS2"/> </policy>
+			<policy label="usb_drv"> <pci class="USB"/> </policy>
+			<policy label="fb_drv">  <pci class="VGA"/> </policy>
+			<policy label="audio_drv"> <pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>}
+}
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+append config {
+<config>
+	<parent-provides>
+		<service name="CAP"/>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>}
+
+append_if [have_spec sdl] config {
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+		<config width="640" height="480"/>
+	</start>}
+
+append_platform_drv_config
+
+append_if [have_spec vesa] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Framebuffer"/></provides>
+		<config buffered="yes"> </config>
+		<config width="640" height="400"/>
+	</start>}
+
+append_if [have_spec pl11x] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Framebuffer"/></provides>
+	</start>}
+
+append_if [have_spec ps2] config {
+	<start name="ps2_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Input"/></provides>
+	</start>}
+
+append config {
+	<start name="audio_drv">
+		<resource name="RAM" quantum="6M"/>
+		<provides><service name="Audio_out"/></provides>
+	</start>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="abuse">
+		<resource name="RAM" quantum="128M"/>
+		<config>
+			<sdl_audio_volume value="100"/>
+			<libc stdout="/dev/log" stderr="/dev/log">
+				<vfs>
+					<inline name="abuserc">
+; Location of the datafiles
+datadir=/data
+					</inline>
+					<dir name="data">
+						<ram/>
+						<tar name="abuse.tar"/>
+					</dir>
+					<dir name="dev"> <log/> </dir>
+				</vfs>
+			</libc>
+		</config>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+file copy -force app/abuse/abuse.tar bin
+
+# generic modules
+set boot_modules {
+	core init
+	audio_drv
+	jpeg.lib.so
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so
+	libpng.lib.so
+	pthread.lib.so
+	sdl_image.lib.so
+	sdl.lib.so
+	sdl_mixer.lib.so
+	sdl_net.lib.so
+	stdcxx.lib.so
+	timer
+	zlib.lib.so
+	abuse abuse.tar
+}
+
+# platform-specific modules
+lappend_if [have_spec linux] boot_modules fb_sdl
+lappend_if [have_spec vesa]  boot_modules fb_drv
+lappend_if [have_spec ps2]   boot_modules ps2_drv
+lappend_if [have_spec pl11x] boot_modules fb_drv
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -m 256 -soundhw es1370 "
+
+run_genode_until forever

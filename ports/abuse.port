@@ -1,0 +1,14 @@
+LICENSE   := WTFPL GPL2
+VERSION   := 0.8
+DOWNLOADS := abuse.archive
+
+# Backup URL
+# /ipfs/QmYej8uE4Zv8wKVTReYGofEYVJvfdDdsbHPSeSkRi4dq58/abuse-0.8.tar.gz
+
+URL(abuse) := http://abuse.zoy.org/raw-attachment/wiki/download/abuse-$(VERSION).tar.gz
+SHA(abuse) := 12fea968a1494338ad71c6ec24954f3eef56826a
+DIR(abuse) := src/app/abuse
+
+PATCHES := src/app/abuse/patch
+
+PATCH_OPT := -p1 -d src/app/abuse

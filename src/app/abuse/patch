@@ -1,0 +1,36 @@
+diff -ur abuse-0.8/src/imlib/transimage.cpp abuse-dummy/src/app/abuse/src/imlib/transimage.cpp
+--- abuse-0.8/src/imlib/transimage.cpp	2011-05-06 11:46:43.000000000 +0200
++++ abuse-dummy/src/app/abuse/src/imlib/transimage.cpp	2015-09-07 09:30:30.271941376 +0200
+@@ -168,10 +168,6 @@
+     if (!datap)
+         return; // if ClipToLine says nothing to draw, return
+ 
+-    CONDITION(N == BLEND && pos.y >= bpos.y
+-                         && pos.y + ysteps < bpos.y + blend->Size().y + 1,
+-              "Blend doesn't fit on TransImage");
+-
+     if (N == FADE || N == FADE_TINT || N == BLEND)
+         paddr = (uint8_t *)pal->addr();
+ 
+diff -ur abuse-0.8/src/intsect.cpp abuse-dummy/src/app/abuse/src/intsect.cpp
+--- abuse-0.8/src/intsect.cpp	2011-05-02 13:55:06.000000000 +0200
++++ abuse-dummy/src/app/abuse/src/intsect.cpp	2015-09-07 09:31:33.671940250 +0200
+@@ -13,6 +13,7 @@
+ #endif
+ 
+ #include <stdlib.h>
++#include <stdint.h>
+ 
+ void pushback(int32_t x1,int32_t y1,int32_t &x2,int32_t &y2,
+              int32_t xp1, int32_t yp1, int32_t xp2, int32_t yp2, int xdir, int ydir, int inside)
+diff -ur abuse-0.8/src/net/tcpip.h abuse-dummy/src/app/abuse/src/net/tcpip.h
+--- abuse-0.8/src/net/tcpip.h	2011-05-02 13:55:06.000000000 +0200
++++ abuse-dummy/src/app/abuse/src/net/tcpip.h	2015-09-07 09:31:10.831940656 +0200
+@@ -27,7 +27,6 @@
+ #   include <string.h>
+ #   include <sys/time.h>
+ #   include <sys/ipc.h>
+-#   include <sys/shm.h>
+ #   include <sys/socket.h>
+ #   include <unistd.h>
+ #   ifdef HAVE_BSTRING_H
