@@ -1,0 +1,11 @@
+LICENSE   := GPLv2
+VERSION   := 2.1.20130907
+DOWNLOADS := opentyrian.archive tyrian.archive
+
+URL(opentyrian) := http://www.camanis.net/opentyrian/releases/opentyrian-$(VERSION)-src.tar.gz
+SHA(opentyrian) := c5b97aea3931db6889acb639e59e619162b05183
+DIR(opentyrian) := src/app/opentyrian
+
+URL(tyrian) := http://camanis.net/tyrian/tyrian21.zip
+SHA(tyrian) := 29827de99c92cdba7ac8d8b1307776c8f473cd44
+DIR(tyrian) := src/app/opentyrian
