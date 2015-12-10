@@ -1,0 +1,40 @@
+LICENSE := other
+VERSION := 1.2.3
+DOWNLOADS := testu01.archive
+
+URL(testu01) := http://www.iro.umontreal.ca/~simardr/testu01/TestU01.zip
+SHA(testu01) := f41af4bc71841e16dacc195930e6c3a191c9ab99
+DIR(testu01) := src/lib/testu01
+
+TESTU01_DIR := src/lib/testu01/TestU01-1.2.3
+
+testu01_includes = $(addprefix $(TESTU01_DIR)/testu01/,\
+	unif01.h ulcg.h umrg.h ucarry.h utaus.h ugfsr.h uinv.h uquad.h ucubic.h ulec.h utezuka.h umarsa.h uweyl.h uknuth.h uwu.h unumrec.h uvaria.h usoft.h ugranger.h ucrypto.h ufile.h udeng.h utouzin.h uautomata.h uxorshift.h ubrent.h rijndael-alg-fst.h tu01_sha1.h scatter.h swrite.h sres.h smultin.h sknuth.h smarsa.h sstring.h svaria.h snpair.h swalk.h sentrop.h sspectral.h scomp.h sspacings.h vectorsF2.h bbattery.h ffam.h fcong.h ffsr.h ftab.h fres.h fcho.h fmultin.h fmarsa.h fknuth.h fwalk.h fstring.h fspectral.h fvaria.h fnpair.h)
+
+probdist_includes = $(addprefix $(TESTU01_DIR)/probdist/,\
+	fmass.h fdist.h fbar.h finv.h gofs.h gofw.h statcoll.h wdist.h)
+
+mylib_includes = $(addprefix $(TESTU01_DIR)/mylib/,\
+	gdef.h addstr.h bitset.h chrono.h mystr.h num.h num2.h tables.h util.h)
+
+DIRS := include/testu01
+DIR_CONTENT(include/testu01) = $(generated_headers)
+
+generated_headers = $(testu01_includes) $(probdist_includes) $(mylib_includes)
+
+_dirs: $(generated_headers)
+
+$(generated_headers): $(DOWNLOADS)
+
+%.h: %.tex tcode
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)mkdir -p include/testu01
+	$(VERBOSE)./tcode $< $@
+
+%.tex: $(DOWNLOADS)
+
+tcode: $(TESTU01_DIR)/mylib/tcode.c
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)$(CC) -o $@ $<
+
+tcode.c: $(DOWNLOADS)
