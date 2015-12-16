@@ -16,4 +16,6 @@ $(TARGET): supertux_data.tar
 supertux_data.tar:
 	$(VERBOSE)cd $(SUPERTUX_DIR); tar cf $(PWD)/bin/$@ data
 
-CC_OPT += -DNOOPENGL -DDATA_PREFIX='"/data"'
+CC_OPT += -DNOOPENGL -DDATA_PREFIX='"/data"' -fpermissive
+
+CC_CXX_OPT_STD = -std=gnu++98

@@ -6,11 +6,10 @@ set build_components {
 	core init
 	drivers/timer
 	app/ltris server/ram_fs
-	drivers/framebuffer drivers/pci drivers/input
+	drivers/framebuffer drivers/platform drivers/input
 }
 
-lappend_if [have_spec usb]          build_components drivers/usb
-lappend_if [have_spec platform_rpi] build_components drivers/platform
+lappend_if [have_spec usb] build_components drivers/usb
 
 build $build_components
 
@@ -46,12 +45,7 @@ append_if [have_spec sdl] config {
 			<service name="Input"/>
 			<service name="Framebuffer"/>
 		</provides>
-	</start>}
-
-append_if [have_spec pci] config {
-	<start name="pci_drv" priority="-1">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="PCI"/></provides>
+		<config width="640" height="480"/>
 	</start>}
 
 append_if [have_spec platform_rpi] config {
@@ -91,7 +85,7 @@ append config {
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="File_system"/> </provides>
 		<config>
-			<policy label="" root="/" writeable="yes" />
+			<policy root="/" writeable="yes" />
 			<content>
 				<dir name="var"/>
 			</content>
@@ -136,7 +130,6 @@ set boot_modules {
 
 # platform-specific modules
 lappend_if [have_spec        linux] boot_modules fb_sdl
-lappend_if [have_spec          pci] boot_modules pci_drv
 lappend_if [have_spec  framebuffer] boot_modules fb_drv
 lappend_if [have_spec          ps2] boot_modules ps2_drv
 lappend_if [have_spec          usb] boot_modules usb_drv
