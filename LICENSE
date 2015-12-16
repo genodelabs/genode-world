@@ -6,7 +6,7 @@ Supplemental glue code that interfaces the ported software with Genode is
 provided under the MIT license:
 
 
-Copyright (C) 2014 Norman Feske
+Copyright (C) 2014 Genode Labs GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
