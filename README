@@ -1,25 +1,38 @@
 
-               =========================================
-               A collection of software ported to Genode
-               =========================================
+          ==========================================================
+          A collection of community-maintained components for Genode
+          ==========================================================
 
 
-This repository hosts ports of existing software, which does not fall in the
-narrow scope of the Genode OS framework, e.g., applications and games.
+This repository hosts Genode components that do not fall in the narrow scope of
+the Genode OS Framework (http://genode.org), e.g., ported applications,
+libraries, and games.
 
 To use it, you first need to obtain a clone of Genode:
 
-! git clone https://github.com/genodelabs/genode.git genode.git
+! git clone https://github.com/genodelabs/genode.git genode
 
-Now, clone the _world.git_ repository to _genode.git/repos/world.git_:
+Now, clone the _genode-world.git_ repository to _genode/repos/world_:
 
-! git clone https://github.com/nfeske/genode-world.git genode.git/repos/world.git
+! git clone https://github.com/genodelabs/genode-world.git genode/repos/world
 
-By placing the _world.git_ repository under the _repos/_ directory, Genode's
-tools will automatically incorporate the ports provided by _world.git_.
+By placing the _world_ repository under the _repos/_ directory, Genode's tools
+will automatically incorporate the ports provided by the _world_ repository.
 
-For building software of the _world.git_ repository, the build-directory
+For building software of the _world_ repository, the build-directory
 configuration _etc/build.conf_ must be extended with the following line:
 
-! REPOSITORIES += $(GENODE_DIR)/repos/world.git
+! REPOSITORIES += $(GENODE_DIR)/repos/world
 
+
+Note of caution
+---------------
+
+In contrast to the components found in the mainline Genode repository, the
+components within the _world_ repository are not subjected to the regular
+quality-assurance measures of Genode Labs. Hence, problems are to be expected.
+If you encounter bugs, build problems, or stability issues, please report them
+to the issue tracker [1] or the Genode mailing list [2].
+
+[1] https://github.com/genodelabs/genode-world/issues
+[2] http://genode.org/community/mailing-lists
