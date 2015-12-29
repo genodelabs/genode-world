@@ -1,0 +1,15 @@
+LICENSE   := GPLv2
+VERSION   := 2.4.2035
+DOWNLOADS := grafx2.archive
+
+#
+# The original URL is http://pulkomandy.tk/projects/GrafX2/downloads/21
+# but it needs a referer and overriding the download command here is
+# cumbersome - I went ahead and mirrored the archive.
+#
+
+URL(grafx2) := http://usr.sysret.de/jws/grafx2-$(VERSION)-src.tgz
+SHA(grafx2) := 7b6aa4e47aa67664947c0a20f32323107cc35440
+DIR(grafx2) := src/app/grafx2
+
+PATCHES   := src/app/grafx2/genode.patch
