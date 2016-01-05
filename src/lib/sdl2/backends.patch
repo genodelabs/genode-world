@@ -1,0 +1,68 @@
+--- a/src/audio/SDL_sysaudio.h
++++ b/src/audio/SDL_sysaudio.h
+@@ -207,6 +207,7 @@
+ extern AudioBootStrap ANDROIDAUDIO_bootstrap;
+ extern AudioBootStrap PSPAUDIO_bootstrap;
+ extern AudioBootStrap EMSCRIPTENAUDIO_bootstrap;
++extern AudioBootStrap GenodeAudio_bootstrap;
+ 
+ #endif /* SDL_sysaudio_h_ */
+ 
+--- a/src/audio/SDL_audio.c
++++ b/src/audio/SDL_audio.c
+@@ -143,6 +144,9 @@ static const AudioBootStrap *const bootstrap[] = {
+ #if SDL_AUDIO_DRIVER_EMSCRIPTEN
+     &EmscriptenAudio_bootstrap,
+ #endif
++#if SDL_AUDIO_DRIVER_GENODE
++    &GenodeAudio_bootstrap,
++#endif
+     NULL
+ };
+ 
+--- a/src/video/SDL_sysvideo.h
++++ b/src/video/SDL_sysvideo.h
+@@ -430,6 +430,7 @@
+ extern VideoBootStrap Emscripten_bootstrap;
+ extern VideoBootStrap QNX_bootstrap;
+ extern VideoBootStrap OFFSCREEN_bootstrap;
++extern VideoBootStrap GenodeVideo_bootstrap;
+ 
+ extern SDL_VideoDevice *SDL_GetVideoDevice(void);
+ extern int SDL_AddBasicVideoDisplay(const SDL_DisplayMode * desktop_mode);
+--- a/src/video/SDL_video.c
++++ b/src/video/SDL_video.c
+@@ -108,6 +108,9 @@ static VideoBootStrap *bootstrap[] = {
+ #if SDL_VIDEO_DRIVER_DUMMY
+     &DUMMY_bootstrap,
+ #endif
++#if SDL_VIDEO_DRIVER_GENODE
++    &GenodeVideo_bootstrap,
++#endif
+     NULL
+ };
+ 
+--- a/src/dynapi/SDL_dynapi.h
++++ b/src/dynapi/SDL_dynapi.h
+@@ -49,6 +49,8 @@
+ #define SDL_DYNAMIC_API 0
+ #elif defined(__clang_analyzer__)
+ #define SDL_DYNAMIC_API 0  /* Turn off for static analysis, so reports are more clear. */
++#elif defined(GENODE)
++#define SDL_DYNAMIC_API 0
+ #endif
+ 
+ /* everyone else. This is where we turn on the API if nothing forced it off. */
+--- a/src/audio/SDL_wave.c
++++ b/src/audio/SDL_wave.c
+@@ -23,8 +23,10 @@
+ #ifdef HAVE_LIMITS_H
+ #include <limits.h>
+ #else
++#ifndef SDL_VIDEO_DRIVER_GENODE
+ #ifndef SIZE_MAX
+ #define SIZE_MAX ((size_t)-1)
++#endif /* SDL_VIDEO_DRIVER_GENODE */
+ #endif
+ #ifndef INT_MAX
+ /* Make a lucky guess. */

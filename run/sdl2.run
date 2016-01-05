@@ -1,0 +1,17 @@
+set build_components { test/sdl2 }
+
+set app_config {
+	<start name="test-sdl2">
+		<resource name="RAM" quantum="32M"/>
+		<config ld_verbose="yes">
+			<vfs> <dir name="dev"> <log/> </dir> </vfs>
+			<libc stdout="/dev/log"/>
+		</config>
+	</start>}
+
+set boot_modules {
+	test-sdl2
+	libc.lib.so vfs.lib.so sdl2.lib.so
+}
+
+source ${genode_dir}/repos/world/run/nitpicker_app.inc
