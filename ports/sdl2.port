@@ -1,0 +1,20 @@
+LICENSE   := zlib
+VERSION   := 2.0.12
+DOWNLOADS := sdl2.archive
+
+URL(sdl2) := http://www.libsdl.org/release/SDL2-$(VERSION).tar.gz
+SHA(sdl2) := 349268f695c02efbc9b9148a70b85e58cefbbf704abd3e91be654db7f1e2c863
+SIG(sdl2) := ${URL(sdl2)}.sig
+KEY(sdl2) := 1528635D8053A57F77D1E08630A59377A7763BE6
+DIR(sdl2) := src/lib/sdl2
+
+PATCHES   := src/lib/sdl2/backends.patch
+PATCH_OPT := -p1 -d src/lib/sdl2
+
+# wipe original 'SDL_config.h' file because it conflicts with our version
+_dirs: remove_default_config
+remove_default_config: $(DOWNLOADS)
+	$(VERBOSE)rm src/lib/sdl2/include/SDL_config*.h
+
+DIRS := include/SDL2
+DIR_CONTENT(include/SDL2) := src/lib/sdl2/include/*.h
