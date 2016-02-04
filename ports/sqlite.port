@@ -1,0 +1,17 @@
+LICENSE   := PublicDomain
+VERSION   := 3100200
+DOWNLOADS := sqlite.archive speedtest.file
+
+# don't forget to bump the year in the url!
+URL(sqlite) := http://sqlite.org/2016/sqlite-amalgamation-$(VERSION).zip
+SHA(sqlite) := 097e71e284d720fe22aad5199875f38f2ed2c43e
+DIR(sqlite) := src/lib/sqlite
+
+URL(speedtest) := https://www.sqlite.org/src/raw/test/speedtest1.c?name=f8bf04214e7b5f745feea99f7bde68b1c4870666
+SHA(speedtest) := f8bf04214e7b5f745feea99f7bde68b1c4870666
+NAME(speedtest) := src/lib/sqlite/speedtest1.c
+
+UNZIP_OPT(sqlite) := -j
+
+DIRS := include/sqlite
+DIR_CONTENT(include/sqlite) := src/lib/sqlite/sqlite3.h src/lib/sqlite/sqlite3ext.h
