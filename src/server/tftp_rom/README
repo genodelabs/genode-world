@@ -1,0 +1,18 @@
+This component serves ROM requests, loading each from TFTP.
+Only a subset of RFC1350 is implemented, so the maximum transfer size is 32MB.
+
+The IP stack configuration is handled by DHCP by default,
+see the libc_lwip_nic_dhcp library for details.
+
+The rest of the configuration is parsed from policies, the options are:
+
+ ip      - server IP address, required
+ port    - sever port
+ dir     - root requests into this server-side directory
+ timeout - session will timeout if forward progress is not made for this period of time
+
+Example:
+	<policy label_prefix="init" ip="10.0.2.2" port="69" dir="/genode" timeout="10"/>
+
+WARNING: The TFTP protocol has no security assurance whatsoever,
+use an authenticated tunnel whenever possible!

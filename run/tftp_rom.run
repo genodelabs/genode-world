@@ -1,0 +1,128 @@
+#
+# \brief  Test of 'tftp_rom' server
+# \author Emery Hemingway
+# \date   2016-02-24
+#
+
+if {![have_include "load/tftp"]} {
+	puts "please enable TFTP booting first"
+	exit 1
+}
+
+set build_components {
+	core init
+	drivers/nic
+	drivers/timer
+	server/tftp_rom
+	test/libc
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+append config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="CAP"/>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>}
+
+append_platform_drv_config
+
+append config {
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="nic_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Nic"/> </provides>
+	</start>
+	<start name="tftp_rom">
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config verbose="yes">
+			<libc stdout="/log" stderr="/log">
+				<vfs> <log/> </vfs>
+			</libc>
+			<policy label_prefix="init" ip="10.0.2.2" port="69"
+			         dir="/genode" timeout="10"/>
+		</config>	
+	</start>
+	<start name="init">
+		<exit propagate="yes"/>
+		<resource name="RAM" quantum="6M"/>
+		<route>
+			<any-service>
+				<child name="tftp_rom"/>
+				<parent/>
+			</any-service>
+		</route>
+		<config>
+			<parent-provides>
+				<service name="CAP"/>
+				<service name="CPU"/>
+				<service name="LOG"/>
+				<service name="PD"/>
+				<service name="RAM"/>
+				<service name="RM"/>
+				<service name="ROM"/>
+				<service name="SIGNAL"/>
+			</parent-provides>
+			<default-route>
+				<any-service> <parent/> </any-service>
+			</default-route>
+			<start name="test-libc">
+				<resource name="RAM" quantum="4M"/>
+				<config>
+					<libc stdout="/dev/log">
+						<vfs> <dir name="dev"> <log/> </dir> </vfs>
+					</libc>
+				</config>
+			</start>
+		</config>
+	</start>
+</config>
+}
+
+install_config $config
+
+# generic modules
+set boot_modules {
+	core init ld.lib.so
+	libc.lib.so
+	libc.lib.so
+	libm.lib.so
+	lwip.lib.so
+	nic_drv
+	test-libc
+	tftp_rom
+	timer
+}
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -nographic -net nic,model=e1000 -net user"
+
+# append qemu_args " -net dump,file=/tmp/tftp_rom.pcap"
+
+run_genode_until {child "test-libc" exited with exit value 0} 60
