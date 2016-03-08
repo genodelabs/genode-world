@@ -64,12 +64,16 @@ class Tftp_rom::Session_component :
 		typedef Genode::String<128> Filename;
 		Filename const _filename;
 
-		Rom_dataspace_capability  _dataspace;
+		Ram_dataspace_capability  _dataspace;
 		Signal_context_capability _sigh;
 
-		udp_pcb *_pcb;          /* lwIP UDP context  */
-		pbuf    *_chain_head = NULL; /* lwIP buffer chain head */
-		pbuf    *_chain_tail = NULL; /* lwIP buffer chain tail */
+		udp_pcb *_pcb; /* lwIP UDP context  */
+		pbuf    *_chain_head = NULL;
+		pbuf    *_chain_tail = NULL;
+		/*
+		 * References to both ends of the buffer chain
+		 * are retained to make concatenation faster.
+		 */
 
 		unsigned long const _start; /* start of session */
 
@@ -85,7 +89,10 @@ class Tftp_rom::Session_component :
 		{
 			unlock();
 			_ack_timeout = 0;
-			pbuf_free(_chain_head);
+			if (_chain_head != NULL) {
+				pbuf_free(_chain_head);
+				_chain_head = NULL;
+			}
 		}
 
 		inline void timeout()
@@ -139,7 +146,19 @@ class Tftp_rom::Session_component :
 			initial_request();
 		}
 
-		~Session_component() { if (_pcb != NULL) udp_remove(_pcb); }
+		~Session_component()
+		{
+			using namespace Genode;
+
+			if (_pcb != NULL)
+				udp_remove(_pcb);
+
+			if (_chain_head != NULL)
+				pbuf_free(_chain_head);
+
+			if (_dataspace.valid())
+				env()->ram_session()->free(_dataspace);
+		}
 
 		/**************************************
 		 ** Members available to lwIP thread **
@@ -210,9 +229,13 @@ class Tftp_rom::Session_component :
 				finalize();
 			}
 
-			/* data pointer is invalid after pbuf_cat */
-			if (_chain_head == NULL) _chain_head = _chain_tail = data;
-			else pbuf_chain(_chain_tail, data);
+			if (_chain_head == NULL)
+				_chain_head = _chain_tail = data;
+			else {
+				/* data pointer is invalid after pbuf_cat */
+				pbuf_cat(_chain_tail, data);
+				_chain_tail = _chain_tail->next;
+			}
 
 			if (done) /* construct the dataspace */ {
 
@@ -225,9 +248,8 @@ class Tftp_rom::Session_component :
 				for (pbuf *link = _chain_head; link != NULL; link = link->next)
 					rom_len += link->len-4;
 
-				Genode::Dataspace_capability ds =
-					Genode::env()->ram_session()->alloc(rom_len);
-				uint8_t *rom_addr = Genode::env()->rm_session()->attach(ds);
+				_dataspace = Genode::env()->ram_session()->alloc(rom_len);
+				uint8_t *rom_addr = Genode::env()->rm_session()->attach(_dataspace);
 				uint8_t *p = rom_addr;
 
 				for (pbuf *link = _chain_head; link != NULL; link = link->next) {
@@ -236,7 +258,6 @@ class Tftp_rom::Session_component :
 					p += len;
 				}
 
-				_dataspace = Genode::static_cap_cast<Genode::Rom_dataspace>(ds);
 				Genode::env()->rm_session()->detach(rom_addr);
 				PLOG("%s retrieved", _filename.string());
 				finalize();
@@ -282,7 +303,9 @@ class Tftp_rom::Session_component :
 		Rom_dataspace_capability dataspace() override
 		{
 			if (!done()) lock();
-			return _dataspace;
+
+			Dataspace_capability ds = _dataspace;
+			return static_cap_cast<Genode::Rom_dataspace>(ds);
 		};
 
 		void sigh(Signal_context_capability sigh) override { _sigh = sigh; }
