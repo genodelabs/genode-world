@@ -1,0 +1,144 @@
++++ src/lib/lemon/lemon/lgf_reader.h	2016-03-11 13:36:16.116842723 +0100
+@@ -2229,7 +2229,8 @@ namespace lemon {
+       Attributes;
+     Attributes _attributes;
+ 
+-    bool _use_nodes;
++    bool _use_red_nodes;
++    bool _use_blue_nodes;
+     bool _use_edges;
+ 
+     bool _skip_nodes;
+@@ -2246,7 +2247,7 @@ namespace lemon {
+     /// input stream.
+     BpGraphReader(BGR& graph, std::istream& is = std::cin)
+       : _is(&is), local_is(false), _graph(graph),
+-        _use_nodes(false), _use_edges(false),
++        _use_red_nodes(false), _use_blue_nodes(false), _use_edges(false),
+         _skip_nodes(false), _skip_edges(false) {}
+ 
+     /// \brief Constructor
+@@ -2256,7 +2257,7 @@ namespace lemon {
+     BpGraphReader(BGR& graph, const std::string& fn)
+       : _is(new std::ifstream(fn.c_str())), local_is(true),
+         _filename(fn), _graph(graph),
+-        _use_nodes(false), _use_edges(false),
++        _use_red_nodes(false), _use_blue_nodes(false), _use_edges(false),
+         _skip_nodes(false), _skip_edges(false) {
+       if (!(*_is)) {
+         delete _is;
+@@ -2271,7 +2272,7 @@ namespace lemon {
+     BpGraphReader(BGR& graph, const char* fn)
+       : _is(new std::ifstream(fn)), local_is(true),
+         _filename(fn), _graph(graph),
+-        _use_nodes(false), _use_edges(false),
++        _use_red_nodes(false), _use_blue_nodes(false), _use_edges(false),
+         _skip_nodes(false), _skip_edges(false) {
+       if (!(*_is)) {
+         delete _is;
+@@ -2318,7 +2319,7 @@ namespace lemon {
+ 
+     BpGraphReader(BpGraphReader& other)
+       : _is(other._is), local_is(other.local_is), _graph(other._graph),
+-        _use_nodes(other._use_nodes), _use_edges(other._use_edges),
++        _use_red_nodes(other._use_red_nodes), _use_blue_nodes(other._use_blue_nodes), _use_edges(other._use_edges),
+         _skip_nodes(other._skip_nodes), _skip_edges(other._skip_edges) {
+ 
+       other._is = 0;
+@@ -2612,8 +2613,9 @@ namespace lemon {
+     template <typename Map>
+     BpGraphReader& useNodes(const Map& map) {
+       checkConcept<concepts::ReadMap<Node, typename Map::Value>, Map>();
+-      LEMON_ASSERT(!_use_nodes, "Multiple usage of useNodes() member");
+-      _use_nodes = true;
++      LEMON_ASSERT(!_use_red_nodes&&!_use_blue_nodes, "Multiple usage of useNodes() member");
++      _use_red_nodes = true;
++      _use_blue_nodes = true;
+       _writer_bits::DefaultConverter<typename Map::Value> converter;
+       for (RedNodeIt n(_graph); n != INVALID; ++n) {
+         _red_node_index.insert(std::make_pair(converter(map[n]), n));
+@@ -2633,8 +2635,9 @@ namespace lemon {
+     BpGraphReader& useNodes(const Map& map,
+                             const Converter& converter = Converter()) {
+       checkConcept<concepts::ReadMap<Node, typename Map::Value>, Map>();
+-      LEMON_ASSERT(!_use_nodes, "Multiple usage of useNodes() member");
+-      _use_nodes = true;
++      LEMON_ASSERT(!_use_red_nodes&&!_use_blue_nodes, "Multiple usage of useNodes() member");
++      _use_red_nodes = true;
++      _use_blue_nodes = true;
+       for (RedNodeIt n(_graph); n != INVALID; ++n) {
+         _red_node_index.insert(std::make_pair(converter(map[n]), n));
+       }
+@@ -2644,6 +2647,54 @@ namespace lemon {
+       return *this;
+     }
+ 
++    template <typename Map>
++    BpGraphReader& useRedNodes(const Map& map) {
++      checkConcept<concepts::ReadMap<RedNode, typename Map::Value>, Map>();
++      LEMON_ASSERT(!_use_red_nodes, "Multiple usage of useNodes() member");
++      _use_red_nodes = true;
++      _writer_bits::DefaultConverter<typename Map::Value> converter;
++      for (RedNodeIt n(_graph); n != INVALID; ++n) {
++        _red_node_index.insert(std::make_pair(converter(map[n]), n));
++      }
++      return *this;
++    }
++
++    template <typename Map, typename Converter>
++    BpGraphReader& useRedNodes(const Map& map,
++                            const Converter& converter = Converter()) {
++      checkConcept<concepts::ReadMap<RedNode, typename Map::Value>, Map>();
++      LEMON_ASSERT(!_use_red_nodes, "Multiple usage of useNodes() member");
++      _use_red_nodes = true;
++      for (RedNodeIt n(_graph); n != INVALID; ++n) {
++        _red_node_index.insert(std::make_pair(converter(map[n]), n));
++      }
++      return *this;
++    }
++
++    template <typename Map>
++    BpGraphReader& useBlueNodes(const Map& map) {
++      checkConcept<concepts::ReadMap<BlueNode, typename Map::Value>, Map>();
++      LEMON_ASSERT(!_use_blue_nodes, "Multiple usage of useNodes() member");
++      _use_blue_nodes = true;
++      _writer_bits::DefaultConverter<typename Map::Value> converter;
++      for (BlueNodeIt n(_graph); n != INVALID; ++n) {
++        _blue_node_index.insert(std::make_pair(converter(map[n]), n));
++      }
++      return *this;
++    }
++
++    template <typename Map, typename Converter>
++    BpGraphReader& useBlueNodes(const Map& map,
++                            const Converter& converter = Converter()) {
++      checkConcept<concepts::ReadMap<BlueNode, typename Map::Value>, Map>();
++      LEMON_ASSERT(!_use_blue_nodes, "Multiple usage of useNodes() member");
++      _use_blue_nodes = true;
++      for (BlueNodeIt n(_graph); n != INVALID; ++n) {
++        _blue_node_index.insert(std::make_pair(converter(map[n]), n));
++      }
++      return *this;
++    }
++
+     /// \brief Use previously constructed edge set
+     ///
+     /// Use previously constructed edge set, and specify the edge
+@@ -2800,7 +2851,7 @@ namespace lemon {
+           throw FormatError("Extra character at the end of line");
+ 
+         RedNode n;
+-        if (!_use_nodes) {
++        if (!_use_red_nodes) {
+           n = _graph.addRedNode();
+           if (label_index != -1)
+             _red_node_index.insert(std::make_pair(tokens[label_index], n));
+@@ -2893,7 +2944,7 @@ namespace lemon {
+           throw FormatError("Extra character at the end of line");
+ 
+         BlueNode n;
+-        if (!_use_nodes) {
++        if (!_use_blue_nodes) {
+           n = _graph.addBlueNode();
+           if (label_index != -1)
+             _blue_node_index.insert(std::make_pair(tokens[label_index], n));
