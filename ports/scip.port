@@ -1,0 +1,46 @@
+LICENSE   := ZIB Academic License
+VERSION   := 3.1.0
+DOWNLOADS := scip.archive
+
+URL(scip) := http://scip.zib.de/download/release/scip-$(VERSION).tgz
+SHA(scip) := 6a5b3f26bfa978bc46978c702c27444ca0b16120
+DIR(scip) := src/lib/scip
+
+PATCHES := src/lib/scip/clock.patch
+
+DIRS := include/scip include/blockmemshell include/nlpi include/lpi
+
+DIR_CONTENT(include/scip) := $(addprefix src/lib/scip/src/scip/,scip.h \
+	def.h \
+	 presolve.h \
+	 intervalarith.h \
+	 scipshell.h \
+	 scipdefplugins.h \
+	 disp.h \
+	 misc.h \
+	 vbc.h \
+	 type_*.h \
+	 pub_*.h \
+	 struct_*.h \
+	 branch_*.h \
+	 cons_*.h \
+	 disp_*.h \
+	 heur_*.h \
+	 nodesel_*.h \
+	 presol_*.h \
+	 prop_*.h \
+	 reader_*.h \
+	 sepa_*.h)
+
+DIR_CONTENT(include/blockmemshell) := src/lib/scip/src/blockmemshell/memory.h
+
+DIR_CONTENT(include/nlpi) := $(addprefix src/lib/scip/src/nlpi/,nlpi.h \
+	 intervalarithext.h \
+	 exprinterpret.h \
+	 nlpi_ipopt.h \
+	 nlpioracle.h \
+	 type_*.h \
+	 pub_*.h \
+	 struct*.h)
+
+DIR_CONTENT(include/lpi) := $(addprefix src/lib/scip/src/lpi/,lpi.h type_lpi.h)
