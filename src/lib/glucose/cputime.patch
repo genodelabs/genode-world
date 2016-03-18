@@ -1,0 +1,21 @@
++++ src/lib/glucose/utils/System.h	2016-03-10 13:09:39.945805425 +0100
+@@ -21,6 +21,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR
+ #ifndef Glucose_System_h
+ #define Glucose_System_h
+ 
++#define _NO_RUSAGE
++
+ #if defined(__linux__)
+ #include <fpu_control.h>
+ #endif
+@@ -45,6 +47,10 @@ extern double memUsedPeak();        // P
+ 
+ static inline double Glucose::cpuTime(void) { return (double)clock() / CLOCKS_PER_SEC; }
+ 
++#elif defined(_NO_RUSAGE)
++
++static inline double Glucose::cpuTime(void) { return 0; }
++
+ #else
+ #include <sys/time.h>
+ #include <sys/resource.h>
