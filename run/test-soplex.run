@@ -32,7 +32,7 @@ install_config {
 
 build_boot_image {
 	core init test-soplex
-	ld.lib.so libc.lib.so libc_log.lib.so libm.lib.so
+	ld.lib.so libc.lib.so libm.lib.so
 	stdcxx.lib.so soplex.lib.so zlib.lib.so gmp.lib.so
 }
 
