@@ -1,0 +1,53 @@
++++ src/lib/lemon/lemon/lgf_writer.h	2016-03-11 14:02:04.371252232 +0100
+@@ -1683,9 +1683,9 @@ namespace lemon {
+     std::string _edges_caption;
+     std::string _attributes_caption;
+ 
+-    typedef std::map<Node, std::string> RedNodeIndex;
++    typedef std::map<RedNode, std::string> RedNodeIndex;
+     RedNodeIndex _red_node_index;
+-    typedef std::map<Node, std::string> BlueNodeIndex;
++    typedef std::map<BlueNode, std::string> BlueNodeIndex;
+     BlueNodeIndex _blue_node_index;
+     typedef std::map<Edge, std::string> EdgeIndex;
+     EdgeIndex _edge_index;
+@@ -2125,8 +2125,8 @@ namespace lemon {
+       }
+ 
+       if (label == 0) {
+-        IdMap<BGR, Node> id_map(_graph);
+-        _writer_bits::MapLess<IdMap<BGR, Node> > id_less(id_map);
++        IdMap<BGR, RedNode> id_map(_graph);
++        _writer_bits::MapLess<IdMap<BGR, RedNode> > id_less(id_map);
+         std::sort(nodes.begin(), nodes.end(), id_less);
+       } else {
+         label->sort(nodes);
+@@ -2136,7 +2136,7 @@ namespace lemon {
+         RedNode n = nodes[i];
+         if (label == 0) {
+           std::ostringstream os;
+-          os << _graph.id(static_cast<Node>(n));
++          os << _graph.id(static_cast<RedNode>(n));
+           _writer_bits::writeToken(*_os, os.str());
+           *_os << '\t';
+           _red_node_index.insert(std::make_pair(n, os.str()));
+@@ -2185,8 +2185,8 @@ namespace lemon {
+       }
+ 
+       if (label == 0) {
+-        IdMap<BGR, Node> id_map(_graph);
+-        _writer_bits::MapLess<IdMap<BGR, Node> > id_less(id_map);
++        IdMap<BGR, BlueNode> id_map(_graph);
++        _writer_bits::MapLess<IdMap<BGR, BlueNode> > id_less(id_map);
+         std::sort(nodes.begin(), nodes.end(), id_less);
+       } else {
+         label->sort(nodes);
+@@ -2196,7 +2196,7 @@ namespace lemon {
+         BlueNode n = nodes[i];
+         if (label == 0) {
+           std::ostringstream os;
+-          os << _graph.id(static_cast<Node>(n));
++          os << _graph.id(static_cast<BlueNode>(n));
+           _writer_bits::writeToken(*_os, os.str());
+           *_os << '\t';
+           _blue_node_index.insert(std::make_pair(n, os.str()));

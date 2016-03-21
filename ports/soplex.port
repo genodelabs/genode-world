@@ -1,0 +1,10 @@
+LICENSE     := ZIB Academic License
+VERSION     := 2.0.0
+DOWNLOADS   := soplex.archive
+
+URL(soplex) := http://soplex.zib.de/download/release/soplex-$(VERSION).tgz
+SHA(soplex) := 054fd0b1e370b999babf9ad537a230965b66808a
+DIR(soplex) := src/lib/soplex
+
+DIRS := include/soplex
+DIR_CONTENT(include/soplex) := $(addprefix src/lib/soplex/src/,soplex.h)

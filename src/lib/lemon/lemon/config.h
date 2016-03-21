@@ -1,0 +1,13 @@
+#define LEMON_VERSION "1.3"
+#define LEMON_HAVE_LONG_LONG 1
+#define LEMON_HAVE_LP 1
+//#define LEMON_HAVE_MIP 0
+//#define LEMON_HAVE_GLPK 0
+//#define LEMON_HAVE_CPLEX 0
+#define LEMON_HAVE_SOPLEX 1
+//#define LEMON_HAVE_CLP 0
+//#define LEMON_HAVE_CBC 0
+#define LEMON_DEFAULT_LP "SOPLEX"
+//#define LEMON_DEFAULT_MIP ""
+//#define LEMON_USE_PTHREAD 0
+//#define LEMON_USE_WIN32_THREADS 0

@@ -1,0 +1,92 @@
+LICENSE    := Boost Software License 1.0
+VERSION    := 1.3
+DOWNLOADS  := lemon.archive
+
+URL(lemon) := http://lemon.cs.elte.hu/pub/sources/lemon-$(VERSION).tar.gz
+SHA(lemon) := c833604b790e6f45d5cf8da304d9b23ba74eae6c
+DIR(lemon) := src/lib/lemon
+
+PATCHES := $(addprefix src/lib/lemon/,BpGraphReader.patch BpGraphWriter.patch)
+
+DIRS := include/lemon
+
+DIR_CONTENT(include/lemon) := $(addprefix src/lib/lemon/lemon/,concepts \
+					  bits \
+                 adaptors.h\
+                 arg_parser.h\
+                 assert.h\
+                 bellman_ford.h\
+                 bfs.h\
+                 bin_heap.h\
+                 binomial_heap.h\
+                 bucket_heap.h\
+                 capacity_scaling.h\
+                 cbc.h\
+                 christofides_tsp.h\
+                 circulation.h\
+                 clp.h\
+                 color.h\
+                 concept_check.h\
+                 connectivity.h\
+                 core.h\
+                 cost_scaling.h\
+                 counter.h\
+                 cplex.h\
+                 cycle_canceling.h\
+                 dfs.h\
+                 dheap.h\
+                 dijkstra.h\
+                 dim2.h\
+                 dimacs.h\
+                 edge_set.h\
+                 edmonds_karp.h\
+                 elevator.h\
+                 error.h\
+                 euler.h\
+                 fib_heap.h\
+                 fractional_matching.h\
+                 full_graph.h\
+                 glpk.h\
+                 gomory_hu.h\
+                 graph_to_eps.h\
+                 greedy_tsp.h\
+                 grid_graph.h\
+                 grosso_locatelli_pullan_mc.h\
+                 hao_orlin.h\
+                 hartmann_orlin_mmc.h\
+                 howard_mmc.h\
+                 hypercube_graph.h\
+                 insertion_tsp.h\
+                 karp_mmc.h\
+                 kruskal.h\
+                 lgf_reader.h\
+                 lgf_writer.h\
+                 list_graph.h\
+                 lp_base.h\
+                 lp.h\
+                 lp_skeleton.h\
+                 maps.h\
+                 matching.h\
+                 math.h\
+                 max_cardinality_search.h\
+                 min_cost_arborescence.h\
+                 nagamochi_ibaraki.h\
+                 nauty_reader.h\
+                 nearest_neighbor_tsp.h\
+                 network_simplex.h\
+                 opt2_tsp.h\
+                 pairing_heap.h\
+                 path.h\
+                 planarity.h\
+                 preflow.h\
+                 quad_heap.h\
+                 radix_heap.h\
+                 radix_sort.h\
+                 random.h\
+                 smart_graph.h\
+                 soplex.h\
+                 static_graph.h\
+                 suurballe.h\
+                 time_measure.h\
+                 tolerance.h\
+                 unionfind.h)
