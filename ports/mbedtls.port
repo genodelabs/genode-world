@@ -1,0 +1,18 @@
+LICENSE   := Apache
+VERSION   := 2.2.0
+DOWNLOADS := mbedtls.archive
+
+URL(mbedtls) := https://tls.mbed.org/download/mbedtls-2.2.0-apache.tgz
+SHA(mbedtls) := eceecfc82cbdea8f91ce416489e0f6fee964049c
+DIR(mbedtls) := src/lib/mbedtls
+
+DIRS := include/mbedtls
+DIR_CONTENT(include/mbedtls) := ${DIR(mbedtls)}/include/mbedtls
+
+default: patch_config.h
+patch_config.h: _dirs
+patch_config.h:
+	$(VERBOSE)sed -i 's:^//#define MBEDTLS_NO_PLATFORM_ENTROPY:#define MBEDTLS_NO_PLATFORM_ENTROPY:' \
+	          include/mbedtls/mbedtls/config.h
+	$(VERBOSE)sed -i 's:^#define MBEDTLS_HAVE_TIME_DATE://#define MBEDTLS_HAVE_TIME_DATE:' \
+	          include/mbedtls/mbedtls/config.h
