@@ -8,7 +8,7 @@ TMP := $(call select_from_repositories,lib/mk/spec/zynq/core.inc)
 BASE_HW_DIR := $(TMP:%lib/mk/spec/zynq/core.inc=%)
 
 # add include paths
-INC_DIR += $(BASE_HW_DIR)/src/core/include/spec/xilinx_uartps_1
+INC_DIR += $(REP_DIR)/src/core/include/spec/xilinx_uartps_1
 INC_DIR += $(REP_DIR)/src/core/include/spec/zynq_zedboard
 
 # include less specific configuration
