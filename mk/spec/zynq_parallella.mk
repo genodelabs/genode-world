@@ -1,7 +1,7 @@
 #
 # Pull in CPU specifics
 #
-SPECS += zynq cadence_gem zynq_uart1
+SPECS += zynq cadence_gem 
 
 REP_INC_DIR += include/spec/parallella
 REP_INC_DIR += include/spec/xilinx

@@ -26,15 +26,18 @@ struct Genode::Board_base : Zynq::Board_base
 	enum
 	{
 		/* clocks (assuming 6:2:1 mode) */
+		PS_CLOCK = 33333333,
 		CPU_1X_CLOCK   = 133000000,
 		CPU_6X4X_CLOCK = 6*CPU_1X_CLOCK,
 
 		CORTEX_A9_CLOCK             = CPU_6X4X_CLOCK,
 		CORTEX_A9_PRIVATE_TIMER_CLK = CORTEX_A9_CLOCK,
 
-		SDHCI_BASE = SDHCI_1_BASE,
-		SDHCI_SIZE = SDHCI_1_SIZE,
-		SDHCI_IRQ  = SDHCI_1_IRQ,
+		SDHCI_BASE = MMIO_0_BASE + 0x101000,
+		SDHCI_SIZE = 0x100,
+		SDHCI_IRQ  = 79,
+
+		UART_1_MMIO_BASE = MMIO_0_BASE + UART_SIZE,
 	};
 };
 
