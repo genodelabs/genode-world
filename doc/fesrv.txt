@@ -1,0 +1,79 @@
+Introduction
+############
+
+Fesrv is a port of the RISCV frontend server, which transports elf
+images to the RISCV core for execution.
+
+This document describes how to connect to the zedboard and configure
+uboot for use with tftp. Assuming a riscv elf image exists, it shows
+the steps to load this on the RISCV using through the Genode port of
+fesrv runnnig no the zedboard arm core.
+
+Thus there are 2 cpu's: an ARM and a RISCV. The RISCV should be loaded
+through the ARM core. Therefore an Genode image (uImage) for the ARM
+core should be created, which then loads a second image to the
+RISCV. The image is loaded on the RISCV using our port of the fesrv
+port.
+
+Preparation
+###########
+
+This document assumes you have a Zedboard which boots with a Riscv
+image configured at the FPGA.
+
+Connect the to the uart of the zedboard and open a terminal using picocom:
+
+! $ sudo picocom -i   -f h -b 115200 /dev/ttyACM0
+
+This has been tested with the following version of uBoot:
+
+! U-Boot 2014.07-01982-gf634657-dirty (Sep 29 2014 - 14:52:40)
+! arm-xilinx-linux-gnueabi-gcc (Sourcery CodeBench Lite 2013.11-53) 4.8.1
+! GNU ld (Sourcery CodeBench Lite 2013.11-53) 2.23.52.20130912
+
+
+Uboot environment variables should be set as follows at the uBoot prompt:
+
+! > env set bootcmd="tftpboot 0x3000000 uImage ;bootm 0x3000000"
+! > env save
+
+And boot with the command below (or reset the zedboard).
+
+! > boot
+
+The directory where the resulting ARM uImage that should be copied
+should be exposed via TFTP. This could be the
+build/hw_zedboard/var/run/hello
+
+With atftp this could be done as follows:
+
+! $ sudo atftpd  --mcast-switch-client -v --no-fork --daemon --logfile - build/hw_zedboard/var/run/hello/
+
+Usage
+#####
+
+Create a riscv compatible elf image, with the code that should run on
+the RISCV core. Let's call this image riscv-image.elf. This image
+should be kept on disc and is included later on in the
+buildprocess.
+
+Now handle the build of the Arm zedboard image:
+
+! $ git clone <genode git repository>
+! $ cd <local git repository>
+! $ cd repos
+! $ git clone git@turing:fesrv.git
+! $ cd .. 
+! $ ./tool/create_builddir hw_zedboard
+! $ cd build/hw_zedboard
+! $ echo 'REPOSITORIES += $(GENODE_DIR)/repos/fesrv' >> etc/build.conf
+! $ echo 'RUN_OPT += --include image/uboot' >> etc/build.conf
+! $ cd ../..
+! $ for port in fesrv stdcxx libc; do ./tool/ports/prepare_port $port; done
+! $ cd build/hw_zedboard
+! $ cp <path to riscv-image.elf> bin/
+! $ make run/fesrv
+
+Optionally you can modify repos/fesrv/run/fesrv.run according to
+needs, or use bits and pieces fo the fesrv.run within the project at
+hand.
