@@ -208,7 +208,7 @@ class Remoterom::Backend_base
 			BUF_SIZE = Nic::Session::QUEUE_SIZE * PACKET_SIZE
 		};
 
-		class Rx_thread : public Genode::Thread<8192>
+		class Rx_thread : public Genode::Thread
 		{
 			protected:
 				Ipv4_packet::Ipv4_address &_accept_ip;
@@ -245,7 +245,7 @@ class Remoterom::Backend_base
 
 			public:
 				Rx_thread(Nic::Connection &nic, HANDLER &handler, Ipv4_packet::Ipv4_address &ip)
-				: Genode::Thread<8192>("backend_nic_rx"),
+				: Genode::Thread(Weight::DEFAULT_WEIGHT, "backend_nic_rx", 8192),
 				  _accept_ip(ip),
 				  _nic(nic), _handler(handler),
 				  _link_state_dispatcher(_sig_rec, *this, &Rx_thread::_handle_link_state),
