@@ -16,7 +16,7 @@
 
 #include <backend_base.h>
 
-#include <os/server.h>
+#include <base/component.h>
 #include <os/config.h>
 #include <os/attached_rom_dataspace.h>
 
@@ -43,12 +43,12 @@ struct Remoterom::Rom_forwarder : Rom_forwarder_base
 			_backend.register_forwarder(this);
 
 			/* on startup, send an update message to remote client */
-			update(0);
+			update();
 		}
 
 		const char *module_name() const { return remotename; }
 
-		void update(unsigned)
+		void update()
 		{
 			/* TODO don't update ROM if a transfer is still in progress */
 
@@ -99,24 +99,25 @@ struct Remoterom::Rom_forwarder : Rom_forwarder_base
 
 struct Remoterom::Main
 {
-	Server::Entrypoint    &_ep;
+	Genode::Entrypoint    &_ep;
 	Attached_rom_dataspace _rom;
 	Rom_forwarder          _forwarder;
 
-	Genode::Signal_rpc_member<Rom_forwarder> _dispatcher =
-		{ _ep, _forwarder, &Rom_forwarder::update };
+	Genode::Signal_handler<Rom_forwarder> _dispatcher = { _ep, _forwarder, &Rom_forwarder::update };
 
-	Main(Server::Entrypoint &ep) : _ep(ep), _rom(modulename), _forwarder(_rom, backend_init_server())
+	Main(Genode::Entrypoint &ep)
+		: _ep(ep),
+	     _rom(modulename),
+	     _forwarder(_rom, backend_init_server())
 	{
 		/* register update dispatcher */
 		_rom.sigh(_dispatcher);
 	}
 };
 
-namespace Server {
-	char const * name()            { return "remoterom_srv_ep"; }
+namespace Component {
 	Genode::size_t stack_size()    { return 2*1024*sizeof(long); }
-	void construct(Entrypoint &ep)
+	void construct(Genode::Env &env)
 	{
 		try {
 			Genode::Xml_node remoterom = Genode::config()->xml_node().sub_node("remoterom");
@@ -129,6 +130,6 @@ namespace Server {
 			PERR("No ROM module configured!");
 		}
 
-		static Remoterom::Main main(ep);
+		static Remoterom::Main main(env.ep());
 	}
 }

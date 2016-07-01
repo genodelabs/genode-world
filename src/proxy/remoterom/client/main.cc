@@ -22,7 +22,7 @@
 #include <os/attached_ram_dataspace.h>
 #include <rom_session/rom_session.h>
 
-#include <os/server.h>
+#include <base/component.h>
 #include <os/config.h>
 
 #include <backend_base.h>
@@ -140,7 +140,7 @@ class Remoterom::Root : public Genode::Root_component<Session_component>
 
 	public:
 
-		Root(Server::Entrypoint &ep, Genode::Allocator &md_alloc, Read_buffer &buffer)
+		Root(Genode::Entrypoint &ep, Genode::Allocator &md_alloc, Read_buffer &buffer)
 		: Genode::Root_component<Session_component>(&ep.rpc_ep(), &md_alloc), _buffer(buffer)
 		{ }
 
@@ -153,7 +153,7 @@ class Remoterom::Root : public Genode::Root_component<Session_component>
 
 struct Remoterom::Main : public Remoterom::Read_buffer, public Remoterom::Rom_receiver_base
 {
-	Server::Entrypoint &ep;
+	Genode::Entrypoint &ep;
 	Root remoterom_root{ ep, *Genode::env()->heap(), *this };
 
 	Genode::Lazy_volatile_object<Genode::Attached_ram_dataspace> _ds;
@@ -161,7 +161,7 @@ struct Remoterom::Main : public Remoterom::Read_buffer, public Remoterom::Rom_re
 
 	Backend_client_base &_backend;
 
-	Main(Server::Entrypoint &ep) : ep(ep), _ds_content_size(1024), _backend(backend_init_client())
+	Main(Genode::Entrypoint &ep) : ep(ep), _ds_content_size(1024), _backend(backend_init_client())
 	{
 		Genode::env()->parent()->announce(ep.manage(remoterom_root));
 
@@ -233,10 +233,9 @@ struct Remoterom::Main : public Remoterom::Read_buffer, public Remoterom::Rom_re
 	}
 };
 
-namespace Server {
-	char const * name()            { return "remoterom_client_ep"; }
+namespace Component {
 	Genode::size_t stack_size()    { return 2*1024*sizeof(long); }
-	void construct(Entrypoint &ep)
+	void construct(Genode::Env &env)
 	{
 		try {
 			Genode::Xml_node remoterom = Genode::config()->xml_node().sub_node("remoterom");
@@ -245,6 +244,6 @@ namespace Server {
 			PERR("No ROM module configured!");
 		}
 
-		static Remoterom::Main main(ep);
+		static Remoterom::Main main(env.ep());
 	}
 }
