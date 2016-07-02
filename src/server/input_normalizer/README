@@ -1,0 +1,47 @@
+This component normalizes the submission of input events into
+periodic bursts, nullifying user behavior profiling based on
+input timing.
+
+It can be configured with the 'period_ms' attribute on the
+config node. The default is 200 milliseconds.
+
+
+An example of injecting delay into VirtualBox:
+
+! <start name="nit_fb">
+! 		<resource name="RAM" quantum="8M" />
+! 		<provides>
+! 			<service name="Framebuffer" />
+! 			<service name="Input" />
+! 		</provides>
+! 	</start>
+!
+! 	<start name="input_normalizer">
+! 		<resource name="RAM" quantum="2M" />
+! 		<provides>
+! 			<service name="Input" />
+! 		</provides>
+! 		<config period_ms="150"/>
+! 		<route>
+! 			<any-service>
+! 				<child name="nit_fb"/>
+! 				<parent/>
+!				<any-child/>
+! 			</any-service>
+! 		</route>
+! 	</start>
+!
+! 	<start name="virtualbox">
+! 		<resource name="RAM" quantum="1280M"/>
+! 		<config>
+! 			...
+! 		</config>
+! 		<route>
+! 			<any-service>
+! 				<child name="input_normalizer"/>
+! 				<child name="nit_fb"/>
+! 				<parent/>
+!				<any-child/>
+! 			</any-service>
+! 		</route>
+! 	</start>
