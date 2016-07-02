@@ -56,6 +56,8 @@ class Remoterom::Session_component : public Genode::Rpc_object<Genode::Rom_sessi
                                      public Session_list::Element
 {
 	private:
+		Genode::Env &_env;
+
 		Signal_context_capability _sigh;
 
 		Read_buffer const &_buffer;
@@ -68,9 +70,9 @@ class Remoterom::Session_component : public Genode::Rpc_object<Genode::Rom_sessi
 
 		static int version() { return 1; }
 
-		Session_component(Session_list &sessions, Read_buffer const &buffer)
+		Session_component(Genode::Env &env, Session_list &sessions, Read_buffer const &buffer)
 		:
-			_buffer(buffer), _sessions(sessions)
+			_env(env), _buffer(buffer), _sessions(sessions)
 		{
 			_sessions.insert(this);
 		}
@@ -95,7 +97,7 @@ class Remoterom::Session_component : public Genode::Rpc_object<Genode::Rom_sessi
 			if (!_ram_ds.is_constructed()
 			 || _buffer.content_size() > _ram_ds->size()) {
 
-				_ram_ds.construct(Genode::env()->ram_session(), _buffer.content_size());
+				_ram_ds.construct(&_env.ram(), _buffer.content_size());
 			}
 
 			char             *dst = _ram_ds->local_addr<char>();
@@ -123,6 +125,7 @@ class Remoterom::Root : public Genode::Root_component<Session_component>
 {
 	private:
 
+		Genode::Env    &_env;
 		Read_buffer    &_buffer;
 		Session_list    _sessions;
 
@@ -135,13 +138,13 @@ class Remoterom::Root : public Genode::Root_component<Session_component>
 			/* TODO compare requested module name with provided module name (config) */
 
 			return new (Root::md_alloc())
-			            Session_component(_sessions, _buffer);
+			            Session_component(_env, _sessions, _buffer);
 		}
 
 	public:
 
-		Root(Genode::Entrypoint &ep, Genode::Allocator &md_alloc, Read_buffer &buffer)
-		: Genode::Root_component<Session_component>(&ep.rpc_ep(), &md_alloc), _buffer(buffer)
+		Root(Genode::Env &env, Genode::Allocator &md_alloc, Read_buffer &buffer)
+		: Genode::Root_component<Session_component>(&env.ep().rpc_ep(), &md_alloc), _env(env), _buffer(buffer)
 		{ }
 
 		void notify_clients()
@@ -153,17 +156,18 @@ class Remoterom::Root : public Genode::Root_component<Session_component>
 
 struct Remoterom::Main : public Remoterom::Read_buffer, public Remoterom::Rom_receiver_base
 {
-	Genode::Entrypoint &ep;
-	Root remoterom_root{ ep, *Genode::env()->heap(), *this };
+	Genode::Env &env;
+	Genode::Heap heap   = { &env.ram(), &env.rm() };
+	Root remoterom_root = { env, heap, *this };
 
 	Genode::Lazy_volatile_object<Genode::Attached_ram_dataspace> _ds;
 	size_t                                                       _ds_content_size;
 
 	Backend_client_base &_backend;
 
-	Main(Genode::Entrypoint &ep) : ep(ep), _ds_content_size(1024), _backend(backend_init_client())
+	Main(Genode::Env &env) : env(env), _ds_content_size(1024), _backend(backend_init_client())
 	{
-		Genode::env()->parent()->announce(ep.manage(remoterom_root));
+		env.parent().announce(env.ep().manage(remoterom_root));
 
 		/* initialise backend */
 		_backend.register_receiver(this);
@@ -180,7 +184,7 @@ struct Remoterom::Main : public Remoterom::Read_buffer, public Remoterom::Rom_re
 
 		// TODO (optional) implement double buffering
 		if (!_ds.is_constructed() || _ds_content_size > _ds->size())
-			_ds.construct(Genode::env()->ram_session(), _ds_content_size);
+			_ds.construct(&env.ram(), _ds_content_size);
 
 		// TODO set write lock
 
@@ -244,6 +248,6 @@ namespace Component {
 			PERR("No ROM module configured!");
 		}
 
-		static Remoterom::Main main(env.ep());
+		static Remoterom::Main main(env);
 	}
 }
