@@ -1,0 +1,95 @@
+source ${genode_dir}/repos/emery/run/synergy.inc
+source ${genode_dir}/repos/base/run/platform_drv.inc
+
+#
+# Build
+#
+
+set build_components {
+	core init
+	drivers/timer
+	test/input
+}
+
+append_synergy_build_components
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+append config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="CPU"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="LOG"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service>
+			<parent/> <any-child/>
+		</any-service>
+	</default-route>}
+
+append_platform_drv_config
+
+append config {
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="test-input">
+		<resource name="RAM" quantum="1M"/>
+	</start>}
+
+append_synergy_config
+
+append config {
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init ld.lib.so
+	timer
+	test-input
+}
+
+append_synergy_boot_modules
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -net user"
+
+append_if [have_spec x86]     qemu_args " -net nic,model=e1000"
+append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118"
+
+write_synergy_host_config
+start_synergy_host
+
+run_genode_until forever
+
+remove_synergy_host_config

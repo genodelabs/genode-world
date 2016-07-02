@@ -1,0 +1,281 @@
+#
+# Instantiate two Synergy clients
+#
+
+source ${genode_dir}/repos/emery/run/synergy.inc
+source ${genode_dir}/repos/base/run/platform_drv.inc
+
+#
+# Build
+#
+
+set build_components {
+	core init
+	drivers/timer
+	server/nic_bridge
+	drivers/framebuffer
+	drivers/input/dummy
+	server/nitpicker
+	server/nit_fb
+	test/nitpicker
+	app/pointer
+}
+
+append_synergy_build_components
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+append config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="CPU"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="LOG"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service>
+			<parent/>
+			<child name="nic_bridge"/>
+			<any-child/>
+		</any-service>
+	</default-route>}
+
+append_platform_drv_config
+
+append_if [have_spec sdl] config {
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+		<config width="640" height="480"/>
+	</start>}
+
+append_if [have_spec framebuffer] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Framebuffer"/></provides>
+		<config buffered="yes" width="640" height="480"/>
+	</start>}
+
+append config {
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<!--
+	<start name="testnit">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+	-->
+
+	<start name="nic_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nic"/></provides>
+	</start>
+
+	<start name="nic_bridge">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nic"/></provides>
+		<route>
+			<any-service>
+				<parent/> <child name="nic_drv"/> <any-child/>
+			</any-service>
+		</route>
+	</start>
+
+	<start name="dummy_input_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Input"/> </provides>
+	</start>
+
+	<start name="nitpicker">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config>
+			<domain name="left"    layer="2" origin="top_left"  />
+			<domain name="right"   layer="2" origin="top_right" xpos="-340"/>
+			<domain name="" layer="1"/>
+
+			<policy label="left"    domain="left"/>
+			<policy label="right"   domain="right"/>
+			<policy label="" domain=""/>
+		</config>
+	</start>
+
+	<start name="left">
+		<binary name="init"/>
+		<resource name="RAM" quantum="24M"/>
+		<config verbose="yes">
+			<parent-provides>
+				<service name="ROM"/>
+				<service name="CPU"/>
+				<service name="PD"/>
+				<service name="RAM"/>
+				<service name="RM"/>
+				<service name="LOG"/>
+				<service name="CAP"/>
+				<service name="SIGNAL"/>
+				<service name="Timer"/>
+				<service name="Nitpicker"/>
+				<service name="Nic"/>
+			</parent-provides>
+			<default-route>
+				<any-service>
+					<child name="synergy_input"/>
+					<child name="nitpicker"/>
+					<any-child/>
+					<parent/>
+				</any-service>
+			</default-route>
+			<start name="nit_fb">
+				<resource name="RAM" quantum="8M" />
+				<provides>
+					<service name="Framebuffer" />
+					<service name="Input" />
+				</provides>
+				<config width="340" height="480" />
+				<route>
+					<any-service> <parent/> </any-service>
+				</route>
+			</start>
+			<start name="synergy_input">
+				<resource name="RAM" quantum="8M"/>
+				<provides> <service name="Input"/> </provides>
+				<config addr="10.0.2.2" name="genode-left"/>
+			</start>
+			<start name="nitpicker">
+				<resource name="RAM" quantum="1M"/>
+				<provides><service name="Nitpicker"/></provides>
+				<config>
+					<background color="#808080"/>
+					<domain name="pointer" layer="1" xray="no" origin="pointer" />
+					<domain name="" layer="2"/>
+					<policy label="pointer" domain="pointer"/>
+					<policy label="" domain=""/>
+				</config>
+			</start>
+			<start name="pointer">
+				<resource name="RAM" quantum="1M"/>
+			</start>
+			<start name="testnit">
+				<resource name="RAM" quantum="1M"/>
+			</start>
+		</config>
+	</start>
+	<start name="right">
+		<binary name="init"/>
+		<resource name="RAM" quantum="24M"/>
+		<config verbose="yes">
+			<parent-provides>
+				<service name="ROM"/>
+				<service name="CPU"/>
+				<service name="PD"/>
+				<service name="RAM"/>
+				<service name="RM"/>
+				<service name="LOG"/>
+				<service name="CAP"/>
+				<service name="SIGNAL"/>
+				<service name="Timer"/>
+				<service name="Nitpicker"/>
+				<service name="Nic"/>
+			</parent-provides>
+			<default-route>
+				<any-service>
+					<child name="synergy_input"/>
+					<any-child/>
+					<parent/>
+				</any-service>
+			</default-route>
+			<start name="nit_fb">
+				<resource name="RAM" quantum="8M" />
+				<provides>
+					<service name="Framebuffer" />
+					<service name="Input" />
+				</provides>
+				<config width="340" height="480" />
+				<route>
+					<any-service> <parent/> </any-service>
+				</route>
+			</start>
+			<start name="synergy_input">
+				<resource name="RAM" quantum="8M"/>
+				<provides> <service name="Input"/> </provides>
+				<config addr="10.0.2.2" name="genode-right"/>
+			</start>
+			<start name="nitpicker">
+				<resource name="RAM" quantum="1M"/>
+				<provides><service name="Nitpicker"/></provides>
+				<config>
+					<background color="#800000"/>
+					<domain name="pointer" layer="1" xray="no" origin="pointer" />
+					<domain name="" layer="2"/>
+					<policy label="pointer" domain="pointer"/>
+					<policy label="" domain=""/>
+				</config>
+			</start>
+			<start name="pointer">
+				<resource name="RAM" quantum="1M"/>
+			</start>
+			<start name="testnit">
+				<resource name="RAM" quantum="1M"/>
+			</start>
+		</config>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init ld.lib.so
+	timer
+	fb_drv
+	dummy_input_drv
+	nitpicker
+	testnit
+	nic_bridge nit_fb
+	pointer
+}
+
+append_synergy_boot_modules
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -net user"
+
+append_if [have_spec x86]     qemu_args " -net nic,model=e1000"
+append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118"
+
+write_synergy_host_config
+start_synergy_host
+
+run_genode_until forever
+
+remove_synergy_host_config
