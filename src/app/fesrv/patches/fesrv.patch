@@ -1,0 +1,162 @@
+diff --git a/fesvr/device.cc b/fesvr/device.cc
+index 7179ce0..118ef71 100644
+--- a/fesvr/device.cc
++++ b/fesvr/device.cc
+@@ -11,6 +11,8 @@
+ #include <sys/stat.h>
+ using namespace std::placeholders;
+ 
++#include <base/printf.h>
++
+ device_t::device_t()
+   : command_handlers(command_t::MAX_COMMANDS),
+     command_names(command_t::MAX_COMMANDS)
+@@ -69,7 +71,7 @@ void bcd_t::handle_read(command_t cmd)
+ 
+ void bcd_t::handle_write(command_t cmd)
+ {
+-  canonical_terminal_t::write(cmd.payload());
++  Genode::printf("%c",(char)cmd.payload()); 
+   cmd.respond(0x100 | (uint8_t)cmd.payload());
+ }
+ 
+diff --git a/fesvr/htif.cc b/fesvr/htif.cc
+index 7e101ad..d8cca9d 100644
+--- a/fesvr/htif.cc
++++ b/fesvr/htif.cc
+@@ -11,7 +11,6 @@
+ #include <iostream>
+ #include <fstream>
+ #include <iomanip>
+-#include <stdio.h>
+ #include <limits.h>
+ #include <unistd.h>
+ #include <signal.h>
+@@ -30,40 +29,11 @@
+ # define TARGET_DIR "/" TARGET_ARCH "/bin/"
+ #endif
+ 
+-static volatile bool signal_exit = false;
+-static void handle_signal(int sig)
+-{
+-  if (sig == SIGABRT || signal_exit) // someone set up us the bomb!
+-    exit(-1);
+-  signal_exit = true;
+-  signal(sig, &handle_signal);
+-}
+-
+-void htif_t::set_chroot(const char* where)
+-{
+-  char buf1[PATH_MAX], buf2[PATH_MAX];
+-
+-  if (getcwd(buf1, sizeof(buf1)) == NULL
+-      || chdir(where) != 0
+-      || getcwd(buf2, sizeof(buf2)) == NULL
+-      || chdir(buf1) != 0)
+-  {
+-    printf("could not chroot to %s\n", chroot.c_str());
+-    exit(-1);
+-  }
+-
+-  chroot = buf2;
+-}
+-
+ htif_t::htif_t(const std::vector<std::string>& args)
+   : exitcode(0), mem(this), seqno(1), started(false), stopped(false),
+-    _mem_mb(0), _num_cores(0), sig_addr(0), sig_len(0),
++    _mem_mb(0), _num_cores(0), sig_addr(0), sig_len(0), 
+     syscall_proxy(this)
+ {
+-  signal(SIGINT, &handle_signal);
+-  signal(SIGTERM, &handle_signal);
+-  signal(SIGABRT, &handle_signal); // we still want to call static destructors
+-
+   size_t i;
+   for (i = 0; i < args.size(); i++)
+     if (args[i].length() && args[i][0] != '-' && args[i][0] != '+')
+@@ -82,8 +52,6 @@ htif_t::htif_t(const std::vector<std::string>& args)
+       dynamic_devices.push_back(new disk_t(arg.c_str() + strlen("+disk=")));
+     else if (arg.find("+signature=") == 0)
+       sig_file = arg.c_str() + strlen("+signature=");
+-    else if (arg.find("+chroot=") == 0)
+-      set_chroot(arg.substr(strlen("+chroot=")).c_str());
+   }
+ 
+   device_list.register_device(&syscall_proxy);
+@@ -169,7 +137,6 @@ void htif_t::load_program()
+     if (access(test_path.c_str(), F_OK) == 0)
+       path = test_path;
+   }
+-
+   if (path.empty())
+     throw std::runtime_error("could not open " + targs[0]);
+ 
+@@ -199,9 +166,9 @@ void htif_t::stop()
+     std::vector<uint8_t> buf(sig_len);
+     mem.read(sig_addr, sig_len, &buf[0]);
+ 
+-    std::ofstream sigs(sig_file);
+-    assert(sigs && "can't open signature file!");
+-    sigs << std::setfill('0') << std::hex;
++   std::ofstream sigs(sig_file);
++   assert(sigs && "can't open signature file!");
++   sigs << std::setfill('0') << std::hex;
+ 
+     const addr_t incr = 16;
+     assert(sig_len % incr == 0);
+@@ -293,7 +260,7 @@ int htif_t::run()
+   for (size_t i = 0; i < num_cores(); i++)
+     fromhost_callbacks.push_back(std::bind(enq_func, &fromhost[i], std::placeholders::_1));
+ 
+-  while (!signal_exit && exitcode == 0)
++  while ( exitcode == 0)
+   {
+     for (uint32_t coreid = 0; coreid < num_cores(); coreid++)
+     {
+diff --git a/fesvr/htif.h b/fesvr/htif.h
+index ace4503..9fcbbf6 100644
+--- a/fesvr/htif.h
++++ b/fesvr/htif.h
+@@ -70,7 +70,6 @@ class htif_t
+   virtual packet_t read_packet(seqno_t expected_seqno);
+   virtual void write_packet(const packet_t& packet);
+ 
+-  void set_chroot(const char* where);
+   const std::vector<std::string>& target_args() { return targs; }
+ 
+   friend class memif_t;
+diff --git a/fesvr/htif_eth.cc b/fesvr/htif_eth.cc
+index 3a9de7d..19028e4 100644
+--- a/fesvr/htif_eth.cc
++++ b/fesvr/htif_eth.cc
+@@ -181,8 +181,6 @@ htif_eth_t::~htif_eth_t()
+ 
+ ssize_t htif_eth_t::read(void* buf, size_t max_size)
+ {
+-  ssize_t bytes;
+-
+   for(int timeouts = 0; timeouts < 3; )
+   {
+   #ifdef __linux__
+@@ -277,4 +275,5 @@ ssize_t htif_eth_t::write(const void* buf, size_t size)
+   else
+     return ::write(sock, (char*)&eth_packet, size);
+   #endif
++  return 0; 
+ }
+diff --git a/fesvr/syscall.cc b/fesvr/syscall.cc
+index dc73360..cf16c58 100644
+--- a/fesvr/syscall.cc
++++ b/fesvr/syscall.cc
+@@ -71,10 +71,7 @@ syscall_t::syscall_t(htif_t* htif)
+ 
+   register_command(0, std::bind(&syscall_t::handle_syscall, this, _1), "syscall");
+ 
+-  int stdin_fd = dup(0), stdout_fd0 = dup(1), stdout_fd1 = dup(1);
+-  if (stdin_fd < 0 || stdout_fd0 < 0 || stdout_fd1 < 0)
+-    throw std::runtime_error("could not dup stdin/stdout");
+-
++  int stdin_fd =0, stdout_fd0 = 1, stdout_fd1 = 1;
+   fds.alloc(stdin_fd); // stdin -> stdin
+   fds.alloc(stdout_fd0); // stdout -> stdout
+   fds.alloc(stdout_fd1); // stderr -> stdout

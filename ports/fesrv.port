@@ -1,0 +1,11 @@
+LICENSE   := BSD
+VERSION   := ceb56f29aacf1ff8a9997e9a57b855936ba00fd6
+DOWNLOADS := riscv-fesrv.git
+
+URL(riscv-fesrv) := https://github.com/riscv/riscv-fesvr.git
+REV(riscv-fesrv) := ceb56f29aacf1ff8a9997e9a57b855936ba00fd6
+
+DIR(riscv-fesrv) := src/app/fesrv
+
+PATCHES := src/app/fesrv/patches/*.patch
+PATCH_OPT := -N -p1 -d ${DIR(riscv-fesrv)}
