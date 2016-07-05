@@ -1,0 +1,13 @@
+A small frontend to the libcURL library.
+
+Configuration
+-------------
+
+!<config>
+! <libc stdout="/dev/log" stderr="/dev/log">
+!  <vfs>
+!   <dir name="dev"> <jitterentropy name="random"/> <log/> </dir>
+!  </vfs>
+! </libc>
+! <fetch url="http://genode.org/about/LICENSE" path="LICENSE"/>
+!</config>
