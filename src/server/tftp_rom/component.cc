@@ -16,11 +16,11 @@
 #include <timer_session/connection.h>
 #include <rom_session/rom_session.h>
 #include <os/signal_rpc_dispatcher.h>
-#include <os/server.h>
 #include <os/session_policy.h>
-#include <os/config.h>
 #include <os/path.h>
+#include <base/attached_rom_dataspace.h>
 #include <root/component.h>
+#include <base/component.h>
 #include <util/list.h>
 #include <util/string.h>
 #include <util/endian.h>
@@ -61,6 +61,8 @@ class Tftp_rom::Session_component :
 {
 	private:
 
+		Genode::Env &_env;
+
 		typedef Genode::String<128> Filename;
 		Filename const _filename;
 
@@ -97,7 +99,7 @@ class Tftp_rom::Session_component :
 
 		inline void timeout()
 		{
-			PERR("%s timed out", _filename.string());
+			Genode::error(_filename.string(), " timed out");
 			finalize();
 		}
 
@@ -122,13 +124,15 @@ class Tftp_rom::Session_component :
 			udp_sendto(_pcb, req, &_addr, _port);
 		}
 
-		Session_component(char const   *namestr,
+		Session_component(Genode::Env  &env,
+		                  char const   *namestr,
 		                  ip_addr      &ipaddr,
 		                  uint16_t      port,
 		                  unsigned long now,
 		                  unsigned      timeout)
 		:
 			Lock(LOCKED),
+			_env(env),
 			_filename(namestr),
 			_pcb(udp_new()),
 			_start(now),
@@ -136,7 +140,7 @@ class Tftp_rom::Session_component :
 			_addr(ipaddr), _port(port)
 		{
 			if (_pcb == NULL) {
-				PERR("failed to create UDP context");
+				Genode::error("failed to create UDP context");
 				throw Genode::Root::Unavailable();
 			}
 
@@ -157,7 +161,7 @@ class Tftp_rom::Session_component :
 				pbuf_free(_chain_head);
 
 			if (_dataspace.valid())
-				env()->ram_session()->free(_dataspace);
+				_env.ram().free(_dataspace);
 		}
 
 		/**************************************
@@ -206,7 +210,7 @@ class Tftp_rom::Session_component :
 
 			if (buf[1] == 0x05) {
 				buf[data->len-1] = '\0';
-				PERR("%s: %s", _filename.string(), (char*)buf+4);
+				Genode::error(_filename.string(), ": ", (const char *)buf+4);
 				_ack_timeout = 0;
 				/* permanent error, inform the client */
 				finalize();
@@ -225,7 +229,7 @@ class Tftp_rom::Session_component :
 
 			/* hit the hard 32MB limit */
 			if (!done && _block_num == 0xffff) {
-				PERR("%s: maximum file size exceded!", _filename.string());
+				Genode::error(_filename.string(), ": maximum file size exceded!");
 				finalize();
 			}
 
@@ -248,8 +252,8 @@ class Tftp_rom::Session_component :
 				for (pbuf *link = _chain_head; link != NULL; link = link->next)
 					rom_len += link->len-4;
 
-				_dataspace = Genode::env()->ram_session()->alloc(rom_len);
-				uint8_t *rom_addr = Genode::env()->rm_session()->attach(_dataspace);
+				_dataspace = _env.ram().alloc(rom_len);
+				uint8_t *rom_addr = _env.rm().attach(_dataspace);
 				uint8_t *p = rom_addr;
 
 				for (pbuf *link = _chain_head; link != NULL; link = link->next) {
@@ -258,8 +262,8 @@ class Tftp_rom::Session_component :
 					p += len;
 				}
 
-				Genode::env()->rm_session()->detach(rom_addr);
-				PLOG("%s retrieved", _filename.string());
+				_env.rm().detach(rom_addr);
+				Genode::log(_filename.string(), " retrieved");
 				finalize();
 			}
 
@@ -324,7 +328,7 @@ extern "C" void rrq_cb(void *arg, udp_pcb *upcb, pbuf *data,
 	Tftp_rom::Session_component *session = (Tftp_rom::Session_component*)arg;
 
 	if (!ip_addr_cmp(addr, session->addr())) {
-		PERR("dropping rogue packet");
+		Genode::error("dropping rogue packet");
 		pbuf_free(data);
 		return;
 	}
@@ -355,19 +359,20 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 {
 	private:
 
-		typedef Genode::Thread<8192> Timeout_base;
+		Genode::Env                    &_env;
+		Genode::Attached_rom_dataspace  _config_rom { _env, "config" };
 
-		class Timeout_dispatcher : Timeout_base, Genode::Lock
+		class Timeout_dispatcher : Genode::Thread, Genode::Lock
 		{
 			private:
 
 				enum { TIMER_PERIOD_US = 1 << 20 };
 
-				Timer::Connection         _timer;
-				Signal_receiver           _sig_rec;
-				Signal_context            _sig_ctx;
-				Signal_context_capability _sig_cap;
-				Session_list              _sessions;
+				Timer::Connection          _timer;
+				Signal_receiver            _sig_rec;
+				Signal_context             _sig_ctx;
+				Signal_context_capability  _sig_cap;
+				Session_list               _sessions;
 
 			protected:
 
@@ -402,10 +407,10 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 			public:
 
-				Timeout_dispatcher()
+				Timeout_dispatcher(Genode::Env &env)
 				:
-					Timeout_base(Cpu_session::DEFAULT_WEIGHT-1, "timeout_ep"),
-					_sig_cap(_sig_rec.manage(&_sig_ctx))
+					Genode::Thread(env, "timeout_ep", 1024 * sizeof(Genode::addr_t)),
+					_timer(env), _sig_cap(_sig_rec.manage(&_sig_ctx))
 				{
 					_timer.trigger_periodic(TIMER_PERIOD_US);
 					start();
@@ -442,7 +447,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 					/* timer will be stopped at the next signal */
 				}
 
-		} _timeout_dispatcher;
+		} _timeout_dispatcher { _env } ;
 
 	protected:
 
@@ -450,29 +455,25 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 		{
 			Session_component *session;
 
-			config()->reload();
+			_config_rom.update();
 
 			ip_addr  ipaddr;
 			unsigned port = 69;
 			unsigned timeout = 0;
 
-			enum { FILENAME_MAX_LEN = 128 };
-			char filename[FILENAME_MAX_LEN];
-			Genode::Arg_string::find_arg(args, "filename")
-				.string(filename, sizeof(filename), "");
-
-			Session_label const label(args);
+			Session_label const label = label_from_args(args);
+			Session_label const rom_name = label.last_element();
 
 			try {
 
-				Session_policy policy(label);
+				Session_policy policy(label, _config_rom.xml());
 
 				try {
 					char addr_str[53];
 					policy.attribute("ip").value(addr_str, sizeof(addr_str));
 					ipaddr_aton(addr_str, &ipaddr);
 				} catch (...) {
-					PERR("%s: 'ip' not specified in policy", label.string());
+					Genode::error(label.string(), ": 'ip' not specified in policy");
 					throw Root::Unavailable();
 				}
 
@@ -487,21 +488,21 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 					policy.attribute("dir").value(path.base(), path.capacity());
 					path.append("/");
-					path.append(filename);
+					path.append(rom_name.string());
 
 					session = new (md_alloc())
-						Session_component(path.base(), ipaddr, port,
+						Session_component(_env, path.base(), ipaddr, port,
 						                  _timeout_dispatcher.elapsed_ms(), timeout*1000);
-					PLOG("%s:%s requested", path.base(), label.string());
-				} catch (...) {
+					Genode::log((char const *)path.base(), " requested");
+				} catch (...) { /* no dir attribute */
 					session = new (md_alloc())
-						Session_component(filename, ipaddr, port,
+						Session_component(_env, rom_name.string(), ipaddr, port,
 						                  _timeout_dispatcher.elapsed_ms(), timeout*1000);
-					PLOG("%s requested", label.string());
+					Genode::log(label.string(), " requested");
 				}
 
 			} catch (Session_policy::No_policy_defined) {
-				PERR("no policy for defined for %s", label.string());
+				Genode::error("no policy for defined for ", label.string());
 				throw Root::Unavailable();
 			}
 
@@ -517,32 +518,21 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 	public:
 
-		Root(Server::Entrypoint &ep, Genode::Allocator &md_alloc)
-		: Genode::Root_component<Session_component>(&ep.rpc_ep(), &md_alloc) { }
+		Root(Genode::Env &env, Genode::Allocator &md_alloc)
+		:
+			Genode::Root_component<Session_component>(&env.ep().rpc_ep(), &md_alloc),
+			_env(env)
+		{
+			env.parent().announce(env.ep().manage(*this));
+		}
 };
 
 
-struct Tftp_rom::Main
+Genode::size_t Component::stack_size() { return 4*1024*sizeof(long); }
+
+void Component::construct(Genode::Env &env )
 {
-	Server::Entrypoint &_ep;
-
-	Sliced_heap _sliced_heap = { env()->ram_session(), env()->rm_session() };
-
-	Root _root = { _ep, _sliced_heap };
-
-	Main(Server::Entrypoint &ep) : _ep(ep)
-	{
-		/* DHCP hasn't settled, but timeouts take care of that */
-		env()->parent()->announce(_ep.manage(_root));
-	}
-};
-
-
-namespace Server {
-
-	char const *name() { return "tftp_rom_ep"; }
-
-	size_t stack_size() { return 4*1024*sizeof(long); }
-
-	void construct(Entrypoint &ep) { static Tftp_rom::Main main(ep); }
+	static Genode::Sliced_heap sliced_heap(env.ram(), env.rm());
+	static Tftp_rom::Root root(env, sliced_heap);
 }
+
