@@ -8,12 +8,12 @@
 #include <stdlib.h>
 
 /* Genode includes */
-#include <base/printf.h>
+#include <base/log.h>
 
 
 extern "C" char *getenv(const char *name)
 {
-	PINF("environment variable \"%s\" requested", name);
+	Genode::log("environment variable \"", name, "\" requested");
 
 	return (char *)"";
 };

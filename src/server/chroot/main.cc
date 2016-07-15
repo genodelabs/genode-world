@@ -148,11 +148,11 @@ struct Proxy : Rpc_object<Typed_root<File_system::Session>>
 		catch (No_space)            { errstr = "no space";          }
 		catch (...)                 { errstr = "unknown error";     }
 
-		PERR("%s: %s", new_root, errstr);
+		Genode::error(new_root, ": ", errstr);
 		throw Root::Unavailable();
 	}
 
-	void upgrade(Session_capability        cap,
+	void upgrade(Session_capability cap,
 	             Root::Upgrade_args const &args) override {
 		_parent_service.upgrade(cap, args.string()); }
 

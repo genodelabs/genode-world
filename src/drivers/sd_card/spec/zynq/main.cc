@@ -13,7 +13,7 @@
  */
 
 /* Genode includes */
-#include <base/printf.h>
+#include <base/log.h>
 #include <os/server.h>
 
 /* local includes */
@@ -23,7 +23,6 @@
 struct Main
 {
 	Server::Entrypoint &ep;
-
 
 	struct Factory : Block::Driver_factory
 	{
@@ -40,7 +39,7 @@ struct Main
 	Main(Server::Entrypoint &ep)
 	: ep(ep), root(ep, Genode::env()->heap(), factory)
 	{
-		Genode::printf("--- SD card driver ---\n");
+		Genode::log("--- SD card driver ---");
 
 		Genode::env()->parent()->announce(ep.manage(root));
 	}

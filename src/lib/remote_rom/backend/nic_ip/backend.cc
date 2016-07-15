@@ -6,6 +6,7 @@
 
 #include <base/env.h>
 #include <base/exception.h>
+#include <base/log.h>
 
 #include <backend_base.h>
 
@@ -56,9 +57,9 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 	protected:
 		char         _module_name[MAX_NAME_LEN];   /* the ROM module name */
 		Type         _type;                        /* packet type */
-		uint32_t       _content_size;                /* ROM content size in bytes */
-		uint16_t       _offset;                      /* offset in bytes */
-		uint16_t       _payload_size;                /* payload size in bytes */
+		uint32_t     _content_size;                /* ROM content size in bytes */
+		uint16_t     _offset;                      /* offset in bytes */
+		uint16_t     _payload_size;                /* payload size in bytes */
 
 		/*****************************************************
 		 ** 'payload' must be the last member of this class **
@@ -68,7 +69,12 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 
 	public:
 
-		Packet_base(size_t size) : Ethernet_frame(sizeof(Packet_base) + size), Ipv4_packet(sizeof(Packet_base) + size - sizeof(Ethernet_frame)), _payload_size(size) { }
+		Packet_base(size_t size) 
+		:
+			Ethernet_frame(sizeof(Packet_base) + size),
+			Ipv4_packet(sizeof(Packet_base) + size - sizeof(Ethernet_frame)),
+			_payload_size(size)
+		{ }
 
 		void const * base() const { return &payload; }
 
@@ -235,12 +241,12 @@ class Remote_rom::Backend_base
 						_nic.rx()->acknowledge_packet(_rx_packet);
 					}
 				}
-																																																											
+
 				void _handle_rx_ready_to_ack(unsigned) { _handle_rx_packet_avail(0); }
-																																																											
+
 				void _handle_link_state(unsigned)
 				{
-					PINF("link state changed");
+					Genode::log("link state changed");
 				}
 
 			public:
@@ -291,7 +297,10 @@ class Remote_rom::Backend_base
 		}
 
 	public:
-		explicit Backend_base(Genode::Allocator &alloc, HANDLER &handler) : _tx_block_alloc(&alloc), _nic(&_tx_block_alloc, BUF_SIZE, BUF_SIZE), _rx_thread(_nic, handler, _accept_ip)
+		explicit Backend_base(Genode::Allocator &alloc, HANDLER &handler)
+		:
+			_tx_block_alloc(&alloc), _nic(&_tx_block_alloc, BUF_SIZE, BUF_SIZE),
+			_rx_thread(_nic, handler, _accept_ip)
 		{
 			/* start dispatcher thread */
 			_rx_thread.start();
@@ -316,7 +325,7 @@ class Remote_rom::Backend_base
 
 				_accept_ip = _src_ip;
 			} catch (...) {
-				PWRN("No IP configured, falling back to broadcast mode!");
+				Genode::warning("No IP configured, falling back to broadcast mode!");
 				_src_ip = Ipv4_packet::CURRENT;
 				_dst_ip = Ipv4_packet::BROADCAST;
 				_accept_ip = Ipv4_packet::BROADCAST;
@@ -417,7 +426,8 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 			switch (packet.type())
 			{
 				case Packet_base::UPDATE:
-					if (verbose) PINF("receiving UPDATE (%s) packet", packet.module_name());
+					if (verbose)
+						Genode::log("receiving UPDATE (", packet.module_name(), ") packet");
 
 					if (!_forwarder)
 						return;
@@ -508,14 +518,16 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 			switch (packet.type())
 			{
 				case Packet_base::SIGNAL:
-					if (verbose) PINF("receiving SIGNAL(%s) packet", packet.module_name());
+					if (verbose)
+						Genode::log("receiving SIGNAL(", packet.module_name(), ") packet");
 
 					/* send update request */
 					update(packet.module_name());
 					
 					break;
 				case Packet_base::DATA:
-					if (verbose) PINF("receiving DATA(%s) packet", packet.module_name());
+					if (verbose)
+						Genode::log("receiving DATA(", packet.module_name(), ") packet");
 
 					/* write into buffer */
 					if (!_receiver) return;
@@ -531,7 +543,8 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 					
 					break;
 				case Packet_base::DATA_CONT:
-					if (verbose) PINF("receiving DATA_CONT(%s) packet", packet.module_name());
+					if (verbose)
+						Genode::log("receiving DATA_CONT(", packet.module_name(), ") packet");
 
 					if (!_receiver) return;
 

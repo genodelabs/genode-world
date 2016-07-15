@@ -351,6 +351,7 @@ static int genode_file_size(sqlite3_file *pFile, sqlite_int64 *pSize)
 	typedef Vfs::Directory_service::Stat_result Result;
 	switch(p->vfs->stat(p->path, stat)) {
 	case Result::STAT_ERR_NO_ENTRY: return SQLITE_IOERR_FSTAT;
+	case Result::STAT_ERR_NO_PERM:  return SQLITE_IOERR_ACCESS;
 	case Result::STAT_OK: break;
 	}
 	*pSize = stat.size;
@@ -510,17 +511,17 @@ static int genode_open(
 
 int sqlite3_os_init(void)
 {
-	PINF("initializing native SQLite OS interface");
+	Genode::log("initializing native SQLite OS interface");
 
 	int ret = Jitter::jent_entropy_init();
 	if(ret) {
-		PERR("Jitter entropy initialization failed with error code %d", ret);
+		Genode::error("Jitter entropy initialization failed with error code ", ret);
 		return SQLITE_ERROR;
 	}
 
 	_jitter = Jitter::jent_entropy_collector_alloc(0, 0);
 	if (!_jitter) {
-		PERR("Jitter entropy collector initialization failed");
+		Genode::error("Jitter entropy collector initialization failed");
 		return SQLITE_ERROR;
 	}
 
@@ -538,11 +539,11 @@ int sqlite3_os_init(void)
 			PWRN("additional VFS created for SQLite");
 
 		} catch (Genode::Xml_node::Nonexistent_sub_node) {
-			PERR("no VFS defined for SQLite library");
+			Genode::error("no VFS defined for SQLite library");
 			return SQLITE_ERROR;
 		}
 	} catch (...) {
-		PERR("error loading VFS definition for SQLite library");
+		Genode::error("error loading VFS definition for SQLite library");
 		return SQLITE_ERROR;
 	}
 

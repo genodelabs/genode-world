@@ -374,7 +374,7 @@ Just add the following two lines to hold the program when the second
 message appears:
 
 ! if (strcmp("basic_string::substr", s) == 0) {
-!   PERR("stop!");
+!   Genode::error("stop!");
 !   for (;;);
 ! }
 
@@ -414,7 +414,7 @@ in a new _getenv.cc_ file that we link to the target:
 
 ! extern "C" char *getenv(const char *name)
 ! {
-!   PINF("environment variable \"%s\" requested", name);
+!   Genode::log("environment variable \"", name, "\" requested");
 !   return (char *)"";
 ! };
 

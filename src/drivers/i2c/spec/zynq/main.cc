@@ -14,7 +14,8 @@
 #include <i2c_session/i2c_session.h>
 #include <cap_session/connection.h>
 #include <dataspace/client.h>
-#include <base/printf.h>
+#include <base/log.h>
+#include <base/heap.h>
 #include <base/sleep.h>
 #include <root/component.h>
 
@@ -78,7 +79,7 @@ int main(int, char **)
 {
 	using namespace I2C;
 
-	PINF("Zynq I2C driver");
+	Genode::log("Zynq I2C driver");
 
 	Driver &driver = Driver::factory();
 

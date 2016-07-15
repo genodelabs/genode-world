@@ -17,8 +17,9 @@
  * under the terms of the GNU General Public License version 2.
  */
 
-#include <base/printf.h>
 #include <base/env.h>
+#include <base/heap.h>
+#include <base/log.h>
 #include <util/volatile_object.h>
 #include <util/list.h>
 
@@ -200,7 +201,7 @@ struct Remote_rom::Main : public Remote_rom::Read_buffer, public Remote_rom::Rom
 	void commit_new_content(bool abort=false)
 	{
 		if (abort)
-			PERR("abort not supported");
+			Genode::error("abort not supported");
 
 		// TODO release write lock
 
@@ -251,7 +252,7 @@ namespace Component {
 			Genode::Xml_node remote_rom = Genode::config()->xml_node().sub_node("remote_rom");
 			remote_rom.attribute("name").value(Remote_rom::remotename, sizeof(Remote_rom::remotename));
 		} catch (...) {
-			PERR("No ROM module configured!");
+			Genode::error("No ROM module configured!");
 		}
 
 		static Remote_rom::Main main(env);

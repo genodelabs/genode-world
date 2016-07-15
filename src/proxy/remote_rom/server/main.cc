@@ -17,7 +17,7 @@
  * under the terms of the GNU General Public License version 2.
  */
 
-#include <base/printf.h>
+#include <base/log.h>
 #include <base/env.h>
 
 #include <backend_base.h>
@@ -133,7 +133,7 @@ namespace Component {
 				remote_rom.attribute("binary").value(&Remote_rom::binary);
 			} catch (...) { }
 		} catch (...) {
-			PERR("No ROM module configured!");
+			Genode::error("No ROM module configured!");
 		}
 
 		static Remote_rom::Main main(env.ep());

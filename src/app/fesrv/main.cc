@@ -127,15 +127,15 @@ int main()
 	{
 		auto image = image_name();
 		Htif_zedboard_genode htif( image );
-		PINF( "Initialized Htif_zedboard with %s", image.c_str() );
+		Genode::log( "Initialized Htif_zedboard with ", image.c_str() );
 		htif.run();
 	}
 	catch ( const std::runtime_error &e )
 	{
-		PERR( "Caught runtime error: %s", e.what() );
+		Genode::error( "Caught runtime error: ", e.what() );
 	}
 	catch ( ... )
 	{
-		PERR( "Unknown error occured" );
+		Genode::error( "Unknown error occured" );
 	}
 }

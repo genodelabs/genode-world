@@ -19,6 +19,7 @@
 #include <os/session_policy.h>
 #include <os/path.h>
 #include <base/attached_rom_dataspace.h>
+#include <base/heap.h>
 #include <root/component.h>
 #include <base/component.h>
 #include <util/list.h>

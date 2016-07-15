@@ -58,12 +58,12 @@ class I2C::Driver
 			buf[1]=reg;
 			if (i2c_reg->i2c_write(adr, buf, 2) != 0) 
 			{
-				PERR("Zynq i2c: read failed");
+				Genode::error("Zynq i2c: read failed");
 				return false;
 			}
 			if (i2c_reg->i2c_read_byte(adr, data) != 0) 
 			{
-				PERR("Zynq i2c: read failed");
+				Genode::error("Zynq i2c: read failed");
 				return false;
 			}
 			return true;
@@ -79,7 +79,7 @@ class I2C::Driver
 			buf[2]=data;
 			if (i2c_reg->i2c_write(adr, buf, 3) != 0) 
 			{
-				PERR("Zynq i2c: write failed");
+				Genode::error("Zynq i2c: write failed");
 				return false;
 			}
 			return true;

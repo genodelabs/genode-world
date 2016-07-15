@@ -14,6 +14,7 @@
  */
 
 /* Genode includes */
+#include <base/log.h>
 #include <input/component.h>
 #include <framebuffer_session/connection.h>
 #include <nitpicker_session/connection.h>
@@ -94,7 +95,7 @@ static uSynergyBool connect(uSynergyCookie cookie)
 	try {
 		config_node.attribute("addr").value(addr, sizeof(addr));
 	} catch (Xml_node::Nonexistent_attribute) {
-		PERR("server address not set in config");
+		Genode::error("server address not set in config");
 		return USYNERGY_FALSE;
 	}
 
@@ -111,7 +112,7 @@ static uSynergyBool connect(uSynergyCookie cookie)
 	sockaddr.sin_family = AF_INET;
 	sockaddr.sin_port   = htons(port);
 	if (inet_pton(AF_INET, addr, &sockaddr.sin_addr.s_addr) == 0) {
-		PERR("bad IPv4 address %s for server", addr);
+		Genode::error("bad IPv4 address ", addr, " for server");
 		return USYNERGY_FALSE;
 	}
 
@@ -149,7 +150,7 @@ void sleep(uSynergyCookie, int timeMs) { timer()->msleep(timeMs); }
 
 uint32_t get_time() { return timer()->elapsed_ms(); }
 
-void trace_callback(uSynergyCookie cookie, const char *text) { PLOG("%s", text); }
+void trace_callback(uSynergyCookie cookie, const char *text) { Genode::log(text); }
 
 void screen_active_callback(uSynergyCookie cookie, uSynergyBool active)
 {
@@ -227,12 +228,12 @@ void keyboard_callback(uSynergyCookie cookie,
  ** Network processing thread **
  *******************************/
 
-struct Synergy_thread : Thread_base
+struct Synergy_thread : Thread
 {
 
 	enum {
 		MAX_NAME_LEN = 256,
-		WEIGHT       = Cpu_session::DEFAULT_WEIGHT,
+		WEIGHT       = Cpu_session::Weight::DEFAULT_WEIGHT,
 		STACK_SIZE   = 1024*sizeof(long)
 	};
 
@@ -242,7 +243,7 @@ struct Synergy_thread : Thread_base
 	Signal_context  config_ctx;
 
 	Synergy_thread(Session_component &session)
-	: Thread_base(WEIGHT, "synergy_ep", STACK_SIZE)
+	: Thread(WEIGHT, "synergy_ep", STACK_SIZE)
 	{
 		*screen_name = 0;
 		uSynergyInit(&context);
@@ -282,14 +283,14 @@ struct Synergy_thread : Thread_base
 		try {
 			config_node.attribute("addr");;
 		} catch (Xml_node::Nonexistent_attribute) {
-			PERR("server address not set in config");
+			Genode::error("server address not set in config");
 			return false;
 		}
 
 		try {
 			config_node.attribute("name").value(screen_name, sizeof(screen_name));
 		} catch (Xml_node::Nonexistent_attribute) {
-			PERR("client screen name not set in config, waiting for update");
+			Genode::error("client screen name not set in config, waiting for update");
 			return false;
 		}
 
