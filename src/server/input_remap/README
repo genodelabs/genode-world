@@ -1,0 +1,14 @@
+Input_remap is a small shim server that remaps keys. It was intended for swapping
+buttons on game controllers, but is suitable for any key code remapping.
+
+The configuration is simple, key codes can be discovered using the
+'test/input' utility in the Genode os repository.
+! <config>
+!   <map from="BTN_X" to="BTN_A"/>
+!   <map from="BTN_Y" to="BTN_B"/>
+!   <map from="BTN_Z" to="BTN_C"/>
+!   <map from="BTN_A" to="BTN_X"/>
+!   <map from="BTN_B" to="BTN_Y"/>
+!   <map from="BTN_C" to="BTN_Z"/>
+!   <map from="KEY_SPACE" to="KEY_BACKSPACE"/>
+! </config>
