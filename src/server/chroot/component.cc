@@ -14,14 +14,15 @@
 /* Genode includes */
 #include <file_system/util.h>
 #include <file_system_session/connection.h>
-#include <cap_session/connection.h>
 #include <os/path.h>
 #include <os/session_policy.h>
 #include <root/root.h>
+#include <base/component.h>
+#include <base/attached_rom_dataspace.h>
 #include <base/rpc_server.h>
 #include <base/service.h>
 #include <base/allocator_avl.h>
-#include <base/sleep.h>
+#include <base/heap.h>
 
 using namespace Genode;
 
@@ -59,19 +60,23 @@ static void path_from_label(Path<MAX_LEN> &path, char const *label)
 
 struct Proxy : Rpc_object<Typed_root<File_system::Session>>
 {
+	Genode::Attached_rom_dataspace _config_rom;
 	Parent_service          _parent_service;
-	Allocator_avl           _fs_tx_block_alloc;
-	File_system::Connection _fs;
+	Heap                    _heap;
+	Allocator_avl           _fs_tx_block_alloc { &_heap };
+	File_system::Connection _fs { _fs_tx_block_alloc, 1024 };
 
 	/**
 	 * Constructor
 	 */
-	Proxy()
+	Proxy(Genode::Env &env)
 	:
+		_config_rom(env, "config"),
 		_parent_service("File_system"),
-		_fs_tx_block_alloc(env()->heap()),
-		_fs(_fs_tx_block_alloc, 1024)
-	{ }
+		_heap(env.ram(), env.rm())
+	{
+		env.parent().announce(env.ep().rpc_ep().manage(this));
+	}
 
 	Session_capability chroot(char const *args, char const *path, Affinity const &affinity)
 	{
@@ -100,11 +105,11 @@ struct Proxy : Rpc_object<Typed_root<File_system::Session>>
 		char tmp[MAX_LEN];
 		Path<MAX_LEN> root_path;
 
-		Session_label label(session_args.string());
+		Session_label label = label_from_args(session_args.string());
 		char const *label_str = label.string();
 
 		try {
-			Session_policy policy(label);
+			Session_policy policy(label, _config_rom.xml());
 
 			if (policy.has_attribute("label_prefix")
 			 && policy.attribute_value("merge", false))
@@ -126,8 +131,7 @@ struct Proxy : Rpc_object<Typed_root<File_system::Session>>
 
 		Arg_string::find_arg(session_args.string(), "root").string(
 			tmp, sizeof(tmp), "/");
-		root_path.append(tmp);
-
+		root_path.append_element(tmp);
 		root_path.remove_trailing('/');
 
 		char const *args = session_args.string();
@@ -152,7 +156,7 @@ struct Proxy : Rpc_object<Typed_root<File_system::Session>>
 		throw Root::Unavailable();
 	}
 
-	void upgrade(Session_capability cap,
+	void upgrade(Session_capability        cap,
 	             Root::Upgrade_args const &args) override {
 		_parent_service.upgrade(cap, args.string()); }
 
@@ -161,16 +165,10 @@ struct Proxy : Rpc_object<Typed_root<File_system::Session>>
 };
 
 
-int main(void)
-{
-	static Cap_connection cap;
-	static Proxy proxy;
+/***************
+ ** Component **
+ ***************/
 
-	enum { STACK_SIZE = 4096 * 4 };
-	static Rpc_entrypoint ep(&cap, STACK_SIZE, "chroot_ep");
+Genode::size_t Component::stack_size() { return 2*1024*sizeof(Genode::addr_t); }
 
-	env()->parent()->announce(ep.manage(&proxy));
-
-	/* let the entrypoint take over */
-	sleep_forever();
-}
+void Component::construct(Genode::Env &env) { static Proxy inst(env); }

@@ -1,3 +1,3 @@
 TARGET = chroot
-SRC_CC = main.cc
-LIBS = base config
+SRC_CC = component.cc
+LIBS = base
