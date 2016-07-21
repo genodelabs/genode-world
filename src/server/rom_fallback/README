@@ -1,0 +1,17 @@
+Rom_fallback serves ROM sessions by opening sessions at its parent
+using a list of labels, returning the first successfully opened sessions.
+
+In the following configuration example an attempt is made to forwarded a
+session from the parent before the sibling 'fs_rom'.
+! <start name="rom_fallback">
+!   <.../>
+!   <config>
+!     <fallback/>
+!     <fallback label="fs"/>
+!   </config>
+!   <route>
+!     <service name="ROM" label_prefix="fs ->">
+!       <child name="fs_rom"/> </service>
+!     <any-service> <parent/> </any-service>
+!   </route>
+! </start>

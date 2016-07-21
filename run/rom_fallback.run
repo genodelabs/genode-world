@@ -1,0 +1,92 @@
+#
+# \brief  Test of 'rom_fallback' server
+# \author Emery Hemingway
+# \date   2016-07-21
+#
+
+
+set build_components {
+	core init
+	drivers/timer
+	server/rom_fallback
+	server/report_rom
+	test/libc
+}
+
+build $build_components
+
+create_boot_directory
+
+append config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service>
+			<child name="rom_fallback"/>
+			<parent/> <any-child/>
+		</any-service>
+	</default-route>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config/>
+		<route> <any-service> <parent/> </any-service> </route>
+	</start>
+
+	<start name="rom_fallback">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config>
+			<fallback label="report"/>
+			<fallback/>
+		</config>
+		<route>
+			<service name="ROM" label_prefix="report ->">
+				<child name="report_rom"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="test-libc">
+		<resource name="RAM" quantum="8M"/>
+		<config>
+			<libc stdout="/log" stderr="log">
+				<vfs> <log/> </vfs>
+			</libc>
+		</config>
+	</start>
+
+</config>
+}
+
+install_config $config
+
+# generic modules
+set boot_modules {
+	core init ld.lib.so
+	libc.lib.so
+	libm.lib.so
+	report_rom
+	rom_fallback
+	test-libc
+	timer
+}
+
+build_boot_image $boot_modules
+
+append qemu_args " -nographic"
+
+run_genode_until {child "test-libc" exited with exit value 0} 60
