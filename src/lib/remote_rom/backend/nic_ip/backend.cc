@@ -144,6 +144,12 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 			Ipv4_packet::checksum(Ipv4_packet::calculate_checksum(*this));
 		}
 
+		/**
+		 * Placement new.
+		 */
+		void * operator new(Genode::size_t size, void* addr) {
+			return addr; }
+
 } __attribute__((packed));
 
 class Remote_rom::SignalPacket : public Packet_base
@@ -372,7 +378,7 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 			{
 				/* create and transmit packet via NIC session */
 				Nic::Packet_descriptor pd = alloc_tx_packet(DataPacket::packet_size(size));
-				DataPacket *packet = (DataPacket*)_nic.tx()->packet_content(pd);
+				DataPacket *packet = new (_nic.tx()->packet_content(pd)) DataPacket();
 
 				packet->prepare_ethernet(_mac_address, Ethernet_frame::BROADCAST);
 				packet->prepare_ipv4(_src_ip, _dst_ip);
@@ -411,7 +417,7 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 
 			/* create and transmit packet via NIC session */
 			Nic::Packet_descriptor pd = alloc_tx_packet(sizeof(SignalPacket));
-			SignalPacket *packet = (SignalPacket*)_nic.tx()->packet_content(pd);
+			SignalPacket *packet = new (_nic.tx()->packet_content(pd)) SignalPacket();
 
 			packet->prepare_ethernet(_mac_address);
 			packet->prepare_ipv4(_src_ip, _dst_ip);
