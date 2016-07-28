@@ -1,0 +1,33 @@
+build "core init server/log_tee test/printf"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="RM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+
+		<start name="log_tee">
+			<resource name="RAM" quantum="2M"/>
+			<provides> <service name="LOG"/> </provides>
+		</start>
+
+		<start name="test-printf">
+			<resource name="RAM" quantum="2M"/>
+			<route>
+				<any-service> <child name="log_tee"/> <parent/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+build_boot_image "core init log_tee test-printf"
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until {child "test-printf" exited with exit value 0} 10

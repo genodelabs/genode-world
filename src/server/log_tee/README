@@ -1,0 +1,41 @@
+Log_tee is a LOG shim server that writes client messages to
+dedicated LOG sessions as well as a global component log. The
+effect is that log messages are duplicated into two streams.
+
+This component pays for each client session from its own quota,
+client quota donations are forwarded to the LOG backends. This
+is to prevent naive client donations from being depleted before
+reaching the final logging destination.
+
+Example: log messages should be written to the file-system,
+the screen, and the kernel log.
+
+     ⇊
+  log_tee → terminal_log (on-screen)
+     ⇊
+  log_tee → parent (kernel)
+     ⇊
+   fs_log (file-system)
+
+!
+! <start name="terminal_log"> ... </start>
+! <start name="fs_log">       ... </start>
+!
+! <start name="log_tee_2">
+!    <binary name="log_tee"/>
+!    <resource name="RAM" quantum="4M"/>
+!      <provides> <service name="LOG"/> </provides>
+!      <route>
+!        <service name="LOG" label=""> <child name="terminal_log"/> </service>
+!        <service name="LOG">          <child name="log_tee_1"/>    </service>
+!    </start>
+! 
+! <start name="log_tee_1">
+!    <binary name="log_tee"/>
+!    <resource name="RAM" quantum="4M"/>
+!      <provides> <service name="LOG"/> </provides>
+!      <route>
+!        <service name="LOG" label=""> <parent/>              </service>
+!        <service name="LOG">          <child name="fs_log"/> </service>
+!    </start>
+!
