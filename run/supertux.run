@@ -1,89 +1,11 @@
-#
-# Build
-#
+set build_components { app/supertux server/ram_fs }
 
-set build_components {
-	core init
-	drivers/timer
-	app/supertux server/ram_fs
-	drivers/framebuffer drivers/platform drivers/input
-}
-
-lappend_if [have_spec usb] build_components drivers/usb
-
-build $build_components
-
-create_boot_directory
-
-#
-# Generate config
-#
-
-append config {
-<config prio_levels="4">
-	<parent-provides>
-		<service name="ROM"/>
-		<service name="RAM"/>
-		<service name="IRQ"/>
-		<service name="IO_MEM"/>
-		<service name="IO_PORT"/>
-		<service name="CAP"/>
-		<service name="PD"/>
-		<service name="RM"/>
-		<service name="CPU"/>
-		<service name="LOG"/>
-		<service name="SIGNAL"/>
-	</parent-provides>
-	<default-route>
-		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>}
-
-append_if [have_spec sdl] config {
-	<start name="fb_sdl">
-		<resource name="RAM" quantum="4M"/>
-		<provides>
-			<service name="Input"/>
-			<service name="Framebuffer"/>
-		</provides>
-	</start>}
-
-append_if [have_spec platform_rpi] config {
-	<start name="platform_drv" priority="-1">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Platform"/></provides>
-		<config/>
-	</start>}
-
-append_if [have_spec framebuffer] config {
-	<start name="fb_drv" priority="-1">
-		<resource name="RAM" quantum="6M"/>
-		<provides><service name="Framebuffer"/></provides>
-		<config buffered="yes" />
-	</start>}
-
-append_if [have_spec ps2] config {
-	<start name="ps2_drv" priority="-1">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Input"/></provides>
-	</start>}
-
-append_if [expr ![have_spec ps2] && [have_spec usb]] config {
-	<start name="usb_drv">
-		<resource name="RAM" quantum="12M"/>
-		<provides><service name="Input"/></provides>
-		<config ehci="yes" uhci="yes" xhci="no"> <hid/> </config>
-	</start> }
-
-append config {
-	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Timer"/></provides>
-	</start>
+set app_config {
 
 	<start name="ram_fs" priority="-1">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="File_system"/> </provides>
-		<config> <policy writeable="yes" root="/"/> </config>
+		<config> <default-policy writeable="yes" root="/"/> </config>
 	</start>
 
 	<start name="supertux" priority="-2">
@@ -100,19 +22,10 @@ append config {
 	</start>
 </config>}
 
-install_config $config
-
-#
-# Boot modules
-#
-
-# generic modules
 set boot_modules {
-	core init
-	timer ram_fs
+	ram_fs
 	supertux
 	jpeg.lib.so
-	ld.lib.so
 	libc.lib.so
 	libm.lib.so
 	libpng.lib.so
@@ -125,15 +38,4 @@ set boot_modules {
 	supertux_data.tar
 }
 
-# platform-specific modules
-lappend_if [have_spec        linux] boot_modules fb_sdl
-lappend_if [have_spec  framebuffer] boot_modules fb_drv
-lappend_if [have_spec          ps2] boot_modules ps2_drv
-lappend_if [have_spec          usb] boot_modules usb_drv
-lappend_if [have_spec platform_rpi] boot_modules platform_drv
-
-build_boot_image $boot_modules
-
-append qemu_args " -m 256 "
-
-run_genode_until forever
+source ${genode_dir}/repos/world/run/framebuffer_app.inc
