@@ -1,0 +1,12 @@
+LICENSE   := GPLv3
+VERSION   := 2.0.1
+DOWNLOADS := t4k.archive tuxmath.archive
+
+URL(t4k) := http://downloads.sourceforge.net/project/tuxmath/t4k_common/t4k_common-0.1.1.tar.gz
+SHA(t4k) := 626eddedee86059ccab593a226c8d98571018b46
+DIR(t4k) := src/app/tuxmath/t4k
+
+URL(tuxmath) := http://downloads.sourceforge.net/project/tuxmath/tuxmath-source/TuxMath%202.0.1%20-%20Source/tuxmath_w_fonts-2.0.1.tar.gz
+SHA(tuxmath) := 7a73430c29e5f1fdb20d33dbce484ed1655044f6
+DIR(tuxmath) := src/app/tuxmath
+
