@@ -20,12 +20,13 @@ if {![info exists fb_config]} {
 append build_components {
 	core init
 	drivers/timer
-	drivers/framebuffer drivers/platform drivers/input
+	drivers/framebuffer drivers/input
 }
 
 lappend_if [have_spec usb] build_components drivers/usb
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
+
 # override default platform driver policy
 proc platform_drv_policy {} {
 	return {
