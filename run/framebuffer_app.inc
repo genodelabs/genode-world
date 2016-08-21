@@ -83,6 +83,7 @@ if {[have_spec framebuffer]} {
 append config {
 	<start name="fb_drv" priority="-1">
 		<resource name="RAM" quantum="6M"/>
+		<resource name="CPU" quantum="10"/>
 		<provides><service name="Framebuffer"/></provides>}
 append config $fb_config
 append config {
@@ -98,6 +99,7 @@ append_if [have_spec ps2] config {
 append_if [expr ![have_spec ps2] && [have_spec usb]] config {
 	<start name="usb_drv">
 		<resource name="RAM" quantum="12M"/>
+		<resource name="CPU" quantum="50"/>
 		<provides><service name="Input"/></provides>
 		<config ehci="yes" uhci="yes" xhci="no"> <hid/> </config>
 	</start> }
@@ -105,6 +107,7 @@ append_if [expr ![have_spec ps2] && [have_spec usb]] config {
 append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
+		<resource name="CPU" quantum="10"/>
 		<provides><service name="Timer"/></provides>
 	</start>}
 
