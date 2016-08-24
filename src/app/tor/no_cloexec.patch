@@ -1,0 +1,15 @@
+diff --git a/src/common/compat.c b/src/common/compat.c
+index bae76f4..bf0c4fd 100644
+--- a/src/common/compat.c
++++ b/src/common/compat.c
+@@ -152,6 +152,10 @@ SecureZeroMemory(PVOID ptr, SIZE_T cnt)
+ #include "strlcat.c"
+ #endif
+ 
++#ifdef FD_CLOEXEC
++#undef FD_CLOEXEC
++#endif
++
+ /* When set_max_file_descriptors() is called, update this with the max file
+  * descriptor value so we can use it to check the limit when opening a new
+  * socket. Default value is what Debian sets as the default hard limit. */

@@ -1,0 +1,185 @@
+#
+# \brief  Test for TOR on Linux
+# \author Stefan Kalkowski
+# \date   2016-06-24
+#
+
+if {![have_spec linux]} {
+	puts "\n Run script is not supported on this platform. \n"; exit 0 }
+
+set tapdev tap0
+set netdev eth0
+set netprefix 192.168.1
+
+set username $tcl_platform(user)
+
+if { [info exists ::env(TAP) ] } {
+	set tapdev $::env(TAP) }
+if { [info exists ::env(ETH) ] } {
+	set netdev $::env(ETH) }
+if { [info exists ::env(NET) ] } {
+	set netprefix $::env(NET) }
+
+#
+# Build
+#
+
+set build_components {
+	core init
+	drivers/timer
+	drivers/rtc
+	drivers/nic
+	server/ram_fs
+	app/tor
+	lib/vfs/jitterentropy
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="rtc_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="config_fs" priority="-1">
+		<binary name="ram_fs"/>
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<content>
+			<dir name="data"/>
+			<dir name="conf">
+				<inline name="torrc">}
+append  config "
+SOCKSPort $netprefix.2:9050"
+append config {
+DataDirectory /tor
+			</inline></dir>
+			</content>
+		<policy label="tor -> data" root="/data" writeable="yes"/>
+		<policy label="tor -> conf" root="/conf" writeable="no"/>
+		</config>
+	</start>
+
+	<start name="tor">
+		<resource name="RAM" quantum="20M"/>
+		<config ld_verbose="yes">
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"}
+append config " ip_addr=\"$netprefix.2\" netmask=\"255.255.255.0\" gateway=\"$netprefix.1\">"
+append config {
+				<vfs>
+					<dir name="dev">
+						<jitterentropy name="random"/>
+						<jitterentropy name="urandom"/>
+						<log/> <rtc/>
+					</dir>
+					<dir name="etc">
+						<dir name="tor"><fs label="conf" /></dir>
+					</dir>
+					<dir name="tor"> <fs label="data"/> </dir>
+				</vfs>
+			</libc>
+		</config>
+	</start>}
+
+append_platform_drv_config
+
+append config {
+	<start name="nic_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nic"/></provides>
+	</start>
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init timer rtc_drv
+	ld.lib.so libc.lib.so libm.lib.so zlib.lib.so
+	libcrypto.lib.so libevent.lib.so libssl.lib.so pthread.lib.so
+	vfs_jitterentropy.lib.so lwip.lib.so
+	nic_drv ram_fs tor
+}
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+
+#
+# Prepare network environment
+#
+
+exec sudo tunctl -u $username -t $tapdev
+exec sudo ifconfig $tapdev up
+exec sudo ifconfig $tapdev $netprefix.1 netmask 255.255.255.0
+exec sudo iptables -t nat -A POSTROUTING -o $netdev -j MASQUERADE
+exec sudo iptables -A FORWARD -i $tapdev -o $netdev -j ACCEPT
+exec sudo iptables -A FORWARD -i $netdev -o tapdev -m state --state RELATED,ESTABLISHED -j ACCEPT
+exec sudo sysctl -w net.ipv4.ip_forward=1
+
+
+#
+# Execute test case
+#
+
+run_genode_until {.* Bootstrapped 100%: Done.*\n} 200
+set serial_id [output_spawn_id]
+set core_pid [exp_pid -i $serial_id]
+spawn curl --socks5-hostname $netprefix.2:9050 https://check.torproject.org/
+set curl_id $spawn_id
+sleep 5
+exec kill -9 $core_pid
+
+
+#
+# Reset network environment again
+#
+
+exec sudo sysctl -w net.ipv4.ip_forward=0
+exec sudo iptables -F
+exec sudo iptables -t nat -F
+exec sudo ifconfig $tapdev down
+exec sudo tunctl -d $tapdev
+
+run_genode_until {.*Congratulations. This browser is configured to use Tor.*/n} 5 $curl_id
+
+# vi: set ft=tcl :

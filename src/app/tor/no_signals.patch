@@ -1,0 +1,14 @@
+diff --git a/src/or/main.c b/src/or/main.c
+index 4de2e70..9077337 100644
+--- a/src/or/main.c
++++ b/src/or/main.c
+@@ -2376,7 +2376,9 @@ do_main_loop(void)
+            "--enable-bufferevents.");
+ #endif
+ 
++#ifdef NOT_GENODE
+   handle_signals(1);
++#endif
+ 
+   /* load the private keys, if we're supposed to have them, and set up the
+    * TLS context. */

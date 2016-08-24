@@ -1,0 +1,17 @@
+diff --git a/src/or/config.c b/src/or/config.c
+index cdd4f10..9a91ff0 100644
+--- a/src/or/config.c
++++ b/src/or/config.c
+@@ -1483,10 +1483,12 @@ options_act(const or_options_t *old_options)
+   /* Write control ports to disk as appropriate */
+   control_ports_write_to_file();
+ 
++#ifdef NOT_GENODE
+   if (running_tor && !have_lockfile()) {
+     if (try_locking(options, 1) < 0)
+       return -1;
+   }
++#endif
+ 
+   if (consider_adding_dir_servers(options, old_options) < 0)
+     return -1;

@@ -1,0 +1,11 @@
+LICENSE   := BSD-like
+VERSION   := git
+DOWNLOADS := tor.git
+URL(tor)  := https://github.com/torproject/tor.git
+REV(tor)  := cb8557f7c93abc8b770f1753d2e39dafb2a9fe3b
+DIR(tor)  := src/app/tor
+PATCHES   := src/app/tor/build.patch \
+             src/app/tor/no_cloexec.patch \
+             src/app/tor/no_flock.patch \
+             src/app/tor/no_signals.patch
+PATCH_OPT := -p1 -d src/app/tor

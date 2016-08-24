@@ -1,0 +1,39 @@
+diff --git a/src/common/compat.h b/src/common/compat.h
+index 6f102be..30325a8 100644
+--- a/src/common/compat.h
++++ b/src/common/compat.h
+@@ -41,6 +41,9 @@
+ #ifdef HAVE_NETINET6_IN6_H
+ #include <netinet6/in6.h>
+ #endif
++#ifdef HAVE_FCNTL_H
++#include <fcntl.h>
++#endif
+ 
+ #if defined(__has_feature)
+ #  if __has_feature(address_sanitizer)
+diff --git a/src/ext/ed25519/donna/ed25519_tor.c b/src/ext/ed25519/donna/ed25519_tor.c
+index 07f6a0f..db7fcaa 100644
+--- a/src/ext/ed25519/donna/ed25519_tor.c
++++ b/src/ext/ed25519/donna/ed25519_tor.c
+@@ -131,6 +131,8 @@ ED25519_FN(curved25519_scalarmult_basepoint) (curved25519_key pk, const curved25
+   curve25519_contract(pk, yplusz);
+ }
+ 
++#include <crypto.h>
++
+ /*
+    Tor has a specific idea of how an Ed25519 implementaion should behave.
+    Implement such a beast using the ed25519-donna primitives/internals.
+diff --git a/src/ext/tor_readpassphrase.h b/src/ext/tor_readpassphrase.h
+index 64f5668..2e2e3d7 100644
+--- a/src/ext/tor_readpassphrase.h
++++ b/src/ext/tor_readpassphrase.h
+@@ -25,6 +25,7 @@
+ #ifndef _READPASSPHRASE_H_
+ #define _READPASSPHRASE_H_
+ 
++#include <stddef.h>
+ #include "orconfig.h"
+ 
+ #ifndef HAVE_READPASSPHRASE
