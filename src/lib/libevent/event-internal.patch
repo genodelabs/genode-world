@@ -1,0 +1,12 @@
+diff --git a/buffer.c b/buffer.c
+index 8510955..196794b 100644
+--- a/buffer.c
++++ b/buffer.c
+@@ -87,6 +87,7 @@
+ #include "log-internal.h"
+ #include "mm-internal.h"
+ #include "util-internal.h"
++#include "event-internal.h"
+ #include "evthread-internal.h"
+ #include "evbuffer-internal.h"
+ #include "bufferevent-internal.h"
