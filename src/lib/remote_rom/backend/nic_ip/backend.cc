@@ -23,10 +23,13 @@ namespace Remote_rom {
 	using  Genode::size_t;
 	using  Genode::uint16_t;
 	using  Genode::uint32_t;
+	using  Genode::Cstring;
 	using  Genode::Packet_descriptor;
 	using  Genode::env;
 	using  Net::Ethernet_frame;
 	using  Net::Ipv4_packet;
+	using  Net::Mac_address;
+	using  Net::Ipv4_address;
 
 	template <class>
 	class  Backend_base;
@@ -223,7 +226,7 @@ class Remote_rom::Backend_base
 		class Rx_thread : public Genode::Thread
 		{
 			protected:
-				Ipv4_packet::Ipv4_address &_accept_ip;
+				Ipv4_address    &_accept_ip;
 				Nic::Connection &_nic;
 				HANDLER         &_handler;
 
@@ -256,7 +259,7 @@ class Remote_rom::Backend_base
 				}
 
 			public:
-				Rx_thread(Nic::Connection &nic, HANDLER &handler, Ipv4_packet::Ipv4_address &ip)
+				Rx_thread(Nic::Connection &nic, HANDLER &handler, Ipv4_address &ip)
 				: Genode::Thread(Weight::DEFAULT_WEIGHT, "backend_nic_rx", 8192),
 				  _accept_ip(ip),
 				  _nic(nic), _handler(handler),
@@ -283,13 +286,13 @@ class Remote_rom::Backend_base
 				}
 		};
 
-		Nic::Packet_allocator   _tx_block_alloc;
-		Nic::Connection         _nic;
-		Rx_thread               _rx_thread;
-		Ethernet_frame::Mac_address _mac_address;
-		Ipv4_packet::Ipv4_address   _src_ip;
-		Ipv4_packet::Ipv4_address   _accept_ip;
-		Ipv4_packet::Ipv4_address   _dst_ip;
+		Nic::Packet_allocator _tx_block_alloc;
+		Nic::Connection       _nic;
+		Rx_thread             _rx_thread;
+		Mac_address           _mac_address;
+		Ipv4_address          _src_ip;
+		Ipv4_address          _accept_ip;
+		Ipv4_address          _dst_ip;
 
 	protected:
 		void _tx_ack(bool block = false)
@@ -311,14 +314,8 @@ class Remote_rom::Backend_base
 			/* start dispatcher thread */
 			_rx_thread.start();
 
-			/* convert and store mac address */
-			Nic::Mac_address mac = _nic.mac_address();
-			_mac_address.addr[0] = mac.addr[0];
-			_mac_address.addr[1] = mac.addr[1];
-			_mac_address.addr[2] = mac.addr[2];
-			_mac_address.addr[3] = mac.addr[3];
-			_mac_address.addr[4] = mac.addr[4];
-			_mac_address.addr[5] = mac.addr[5];
+			/* store mac address */
+			_mac_address = _nic.mac_address();
 
 			try {
 				char ip_string[15];
@@ -433,7 +430,7 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 			{
 				case Packet_base::UPDATE:
 					if (verbose)
-						Genode::log("receiving UPDATE (", packet.module_name(), ") packet");
+						Genode::log("receiving UPDATE (", Cstring(packet.module_name()), ") packet");
 
 					if (!_forwarder)
 						return;
@@ -525,7 +522,7 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 			{
 				case Packet_base::SIGNAL:
 					if (verbose)
-						Genode::log("receiving SIGNAL(", packet.module_name(), ") packet");
+						Genode::log("receiving SIGNAL(", Cstring(packet.module_name()), ") packet");
 
 					/* send update request */
 					update(packet.module_name());
@@ -533,7 +530,7 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 					break;
 				case Packet_base::DATA:
 					if (verbose)
-						Genode::log("receiving DATA(", packet.module_name(), ") packet");
+						Genode::log("receiving DATA(", Cstring(packet.module_name()), ") packet");
 
 					/* write into buffer */
 					if (!_receiver) return;
@@ -550,7 +547,7 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 					break;
 				case Packet_base::DATA_CONT:
 					if (verbose)
-						Genode::log("receiving DATA_CONT(", packet.module_name(), ") packet");
+						Genode::log("receiving DATA_CONT(", Cstring(packet.module_name()), ") packet");
 
 					if (!_receiver) return;
 
