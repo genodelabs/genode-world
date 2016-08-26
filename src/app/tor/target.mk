@@ -41,7 +41,6 @@ SRC_C   = common/address.c \
           common/util_process.c \
           common/workqueue.c \
           ext/csiphash.c \
-          ext/curve25519_donna/curve25519-donna-c64.c \
           ext/ed25519/donna/ed25519_tor.c \
           ext/ed25519/ref10/blinding.c \
           ext/ed25519/ref10/fe_0.c \
@@ -152,5 +151,11 @@ SRC_C   = common/address.c \
           trunnel/ed25519_cert.c \
           trunnel/link_handshake.c \
           trunnel/pwbox.c
+
+ifeq ($(filter-out $(SPECS),64bit),)
+SRC_C +=  ext/curve25519_donna/curve25519-donna-c64.c
+else
+SRC_C +=  ext/curve25519_donna/curve25519-donna.c
+endif # 64bit
 
 vpath %.c $(TOR_DIR)/src
