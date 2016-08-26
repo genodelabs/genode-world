@@ -16,6 +16,7 @@
 #include <root/component.h>
 #include <base/component.h>
 #include <base/session_label.h>
+#include <base/heap.h>
 #include <base/log.h>
 #include <base/snprintf.h>
 #include <util/list.h>
