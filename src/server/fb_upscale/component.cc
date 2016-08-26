@@ -17,6 +17,7 @@
 #include <base/attached_dataspace.h>
 #include <root/component.h>
 #include <base/component.h>
+#include <base/heap.h>
 #include <base/log.h>
 
 

@@ -112,7 +112,7 @@ static uSynergyBool connect(uSynergyCookie cookie)
 	sockaddr.sin_family = AF_INET;
 	sockaddr.sin_port   = htons(port);
 	if (inet_pton(AF_INET, addr, &sockaddr.sin_addr.s_addr) == 0) {
-		Genode::error("bad IPv4 address ", addr, " for server");
+		Genode::error("bad IPv4 address ", Cstring(addr), " for server");
 		return USYNERGY_FALSE;
 	}
 
