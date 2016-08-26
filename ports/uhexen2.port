@@ -1,8 +1,8 @@
 LICENSE   := GPLv2
-VERSION   := 1.5.6
+VERSION   := 1.5.8
 DOWNLOADS := uhexen2.archive
 
 BASE_URL := http://downloads.sourceforge.net/project/uhexen2/Hammer%20of%20Thyrion/$(VERSION)/Source
 URL(uhexen2) := $(BASE_URL)/hexen2source-$(VERSION).tgz
-SHA(uhexen2) := f3735a650468583eb433628b24bf9a15755d092a
+SHA(uhexen2) := c6b90091f507f4d07c8354391df179f6aba49b8a
 DIR(uhexen2) := src/app/uhexen2

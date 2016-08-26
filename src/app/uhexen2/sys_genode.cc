@@ -741,7 +741,7 @@ extern "C" int sigprocmask(int, const sigset_t*, sigset_t*) { return -1; }
 int main(int argc, char *argv[])
 {
 	/* Hexen 2 needs lots of stack */
-	Genode::Thread_base::myself()->stack_size(256 * 1024);
+	Genode::Thread::myself()->stack_size(256 * 1024);
 
 	return ::hexen_main(argc, argv);
 }
