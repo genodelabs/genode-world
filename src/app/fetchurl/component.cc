@@ -135,6 +135,13 @@ void Component::construct(Genode::Env &env)
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
+		/* check for optional proxy configuration */
+		try {
+			Genode::String<256> proxy;
+			node.attribute("proxy").value(&proxy);
+			curl_easy_setopt(curl, CURLOPT_PROXY, proxy.string());
+		} catch (...) { }
+
 		res = curl_easy_perform(curl);
 		close(fd);
 		if (res != CURLE_OK)
