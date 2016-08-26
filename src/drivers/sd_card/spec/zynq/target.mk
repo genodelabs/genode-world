@@ -1,5 +1,5 @@
 TARGET   = sd_card_drv
-REQUIRES = zynq
+REQUIRES = zynq_sdhci
 SRC_CC   = main.cc
 LIBS     = base server
 INC_DIR += $(PRG_DIR)
