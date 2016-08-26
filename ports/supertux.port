@@ -2,6 +2,7 @@ LICENSE   := GPLv3
 VERSION   := 0.1.3
 DOWNLOADS := supertux.archive
 
-URL(supertux) := http://supertux.googlecode.com/files/supertux-$(VERSION).tar.bz2
+
+URL(supertux) := https://github.com/SuperTux/supertux/releases/download/v$(VERSION)/supertux-$(VERSION).tar.bz2
 SHA(supertux) := ad783011fbf15a8a56ca8680769a8c2a15abc515
 DIR(supertux) := src/app/supertux
