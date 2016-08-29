@@ -593,7 +593,7 @@ static Uint8		appState;
 
 } /* extern "C" */
 
-int hexen_main (int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int    i;
 	double time, oldtime, newtime;
@@ -730,18 +730,18 @@ int hexen_main (int argc, char **argv)
 	return 0;
 }
 
+
 /* keep the noise down */
 /* x86 */
 extern "C" int _sigprocmask(int, const sigset_t*, sigset_t*) { return -1; }
 /* arm */
 extern "C" int sigprocmask(int, const sigset_t*, sigset_t*) { return -1; }
 
-#include <base/thread.h>
 
-int main(int argc, char *argv[])
-{
-	/* Hexen 2 needs lots of stack */
-	Genode::Thread::myself()->stack_size(256 * 1024);
+/*
+ * Hexen 2 needs a stack of at least 128 KiB while loading PAK files but
+ * the libc application stack is merely so large on 32Bit.
+ */
+#include <base/component.h>
 
-	return ::hexen_main(argc, argv);
-}
+Genode::size_t Component::stack_size() { return 256UL * 1024; }
