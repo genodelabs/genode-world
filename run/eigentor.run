@@ -22,7 +22,7 @@ set build_components {
 	init
 	lib/vfs/jitterentropy
 	server/dynamic_rom
-	server/nat
+	server/nic_router
 	server/ram_fs
 }
 
@@ -66,7 +66,7 @@ append config {
 		<provides><service name="Nic"/></provides>
 	</start>
 
-	<start name="nat">
+	<start name="nic_router">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="Nic"/></provides>
 		<config rtt_sec="3">
@@ -125,7 +125,7 @@ DataDirectory /tor
 			</libc>
 		</config>
 		<route>
-			<any-service> <child name="nat"/> <parent/> <any-child/> </any-service>
+			<any-service> <child name="nic_router"/> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
 
@@ -176,7 +176,7 @@ DataDirectory /tor
 		<configfile name="init.config"/>
 		<route>
 			<service name="ROM" label="init.config"> <child name="dynamic_rom"/> </service>
-			<service name="Nic"> <child name="nat"/> </service>
+			<service name="Nic"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -199,8 +199,8 @@ set boot_modules {
 	libssh.lib.so
 	libssl.lib.so
 	lwip.lib.so
-	nat
 	nic_drv
+	nic_router
 	pthread.lib.so
 	ram_fs
 	rtc_drv
