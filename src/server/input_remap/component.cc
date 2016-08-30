@@ -92,7 +92,7 @@ struct Input::Remap
 			if ((from == "") || (to == "")) {
 				char tmp[128];
 				strncpy(tmp, node.addr(), min(sizeof(tmp), node.size()+1));
-				error("ignoring mapping '", tmp, "'");
+				error("ignoring mapping '", (char const *)tmp, "'");
 				return;
 			}
 
