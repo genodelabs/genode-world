@@ -15,6 +15,7 @@
 #include <framebuffer_session/connection.h>
 #include <base/attached_ram_dataspace.h>
 #include <base/attached_dataspace.h>
+#include <base/heap.h>
 #include <root/component.h>
 #include <base/component.h>
 #include <base/log.h>
