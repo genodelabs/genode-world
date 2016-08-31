@@ -1,0 +1,12 @@
+diff --git a/evutil.c b/evutil.c
+--- a/evutil.c
++++ b/evutil.c
+@@ -182,7 +182,7 @@
+ int
+ evutil_socketpair(int family, int type, int protocol, evutil_socket_t fd[2])
+ {
+-#ifndef WIN32
++#if 0
+ 	return socketpair(family, type, protocol, fd);
+ #else
+ 	return evutil_ersatz_socketpair(family, type, protocol, fd);
