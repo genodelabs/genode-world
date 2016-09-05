@@ -2,25 +2,24 @@ set build_components { app/supertux server/ram_fs }
 
 set app_config {
 
-	<start name="ram_fs" priority="-1">
-		<resource name="RAM" quantum="4M"/>
-		<provides> <service name="File_system"/> </provides>
-		<config> <default-policy writeable="yes" root="/"/> </config>
-	</start>
+<start name="ram_fs" priority="-1">
+	<resource name="RAM" quantum="4M"/>
+	<provides> <service name="File_system"/> </provides>
+	<config> <default-policy writeable="yes" root="/"/> </config>
+</start>
 
-	<start name="supertux" priority="-2">
-		<resource name="RAM" quantum="64M"/>
-		<config>
-			<libc stdout="/dev/log" stderr="/dev/log" >
-				<vfs>
-					<tar name="supertux_data.tar" />
-					<dir name="dev"> <log/> </dir>
-					<fs/>
-				</vfs>
-			</libc>
-		</config>
-	</start>
-</config>}
+<start name="supertux" priority="-2">
+	<resource name="RAM" quantum="64M"/>
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" >
+			<vfs>
+				<tar name="supertux_data.tar" />
+				<dir name="dev"> <log/> </dir>
+				<fs/>
+			</vfs>
+		</libc>
+	</config>
+</start>}
 
 set boot_modules {
 	ram_fs

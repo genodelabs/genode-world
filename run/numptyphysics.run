@@ -21,8 +21,7 @@ set app_config {
 				</vfs>
 			</libc>
 		</config>
-	</start>
-</config>}
+	</start>}
 
 set boot_modules {
 	ram_fs
