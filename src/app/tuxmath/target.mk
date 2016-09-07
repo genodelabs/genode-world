@@ -13,7 +13,7 @@ CC_OPT  += -DDATA_PREFIX=\"/data\" \
 SRC_C   := tuxmath.c setup.c titlescreen.c menu.c menu_lan.c game.c \
            factoroids.c fileops_media.c options.c credits.c highscore.c \
            audio.c network.c mathcards.c campaign.c multiplayer.c fileops.c \
-           SDL_rotozoom.c lessons.c server.c
+           SDL_rotozoom.c lessons.c server.c component_support.cc
 
 #
 # Disable sound during the game because the current version of sdl_mixer is
