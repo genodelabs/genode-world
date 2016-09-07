@@ -1,0 +1,10 @@
+LICENSE   := boost
+VERSION   := 5.6.3
+DOWNLOADS := cryptopp.archive
+
+URL(cryptopp) := http://www.cryptopp.com/cryptopp563.zip
+SHA(cryptopp) := f2fcd1fbf884bed70a69b565970ecd8b33a68cc4
+DIR(cryptopp) := src/lib/cryptopp
+
+DIRS := include/cryptopp
+DIR_CONTENT(include/cryptopp) := src/lib/cryptopp/*.h
