@@ -1,0 +1,15 @@
+This is a VFS plugin that generates Time-based One-time Passwords
+using the common Google Authenticator algorithms.
+
+It is configured with two XML attributes, name and secret,
+that is the file name and a base32 encoded shared secret.
+! ...
+! <vfs>
+!   ...
+!   <dir name="gtotp">
+!     <gtotp name="service-1" secret="IMGLPG6VANGX3UCP"/>
+!     <gtotp name="service-2" secret="GIDF55RAQSKRRKXMA5S6JRE3ZHO2QG4F"/>
+!   </dir>
+!   ...
+! </vfs>
+! ...
