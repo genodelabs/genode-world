@@ -15,11 +15,12 @@
 /* Genode includes */
 #include <timer_session/connection.h>
 #include <input/component.h>
+#include <input/event_queue.h>
 #include <input_session/connection.h>
-#include <os/attached_dataspace.h>
-#include <os/config.h>
-#include <os/server.h>
 #include <os/static_root.h>
+#include <base/component.h>
+#include <base/attached_rom_dataspace.h>
+#include <base/attached_dataspace.h>
 
 namespace Input_normalizer {
 	using namespace Genode;
@@ -32,86 +33,102 @@ namespace Input_normalizer {
 
 struct Input_normalizer::Main
 {
-	Server::Entrypoint &ep;
+	Genode::Env &env;
 
-	/*
-	 * Input session provided by our parent
-	 */
-	Input::Session_client parent_input
-		{ env()->parent()->session<Input::Session>("ram_quota=16K") };
-	Attached_dataspace input_dataspace { parent_input.dataspace() };
-
-	/*
-	 * Input session provided to our client
-	 */
-	Input::Session_component input_session_component;
-
-	/*
-	 * Attach root interface to the entry point
-	 */
-	Static_root<Input::Session> input_root { ep.manage(input_session_component) };
-
-	/*
-	 * Timer session for event timing
-	 */
-	Timer::Connection timer;
-
-	void flush_input(unsigned)
+	unsigned config_period_ms()
 	{
-		Input::Event const * const events =
-			input_dataspace.local_addr<Input::Event>();
+		enum { DEFAULT_PERIOD_MS = 200 };
+		unsigned value = DEFAULT_PERIOD_MS;
 
-		unsigned const num = parent_input.flush();
-		for (unsigned i = 0; i < num; i++)
-			input_session_component.submit(events[i]);
+		try {
+			Attached_rom_dataspace config { env, "config" };
+			config.xml().attribute("period_ms").value(&value);
+		} catch (...) { }
+		return value;
 	}
 
-	Signal_rpc_member<Main> timer_dispatcher =
-		{ ep, *this, &Main::flush_input };
+	unsigned const period_us = config_period_ms() * 1000;
+
+	/* input session provided by our parent  */
+	Input::Connection parent_input { env };
+
+	/* input session provided to our client  */
+	Input::Session_component client_input { env, env.ram() };
+
+	Input::Event_queue &queue = client_input.event_queue();
+
+	/*  attach root interface to the entry point */
+	Static_root<Input::Session> input_root
+		{ env.ep().manage(client_input) };
+
+	/* Timer session for delaying events */
+	Timer::Connection timer { env };
+
+	enum { STAY_ACTIVE = 10 };
+	int timer_active = 0;
+
+	/* signaled by input */
+	void handle_input()
+	{
+		using namespace Input;
+
+		/* forward the queue */
+		parent_input.for_each_event([&] (Event const &e) {
+			/*
+			 * laggy pointing is upleasant, so signal the client if
+			 * there is anything other than button presses queued,
+			 * otherwise notify the client when the timer fires
+			 */
+			queue.add(e, (e.type() != Event::PRESS) && (e.type() != Event::RELEASE));
+		});
+
+		if (timer_active < 1) /* wake up the timer */
+			timer.trigger_periodic(period_us);
+
+		timer_active = STAY_ACTIVE;
+	}
+
+	Signal_handler<Main> input_handler =
+		{ env.ep(), *this, &Main::handle_input };
+
+	/* signaled by timer */
+	void handle_timer()
+	{
+		if (queue.empty()) {
+			--timer_active;
+			/* stop the timer if nothing is happening */
+			if (timer_active < 1)
+				timer.trigger_periodic(0);
+		} else
+			queue.submit_signal();
+	}
+
+	Signal_handler<Main> timer_handler =
+		{ env.ep(), *this, &Main::handle_timer };
 
 	/**
 	 * Constructor
 	 */
-	Main(Server::Entrypoint &ep) : ep(ep)
+	Main(Genode::Env &env) : env(env)
 	{
-		input_session_component.event_queue().enabled(true);
+		queue.enabled(true);
 
-		/*
-		 * Get period from config
-		 */
-		enum { DEFAULT_PERIOD_MS = 200 };
-		unsigned period_ms = DEFAULT_PERIOD_MS;
-		period_ms = config()->xml_node().attribute_value("period_ms", period_ms);
+		/* register input handler */
+		parent_input.sigh(input_handler);
 
-		/*
-		 * Register timeout handler
-		 */
-		timer.sigh(timer_dispatcher);
-		timer.trigger_periodic(period_ms*1000); /* convert to microseconds */
+		/* register timeout handler */
+		timer.sigh(timer_handler);
 
-		/*
-		 * Announce service
-		 */
-		Genode::env()->parent()->announce(ep.manage(input_root));
+		/* announce service */
+		env.parent().announce(env.ep().manage(input_root));
 	}
-
-	~Main()
-	{
-		env()->parent()->close(parent_input);
-	}
-
 };
 
 
-/************
- ** Server **
- ************/
+/***************
+ ** Component **
+ ***************/
 
-namespace Server {
+Genode::size_t Component::stack_size() { return 4*1024*sizeof(Genode::addr_t); }
 
-	char const *name() { return "input_normalizer_ep"; }
-
-	size_t stack_size() { return 4*1024*sizeof(addr_t); }
-
-	void construct(Entrypoint &ep) { static Input_normalizer::Main inst(ep); }
-}
+void Component::construct(Genode::Env &env) { static Input_normalizer::Main inst(env); }

@@ -1,6 +1,6 @@
-This component normalizes the submission of input events into
-periodic bursts, nullifying user behavior profiling based on
-input timing.
+This component partitions the submission of key presses
+into periodic bursts, nullifying user behavior profiling
+based on keyboard input timing.
 
 It can be configured with the 'period_ms' attribute on the
 config node. The default is 200 milliseconds.
@@ -17,7 +17,7 @@ An example of injecting delay into VirtualBox:
 ! 	</start>
 !
 ! 	<start name="input_normalizer">
-! 		<resource name="RAM" quantum="2M" />
+! 		<resource name="RAM" quantum="1M" />
 ! 		<provides>
 ! 			<service name="Input" />
 ! 		</provides>
