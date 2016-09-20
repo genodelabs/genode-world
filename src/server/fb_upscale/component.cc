@@ -99,6 +99,7 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 
 			if (_parent_mode.width() && _parent_mode.height()) {
 				_rescale();
+				refresh(0,0, _client_mode.width(), _client_mode.height());
 			} else {
 				/* notify the client of the null mode */
 				if (_client_sig_cap.valid())
@@ -165,8 +166,7 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 				}
 			}
 
-			_parent_fb.refresh(_x_offset+px, _y_offset+py,
-			                   _y_offset+pw, _x_offset+ph);
+			_parent_fb.refresh(_x_offset+px, _y_offset+py, pw, ph);
 		}
 
 
