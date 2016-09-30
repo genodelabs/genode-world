@@ -6,5 +6,7 @@ URL(soplex) := http://soplex.zib.de/download/release/soplex-$(VERSION).tgz
 SHA(soplex) := 054fd0b1e370b999babf9ad537a230965b66808a
 DIR(soplex) := src/lib/soplex
 
+PATCHES := src/lib/soplex/timer.patch
+
 DIRS := include/soplex
 DIR_CONTENT(include/soplex) := $(addprefix src/lib/soplex/src/,soplex.h)

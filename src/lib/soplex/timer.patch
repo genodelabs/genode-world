@@ -1,0 +1,11 @@
+--- src/lib/soplex/src/timer.cpp.orig	2016-09-30 11:55:56.910103919 +0200
++++ src/lib/soplex/src/timer.cpp	2016-09-30 11:55:23.716638129 +0200
+@@ -37,6 +37,8 @@ namespace soplex
+ /* determine TIMES_TICKS_PER_SEC for clock ticks delivered by times().
+  * (don't use CLOCKS_PER_SEC since this is related to clock() only).
+  */
++#undef _SC_CLK_TCK /* not implemented in Genode */
++
+ #if defined(CLK_TCK)
+ #define TIMES_TICKS_PER_SEC CLK_TCK
+ #elif defined(_SC_CLK_TCK)
