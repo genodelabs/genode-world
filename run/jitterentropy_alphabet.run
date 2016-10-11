@@ -1,0 +1,5 @@
+set test_name "testu01_alphabet"
+
+source ${genode_dir}/repos/world/run/jitterentropy_testu01.inc
+
+run_genode_until "child \"${test_name}\" exited with exit value 0" 600
