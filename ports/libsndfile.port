@@ -1,0 +1,21 @@
+LICENSE   := GPLv3
+VERSION   := 1.0.27
+DOWNLOADS := libsndfile.archive
+
+URL(libsndfile) := http://www.mega-nerd.com/libsndfile/files/libsndfile-$(VERSION).tar.gz
+SHA(libsndfile) := e112d4937352d1722b06911b00c79e9bce15095c
+DIR(libsndfile) := src/lib/libsndfile
+
+_dirs: include/libsndfile/sndfile.h
+
+include/libsndfile/sndfile.h: src/lib/libsndfile/src/sndfile.h.in
+	@$(MSG_GENERATE)$@
+	$(VERBOSE) mkdir -p include/libsndfile
+	$(VERBOSE) sed \
+		-e 's/@TYPEOF_SF_COUNT_T@/long long/'\
+		-e 's/@SF_COUNT_MAX@/0x7FFFFFFFFFFFFFFFLL/' \
+			$< > $@
+
+src/lib/libsndfile/src/sndfile.h.in: $(DOWNLOADS)
+
+# see ../src/lib/libsndfile/config.h
