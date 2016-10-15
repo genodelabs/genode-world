@@ -1,0 +1,23 @@
+LICENSE   := BSD
+VERSION   := 1.3.1
+DOWNLOADS := flac.archive
+
+URL(flac) := http://downloads.xiph.org/releases/flac/flac-$(VERSION).tar.xz
+SHA(flac) := 38e17439d11be26207e4af0ff50973815694b26f
+DIR(flac) := src/lib/flac
+
+DIRS := include/FLAC  include/FLAC++
+DIR_CONTENT(include/FLAC)   := src/lib/flac/include/FLAC/*.h
+DIR_CONTENT(include/FLAC++) := src/lib/flac/include/FLAC++/*.h
+
+_dirs: src/lib/flac/include/config.h
+
+src/lib/flac/include/config.h: src/lib/flac/config.h.in
+	@$(MSG_GENERATE)$@
+	$(VERBOSE) sed \
+		-e 's/#undef VERSION/#define VERSION "$(VERSION)"/'\
+		-e 's/#undef FLAC__HAS_OGG/#define FLAC__HAS_OGG 1/' \
+		-e 's/#undef HAVE_LROUND/#define HAVE_LROUND 1/' \
+			$< > $@
+
+src/lib/flac/config.h.in: $(DOWNLOADS)
