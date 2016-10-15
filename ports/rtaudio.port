@@ -1,0 +1,13 @@
+LICENSE   := MIT
+VERSION   := git
+DOWNLOADS := rtaudio.archive
+
+OWNER := ehmry
+REPO  := rtaudio
+REV   := bde69fff7cf263552e27b33ca0db63e8c239e20e
+URL(rtaudio) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(rtaudio) := e519e49d636818d2dcb95fc0fc3daf1e8c59704b
+DIR(rtaudio) := src/lib/rtaudio
+
+DIRS := include/RtAudio
+DIR_CONTENT(include/RtAudio) := src/lib/rtaudio/RtAudio.h
