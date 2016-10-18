@@ -1,7 +1,7 @@
 #
 # Pull in CPU specifics
 #
-SPECS += zynq cadence_gem zynq_uart1 zynq_i2c
+SPECS += zynq cadence_gem zynq_i2c
 
 REP_INC_DIR += include/spec/zedboard
 REP_INC_DIR += include/spec/xilinx
