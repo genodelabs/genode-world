@@ -1,0 +1,23 @@
+LICENSE   := GPLv3
+VERSION   := 0.28
+DOWNLOADS := liblo.archive
+
+URL(liblo) := http://downloads.sourceforge.net/liblo/liblo-$(VERSION).tar.gz
+SHA(liblo) := 949d5f0c9919741c67602514786b9c7366fa001b
+DIR(liblo) := src/lib/liblo
+
+DIRS := include/lo
+DIR_CONTENT(include/lo) := src/lib/liblo/lo/*.h
+
+_dirs: include/lo/lo.h src/lib/liblo/lo/lo_endian.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -i '/in6_addr/d' src/lib/liblo/src/lo_types_internal.h
+
+include/lo/lo.h: src/lib/liblo/lo/lo.h.in $(DOWNLOADS)
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)mkdir -p include/lo
+	$(VERBOSE)sed 's/@ENABLE_THREADS@/0/' $< > $@
+
+src/lib/liblo/lo/lo_endian.h: src/lib/liblo/lo/lo_endian.h.in $(DOWNLOADS)
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed 's/@LO_BIGENDIAN@/0/' $< > $@
