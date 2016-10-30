@@ -1,0 +1,35 @@
+LICENSE   := GPL2
+VERSION   := 1.3.5.2
+DOWNLOADS := chuck.archive
+
+#
+# Check for tools
+#
+$(call check_tool,lex)
+$(call check_tool,bison)
+
+OWNER := ccrma
+REPO  := chuck
+REV   := 53f99be5498c6b1deb59aa2c223e75326820a30b
+URL(chuck) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(chuck) := 1ecea44425eb9048a6ae9f2f37a3c21376511a13
+DIR(chuck) := src/app/chuck
+
+DIRS := include/chuck
+DIR_CONTENT(include/chuck) := src/app/chuck/src/*.h
+
+PATCHES := src/app/chuck/patch
+PATCH_OPT := -p1 -d src/app/chuck
+
+CHUCK_TAB = src/app/chuck/src/chuck.tab.c src/app/chuck/src/chuck.tab.h
+
+_dirs: $(DOWNLOADS) $(CHUCK_TAB) src/app/chuck/src/chuck.yy.c
+	$(VERBOSE) find src/app/chuck -name RtAudio.h -delete
+
+$(CHUCK_TAB): src/app/chuck/src/chuck.y $(DOWNLOADS)
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)$(YACC) -dv -b src/app/chuck/src/chuck $<
+
+src/app/chuck/src/chuck.yy.c: src/app/chuck/src/chuck.lex $(DOWNLOADS)
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)$(LEX)  -o$@ $<

@@ -1,0 +1,23 @@
+ChucK is a strongly-timed concurrent music programming language.
+This directory contains an initial non-interactive frontend.
+
+Configuration
+~~~~~~~~~~~~~
+
+The following configuration compiles and runs seven files:
+
+! <config dac_channels="2" adc_channels="0">
+! 	<libc stdout="/log" stderr="/log">
+! 		<vfs>
+! 			<log/>
+! 			<fs/>
+! 		</vfs>
+! 	</libc>
+! 	<file path="otf_01.ck"/>
+! 	<file path="otf_02.ck"/>
+! 	<file path="otf_03.ck"/>
+! 	<file path="otf_04.ck"/>
+! 	<file path="otf_05.ck"/>
+! 	<file path="otf_06.ck"/>
+! 	<file path="otf_07.ck"/>
+! </config>

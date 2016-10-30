@@ -1,0 +1,501 @@
+diff --git a/src/chuck_bbq.h b/src/chuck_bbq.h
+index 0cd059f..9cc0664 100644
+--- a/src/chuck_bbq.h
++++ b/src/chuck_bbq.h
+@@ -44,9 +44,10 @@
+ #elif defined(__MACOSX_CORE__)
+ #elif defined(__WINDOWS_DS__)
+ #elif defined(__WINDOWS_ASIO__)
++#elif defined(__GENODE_AUDIO__)
+ #else
+ #error "must define one:\
+-__LINUX_ALSA__ __UNIX_JACK__ __LINUX_JACK__ __LINUX_PULSE__ __MACOSX_CORE__ __WINDOWS_DS__"
++__LINUX_ALSA__ __UNIX_JACK__ __LINUX_JACK__ __LINUX_PULSE__ __MACOSX_CORE__ __WINDOWS_DS__ __GENODE_AUDIO__"
+ #endif
+ 
+ struct Chuck_VM;
+diff --git a/src/chuck_shell.cpp b/src/chuck_shell.cpp
+index 726afa4..506f886 100644
+--- a/src/chuck_shell.cpp
++++ b/src/chuck_shell.cpp
+@@ -45,6 +45,10 @@
+  #include <dirent.h>
+ #endif
+ 
++#ifdef __PLATFORM_GENODE__
++#include <trace/timestamp.h>
++#endif
++
+ using namespace std;
+ 
+ // global shell pointer (lives in chuck_main)
+@@ -630,7 +634,7 @@ void Chuck_Shell::do_code( string & code, string & out, string command )
+         prompt = variables["COMMAND_PROMPT"];
+         return;
+     }
+-#else
++#elif defined(__PLATFORM_WIN32__)
+     char tmp_filepath1[MAX_PATH];
+     win32_tmpnam(tmp_filepath1);
+ 
+@@ -650,6 +654,19 @@ void Chuck_Shell::do_code( string & code, string & out, string command )
+         prompt = variables["COMMAND_PROMPT"];
+         return;
+     }
++#elif defined(__PLATFORM_GENODE__)
++    char tmp_filepath[32];
++    snprintf(tmp_filepath, sizeof(tmp_filepath), "/tmp/chuck_file.%x", Genode::Trace::Timestamp()&0xFFFFU);
++
++    FILE * tmp_file = fopen( tmp_filepath, "w" );
++    if( tmp_file == NULL )
++    {
++        out += string( "shell: error: unable to open tmpfile '" ) + tmp_filepath + "'\n";
++        prompt = variables["COMMAND_PROMPT"];
++        return;
++    }
++#else
++#error Missing platform code for temporary files
+ #endif
+         
+     // write the code to the temp file
+diff --git a/src/chuck_vm.cpp b/src/chuck_vm.cpp
+index d907347..3ceafb2 100644
+--- a/src/chuck_vm.cpp
++++ b/src/chuck_vm.cpp
+@@ -176,8 +176,16 @@ t_CKINT Chuck_VM::our_priority = 85;
+ t_CKINT Chuck_VM::our_priority = 0x7fffffff;
+ #endif
+ 
+-
+-#if !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
++#if defined(__PLATFORM_GENODE__)
++//-----------------------------------------------------------------------------
++// name: set_priority()
++// desc: ...
++//-----------------------------------------------------------------------------
++t_CKBOOL Chuck_VM::set_priority( t_CKINT priority, Chuck_VM * vm )
++{
++    return FALSE;
++}
++#elif !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
+ //-----------------------------------------------------------------------------
+ // name: set_priority()
+ // desc: ...
+@@ -244,7 +252,6 @@ t_CKBOOL Chuck_VM::set_priority( t_CKINT priority, Chuck_VM * vm )
+ #endif
+ 
+ 
+-
+         
+ //-----------------------------------------------------------------------------
+ // name: initialize()
+diff --git a/src/digiio_rtaudio.cpp b/src/digiio_rtaudio.cpp
+index e78b19d..ea349e8 100644
+--- a/src/digiio_rtaudio.cpp
++++ b/src/digiio_rtaudio.cpp
+@@ -151,7 +151,7 @@ void Digitalio::probe()
+     
+     // allocate RtAudio
+     try { rta = new RtAudio( ); }
+-    catch( RtError err )
++    catch( RtAudioError err )
+     {
+         // problem finding audio devices, most likely
+         EM_error2b( 0, "%s", err.getMessage().c_str() );
+@@ -169,7 +169,7 @@ void Digitalio::probe()
+     for( int i = 0; i < devices; i++ )
+     {
+         try { info = rta->getDeviceInfo(i); }
+-        catch( RtError & error )
++        catch( RtAudioError & error )
+         {
+             error.printMessage();
+             break;
+@@ -205,7 +205,7 @@ DWORD__ Digitalio::device_named( const std::string & name, t_CKBOOL needs_dac, t
+     
+     // allocate RtAudio
+     try { rta = new RtAudio( ); }
+-    catch( RtError err )
++    catch( RtAudioError err )
+     {
+         // problem finding audio devices, most likely
+         EM_error2b( 0, "%s", err.getMessage().c_str() );
+@@ -220,7 +220,7 @@ DWORD__ Digitalio::device_named( const std::string & name, t_CKBOOL needs_dac, t
+     for( int i = 0; i < devices; i++ )
+     {
+         try { info = rta->getDeviceInfo(i); }
+-        catch( RtError & error )
++        catch( RtAudioError & error )
+         {
+             error.printMessage();
+             break;
+@@ -239,7 +239,7 @@ DWORD__ Digitalio::device_named( const std::string & name, t_CKBOOL needs_dac, t
+         for( int i = 0; i < devices; i++ )
+         {
+             try { info = rta->getDeviceInfo(i); }
+-            catch( RtError & error )
++            catch( RtAudioError & error )
+             {
+                 error.printMessage();
+                 break;
+@@ -269,7 +269,16 @@ DWORD__ Digitalio::device_named( const std::string & name, t_CKBOOL needs_dac, t
+ 
+ 
+ 
+-#if !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
++#if defined(__PLATFORM_GENODE__)
++//-----------------------------------------------------------------------------
++// name: set_priority()
++// desc: ...
++//-----------------------------------------------------------------------------
++static t_CKBOOL set_priority( CHUCK_THREAD tid, t_CKINT priority )
++{
++    return FALSE;
++}
++#elif !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
+ //-----------------------------------------------------------------------------
+ // name: set_priority()
+ // desc: ...
+@@ -515,7 +524,7 @@ BOOL__ Digitalio::initialize( DWORD__ num_dac_channels,
+     {
+         // allocate RtAudio
+         try { m_rtaudio = new RtAudio( ); }
+-        catch( RtError err )
++        catch( RtAudioError err )
+         {
+             // problem finding audio devices, most likely
+             EM_error2( 0, "%s", err.getMessage().c_str() );
+@@ -584,13 +593,13 @@ BOOL__ Digitalio::initialize( DWORD__ num_dac_channels,
+             {
+                 // difference
+                 long diff = device_info.sampleRates[i] - sampling_rate;
+-                // check // ge: changed from abs to labs, 2015.11
+-                if( ::labs(diff) < closestDiff )
++                // check
++                if( ::abs(diff) < closestDiff )
+                 {
+                     // remember index
+                     closestIndex = i;
+                     // update diff
+-                    closestDiff = ::labs(diff);
++                    closestDiff = ::abs(diff);
+                 }
+ 
+                 // for next highest
+@@ -711,7 +720,7 @@ BOOL__ Digitalio::initialize( DWORD__ num_dac_channels,
+                 CK_RTAUDIO_FORMAT, sampling_rate, &bufsize, 
+                 m_use_cb ? ( block ? &cb : &cb2 ) : NULL, vm_ref, 
+                 &stream_options );
+-        } catch( RtError err ) {
++        } catch( RtAudioError err ) {
+             // log
+             EM_log( CK_LOG_INFO, "exception caught: '%s'...", err.getMessage().c_str() );
+             EM_error2( 0, "%s", err.getMessage().c_str() );
+@@ -956,7 +965,7 @@ BOOL__ Digitalio::start( )
+     try{ if( !m_start )
+               m_rtaudio->startStream();
+          m_start = TRUE;
+-    } catch( RtError err ){ return FALSE; }
++    } catch( RtAudioError err ){ return FALSE; }
+ #endif // __DISABLE_RTAUDIO__
+ 
+ #if defined(__CHIP_MODE__)
+@@ -980,7 +989,7 @@ BOOL__ Digitalio::stop( )
+     try{ if( m_start )
+              m_rtaudio->stopStream();
+          m_start = FALSE;
+-    } catch( RtError err ){ return FALSE; }
++    } catch( RtAudioError err ){ return FALSE; }
+ #endif // __DISABLE_RTAUDIO__
+ 
+ #if defined(__CHIP_MODE__)
+@@ -1013,7 +1022,7 @@ BOOL__ Digitalio::stop( )
+ //        }
+ //        
+ //        return TRUE;
+-//    } catch( RtError err ){ return FALSE; }
++//    } catch( RtAudioError err ){ return FALSE; }
+ //#endif // __DISABLE_RTAUDIO__
+ //    
+ //    return FALSE;
+diff --git a/src/util_hid.cpp b/src/util_hid.cpp
+index 9c26e2d..b66e87a 100644
+--- a/src/util_hid.cpp
++++ b/src/util_hid.cpp
+@@ -3725,7 +3725,7 @@ t_CKINT WiiRemote::disconnect()
+     msg.device_type = CK_HID_DEV_WIIREMOTE;
+     msg.type = CK_HID_DEVICE_DISCONNECTED;
+     
+-    HidInManager::push_message( msg );    
++    HidInManager::push_message( msg );
+     
+     return 0;
+ }
+@@ -7679,6 +7679,122 @@ const char * Keyboard_name( int k )
+     return keyboards->at( k )->name;
+ }
+ 
++#elif defined(__PLATFORM_GENODE__)
++
++#include <input_session/connection.h>
++
++static Genode::Signal_context  g_input_sig_ctx;
++static Genode::Signal_receiver g_input_sig_rec;
++
++static Input::Connection *g_input_session;
++
++static int g_input_count = 0;
++
++void Genode_input_init()
++{
++    if( g_input_session == nullptr ) try {
++		g_input_session = new Input::Connection;
++		g_input_session->sigh(g_input_sig_rec.manage(&g_input_sig_ctx));
++		g_input_count = g_input_count < 1 ? 1 : g_input_count+1;
++	} catch ( ... ) { }
++}
++
++void Genode_input_quit()
++{
++    if( --g_input_count > 0 ) {
++		delete g_input_session;
++		g_input_sig_rec.dissolve(&g_input_sig_ctx);
++		g_input_session = nullptr;
++	}
++}
++
++void Genode_input_poll()
++{
++	if ( !g_input_sig_rec.pending() )
++		return;
++	do { g_input_sig_rec.wait_for_signal(); }
++	while ( g_input_sig_rec.pending() );
++
++	g_input_session->for_each_event( [&] ( Input::Event const &ev ) {
++		HidMsg msg;
++
++		switch (ev.type()) {
++		case Input::Event::MOTION:
++			msg.device_type = CK_HID_DEV_MOUSE;
++			msg.type = CK_HID_MOUSE_MOTION;
++			msg.idata[0] = ev.ax();
++			msg.idata[1] = ev.ay();
++			break;
++
++		case Input::Event::WHEEL:
++			msg.device_type = CK_HID_DEV_MOUSE;
++			msg.type = CK_HID_MOUSE_WHEEL;
++			msg.idata[1] = ev.ry();
++			break;
++
++		case Input::Event::PRESS:
++		case Input::Event::RELEASE:
++		case Input::Event::FOCUS:
++		case Input::Event::LEAVE:
++		case Input::Event::TOUCH:
++		case Input::Event::INVALID: return;
++		}
++
++		HidInManager::push_message( msg );
++	});
++}
++
++void Hid_init() { }
++void Hid_poll() { }
++void Hid_quit() { }
++
++void Joystick_init() { }
++void Joystick_poll() { }
++void Joystick_quit() { }
++void Joystick_probe() { }
++int Joystick_count() { return -1; }
++int Joystick_open( int js ) { return -1; }
++int Joystick_open_async( int js ) { return -1; }
++int Joystick_open( const char * name ) { return -1; }
++int Joystick_close( int js ) { return -1; };
++int Joystick_send( int js, const HidMsg * msg ) { return -1; }
++const char * Joystick_name( int js ) { return ""; }
++
++void Mouse_init() { Genode_input_init(); }
++
++void Mouse_poll() { Genode_input_poll(); }
++
++void Mouse_quit() { Genode_input_quit(); }
++
++void Mouse_probe() { }
++int Mouse_count() { return ( g_input_session == nullptr ) ? 1 : -1; }
++int Mouse_open( int m ) { return ( g_input_session == nullptr ) ? 1 : -1; }
++int Mouse_open( const char * name ) { return ( g_input_session == nullptr ) ? 1 : -1; }
++int Mouse_close( int m ) { return 0; }
++int Mouse_send( int m, const HidMsg * msg ) { return -1; }
++const char * Mouse_name( int m ) { return ""; }
++int Mouse_buttons( int m ) { return 0; }
++
++void Keyboard_init() { }
++void Keyboard_poll() { }
++void Keyboard_quit() { }
++void Keyboard_probe() { }
++int Keyboard_count() { return -1; }
++int Keyboard_open( int kb ) { return -1; }
++int Keyboard_open( const char * name ) { return -1; }
++int Keyboard_close( int kb ) { return -1; }
++const char * Keyboard_name( int kb ) { return ""; }
++
++t_CKINT TiltSensor_setPollRate( t_CKINT usec )
++{
++    return -1;
++}
++
++t_CKINT TiltSensor_getPollRate( )
++{
++    return -1;
++}
++
+ #endif
+ 
+ 
+diff --git a/src/util_sndfile.h b/src/util_sndfile.h
+index 2a62fd7..a4f4f3b 100644
+--- a/src/util_sndfile.h
++++ b/src/util_sndfile.h
+@@ -184,6 +184,18 @@
+ #define HAVE_LRINT 1
+ #endif
+ 
++#if defined(__PLATFORM_GENODE__)
++#define TYPEOF_SF_COUNT_T long
++#define CPU_CLIPS_POSITIVE 0
++#define CPU_IS_BIG_ENDIAN 0
++#define CPU_IS_LITTLE_ENDIAN 1
++#define HAVE_PREAD 1
++#define HAVE_PWRITE 1
++#define OS_IS_MACOSX 0
++#define OS_IS_WIN32 0
++#define HAVE_LRINTF 1
++#define HAVE_LRINT 1
++#endif
+ 
+ 
+ // XXX 'inline' is necessary for C compilation
+diff --git a/src/util_string.cpp b/src/util_string.cpp
+index ff1770e..774d43c 100644
+--- a/src/util_string.cpp
++++ b/src/util_string.cpp
+@@ -40,6 +40,10 @@
+ #include <linux/limits.h>
+ #endif // __PLATFORM_LINUX__
+ 
++#ifdef __PLATFORM_GENODE__
++#define PATH_MAX 512
++#endif // __PLATFORM_GENODE__
++
+ #include <stdio.h>
+ using namespace std;
+ 
+diff --git a/src/util_thread.cpp b/src/util_thread.cpp
+index 5e32ade..a4095a5 100644
+--- a/src/util_thread.cpp
++++ b/src/util_thread.cpp
+@@ -69,7 +69,7 @@ XThread::~XThread( )
+ {
+     if( thread != 0 )
+     {
+-#if defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__)
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+         pthread_cancel(thread);
+         pthread_join(thread, NULL);
+ #elif defined(__PLATFORM_WIN32__)
+@@ -89,7 +89,7 @@ bool XThread::start( THREAD_FUNCTION routine, void * ptr )
+ {
+     bool result = false;
+     
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+     if( pthread_create( &thread, NULL, *routine, ptr ) == 0 )
+         result = true;
+ #elif defined(__PLATFORM_WIN32__)
+@@ -111,7 +111,7 @@ bool XThread::wait( long milliseconds, bool cancel )
+ {
+     bool result = false;
+     
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+     if(cancel) pthread_cancel(thread);
+     pthread_join(thread, NULL);
+ #elif defined(__PLATFORM_WIN32__)
+@@ -138,7 +138,7 @@ bool XThread::wait( long milliseconds, bool cancel )
+ //-----------------------------------------------------------------------------
+ void XThread :: test( )
+ {
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__)  || defined(__PLATFORM_GENODE__) )
+     pthread_testcancel();
+ #endif
+ }
+@@ -152,7 +152,7 @@ void XThread :: test( )
+ //-----------------------------------------------------------------------------
+ XMutex::XMutex( )
+ {
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__))
+     pthread_mutex_init(&mutex, NULL);
+ #elif defined(__PLATFORM_WIN32__)
+     InitializeCriticalSection(&mutex);
+@@ -168,7 +168,7 @@ XMutex::XMutex( )
+ //-----------------------------------------------------------------------------
+ XMutex::~XMutex( )
+ {
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__)  || defined(__PLATFORM_GENODE__) )
+     pthread_mutex_destroy( &mutex );
+ #elif defined(__PLATFORM_WIN32__)
+     DeleteCriticalSection(&mutex);
+@@ -184,7 +184,7 @@ XMutex::~XMutex( )
+ //-----------------------------------------------------------------------------
+ void XMutex::acquire( )
+ {
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+     pthread_mutex_lock(&mutex);
+ #elif defined(__PLATFORM_WIN32__)
+     EnterCriticalSection(&mutex);
+@@ -200,7 +200,7 @@ void XMutex::acquire( )
+ //-----------------------------------------------------------------------------
+ void XMutex::release( )
+ {
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+     pthread_mutex_unlock(&mutex);
+ #elif defined(__PLATFORM_WIN32__)
+     LeaveCriticalSection(&mutex);
+@@ -389,7 +389,7 @@ void XWriteThread::flush_data_buffer()
+ // name: write_cb()
+ // desc: thread function
+ //-----------------------------------------------------------------------------
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+ void * XWriteThread::write_cb(void * _thiss)
+ #elif defined(__PLATFORM_WIN32__)
+ unsigned XWriteThread::write_cb(void * _thiss)
+diff --git a/src/util_thread.h b/src/util_thread.h
+index ebdd5dd..3703844 100644
+--- a/src/util_thread.h
++++ b/src/util_thread.h
+@@ -43,7 +43,7 @@ class FastCircularBuffer;
+ template<typename T> class CircularBuffer;
+ 
+ 
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) || defined(__PLATFORM_GENODE__))
+   #include <pthread.h>
+   #define THREAD_TYPE
+   typedef pthread_t THREAD_HANDLE;
+@@ -154,7 +154,7 @@ private:
+     void flush_data_buffer();
+ 
+ 	// callback
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+     static void * write_cb( void * _thiss );
+ #elif defined(__PLATFORM_WIN32__)
+     static unsigned THREAD_TYPE write_cb( void * _thiss );
