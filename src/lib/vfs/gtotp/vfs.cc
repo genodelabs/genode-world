@@ -43,7 +43,7 @@ class Vfs::Gtotp_file_system : public Single_file_system
 		                  Genode::uint8_t  *secret,
 		                  Genode::size_t    secret_len)
 		:
-			Vfs::Single_file_system(NODE_TYPE_CHAR_DEVICE, "gtot", node),
+			Vfs::Single_file_system(NODE_TYPE_CHAR_DEVICE, "gtotp", node),
 			_hmac(secret, secret_len), _rtc(rtc) { }
 
 		Stat_result stat(char const *path, Stat &out) override
@@ -136,8 +136,6 @@ struct Gtotp_file_system_factory : Vfs::File_system_factory
 {
 	Genode::uint8_t base32_table[256];
 
-	Rtc::Connection rtc;
-
 	Gtotp_file_system_factory()
 	{
 		char const *upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -153,8 +151,12 @@ struct Gtotp_file_system_factory : Vfs::File_system_factory
 			base32_table[(uint8_t)lower[i]] = i;
 	}
 
-	Vfs::File_system *create(Genode::Xml_node node) override
+	Vfs::File_system *create(Genode::Env &env,
+		                     Genode::Allocator &alloc,
+		                     Genode::Xml_node node) override
 	{
+		static Rtc::Connection rtc(env);
+
 		using namespace Genode;
 		enum {
 			BASE32_FACTOR   = 256 / 32,

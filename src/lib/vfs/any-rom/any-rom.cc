@@ -29,8 +29,8 @@ class Vfs::Any_rom_file_system : public File_system
 
 			int _ref_count = 0;
 
-			Rom(Genode::Session_label const &rom_label )
-			: Attached_rom_dataspace(rom_label.string()), _name(rom_label.last_element()) { }
+			Rom(Genode::Env &env, Genode::Session_label const &rom_label )
+			: Attached_rom_dataspace(env, rom_label.string()), _name(rom_label.last_element()) { }
 
 			bool operator == (char const *other) const { return _name == other; }
 
@@ -69,6 +69,7 @@ class Vfs::Any_rom_file_system : public File_system
 				}
 		};
 
+		Genode::Env       &_env;
 		Genode::Allocator &_alloc;
 		Genode::List<Rom>  _roms;
 
@@ -85,7 +86,7 @@ class Vfs::Any_rom_file_system : public File_system
 					/* if the ROM dataspace is not in use, update it */
 					if (rom->unused()) {
 						_roms.remove(rom);
-						destroy(env()->heap(), rom);
+						destroy(_alloc, rom);
 						/* fallthru and try again */
 					} else
 						return rom;
@@ -94,7 +95,7 @@ class Vfs::Any_rom_file_system : public File_system
 
 			try {
 				Rom *rom = new (_alloc)
-					Rom(prefixed_label(_label, Session_label(filename)));
+					Rom(_env, prefixed_label(_label, Session_label(filename)));
 				_roms.insert(rom);
 				return rom;
 			} catch (...) { }
@@ -103,9 +104,11 @@ class Vfs::Any_rom_file_system : public File_system
 
 	public:
 
-		Any_rom_file_system(Genode::Allocator &alloc, Genode::Xml_node node)
+		Any_rom_file_system(Genode::Env &env,
+		                    Genode::Allocator &alloc,
+		                    Genode::Xml_node node)
 		:
-			_alloc(alloc),
+			_env(env), _alloc(alloc),
 			_label(node.attribute_value("label",
 			                            Genode::String<Genode::Session_label::capacity()>()).string())
 		{ }
@@ -184,7 +187,7 @@ class Vfs::Any_rom_file_system : public File_system
 				if (rom->unused()) {
 					/* why not free some memory */
 					_roms.remove(rom);
-					destroy(env()->heap(), rom);
+					destroy(_alloc, rom);
 					return UNLINK_OK;
 				}
 				return UNLINK_ERR_NO_PERM;
@@ -217,7 +220,7 @@ class Vfs::Any_rom_file_system : public File_system
 			for (Rom *rom = _roms.first(); rom;) {
 				if (rom->unused()) {
 					_roms.remove(rom);
-					destroy(env()->heap(), rom);
+					destroy(_alloc, rom);
 					rom = _roms.first();
 				} else {
 					rom = rom->next();
@@ -258,10 +261,11 @@ extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
 {
 	struct Any_rom_factory : Vfs::File_system_factory
 	{
-		Vfs::File_system *create(Genode::Xml_node node) override
+		Vfs::File_system *create(Genode::Env &env,
+		                         Genode::Allocator &alloc,
+		                         Genode::Xml_node node) override
 		{
-			Genode::Allocator &alloc = *Genode::env()->heap();
-			return new (alloc) Vfs::Any_rom_file_system(alloc, node);
+			return new (alloc) Vfs::Any_rom_file_system(env, alloc, node);
 		}
 	};
 
