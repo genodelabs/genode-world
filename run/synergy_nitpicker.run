@@ -116,9 +116,9 @@ append config {
 			<domain name="right"   layer="2" origin="top_right" xpos="-340"/>
 			<domain name="" layer="1"/>
 
-			<policy label="left"    domain="left"/>
-			<policy label="right"   domain="right"/>
-			<policy label="" domain=""/>
+			<policy label_prefix="left"  domain="left"/>
+			<policy label_prefix="right" domain="right"/>
+			<default-policy              domain=""/>
 		</config>
 	</start>
 
@@ -170,8 +170,8 @@ append config {
 					<background color="#808080"/>
 					<domain name="pointer" layer="1" xray="no" origin="pointer" />
 					<domain name="" layer="2"/>
-					<policy label="pointer" domain="pointer"/>
-					<policy label="" domain=""/>
+					<policy label_prefix="pointer" domain="pointer"/>
+					<default-policy domain=""/>
 				</config>
 			</start>
 			<start name="pointer">
@@ -229,8 +229,8 @@ append config {
 					<background color="#800000"/>
 					<domain name="pointer" layer="1" xray="no" origin="pointer" />
 					<domain name="" layer="2"/>
-					<policy label="pointer" domain="pointer"/>
-					<policy label="" domain=""/>
+					<policy label_prefix="pointer" domain="pointer"/>
+					<default-policy domain=""/>
 				</config>
 			</start>
 			<start name="pointer">

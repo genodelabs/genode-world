@@ -87,8 +87,8 @@ append config {
 DataDirectory /tor
 			</inline></dir>
 			</content>
-		<policy label="tor -> data" root="/data" writeable="yes"/>
-		<policy label="tor -> conf" root="/conf" writeable="no"/>
+		<policy label_prefix="tor -> data" root="/data" writeable="yes"/>
+		<policy label_prefix="tor -> conf" root="/conf" writeable="no"/>
 		</config>
 	</start>
 

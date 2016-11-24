@@ -53,7 +53,7 @@ append config {
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config verbose="yes">
 			<rom>
-				<policy label="" report="audio_player -> current_track"/>
+				<policy label_prefix="" report="audio_player -> current_track"/>
 			</rom>
 		</config>
 	</start>

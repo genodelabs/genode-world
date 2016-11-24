@@ -139,7 +139,7 @@ append config {
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<archive name="data.tar" />
-			<policy label="chocolate-doom -> wads" root="/wads" />
+			<policy label_prefix="chocolate-doom -> wads" root="/wads" />
 		</config>
 	</start>
 	<start name="chocolate-doom">
