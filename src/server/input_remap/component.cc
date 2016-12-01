@@ -35,9 +35,7 @@ struct Input::Remap
 	/*
 	 * Input session provided by our parent
 	 */
-	Input::Session_client parent_input
-		{ env.parent().session<Input::Session>("ram_quota=16K") };
-	Genode::Attached_dataspace input_dataspace { parent_input.dataspace() };
+	Input::Connection parent_input { env };
 
 	/*
 	 * Input session provided to our client
@@ -52,18 +50,13 @@ struct Input::Remap
 
 	void event_flush()
 	{
-		Input::Event const * const events =
-			input_dataspace.local_addr<Input::Event>();
-
-		unsigned const num = parent_input.flush();
-		for (unsigned i = 0; i < num; i++) {
-			Event e = events[i];
+		parent_input.for_each_event([&] (Event const &e) {
 			if ((e.type() == Event::PRESS) || (e.type() == Event::RELEASE))
 				input_session_component.submit(Event(
 					e.type(), code_map[e.code()], e.ax(), e.ay(), e.rx(), e.ry()));
 			else
 				input_session_component.submit(e);
-		}
+		});
 	}
 
 	Genode::Signal_handler<Remap> event_flusher
@@ -129,12 +122,6 @@ struct Input::Remap
 
 		env.parent().announce(env.ep().manage(input_root));
 	}
-
-	~Remap()
-	{
-		env.parent().close(parent_input);
-	}
-
 };
 
 
