@@ -1,0 +1,10 @@
+LICENSE   := GPL3
+VERSION   := 1.3.2
+DOWNLOADS := retroarch.archive
+ 
+URL(retroarch) := https://github.com/libretro/RetroArch/archive/v$(VERSION).tar.gz
+SHA(retroarch) := 0e88126e9193949f65ed2b48cd2a13e2327b08b6
+DIR(retroarch) := src/app/retroarch
+
+DIRS := include/libretro
+DIR_CONTENT(include/libretro) := src/app/retroarch/libretro.h
