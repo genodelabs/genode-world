@@ -1,0 +1,11 @@
+LICENSE   := GPL2
+VERSION   := dev
+DOWNLOADS := fceumm.archive
+
+OWNER := libretro
+REPO := libretro-fceumm
+REV := 72e74d6fcc4f3173f5b3826e984d431fb39ae147
+URL(fceumm) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(fceumm) := d13cd6996ce545def86c9f45025159ac23298ddb
+
+DIR(fceumm) := src/libretro/fceumm
