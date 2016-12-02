@@ -1,0 +1,10 @@
+LICENSE   := GPL3
+VERSION   := dev
+DOWNLOADS := snes9x-libretro.archive
+
+OWNER := libretro
+REPO := snes9x
+REV := f29f7b48b7548a88540a2d01683c37b1b55a74a2
+URL(snes9x-libretro) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(snes9x-libretro) := afd9f9a3cae367207210caf619f3b449e4d9f70f
+DIR(snes9x-libretro) := src/libretro/snes9x
