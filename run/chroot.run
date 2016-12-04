@@ -1,0 +1,129 @@
+#
+# \brief  Chroot test
+# \author Emery Hemingway
+# \date   2016-12-03
+#
+
+#
+# Build
+#
+
+build { core init server/vfs server/chroot test/libc }
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<start name="vfs">
+		<resource name="RAM" quantum="12M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<dir name="test-libc-1">
+					<log label="chroot-1"/>
+				</dir>
+				<dir name="test-libc-2">
+					<log label="chroot-2"/>
+				</dir>
+				<dir name="test-libc-3">
+					<log label="chroot-3"/>
+				</dir>
+			</vfs>
+			<policy label_prefix="chroot" root="/" writeable="yes"/>
+		</config>
+	</start>
+
+	<start name="chroot">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="File_system"/> </provides>
+		<route>
+			<any-service>
+				<child name="vfs"/> <parent/>
+			</any-service>
+		</route>
+	</start>
+
+	<start name="test-libc-1">
+		<binary name="test-libc"/>
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<libc stdout="/log">
+				<vfs> <fs/> </vfs>
+			</libc>
+		</config>
+		<route>
+			<any-service>
+				<child name="chroot"/> <parent/>
+			</any-service>
+		</route>
+	</start>
+
+	<start name="test-libc-2">
+		<binary name="test-libc"/>
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<libc stdout="/log">
+				<vfs> <fs/> </vfs>
+			</libc>
+		</config>
+		<route>
+			<any-service>
+				<child name="chroot"/> <parent/>
+			</any-service>
+		</route>
+	</start>
+
+	<start name="test-libc-3">
+		<binary name="test-libc"/>
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<libc stdout="/log">
+				<vfs> <fs/> </vfs>
+			</libc>
+		</config>
+		<route>
+			<any-service>
+				<child name="chroot"/> <parent/>
+			</any-service>
+		</route>
+	</start>
+
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+build_boot_image {
+	core init vfs chroot
+	ld.lib.so libc.lib.so libm.lib.so
+	test-libc
+}
+
+#
+# Execute test case
+#
+
+append qemu_args " -nographic -m 64 "
+run_genode_until {child "test-libc-3" exited with exit value 0} 60
+
+# vi: set ft=tcl :
