@@ -117,7 +117,7 @@ install_config {
 # Boot image
 #
 
-build_boot_image { core init timer
+build_boot_image { core ld.lib.so init timer
 	remote_rom_server
 	remote_rom_client
 	dynamic_rom
