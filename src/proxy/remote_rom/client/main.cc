@@ -20,7 +20,7 @@
 #include <base/env.h>
 #include <base/heap.h>
 #include <base/log.h>
-#include <util/volatile_object.h>
+#include <util/reconstructible.h>
 #include <util/list.h>
 
 #include <base/rpc_server.h>
@@ -36,7 +36,7 @@
 
 namespace Remote_rom {
 	using Genode::size_t;
-	using Genode::Lazy_volatile_object;
+	using Genode::Constructible;
 	using Genode::Signal_context_capability;
 
 	class  Session_component;
@@ -71,7 +71,7 @@ class Remote_rom::Session_component : public Genode::Rpc_object<Genode::Rom_sess
 
 		Session_list &_sessions;
 
-		Lazy_volatile_object<Genode::Attached_ram_dataspace> _ram_ds;
+		Constructible<Genode::Attached_ram_dataspace> _ram_ds;
 
 	public:
 
@@ -167,8 +167,8 @@ struct Remote_rom::Main : public Remote_rom::Read_buffer, public Remote_rom::Rom
 	Genode::Heap heap   = { &env.ram(), &env.rm() };
 	Root remote_rom_root = { env, heap, *this };
 
-	Genode::Lazy_volatile_object<Genode::Attached_ram_dataspace> _ds;
-	size_t                                                       _ds_content_size;
+	Genode::Constructible<Genode::Attached_ram_dataspace> _ds;
+	size_t                                                _ds_content_size;
 
 	Backend_client_base &_backend;
 

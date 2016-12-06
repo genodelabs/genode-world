@@ -50,7 +50,7 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 			  Genode::size_t(_client_mode.width()*_client_mode.height())*2
 			};
 
-		Genode::Lazy_volatile_object<Genode::Attached_dataspace> _parent_ds;
+		Genode::Constructible<Genode::Attached_dataspace> _parent_ds;
 
 		Genode::Signal_context_capability _client_sig_cap;
 

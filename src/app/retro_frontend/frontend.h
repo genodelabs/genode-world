@@ -132,7 +132,7 @@ struct Libretro::Frontend
 	Game_path game_path;
 	Rom_name rom_meta;
 
-	Genode::Lazy_volatile_object<Genode::Attached_rom_dataspace> game_rom;
+	Genode::Constructible<Genode::Attached_rom_dataspace> game_rom;
 
 	retro_game_info game_info;
 
@@ -301,7 +301,7 @@ struct Libretro::Frontend
 		void update_mode() { mode = session.mode(); }
 	};
 
-	Genode::Lazy_volatile_object<Framebuffer> framebuffer;
+	Genode::Constructible<Framebuffer> framebuffer;
 
 	struct Stereo_out
 	{
@@ -315,7 +315,7 @@ struct Libretro::Frontend
 		{ }
 	};
 
-	Genode::Lazy_volatile_object<Stereo_out> stereo_out;
+	Genode::Constructible<Stereo_out> stereo_out;
 
 	Genode::Reporter   variable_reporter {   "variables" };
 	Genode::Reporter  subsystem_reporter {  "subsystems" };
