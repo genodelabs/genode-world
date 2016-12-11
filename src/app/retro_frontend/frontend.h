@@ -346,11 +346,12 @@ struct Libretro::Frontend
 		} else if (fb_sync_sample_count == quarter_fps) {
 			fb_sync_sample_count = 0;
 
-			int sync_ms = (timer.elapsed_ms() - sample_start)/quarter_fps;
-			int want_ms = 250.0 / quarter_fps;
+			float sync_ms = (timer.elapsed_ms() - sample_start)/quarter_fps;
+			float want_ms = 250.0 / quarter_fps;
+			float diff = want_ms - sync_ms;
 
-			int diff = want_ms - sync_ms;
-			if (diff > 10 || diff < -10) {
+			/* allow a generous two millisecond difference in FPS */
+			if (diff > 2.0 || diff < -2.0) {
 				framebuffer->session.sync_sigh(Genode::Signal_context_capability());
 				Genode::warning("framebuffer sync unsuitable, "
 				                "using alternative timing source");
