@@ -4,9 +4,10 @@
 
 TARGET   = zynq_gpio_drv
 
-SRC_CC   = main.cc
-LIBS     = base config libc libm stdcxx
-INC_DIR += $(PRG_DIR)
+SRC_CC    = main.cc
+LIBS      = base config libc libm stdcxx
+INC_DIR  += $(PRG_DIR)
+REQUIRES += zynq
 
 vpath main.cc $(PRG_DIR)
 
