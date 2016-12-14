@@ -150,8 +150,7 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 		/**
 		 * Placement new.
 		 */
-		void * operator new(Genode::size_t size, void* addr) {
-			return addr; }
+		void * operator new(__SIZE_TYPE__ size, void* addr) { return addr; }
 
 } __attribute__((packed));
 
