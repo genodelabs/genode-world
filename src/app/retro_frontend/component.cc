@@ -11,10 +11,13 @@
  * under the terms of the GNU General Public License version 2.
  */
 
+/* libc includes */
+#include <libc/component.h>
+
 #include "frontend.h"
 #include "callbacks.h"
 
-Libretro::Frontend::Frontend(Genode::Env &env) : env(env)
+Retro_frontend::Frontend::Frontend(Libc::Env &env) : env(env)
 {
 	/* set the global frontend pointer for callbacks */
 	global_frontend = this;
@@ -55,7 +58,6 @@ Libretro::Frontend::Frontend(Genode::Env &env) : env(env)
 
 		shared_object.lookup<Retro_set_audio_sample_batch>
 			("retro_set_audio_sample_batch")(&audio_sample_batch_callback);
-
 	} catch (...) {
 
 		shared_object.lookup<Retro_set_audio_sample>
@@ -143,18 +145,17 @@ Libretro::Frontend::Frontend(Genode::Env &env) : env(env)
 }
 
 
-Genode::size_t Component::stack_size() { return 16*1024*sizeof(Genode::addr_t); }
+/* each core will drive the stack differently, so be generous */
+Genode::size_t Component::stack_size() { return 64*1024*sizeof(Genode::addr_t); }
 
-void Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
 	using namespace Genode;
+	using namespace Retro_frontend;
 
-	Libretro::init_keyboard_map();
+	init_keyboard_map();
 
-	try {
-		static Libretro::Frontend inst(env);
-		return;
-	}
+	try { static Frontend inst(env); }
 
 	catch (Shared_object::Invalid_rom_module) {
 		error("failed to load core"); }
@@ -162,6 +163,8 @@ void Component::construct(Genode::Env &env)
 	catch (Shared_object::Invalid_symbol) {
 		error("failed to load required symbols from core"); }
 
-	catch (...) { error("failed to init core"); }
-	env.parent().exit(-1);
+	catch (...) {
+		error("failed to init core");
+		env.parent().exit(-1);
+	}
 }

@@ -15,7 +15,6 @@
 #define _RETRO_FRONTEND__FRONTEND_H_
 
 /* Genode includes */
-#include <gems/file.h>
 #include <audio_out_session/connection.h>
 #include <input_session/connection.h>
 #include <input/event_queue.h>
@@ -36,20 +35,41 @@
 #include <unistd.h>
 
 /* Local includes */
+#include "audio.h"
 #include "input.h"
 
-namespace Libretro {
-#include <libretro.h>
+namespace Retro_frontend {
+	#include <libretro.h>
 	struct Frontend;
+	struct Framebuffer;
 }
 
 /* Global frontend instance */
-static Libretro::Frontend *global_frontend = (Libretro::Frontend*)(Genode::addr_t)666;
+static Retro_frontend::Frontend *global_frontend = nullptr;
+
+struct Retro_frontend::Framebuffer
+{
+	::Framebuffer::Connection session;
+
+	::Framebuffer::Mode mode;
+
+	Genode::Attached_dataspace ds;
+
+	Framebuffer(Genode::Env &env, ::Framebuffer::Mode mode)
+	: session(env, mode), ds(env.rm(), session.dataspace())
+	{ update_mode(); }
+
+	void update_mode() { mode = session.mode(); }
+};
+
+
+static Genode::Constructible<Retro_frontend::Framebuffer> framebuffer;
+
 
 /**
  * Object to encapsulate Genode services
  */
-struct Libretro::Frontend
+struct Retro_frontend::Frontend
 {
 	typedef void (*Retro_set_environment)(retro_environment_t);
 	typedef void (*Retro_set_video_refresh)(retro_video_refresh_t);
@@ -80,10 +100,11 @@ struct Libretro::Frontend
 	typedef void *(*Retro_get_memory_data)(unsigned id);
 	typedef size_t (*Retro_get_memory_size)(unsigned id);
 
-	Genode::Env  &env;
-	Genode::Heap  heap { env.ram(), env.rm() };
+	Libc::Env  &env;
 
 	Genode::Attached_rom_dataspace config_rom { env, "config" };
+
+	Genode::Heap heap { env.ram(), env.rm() };
 
 	typedef Genode::String<128> Name;
 
@@ -284,42 +305,11 @@ struct Libretro::Frontend
 	Genode::Signal_handler<Frontend> core_runner
 		{ env.ep(), *this, &Frontend::run };
 
-	Timer::Connection timer { env };		
+	Timer::Connection timer { env };
 
-	struct Framebuffer
-	{
-		::Framebuffer::Connection session;
-
-		::Framebuffer::Mode mode;
-
-		Genode::Attached_dataspace ds;
-
-		Framebuffer(Genode::Env &env, ::Framebuffer::Mode mode)
-		: session(env, mode), ds(env.rm(), session.dataspace())
-		{ update_mode(); }
-
-		void update_mode() { mode = session.mode(); }
-	};
-
-	Genode::Constructible<Framebuffer> framebuffer;
-
-	struct Stereo_out
-	{
-		Audio_out::Connection left;
-		Audio_out::Connection right;
-
-		Stereo_out(Genode::Env &env)
-		:
-			left(env,  "left", false, false),
-			right(env, "right", false, false)
-		{ }
-	};
-
-	Genode::Constructible<Stereo_out> stereo_out;
-
-	Genode::Reporter   variable_reporter {   "variables" };
-	Genode::Reporter  subsystem_reporter {  "subsystems" };
-	Genode::Reporter controller_reporter { "controllers" };
+	Genode::Reporter   variable_reporter { env, "variables" };
+	Genode::Reporter  subsystem_reporter { env, "subsystems" };
+	Genode::Reporter controller_reporter { env, "controllers" };
 
 	Controller controller { env };
 
@@ -361,6 +351,10 @@ struct Libretro::Frontend
 				Genode::log("using framebuffer sync as timing source");
 				framebuffer->session.sync_sigh(core_runner);
 			}
+
+			/* start the audio streams */
+			if (stereo_out.constructed())
+				stereo_out->start_stream();
 		}
 	}
 
@@ -384,7 +378,7 @@ struct Libretro::Frontend
 	Genode::Signal_handler<Frontend> resume_handler
 		{ env.ep(), *this, &Frontend::handle_input };
 
-	Frontend(Genode::Env &env);
+	Frontend(Libc::Env &env);
 
 	~Frontend()
 	{
@@ -394,6 +388,8 @@ struct Libretro::Frontend
 
 	void set_av_info(retro_system_av_info &av_info)
 	{
+		using namespace Retro_frontend;
+
 		framebuffer.construct(
 			env, ::Framebuffer::Mode(av_info.geometry.base_width,
 			                         av_info.geometry.base_height,
@@ -401,14 +397,16 @@ struct Libretro::Frontend
 
 		framebuffer->session.mode_sigh(mode_handler);
 
-		/* start audio streams */
 		if (stereo_out.constructed()) {
-			stereo_out->left.start();
-			stereo_out->right.start();
+			double ratio = (double)Audio_out::SAMPLE_RATE / av_info.timing.sample_rate;
+
+			audio_shift_factor = SHIFT_ONE / ratio;
+			audio_input_period = Audio_out::PERIOD * (1.0f / ratio);
 		}
 
 		quarter_fps = av_info.timing.fps / 4;
 		fb_sync_sample_count = 0;
+
 		framebuffer->session.sync_sigh(fb_sync_sampler);
 	}
 
@@ -419,6 +417,9 @@ struct Libretro::Frontend
 			/* unset signal handler for rendering */
 			framebuffer->session.sync_sigh(Genode::Signal_context_capability());
 			timer.sigh(Genode::Signal_context_capability());
+
+			/* stop playpack */
+			stereo_out->stop_stream();
 
 			/* set signal handler for unpausing */
 			controller.input.sigh(resume_handler);

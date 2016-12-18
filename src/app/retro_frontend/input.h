@@ -18,7 +18,7 @@
 #include <input_session/connection.h>
 #include <input/event_queue.h>
 
-namespace Libretro {
+namespace Retro_frontend {
 #include <libretro.h>
 
 	struct Controller;
@@ -27,7 +27,7 @@ namespace Libretro {
 
 }
 
-struct Libretro::Controller
+struct Retro_frontend::Controller
 {
 	enum {
 		RETRO_JOYPAD_MAX = RETRO_DEVICE_ID_JOYPAD_R3+1,
@@ -152,7 +152,7 @@ struct Libretro::Controller
 };
 
 
-namespace Libretro {
+namespace Retro_frontend {
 
 	void init_keyboard_map()
 	{

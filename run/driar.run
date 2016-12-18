@@ -15,6 +15,7 @@ set unzip [check_installed unzip]
 set build_components {
 	core init
 	app/retro_frontend
+	drivers/audio
 	drivers/framebuffer
 	drivers/input
 	drivers/timer
@@ -29,7 +30,8 @@ proc platform_drv_policy {} {
 	return {
 			<policy label_prefix="ps2_drv"> <device name="PS2"/> </policy>
 			<policy label_prefix="usb_drv"> <pci class="USB"/> </policy>
-			<policy label_prefix="fb_drv">  <pci class="VGA"/> </policy>}
+			<policy label_prefix="fb_drv">  <pci class="VGA"/> </policy>
+			<policy label_prefix="audio_drv"> <pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>}
 }
 
 append_platform_drv_build_components
@@ -95,6 +97,10 @@ append_if [have_spec ps2] config {
 	<alias name="input_drv" child="ps2_drv"/>}
 
 append config {
+	<start name="audio_drv">
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="Audio_out"/></provides>
+	</start>
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
@@ -112,10 +118,13 @@ append config {
 		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Input"/> </provides>
 		<config>
-			<map from="KEY_A" to="BTN_A"/>
-			<map from="KEY_S" to="BTN_B"/>
-			<map from="KEY_LEFTCTRL" to="BTN_A"/>
-			<map from="KEY_LEFTALT" to="BTN_B"/>
+			<!-- Retroarch mappings -->
+			<map from="KEY_Z" to="BTN_B"/>
+			<map from="KEY_A" to="BTN_Y"/>
+			<map from="KEY_X" to="BTN_A"/>
+			<map from="KEY_S" to="BTN_X"/>
+			<map from="KEY_Q" to="BTN_TL"/>
+			<map from="KEY_W" to="BTN_TR"/>
 			<map from="KEY_ENTER" to="BTN_START"/>
 			<map from="KEY_RIGHTSHIFT" to="BTN_SELECT"/>
 			<map from="KEY_LEFT" to="BTN_LEFT"/>
@@ -166,6 +175,7 @@ if {![file exist bin/Driar.nes]} {
 # generic modules
 set boot_modules {
 	core init ld.lib.so
+	audio_drv
 	fb_upscale
 	input_remap
 	libc.lib.so
