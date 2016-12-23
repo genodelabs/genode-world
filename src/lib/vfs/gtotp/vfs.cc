@@ -158,6 +158,8 @@ struct Gtotp_file_system_factory : Vfs::File_system_factory
 		static Rtc::Connection rtc(env);
 
 		using namespace Genode;
+		typedef Genode::size_t size_t;
+
 		enum {
 			BASE32_FACTOR   = 256 / 32,
 			MAX_SECRET_BIN_LEN = 20,
