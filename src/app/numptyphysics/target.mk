@@ -54,7 +54,7 @@ vpath getenv.cc $(PRG_DIR)
 
 INC_DIR += $(NUMPTY_DIR) $(NUMPTY_DIR)/Box2D/Include
 
-LIBS += base libc stdcxx
+LIBS += base posix stdcxx
 LIBS += sdl sdl_image sdl_ttf zlib
 
 CC_OPT_Canvas := -DGENODE

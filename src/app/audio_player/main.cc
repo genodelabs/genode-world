@@ -13,7 +13,7 @@
 
 /* Genode includes */
 #include <base/attached_rom_dataspace.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <base/heap.h>
 #include <base/printf.h>
 #include <base/sleep.h>
@@ -852,10 +852,7 @@ void Audio_player::Main::handle_config()
  ** Component **
  ***************/
 
-Genode::size_t Component::stack_size() { return 8 * 1024 * sizeof(long); }
-
-
-void Component::construct(Genode::Env &env)
+void Libc::Component::construct(Genode::Env &env)
 {
 	static Audio_player::Main main(env);
 }

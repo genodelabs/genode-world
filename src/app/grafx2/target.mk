@@ -9,7 +9,7 @@ INC_DIR += $(GRAFX2_DIR)
 
 CC_OPT  += -DGENODE -DNOTTF=1
 
-LIBS    += libc libm libpng sdl sdl_image zlib
+LIBS    += posix libpng sdl sdl_image zlib
 
 $(TARGET): grafx2_data.tar
 grafx2_data.tar:

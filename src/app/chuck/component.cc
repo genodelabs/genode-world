@@ -31,7 +31,7 @@
 #include <audio_out_session/audio_out_session.h>
 #include <timer_session/connection.h>
 #include <base/attached_rom_dataspace.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <base/log.h>
 
 /* ChucK includes */
@@ -395,7 +395,7 @@ Main::Main(Genode::Env &env) : env(env)
 };
 
 
-void Component::construct(Genode::Env &env)
+void Libc::Component::construct(Genode::Env &env)
 {
 	static Main inst(env);
 }

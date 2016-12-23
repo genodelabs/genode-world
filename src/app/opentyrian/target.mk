@@ -7,7 +7,7 @@ SRC_C := $(notdir $(wildcard $(OPENTYRIAN_SRC)/*.c))
 
 vpath %.c $(OPENTYRIAN_SRC)
 
-LIBS += libc libm sdl sdl_net
+LIBS += posix sdl sdl_net
 
 CC_OPT += -std=c99 -DTARGET_UNIX
 

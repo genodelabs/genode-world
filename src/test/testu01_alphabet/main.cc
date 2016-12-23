@@ -1,12 +1,12 @@
 #include <base/attached_rom_dataspace.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <base/log.h>
 
 extern "C" {
 #include "bbattery.h"
 }
 
-void Component::construct(Genode::Env &env)
+void Libc::Component::construct(Genode::Env &env)
 {
 	using namespace Genode;
 

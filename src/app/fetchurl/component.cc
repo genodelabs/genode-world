@@ -15,7 +15,7 @@
 #include <timer_session/connection.h>
 #include <os/path.h>
 #include <base/attached_rom_dataspace.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <base/log.h>
 
 /* cURL includes */
@@ -66,7 +66,7 @@ int progress_callback(void   *clientp,
 	return CURLE_OK;
 }
 
-void Component::construct(Genode::Env &env)
+void Libc::Component::construct(Genode::Env &env)
 {
 	Genode::Attached_rom_dataspace config(env, "config");
 

@@ -21,7 +21,7 @@
 #include <base/attached_rom_dataspace.h>
 #include <base/heap.h>
 #include <root/component.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <util/list.h>
 #include <util/string.h>
 #include <util/endian.h>
@@ -203,6 +203,8 @@ class Tftp_rom::Session_component :
 		 */
 		bool add_block(pbuf *data)
 		{
+			using Genode::size_t;
+
 			uint8_t *buf = (uint8_t*)data->payload;
 
 			/* TFTP packets always start with zero */
@@ -514,7 +516,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 		void _destroy_session(Session_component *session) override
 		{
 			_timeout_dispatcher.remove(session);
-			destroy(md_alloc(), session);
+			Genode::destroy(md_alloc(), session);
 		}
 
 	public:
@@ -529,9 +531,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 };
 
 
-Genode::size_t Component::stack_size() { return 4*1024*sizeof(long); }
-
-void Component::construct(Genode::Env &env )
+void Libc::Component::construct(Genode::Env &env )
 {
 	static Genode::Sliced_heap sliced_heap(env.ram(), env.rm());
 	static Tftp_rom::Root root(env, sliced_heap);

@@ -5,7 +5,7 @@
 TARGET   = zynq_gpio_drv
 
 SRC_CC    = main.cc
-LIBS      = base config libc libm stdcxx
+LIBS      = base config posix stdcxx
 INC_DIR  += $(PRG_DIR)
 REQUIRES += zynq
 

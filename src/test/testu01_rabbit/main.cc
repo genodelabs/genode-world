@@ -1,5 +1,5 @@
 #include <base/attached_rom_dataspace.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <base/log.h>
 
 extern "C" {
@@ -9,9 +9,10 @@ extern "C" {
 }
 
 /* This is a big one */
-Genode::size_t Component::stack_size() { return 64*1024*sizeof(Genode::addr_t); }
+Genode::size_t Libc::Component::stack_size() { return 64*1024*sizeof(Genode::addr_t); }
 
-void Component::construct(Genode::Env &env)
+
+void Libc::Component::construct(Genode::Env &env)
 {
 	using namespace Genode;
 

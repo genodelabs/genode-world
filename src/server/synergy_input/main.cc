@@ -22,7 +22,7 @@
 #include <os/static_root.h>
 #include <os/signal_rpc_dispatcher.h>
 #include <os/config.h>
-#include <os/server.h>
+#include <libc/component.h>
 
 /* Synergy includes */
 #include <uSynergy.h>
@@ -358,7 +358,7 @@ using namespace Genode;
 
 struct Main
 {
-	Server::Entrypoint &ep;
+	Genode::Entrypoint &ep;
 
 	/*
 	 * Input session provided to our client
@@ -378,7 +378,7 @@ struct Main
 	/**
 	 * Constructor
 	 */
-	Main(Server::Entrypoint &ep) : ep(ep)
+	Main(Genode::Entrypoint &ep) : ep(ep)
 	{
 		session_component.event_queue().enabled(true);
 
@@ -389,15 +389,8 @@ struct Main
 };
 
 
-/************
- ** Server **
- ************/
+/***************
+ ** Component **
+ ***************/
 
-namespace Server {
-
-	char const *name() { return "synergy_client_ep"; }
-
-	size_t stack_size() { return 1; }
-
-	void construct(Entrypoint &ep) { static Main inst(ep); }
-}
+void Libc::Component::construct(Genode::Env &env) { static Main inst(env.ep()); }

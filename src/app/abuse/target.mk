@@ -30,7 +30,7 @@ INC_DIR += $(PRG_DIR) \
 	$(ABUSE_SRC)/net \
 	$(ABUSE_SRC)/ui
 
-LIBS += abuse_imlib libc stdcxx sdl sdl_image sdl_mixer sdl_net
+LIBS += abuse_imlib posix stdcxx sdl sdl_image sdl_mixer sdl_net
 
 CC_WARN += \
 	-Wno-unused-but-set-variable \

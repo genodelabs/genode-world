@@ -2,7 +2,7 @@ TARGET  := tuxmath
 
 TUXMATH_DIR := $(call select_from_ports,tuxmath)/src/app/tuxmath
 
-LIBS    += libc libm sdl sdl_image sdl_mixer sdl_ttf sdl_net tuxmath_t4k
+LIBS    += posix sdl sdl_image sdl_mixer sdl_ttf sdl_net tuxmath_t4k
 
 INC_DIR += $(REP_DIR)/src/app/tuxmath \
            $(TUXMATH_DIR)/t4k/src

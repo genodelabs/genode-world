@@ -9,7 +9,7 @@ vpath %.cpp $(SUPERTUX_DIR)/src
 
 INC_DIR += $(SUPERTUX_DIR)/src
 
-LIBS += base libc libm stdcxx
+LIBS += posix stdcxx
 LIBS += sdl sdl_image sdl_mixer zlib
 
 $(TARGET): supertux_data.tar
