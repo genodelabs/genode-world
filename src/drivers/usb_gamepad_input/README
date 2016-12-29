@@ -1,0 +1,187 @@
+This directory contains an minimal USB gamepad driver. It uses the Usb session
+interface to access the USB device and provides Genode's Input service to its
+client. There is no support for any fancy features like rumble support or, if
+available, battery state checking. Furthermore there is currently no way to
+calibrate the analog input sources, which leads to unexpected motion events
+due to input jitter.
+
+
+Usage
+-----
+
+Please take a look at the run script _repos/world/run/usb_gamepad_input.run_.
+
+
+Support gamepads and mappings
+-----------------------------
+
+* iBuffalo SNES replica (0583:2060) fully supported:
+
+  dpad top:    BTN_FORWARD
+  dpad bottom: BTN_BACK
+  dpad left:   BTN_LEFT
+  dpad right:  BTN_RIGHT
+  start:       BTN_START
+  select:      BTN_SELECT
+  A:           BTN_A
+  B:           BTN_B
+  X:           BTN_X
+  Y:           BTN_Y
+  L:           BTN_TL
+  R:           BTN_RL
+
+
+* Logitech Precision Gamepad (046d:c21a) fully supported:
+
+  dpad top:    BTN_FORWARD
+  dpad bottom: BTN_BACK
+  dpad left:   BTN_LEFT
+  dpad right:  BTN_RIGHT
+  start:       BTN_START
+  select:      BTN_SELECT
+  1:           BTN_A
+  2:           BTN_B
+  3:           BTN_X
+  4:           BTN_Y
+  L1:          BTN_TL
+  R1:          BTN_RL
+  L2:          BTN_TL2
+  R2:          BTN_RL2
+
+
+* Microsoft XBox 360 (045e:028e) / One (045e:02d1) partially supported:
+
+  LED support and battery information checking is missing as well as
+  is rumble support.
+
+  analog X  axis: MOTION 0 ax
+  analog Y  axis: MOTION 0 ay
+  analog Z  axis: MOTION 1 ax
+  analog Rz axis: MOTION 1 ay
+  analog L2 axis: MOTION 2 ax
+  analog R2 axis: MOTION 3 ax
+  dpad up:        BTN_FORWARD
+  dpad right:     BTN_RIGHT
+  dpad down:      BTN_BACK
+  dpad left:      BTN_LEFT
+  start:          BTN_START
+  select:         BTN_SELECT
+  guide:          BTN_MODE
+  A:              BTN_A
+  B:              BTN_B
+  X:              BTN_X
+  Y:              BTN_Y
+  L1:             BTN_TL
+  R1:             BTN_RL
+  L3:             BTN_THUMBL
+  R3:             BTN_THUMBR
+
+
+* Retrolink N64 replica (0079:0006) fully supported:
+
+  The dpad is actually a 8-way hat that is mapped to 4-way dpad.
+
+  analog X axis: MOTION ax
+  analog Y axis: MOTION ay
+  dpad up:       BTN_FORWARD
+  dpad right:    BTN_RIGHT
+  dpad down:     BTN_BACK
+  dpad left:     BTN_LEFT
+  start:         BTN_START
+  select:        BTN_SELECT
+  A:             BTN_A
+  B:             BTN_B
+  CUP:           BTN_0are
+  CRIGHT:        BTN_1
+  CDOWN:         BTN_2
+  CLEFT:         BTN_3
+  L:             BTN_TL
+  R:             BTN_RL
+  Z:             BTN_Z
+
+
+* Sony DualShock3 Sixaxis (054c:0268) partially supported:
+
+  Analog support for all buttons as well as sixaxis support and battery
+  information checking and rumble support is missing. The PS button is
+  not usable for now.
+
+  analog X  axis: MOTION 0 ax
+  analog Y  axis: MOTION 0 ay
+  analog Z  axis: MOTION 1 ax
+  analog Rz axis: MOTION 1 ay
+  analog L2 axis: MOTION 2 ax
+  analog R2 axis: MOTION 3 ax
+  R2:             BTN_RL2
+  dpad up:        BTN_FORWARD
+  dpad right:     BTN_RIGHT
+  dpad down:      BTN_BACK
+  dpad left:      BTN_LEFT
+  start:          BTN_START
+  select:         BTN_SELECT
+  X:              BTN_A
+  O:              BTN_B
+  SQUARE:         BTN_X
+  CIRCLE:         BTN_Y
+  L1:             BTN_TL
+  R1:             BTN_RL
+  L2:             BTN_TL2
+  R2:             BTN_RL2
+  L3:             BTN_THUMB
+  R3:             BTN_THUMB2
+
+
+* Sony DualShock4 Sixaxis (054c:05c4) partially supported:
+
+  Gyro/touchpad support, battery information checking and rumble support
+  as well as LED support is missing. The dpad is actually a 8-way hat that
+  is mapped to 4-way dpad.
+
+  analog X  axis: MOTION 0 ax
+  analog Y  axis: MOTION 0 ay
+  analog Z  axis: MOTION 1 ax
+  analog Rz axis: MOTION 1 ay
+  analog L2 axis: MOTION 2 ax
+  analog R2 axis: MOTION 3 ax
+  R2:             BTN_RL2
+  dpad up:        BTN_FORWARD
+  dpad right:     BTN_RIGHT
+  dpad down:      BTN_BACK
+  dpad left:      BTN_LEFT
+  start:          BTN_START
+  select:         BTN_SELECT
+  X:              BTN_A
+  O:              BTN_B
+  SQUARE:         BTN_X
+  CIRCLE:         BTN_Y
+  L1:             BTN_TL
+  R1:             BTN_RL
+  L2:             BTN_TL2
+  R2:             BTN_RL2
+  L3:             BTN_THUMB
+  R3:             BTN_THUMB2
+
+
+Adding support for additional devices
+-------------------------------------
+
+There is a variety of 3rd party devices that are compatible to the
+Microsoft and Sony gamepads. In their case it should be enough to
+add their vendor and product id to the proper driver for them to be
+recognized.
+
+Adding support for other completely different devices is mostly just
+a matter of picking a fitting existing driver as blueprint and implementing
+the 'parse' method. If the device needs a quirk to work, like the DS3,
+it may be hacked in the like it was done for the DS4 and XBone controller.
+
+
+Todo
+----
+
+* add proper configuration handling, e.g. enable_left_analog_stick='yes'
+  and calibration knobs
+* generate device Report, i.e., how many buttons, axis and so on
+* rework quirk mechanism and thereby turn the drivers inside out and make
+  use of a proper state-machine
+* support for fancy features
