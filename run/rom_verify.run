@@ -1,0 +1,85 @@
+if {![have_spec linux]} {
+	puts "ROM padding requires that this script run on linux!"
+	exit 1
+}
+
+# Build program images
+build {
+	core init
+	proxy/rom_verify
+	test/log
+}
+
+create_boot_directory
+
+set sha256sum     [check_installed sha256sum]
+
+
+set rom_file bin/test-log
+set test_digest [exec $sha256sum $rom_file]
+
+append config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service><parent/><any-child/></any-service>
+	</default-route>
+	<start name="rom_verify">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config>}
+append config "<policy label=\"init -> test-log\" sha256=\"$test_digest\"/>"
+append config {
+		</config>
+	</start>
+	<start name="init" verbose="yes">
+		<resource name="RAM" quantum="2M"/>
+		<route>
+			<service name="ROM" label_suffix="test-log">
+				<child name="rom_verify"/> </service>
+			<any-service>
+				<parent/>
+			</any-service>
+		</route>
+		<config>
+			<parent-provides>
+				<service name="CPU"/>
+				<service name="LOG"/>
+				<service name="PD"/>
+				<service name="RAM"/>
+				<service name="RM"/>
+				<service name="ROM"/>
+			</parent-provides>
+			<start name="test-log">
+				<resource name="RAM" quantum="1M"/>
+				<route> <any-service> <parent/> </any-service> </route>
+			</start>
+		</config>
+	</start>
+</config>
+}
+
+install_config $config
+
+build_boot_image {
+	core init ld.lib.so
+	libc.lib.so
+	libm.lib.so
+	rom_verify
+	stdcxx.lib.so
+	test-log
+}
+
+append qemu_args " -nographic"
+
+run_genode_until {Test done.} 20
