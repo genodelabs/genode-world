@@ -16,17 +16,20 @@
 
 #include "frontend.h"
 
-/**
-  * Doesn't work
+/* vsnprintf */
+#include <stdio.h>
+
 
 static
-void log_callback(enum retro_log_level level, const char *fmt, ...)
+void log_printf_callback(Retro_frontend::retro_log_level level, const char *fmt, ...)
 {
+	using namespace Retro_frontend;
+
 	char buf[Genode::Log_session::MAX_STRING_LEN];
 
 	va_list vp;
 	va_start(vp, fmt);
-	Genode::snprintf(buf, sizeof(buf), fmt, vp);
+	::vsnprintf(buf, sizeof(buf), fmt, vp);
 	va_end(vp);
 
 	char const *msg = buf;
@@ -39,7 +42,6 @@ void log_callback(enum retro_log_level level, const char *fmt, ...)
 	case RETRO_LOG_DUMMY: Genode::log("Dummy: ", msg); return;
 	}
 }
-*/
 
 
 static
@@ -101,13 +103,26 @@ bool environment_callback(unsigned cmd, void *data)
 
 	case RETRO_ENVIRONMENT_GET_VARIABLE:
 	{
-		/********************************************
-		 ** TODO: Retrieve variables set by parent **
-		 ********************************************/
+		retro_variable *out = (retro_variable*)data;
+		Genode::warning("RETRO_ENVIRONMENT_GET_VARIABLE ", out->key);
 
-		const retro_variable *var = (retro_variable*)data;
-		Genode::warning("RETRO_ENVIRONMENT_GET_VARIABLE ", var->key);
-		return false;
+		out->value = NULL;
+
+		static char var_buf[256];
+
+		typedef Genode::String<32> String;
+		auto const f = [&] (Genode::Xml_node const &in) {
+			if (in.attribute_value("key", String()) == out->key &&
+			    in.has_attribute("value"))
+			{
+				in.attribute("value").value(var_buf, sizeof(var_buf));
+				out->value = var_buf;
+			}
+		};
+
+		global_frontend->variables().for_each_sub_node("variable", f);
+
+		return out->value != NULL;
 	}
 
 	case RETRO_ENVIRONMENT_SET_VARIABLES:
@@ -144,14 +159,12 @@ bool environment_callback(unsigned cmd, void *data)
 	//	global_frontend->core.supports_null_load = data;
 	//	return true;
 
-	/*
 	case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
 	{
-		retro_log_callback *cb = ( retro_log_callback*)data;
-		cb->log = log_callback;
+		retro_log_callback *cb = (retro_log_callback*)data;
+		cb->log = log_printf_callback;
 		return true;
 	}
-	*/
 
 	case RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO:
 	{
@@ -255,11 +268,15 @@ void video_refresh_callback(const void *data,
                             unsigned src_width, unsigned src_height,
                             size_t src_pitch)
 {
+	if (!framebuffer.constructed())
+		return; /* tyrquake does this during 'retro_load_game' */
+
 	using namespace Retro_frontend;
 	using namespace Genode;
 
-	if (data == NULL) /* frame duping? */
+	if (data == NULL) /* frame duping? */ {
 		return;
+	}
 
 	uint8_t const *src = (uint8_t const*)data;
 	uint8_t *dst = framebuffer->ds.local_addr<uint8_t>();
@@ -289,10 +306,7 @@ static
 int16_t input_state_callback(unsigned port,  unsigned device,
                              unsigned index, unsigned id)
 {
-	using namespace Retro_frontend;
-
-	Controller *controller = &global_frontend->controller;
-	return controller ? controller->event(device, index, id) : 0;
+	return global_frontend->controller.event(device, index, id);
 }
 
 #endif

@@ -104,6 +104,8 @@ struct Retro_frontend::Frontend
 
 	Genode::Attached_rom_dataspace config_rom { env, "config" };
 
+	Genode::Constructible<Genode::Attached_rom_dataspace> var_rom;
+
 	Genode::Heap heap { env.ram(), env.rm() };
 
 	typedef Genode::String<128> Name;
@@ -426,6 +428,17 @@ struct Retro_frontend::Frontend
 
 			/* a good time to flush memory to the FS */
 			save_memory();
+		}
+	}
+
+	Genode::Xml_node variables()
+	{
+		try {
+			if (!var_rom.constructed())
+				var_rom.construct(env, "variables");
+			return var_rom->xml();
+		} catch (...) {
+			return Genode::Xml_node("<variables/>");
 		}
 	}
 

@@ -22,7 +22,6 @@ Retro_frontend::Frontend::Frontend(Libc::Env &env) : env(env)
 	/* set the global frontend pointer for callbacks */
 	global_frontend = this;
 
-
 	/****************
 	 ** Initialize **
 	 ****************/
@@ -38,7 +37,7 @@ Retro_frontend::Frontend::Frontend(Libc::Env &env) : env(env)
 				                  sys_info.valid_extensions : "");
 
 	shared_object.lookup<Retro_set_environment>
-		("retro_set_environment")(&environment_callback);
+		("retro_set_environment")(environment_callback);
 
 	shared_object.lookup<Retro_init>("retro_init")();
 
@@ -54,24 +53,24 @@ Retro_frontend::Frontend::Frontend(Libc::Env &env) : env(env)
 		stereo_out.construct(env);
 
 		shared_object.lookup<Retro_set_audio_sample>
-			("retro_set_audio_sample")(&audio_sample_callback);
+			("retro_set_audio_sample")(audio_sample_callback);
 
 		shared_object.lookup<Retro_set_audio_sample_batch>
-			("retro_set_audio_sample_batch")(&audio_sample_batch_callback);
+			("retro_set_audio_sample_batch")(audio_sample_batch_callback);
 	} catch (...) {
 
 		shared_object.lookup<Retro_set_audio_sample>
-			("retro_set_audio_sample")(&audio_sample_noop);
+			("retro_set_audio_sample")(audio_sample_noop);
 
 		shared_object.lookup<Retro_set_audio_sample_batch>
-			("retro_set_audio_sample_batch")(&audio_sample_batch_noop);
+			("retro_set_audio_sample_batch")(audio_sample_batch_noop);
 	}
 
 	shared_object.lookup<Retro_set_input_poll>
-		("retro_set_input_poll")(&input_poll_callback);
+		("retro_set_input_poll")(input_poll_callback);
 
 	shared_object.lookup<Retro_set_input_state>
-		("retro_set_input_state")(&input_state_callback);
+		("retro_set_input_state")(input_state_callback);
 
 
 	/********************
