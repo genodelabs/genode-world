@@ -1,0 +1,222 @@
+# setting environment variable FORCE_QEMU permits running netperf in qemu
+set force_qemu [info exists ::env(FORCE_QEMU)]
+
+if {[expr [have_include "power_on/qemu"] && !$force_qemu]} {
+	puts "\Game emulation inside Qemu is not recommended.\n"
+	exit
+}
+
+set build_components {
+	core init
+	app/retro_frontend
+	drivers/audio
+	drivers/framebuffer
+	drivers/input
+	drivers/timer
+	libretro/tyrquake
+	server/fb_upscale
+	server/input_remap
+	server/report_rom
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+# override default platform driver policy
+proc platform_drv_policy {} {
+	return {
+			<policy label_prefix="ps2_drv"> <device name="PS2"/> </policy>
+			<policy label_prefix="usb_drv"> <pci class="USB"/> </policy>
+			<policy label_prefix="fb_drv">  <pci class="VGA"/> </policy>
+			<policy label_prefix="audio_drv"> <pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>}
+}
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+append config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>}
+
+append_if [have_spec sdl] config {
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+	</start>
+	<alias name="input_drv" child="fb_sdl"/>
+	<alias name="fb_drv" child="fb_sdl"/>}
+
+append_platform_drv_config
+
+append_if [have_spec vesa] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Framebuffer"/></provides>
+		<config buffered="yes"> </config>
+		<config width="640" height="480"/>
+	</start>}
+
+append_if [have_spec pl11x] config {
+	<start name="fb_drv">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Framebuffer"/></provides>
+	</start>}
+
+append_if [have_spec ps2] config {
+	<start name="ps2_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Input"/></provides>
+	</start>
+	<alias name="input_drv" child="ps2_drv"/>}
+
+append config {
+	<start name="audio_drv">
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Audio_out"/> </provides>
+	</start>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="fb_upscale">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Framebuffer"/> </provides>
+		<route>
+			<service name="Framebuffer">
+				<child name="fb_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+	<start name="input_remap">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Input"/> </provides>
+		<config>
+			<!-- Retroarch mappings -->
+			<map from="KEY_Z" to="BTN_B"/>
+			<map from="KEY_A" to="BTN_Y"/>
+			<map from="KEY_X" to="BTN_A"/>
+			<map from="KEY_S" to="BTN_X"/>
+			<map from="KEY_Q" to="BTN_TL"/>
+			<map from="KEY_W" to="BTN_TR"/>
+			<map from="KEY_ENTER" to="BTN_START"/>
+			<map from="KEY_RIGHTSHIFT" to="BTN_SELECT"/>
+			<map from="KEY_LEFT" to="BTN_LEFT"/>
+			<map from="KEY_RIGHT" to="BTN_RIGHT"/>
+			<map from="KEY_UP" to="BTN_FORWARD"/>
+			<map from="KEY_DOWN" to="BTN_BACK"/>
+		</config>
+		<route>
+			<service name="Input">
+				<child name="input_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+	<start name="report_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Report"/> </provides>
+		<config verbose="yes"/>
+	</start>
+	<start name="retro_frontend">
+		<resource name="RAM" quantum="64M"/>
+		<config core="tyrquake_libretro.lib.so">
+			<libc stdout="/dev/log" stderr="/dev/log">
+				<vfs>
+					<tar name="quake.tar"/>
+					<dir name="dev"> <log/> </dir>
+					<dir name="id1"> <tar name="quake.tar"/> </dir>
+					<ram/>
+				</vfs>
+			</libc>
+		</config>
+		<route>
+			<service name="Framebuffer">
+				<child name="fb_upscale"/> </service>
+			<service name="Input">
+				<child name="input_remap"/> </service>
+			<service name="Report">
+				<child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Core variables ROM
+#
+set variables_fd [open "bin/variables" w]
+puts $variables_fd {
+<variables>
+	<variable key="tyrquake_colored_lighting" value="disabled"/>
+	<variable key="tyrquake_resolution" value="640x400"/>
+	<variable key="tyrquake_retropad_layout" value="1: New layout"/>
+</variables>
+}
+close $variables_fd
+
+
+if {![file exists bin/quake.tar]} {
+	puts ""
+	puts "Content archive not present, please place a tarball containing the"
+	puts "files 'pak0.pak' and 'config.cfg' at 'bin/quake.tar'."
+	puts ""
+	puts "These can be found in the shareware version of Quake available at:"
+	puts "    https://archive.org/details/quakeshareware"
+	puts ""
+	exit 1
+}
+
+# generic modules
+set boot_modules {
+	core init ld.lib.so
+	audio_drv
+	fb_upscale
+	input_remap
+	libc.lib.so
+	libm.lib.so
+	report_rom
+	retro_frontend
+	stdcxx.lib.so
+	timer
+	tyrquake_libretro.lib.so
+	quake.tar
+	variables
+}
+
+# platform-specific modules
+lappend_if [have_spec linux] boot_modules fb_sdl
+lappend_if [have_spec vesa]  boot_modules fb_drv
+lappend_if [have_spec ps2]   boot_modules ps2_drv
+lappend_if [have_spec pl11x] boot_modules fb_drv
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -m 256 -soundhw es1370 "
+
+run_genode_until forever
+
+rm bin/variables

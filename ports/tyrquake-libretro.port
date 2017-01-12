@@ -1,0 +1,11 @@
+LICENSE   := Unknown
+VERSION   := dev
+DOWNLOADS := tyrquake-libretro.archive
+
+OWNER := libretro
+REPO := tyrquake
+REV := 7f3c540a320b706031021bb187bb03bb4c326f88
+URL(tyrquake-libretro) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(tyrquake-libretro) := 4ef1899ac6a66b476541064319df6d40c148fba2
+
+DIR(tyrquake-libretro) := src/lib/tyrquake-libretro
