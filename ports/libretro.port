@@ -1,0 +1,9 @@
+LICENSE   := MIT
+VERSION   := 1.3.6
+DOWNLOADS := libretro.file
+
+URL(libretro) := https://raw.githubusercontent.com/libretro/RetroArch/v1.3.6/libretro-common/include/libretro.h
+SHA(libretro) := 452485de627b9791b243a628c1ec3f6b8a90d2c0
+
+DIRS := include
+DIR_CONTENT(include) := libretro.h
