@@ -97,6 +97,34 @@ bool environment_callback(unsigned cmd, void *data)
 		}
 	}
 
+	case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
+	{
+		try {
+			global_frontend->input_reporter.enabled(true);
+		} catch (...) {
+			Genode::error("input descriptors not reported");
+			return false;
+		}
+
+		/* TODO: translate device, index, and id to a string descriptor */
+
+		Genode::Reporter::Xml_generator gen(global_frontend->input_reporter, [&] () {
+			for (const struct retro_input_descriptor *desc = (retro_input_descriptor*)data;
+			     (desc && (desc->description != NULL)); ++desc)
+				{
+					gen.node("descriptor", [&] () {
+						gen.attribute("port",        desc->port);
+						gen.attribute("device",      desc->device);
+						gen.attribute("index",       desc->index);
+						gen.attribute("id",          desc->id);
+						gen.attribute("description", desc->description);
+					});
+				}
+		});
+
+		return true;
+	}
+
 	case RETRO_ENVIRONMENT_SHUTDOWN:
 		global_frontend->env.parent().exit(0);
 		return true;
@@ -158,6 +186,10 @@ bool environment_callback(unsigned cmd, void *data)
 	//case RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME:
 	//	global_frontend->core.supports_null_load = data;
 	//	return true;
+
+	case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
+		Genode::warning("Genode rumble interface not implemented");
+		return false;
 
 	case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
 	{

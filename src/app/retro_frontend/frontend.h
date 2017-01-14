@@ -309,6 +309,7 @@ struct Retro_frontend::Frontend
 
 	Timer::Connection timer { env };
 
+	Genode::Reporter      input_reporter { env, "input" };
 	Genode::Reporter   variable_reporter { env, "variables" };
 	Genode::Reporter  subsystem_reporter { env, "subsystems" };
 	Genode::Reporter controller_reporter { env, "controllers" };
