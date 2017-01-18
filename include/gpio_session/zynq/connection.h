@@ -21,7 +21,7 @@ namespace Gpio {
 
 	struct Connection : Genode::Connection<Session>, Session_client
 	{
-        Connection(unsigned gpio_number)
+        Connection(unsigned gpio_number) __attribute__((deprecated))
         : Genode::Connection<Session>(session("ram_quota=8K, gpio=%zd", gpio_number)),
 		  Session_client(cap()) { }
 	};
