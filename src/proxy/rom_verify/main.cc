@@ -22,7 +22,7 @@
 #include <base/heap.h>
 #include <base/service.h>
 #include <base/session_label.h>
-#include <base/component.h>
+#include <libc/component.h>
 #include <base/log.h>
 
 static char const alph[0x10] = {
@@ -210,7 +210,7 @@ void Rom_hash::Main::handle_session_request(Xml_node request)
 
 	if (request.has_type("upgrade")) {
 		server_id_space.apply<Session>(server_id, [&] (Session &session) {
-			size_t ram_quota = request.attribute_value("ram_quota", 0UL);
+		 Genode::size_t ram_quota = request.attribute_value("ram_quota", 0UL);
 
 			char buf[64];
 			Genode::snprintf(buf, sizeof(buf), "ram_quota=%ld", ram_quota);
@@ -235,7 +235,7 @@ void Rom_hash::Main::handle_session_request(Xml_node request)
  ** Component **
  ***************/
 
-void Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
 	static Rom_hash::Main inst(env);
 	env.parent().announce("ROM");
