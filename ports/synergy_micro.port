@@ -1,9 +1,9 @@
 LICENSE   := GPLv2
-VERSION   := 1.7.6
+VERSION   := 1.8.6
 DOWNLOADS := synergy_micro.archive
  
 URL(synergy_micro) := https://github.com/symless/synergy/archive/v$(VERSION)-stable.tar.gz
-SHA(synergy_micro) := 01936476040b85c08d1077c4dd9614303c78f69b
+SHA(synergy_micro) := a07bf95d0c3bf8a2be4044a7557fb13792ff1867
 DIR(synergy_micro) := src/lib/synergy_micro
 
 TAR_OPT(synergy_micro) := --strip-components 3 synergy-$(VERSION)-stable/src/micro

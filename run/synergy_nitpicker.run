@@ -2,7 +2,7 @@
 # Instantiate two Synergy clients
 #
 
-source ${genode_dir}/repos/emery/run/synergy.inc
+source ${genode_dir}/repos/world/run/synergy.inc
 source ${genode_dir}/repos/base/run/platform_drv.inc
 
 #

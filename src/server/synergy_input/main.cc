@@ -20,8 +20,7 @@
 #include <nitpicker_session/connection.h>
 #include <timer_session/connection.h>
 #include <os/static_root.h>
-#include <os/signal_rpc_dispatcher.h>
-#include <os/config.h>
+#include <base/attached_rom_dataspace.h>
 #include <libc/component.h>
 
 /* Synergy includes */
@@ -40,11 +39,10 @@ extern "C" {
 
 using namespace Genode;
 
-Timer::Session *timer()
-{
-	static Timer::Connection _timer;
-	return &_timer;
-}
+
+Constructible<Attached_rom_dataspace> config;
+Constructible<Timer::Connection>      timer;
+
 
 struct Session_component : Input::Session_component
 {
@@ -55,8 +53,8 @@ struct Session_component : Input::Session_component
 	uSynergyBool                         button_right;
 	uSynergyBool                         button_middle;
 
-	Session_component()
-	: socket_fd(-1) { }
+	Session_component(Genode::Env &env)
+	: Input::Session_component(env, env.ram()), socket_fd(-1) { }
 
 	~Session_component()
 	{
@@ -90,7 +88,7 @@ static uSynergyBool connect(uSynergyCookie cookie)
 	char addr[INET_ADDRSTRLEN];
 	unsigned long port = 24800;
 
-	Xml_node config_node = config()->xml_node();
+	Xml_node config_node = config->xml();
 
 	try {
 		config_node.attribute("addr").value(addr, sizeof(addr));
@@ -146,9 +144,9 @@ uSynergyBool receive(uSynergyCookie cookie, uint8_t *buffer, int maxLength, int*
 	return USYNERGY_TRUE;
 }
 
-void sleep(uSynergyCookie, int timeMs) { timer()->msleep(timeMs); }
+void sleep(uSynergyCookie, int timeMs) { timer->msleep(timeMs); }
 
-uint32_t get_time() { return timer()->elapsed_ms(); }
+uint32_t get_time() { return timer->elapsed_ms(); }
 
 void trace_callback(uSynergyCookie cookie, const char *text) { Genode::log(text); }
 
@@ -233,17 +231,18 @@ struct Synergy_thread : Thread
 
 	enum {
 		MAX_NAME_LEN = 256,
-		WEIGHT       = Cpu_session::Weight::DEFAULT_WEIGHT,
 		STACK_SIZE   = 1024*sizeof(long)
 	};
+
+	Genode::Env &env;
 
 	char            screen_name[MAX_NAME_LEN];
 	uSynergyContext context;
 	Signal_receiver config_rec;
 	Signal_context  config_ctx;
 
-	Synergy_thread(Session_component &session)
-	: Thread(WEIGHT, "synergy_ep", STACK_SIZE)
+	Synergy_thread(Genode::Env &env, Session_component &session)
+	: Thread(env, "uSynergy", STACK_SIZE), env(env)
 	{
 		*screen_name = 0;
 		uSynergyInit(&context);
@@ -261,7 +260,7 @@ struct Synergy_thread : Thread
 		context.m_mouseCallback        = &mouse_callback;         /* Callback for mouse events */
 		context.m_keyboardCallback     = &keyboard_callback;      /* Callback for keyboard events */
 
-		config()->sigh(config_rec.manage(&config_ctx));
+		config->sigh(config_rec.manage(&config_ctx));
 	}
 
 	~Synergy_thread()
@@ -278,7 +277,7 @@ struct Synergy_thread : Thread
 		 * TODO: detect changes to network config
 		 * and trigger a reconnect if appropriate.
 		 */
-		Xml_node config_node = config()->xml_node();
+		Xml_node config_node = config->xml();
 
 		try {
 			config_node.attribute("addr");;
@@ -299,8 +298,9 @@ struct Synergy_thread : Thread
 		 * then make a simple resolution client that wraps that.
 		 */
 
+		Genode::log("probing Nitpicker service");
 		try {
-			Framebuffer::Connection conn;
+			Nitpicker::Connection conn { env, "dimension" };
 			Framebuffer::Mode mode = conn.mode();
 
 			context.m_clientWidth  = mode.width();
@@ -308,8 +308,9 @@ struct Synergy_thread : Thread
 			return true;
 		} catch (...) { }
 
+		Genode::log("probing Framebuffer service");
 		try {
-			Nitpicker::Connection conn;
+			Framebuffer::Connection conn { env, Framebuffer::Mode() };
 			Framebuffer::Mode mode = conn.mode();
 
 			context.m_clientWidth  = mode.width();
@@ -322,6 +323,7 @@ struct Synergy_thread : Thread
 		 *
 		 * XXX: drop pointer events without a screen?
 		 */
+		Genode::log("using a virtual screen area");
 		context.m_clientWidth  = context.m_clientHeight = 64;
 		return true;
 	}
@@ -335,7 +337,7 @@ struct Synergy_thread : Thread
 	{
 		while (!update_config()) {
 			config_rec.wait_for_signal();
-			config()->reload();
+			config->update();
 		}
 
 		for (;;) {
@@ -343,7 +345,7 @@ struct Synergy_thread : Thread
 			if (config_rec.pending()) {
 				while (!update_config())
 				config_rec.wait_for_signal();
-				config()->reload();
+				config->update();
 			}
 		}
 	}
@@ -358,31 +360,31 @@ using namespace Genode;
 
 struct Main
 {
-	Genode::Entrypoint &ep;
+	Genode::Env &env;
 
 	/*
 	 * Input session provided to our client
 	 */
-	Session_component session_component;
+	Session_component session_component { env };
 
 	/*
 	 * Attach root interface to the entry point
 	 */
-	Static_root<Input::Session> input_root { ep.manage(session_component) };
+	Static_root<Input::Session> input_root { env.ep().manage(session_component) };
 
 	/*
 	 * Additional thread for processing incoming events.
 	 */
- 	Synergy_thread synergy_thread { session_component };
+ 	Synergy_thread synergy_thread { env, session_component };
 
 	/**
 	 * Constructor
 	 */
-	Main(Genode::Entrypoint &ep) : ep(ep)
+	Main(Genode::Env &env) : env(env)
 	{
 		session_component.event_queue().enabled(true);
 
-		Genode::env()->parent()->announce(ep.manage(input_root));
+		env.parent().announce(env.ep().manage(input_root));
 
 		synergy_thread.start();		
 	}
@@ -393,4 +395,9 @@ struct Main
  ** Component **
  ***************/
 
-void Libc::Component::construct(Genode::Env &env) { static Main inst(env.ep()); }
+void Libc::Component::construct(Libc::Env &env)
+{
+	config.construct(env, "config");
+	timer.construct(env, "uSynergy");
+	static Main inst(env);
+}

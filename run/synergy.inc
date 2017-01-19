@@ -3,6 +3,11 @@ if ![have_installed synergys] {
 	exit -1
 }
 
+if {[have_spec linux]} {
+	puts "\Synergy scenarios not supported on Linux.\n"
+	exit
+}
+
 proc append_synergy_build_components { } {
 	global build_components
 	append build_components { drivers/nic server/synergy_input }
