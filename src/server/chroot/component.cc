@@ -125,6 +125,9 @@ struct Chroot::Main
 	{
 		config_rom.sigh(config_sig_rec.manage(&config_sig_ctx));
 		session_requests.sigh(session_request_handler);
+
+		/* handle requests that have queued before or during construction */
+		handle_session_requests();
 	}
 
 	~Main() {
@@ -190,6 +193,10 @@ struct Chroot::Main
 		char new_args[ARGS_MAX_LEN];
 
 		strncpy(new_args, args.string(), ARGS_MAX_LEN);
+
+		/* sacrifice the label to make space for the root argument */
+		Arg_string::remove_arg(new_args, "label");
+
 		Arg_string::set_arg_string(new_args, ARGS_MAX_LEN, "root", new_root);
 
 		Affinity affinity;

@@ -111,6 +111,9 @@ struct Rom_fallback::Main
 
 		config_rom.sigh(config_sig_rec.manage(&config_sig_ctx));
 		session_requests.sigh(session_request_handler);
+
+		/* handle requests that have queued before or during construction */
+		handle_session_requests();
 	}
 
 	~Main() {

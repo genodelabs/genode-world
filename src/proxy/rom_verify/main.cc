@@ -170,6 +170,9 @@ struct Rom_hash::Main
 	{
 		config_rom.sigh(config_handler);
 		session_requests.sigh(session_request_handler);
+
+		/* handle requests that have queued before or during construction */
+		handle_session_requests();
 	}
 };
 
