@@ -1,0 +1,19 @@
+LICENSE   := CUSTOM
+DOWNLOADS := libpqxx.archive
+VERSION   := 4.0
+
+URL(libpqxx) := http://pqxx.org/download/software/libpqxx/libpqxx-$(VERSION).tar.gz
+SHA(libpqxx) := 09e6301e610e7acddbec85f4803886fd6822b2e6
+DIR(libpqxx) := src/lib/libpqxx
+
+DIRS := include/pqxx
+DIR_CONTENT(include/pqxx) := $(REP_DIR)/include/pqxx/*.h
+
+
+SRC_FOLDERS := `pwd`$(call select_from_ports,libpqxx)/src/lib/libpqxx/src
+
+rename_files = cd $(SRC_FOLDERS); rename -v -f "s/\.cxx/\.cpp/" *.cxx
+
+default: $(DOWNLOADS)
+	@$(MSG_GENERATE) Fixing source file extensions
+	$(VERBOSE)$(call rename_files)
