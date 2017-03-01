@@ -1,5 +1,5 @@
 TARGET = test-scip
-LIBS   = posix scip stdcxx config_args
+LIBS   = posix scip stdcxx 
 SCIP_DIR = $(call select_from_ports,scip)/src/lib/scip/
 EX_DIR   = $(SCIP_DIR)/examples/Queens/src
 INC_DIR  += $(EX_DIR)

@@ -25,9 +25,8 @@ install_config {
 		<config>
 			<arg value="queens"/>
 			<arg value="5"/>
-			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log">
-				<vfs> <dir name="dev"> <log/> <null/> </dir>	</vfs>
-			</libc>
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" />
+			<vfs> <dir name="dev"> <log/> <null/> </dir>	</vfs>
 		</config>
 	</start>
 </config>
