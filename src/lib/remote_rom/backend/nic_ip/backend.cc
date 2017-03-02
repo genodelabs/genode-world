@@ -7,6 +7,7 @@
 #include <base/env.h>
 #include <base/exception.h>
 #include <base/log.h>
+#include <base/attached_rom_dataspace.h>
 
 #include <backend_base.h>
 
@@ -15,8 +16,6 @@
 
 #include <net/ethernet.h>
 #include <net/ipv4.h>
-
-#include <os/config.h>
 
 namespace Remote_rom {
 	bool verbose = false;
@@ -305,9 +304,9 @@ class Remote_rom::Backend_base
 		}
 
 	public:
-		explicit Backend_base(Genode::Allocator &alloc, HANDLER &handler)
+		explicit Backend_base(Genode::Env &env, Genode::Allocator &alloc, HANDLER &handler)
 		:
-			_tx_block_alloc(&alloc), _nic(&_tx_block_alloc, BUF_SIZE, BUF_SIZE),
+			_tx_block_alloc(&alloc), _nic(env, &_tx_block_alloc, BUF_SIZE, BUF_SIZE),
 			_rx_thread(_nic, handler, _accept_ip)
 		{
 			/* start dispatcher thread */
@@ -316,9 +315,11 @@ class Remote_rom::Backend_base
 			/* store mac address */
 			_mac_address = _nic.mac_address();
 
+			Genode::Attached_rom_dataspace config = {env, "config"};
+
 			try {
 				char ip_string[15];
-				Genode::Xml_node remoterom = Genode::config()->xml_node().sub_node("remote_rom");
+				Genode::Xml_node remoterom = config.xml().sub_node("remote_rom");
 				remoterom.attribute("src").value(ip_string, sizeof(ip_string));
 				_src_ip = Ipv4_packet::ip_from_string(ip_string);
 
@@ -358,11 +359,7 @@ class Remote_rom::Backend_base
 class Remote_rom::Backend_server : public Backend_server_base, public Backend_base<Backend_server>
 {
 	private:
-		static Backend_server_base* _instance;
 		Rom_forwarder_base         *_forwarder;
-
-		Backend_server(Genode::Allocator &alloc) : Backend_base(alloc, *this), _forwarder(nullptr)
-		{	}
 
 		void send_data()
 		{
@@ -390,17 +387,8 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 		}
 
 	public:
-		static Backend_server_base &instance()
-		{
-			if (!_instance) {
-				_instance = new (env()->heap()) Backend_server(*env()->heap());
-
-				if (!_instance)
-					throw Exception();
-			}
-
-			return *_instance;
-		}
+		Backend_server(Genode::Env &env, Genode::Allocator &alloc) : Backend_base(env, alloc, *this), _forwarder(nullptr)
+		{	}
 
 		void register_forwarder(Rom_forwarder_base *forwarder)
 		{
@@ -451,14 +439,10 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 class Remote_rom::Backend_client : public Backend_client_base, public Backend_base<Backend_client>
 {
 	private:
-		static Backend_client_base *_instance;
 		Rom_receiver_base          *_receiver;
 		char                       *_write_ptr;
 		size_t                     _buf_size;
 
-		Backend_client(Genode::Allocator &alloc) : Backend_base(alloc, *this), _receiver(nullptr), _write_ptr(nullptr), _buf_size(0)
-		{
-		}
 
 		void write(char *data, size_t offset, size_t size)
 		{
@@ -472,16 +456,8 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 		}
 
 	public:
-		static Backend_client_base &instance()
+		Backend_client(Genode::Env &env, Genode::Allocator &alloc) : Backend_base(env, alloc, *this), _receiver(nullptr), _write_ptr(nullptr), _buf_size(0)
 		{
-			if (!_instance) {
-				_instance = new (env()->heap()) Backend_client(*env()->heap());
-
-				if (!_instance)
-					throw Exception();
-			}
-
-			return *_instance;
 		}
 
 		void register_receiver(Rom_receiver_base *receiver)
@@ -564,15 +540,14 @@ class Remote_rom::Backend_client : public Backend_client_base, public Backend_ba
 		}
 };
 
-Remote_rom::Backend_server_base *Remote_rom::Backend_server::_instance = nullptr;
-Remote_rom::Backend_client_base *Remote_rom::Backend_client::_instance = nullptr;
-
-Remote_rom::Backend_server_base &Remote_rom::backend_init_server()
+Remote_rom::Backend_server_base &Remote_rom::backend_init_server(Genode::Env &env, Genode::Allocator &alloc)
 {
-	return Backend_server::instance();
+	static Backend_server backend(env, alloc);
+	return backend;
 }
 
-Remote_rom::Backend_client_base &Remote_rom::backend_init_client()
+Remote_rom::Backend_client_base &Remote_rom::backend_init_client(Genode::Env &env, Genode::Allocator &alloc)
 {
-	return Backend_client::instance();
+	static Backend_client backend(env, alloc);
+	return backend;
 }

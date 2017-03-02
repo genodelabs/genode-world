@@ -22,8 +22,8 @@ namespace Remote_rom {
 	struct Backend_client_base;
 
 	class Exception : public ::Genode::Exception { };
-	Backend_server_base &backend_init_server();
-	Backend_client_base &backend_init_client();
+	Backend_server_base &backend_init_server(Genode::Env &env, Genode::Allocator &alloc);
+	Backend_client_base &backend_init_client(Genode::Env &env, Genode::Allocator &alloc);
 };
 
 struct Remote_rom::Backend_server_base

@@ -26,11 +26,11 @@
 #include <base/rpc_server.h>
 #include <root/component.h>
 
-#include <os/attached_ram_dataspace.h>
+#include <base/attached_ram_dataspace.h>
+#include <base/attached_rom_dataspace.h>
 #include <rom_session/rom_session.h>
 
 #include <base/component.h>
-#include <os/config.h>
 
 #include <backend_base.h>
 
@@ -43,8 +43,6 @@ namespace Remote_rom {
 	class  Root;
 	struct Main;
 	struct Read_buffer;
-
-	static char remotename[255];
 
 	typedef Genode::List<Session_component> Session_list;
 };
@@ -104,7 +102,7 @@ class Remote_rom::Session_component : public Genode::Rpc_object<Genode::Rom_sess
 			if (!_ram_ds.is_constructed()
 			 || _buffer.content_size() > _ram_ds->size()) {
 
-				_ram_ds.construct(&_env.ram(), _buffer.content_size());
+				_ram_ds.construct(_env.ram(), _env.rm(), _buffer.content_size());
 			}
 
 			char             *dst = _ram_ds->local_addr<char>();
@@ -170,16 +168,25 @@ struct Remote_rom::Main : public Remote_rom::Read_buffer, public Remote_rom::Rom
 	Genode::Constructible<Genode::Attached_ram_dataspace> _ds;
 	size_t                                                _ds_content_size;
 
+	Genode::Attached_rom_dataspace _config = { env, "config" };
+
 	Backend_client_base &_backend;
 
-	Main(Genode::Env &env) : env(env), _ds_content_size(1024), _backend(backend_init_client())
+	char remotename[255];
+
+	Main(Genode::Env &env) : env(env), _ds_content_size(1024), _backend(backend_init_client(env, heap))
 	{
+		try {
+			Genode::Xml_node remote_rom = _config.xml().sub_node("remote_rom");
+			remote_rom.attribute("name").value(remotename, sizeof(remotename));
+		} catch (...) {
+			Genode::error("No ROM module configured!");
+		}
+
 		env.parent().announce(env.ep().manage(remote_rom_root));
 
 		/* initialise backend */
 		_backend.register_receiver(this);
-		
-//		_ds.construct(Genode::env()->ram_session(), _ds_content_size);
 	}
 
 	const char* module_name() const { return remotename; }
@@ -191,7 +198,7 @@ struct Remote_rom::Main : public Remote_rom::Read_buffer, public Remote_rom::Rom
 
 		// TODO (optional) implement double buffering
 		if (!_ds.is_constructed() || _ds_content_size > _ds->size())
-			_ds.construct(&env.ram(), _ds_content_size);
+			_ds.construct(env.ram(), env.rm(), _ds_content_size);
 
 		// TODO set write lock
 
@@ -216,7 +223,7 @@ struct Remote_rom::Main : public Remote_rom::Read_buffer, public Remote_rom::Rom
 		else {
 			/* transfer default content if set */
 			try {
-				Genode::Xml_node default_content = Genode::config()->xml_node().sub_node("remote_rom").sub_node("default");
+				Genode::Xml_node default_content = _config.xml().sub_node("remote_rom").sub_node("default");
 				return default_content.content_size();
 			} catch (...) { }
 		}
@@ -234,7 +241,7 @@ struct Remote_rom::Main : public Remote_rom::Read_buffer, public Remote_rom::Rom
 		else {
 			/* transfer default content if set */
 			try {
-				Genode::Xml_node default_content = Genode::config()->xml_node().sub_node("remote_rom").sub_node("default");
+				Genode::Xml_node default_content = _config.xml().sub_node("remote_rom").sub_node("default");
 				size_t const len = Genode::min(dst_len, default_content.content_size());
 				Genode::memcpy(dst, default_content.content_base(), len);
 				return len;
@@ -248,13 +255,6 @@ namespace Component {
 	Genode::size_t stack_size()    { return 2*1024*sizeof(long); }
 	void construct(Genode::Env &env)
 	{
-		try {
-			Genode::Xml_node remote_rom = Genode::config()->xml_node().sub_node("remote_rom");
-			remote_rom.attribute("name").value(Remote_rom::remotename, sizeof(Remote_rom::remotename));
-		} catch (...) {
-			Genode::error("No ROM module configured!");
-		}
-
 		static Remote_rom::Main main(env);
 	}
 }

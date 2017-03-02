@@ -19,12 +19,12 @@
 
 #include <base/log.h>
 #include <base/env.h>
+#include <base/heap.h>
 
 #include <backend_base.h>
 
 #include <base/component.h>
-#include <os/config.h>
-#include <os/attached_rom_dataspace.h>
+#include <base/attached_rom_dataspace.h>
 
 namespace Remote_rom {
 	using Genode::size_t;
@@ -44,7 +44,10 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 		Attached_rom_dataspace &_rom;
 		Backend_server_base    &_backend;
 
-		Rom_forwarder(Attached_rom_dataspace &rom, Backend_server_base &backend) : _rom(rom), _backend(backend)
+		Attached_rom_dataspace &_config;
+
+		Rom_forwarder(Attached_rom_dataspace &rom, Backend_server_base &backend, Attached_rom_dataspace &config)
+			: _rom(rom), _backend(backend), _config(config)
 		{
 			_backend.register_forwarder(this);
 
@@ -75,7 +78,7 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			}
 			else {
 				try {
-					Genode::Xml_node default_content = Genode::config()->xml_node().sub_node("remote_rom").sub_node("default");
+					Genode::Xml_node default_content = _config.xml().sub_node("remote_rom").sub_node("default");
 					return default_content.content_size();
 				} catch (...) { }
 			}
@@ -92,7 +95,7 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			else {
 				/* transfer default content if set */
 				try {
-					Genode::Xml_node default_content = Genode::config()->xml_node().sub_node("remote_rom").sub_node("default");
+					Genode::Xml_node default_content = _config.xml().sub_node("remote_rom").sub_node("default");
 					size_t const len = Genode::min(dst_len, default_content.content_size()-offset);
 					Genode::memcpy(dst, default_content.content_base() + offset, len);
 					return len;
@@ -105,16 +108,19 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 
 struct Remote_rom::Main
 {
-	Genode::Entrypoint    &_ep;
+	Genode::Env    &_env;
+	Genode::Heap    _heap   = { &_env.ram(), &_env.rm() };
+	Attached_rom_dataspace _config = { _env, "config" };
+
 	Attached_rom_dataspace _rom;
 	Rom_forwarder          _forwarder;
 
-	Genode::Signal_handler<Rom_forwarder> _dispatcher = { _ep, _forwarder, &Rom_forwarder::update };
+	Genode::Signal_handler<Rom_forwarder> _dispatcher = { _env.ep(), _forwarder, &Rom_forwarder::update };
 
-	Main(Genode::Entrypoint &ep)
-		: _ep(ep),
-	     _rom(modulename),
-	     _forwarder(_rom, backend_init_server())
+	Main(Genode::Env &env)
+		: _env(env),
+	     _rom(env, modulename),
+	     _forwarder(_rom, backend_init_server(env, _heap), _config)
 	{
 		/* register update dispatcher */
 		_rom.sigh(_dispatcher);
@@ -123,10 +129,13 @@ struct Remote_rom::Main
 
 namespace Component {
 	Genode::size_t stack_size()    { return 2*1024*sizeof(long); }
+
+
 	void construct(Genode::Env &env)
 	{
+		Genode::Attached_rom_dataspace config = { env, "config" };
 		try {
-			Genode::Xml_node remote_rom = Genode::config()->xml_node().sub_node("remote_rom");
+			Genode::Xml_node remote_rom = config.xml().sub_node("remote_rom");
 			if (remote_rom.has_attribute("localname"))
 				remote_rom.attribute("localname").value(Remote_rom::modulename, sizeof(Remote_rom::modulename));
 			else
@@ -140,6 +149,6 @@ namespace Component {
 			Genode::error("No ROM module configured!");
 		}
 
-		static Remote_rom::Main main(env.ep());
+		static Remote_rom::Main main(env);
 	}
 }
