@@ -39,7 +39,7 @@ install_config {
 		<resource name="RAM" quantum="4M"/>
 		<config rom="remote" />
 		<route>
-			<service name="ROM"> <child name="remote_rom_client"/> </service>
+			<service name="ROM" label_suffix="remote"> <child name="remote_rom_client"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
