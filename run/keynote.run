@@ -1,0 +1,60 @@
+#
+# Build
+#
+
+set build_components {
+	test/keynote		
+	core init
+	
+}
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="test-keynote">
+		<resource name="RAM" quantum="32M"/>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init
+	test-keynote
+	ld.lib.so libc.lib.so keynote.lib.so libm.lib.so libcrypto.lib.so
+}
+
+
+build_boot_image $boot_modules
+
+append qemu_args " -m 256 "
+
+run_genode_until {.*exited with exit value 0.*} 20

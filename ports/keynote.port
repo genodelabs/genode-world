@@ -1,0 +1,34 @@
+LICENSE := BSD
+VERSION := 2.3
+DOWNLOADS := keynote.archive
+
+URL(keynote) := https://www.cs.columbia.edu/~angelos/Code/keynote.tar.gz
+SHA(keynote) :=1b51066ffc66d04660cc206254c41531a17e8b04
+DIR(keynote) := src/lib/keynote
+
+
+
+DIRS := include/keynote
+DIR_CONTENT(include/keynote) := src/lib/keynote/keynote.h\
+				src/lib/keynote/header.h\
+				src/lib/keynote/assertion.h\
+				src/lib/keynote/signature.h
+
+$(call check_tool,lex)
+$(call check_tool,bison)
+
+gen_files :=  src/lib/keynote/k.tab.c  src/lib/keynote/lex.kn.c  src/lib/keynote/lex.kv.c  src/lib/keynote/z.tab.c
+default: $(gen_files)
+$(gen_files): $(DOWNLOADS)
+
+src/lib/keynote/k.tab.c :
+	$(VERBOSE)bison -y -d -p kn -b k src/lib/keynote/keynote.y -o src/lib/keynote/k.tab.c
+
+src/lib/keynote/lex.kn.c:
+	$(VERBOSE)flex -Cr -Pkn -s -i -o src/lib/keynote/lex.kn.c src/lib/keynote/keynote.l
+
+src/lib/keynote/lex.kv.c :
+	$(VERBOSE)flex -Cr -Pkv -s -i -o src/lib/keynote/lex.kv.c src/lib/keynote/keynote-ver.l
+
+src/lib/keynote/z.tab.c:
+	$(VERBOSE)bison -y -d -p kv -b z src/lib/keynote/keynote-ver.y -o src/lib/keynote/z.tab.c
