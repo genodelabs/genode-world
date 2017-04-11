@@ -1,0 +1,58 @@
+This component services accepts ROM sessions requests and opens a
+file with the name of the ROM request label appended with '.lz'.
+The file content is passed through Lzip decompression and returned
+to the client. All sessions are static, no update signals shall be
+issued.
+
+The Lzip format is designed for archiving and sharing data. In the
+general case the speed of decompression is bound by CPU and RAM
+resources and is thus assumed to be slower than local storage.
+
+
+Example configuration
+---------------------
+In this init configuration snippet ROM requests are serviced from a
+hierarchy. Initially the parent is consulted, followed by a query for
+a raw file on the file-system, and finally an lzipped file.
+
+! <start name="rom_fallback">
+! 	<resource name="RAM" quantum="4M"/>
+! 	<provides> <service name="ROM"/> </provides>
+! 	<config>
+! 		<fallback/> <!-- request from parent first -->
+! 		<fallback label="fs"/>
+! 		<fallback label="lz"/>
+! 	</config>
+! 	<route>
+! 		<service name="ROM" label_prefix="fs ->" >
+! 			<child name="fs_rom"/> </service>
+! 		<service name="ROM" label_prefix="lz ->" >
+! 			<child name="lz_rom"/> </service>
+! 		<!-- fallthrough to parent -->
+! 		<any-service> <parent/> </any-service>
+! 	</route>
+! </start>
+
+! <start name="fs_rom">
+! 	<resource name="RAM" quantum="96M"/>
+! 	<provides><service name="ROM"/></provides>
+! 	<route>
+! 		<service name="File_system">
+! 			<child name="fs_server"/> </service>
+! 		<any-service> <parent/> </any-service>
+! 	</route>
+! </start>
+
+! <start name="lz_rom">
+! 	<resource name="RAM" quantum="96M"/>
+! 	<provides><service name="ROM"/></provides>
+! 	<config>
+! 		<vfs> <fs writeable="no"/> </vfs>
+! 		<libc/>
+! 	</config>
+! 	<route>
+! 		<service name="File_system">
+! 			<child name="fs_server"/> </service>
+! 		<any-service> <parent/> </any-service>
+! 	</route>
+! </start>

@@ -1,0 +1,93 @@
+build {
+	core init
+	drivers/timer
+	lib/libc_noux
+	noux-pkg/coreutils
+	noux/minimal
+	server/log_terminal
+	server/lz_rom
+}
+
+# strip coreutils binaries and create tar archive
+exec sh -c "[cross_dev_prefix]strip bin/coreutils/bin/*"
+exec tar cfv bin/coreutils.tar -h -C bin/coreutils .
+
+create_boot_directory
+
+install_config {
+	<config verbose="yes">
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="LOG"/>
+			<service name="RAM"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="PD"/>
+			<service name="IRQ"/>
+			<service name="IO_MEM"/>
+			<service name="IO_PORT"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides><service name="Timer"/></provides>
+		</start>
+		<start name="terminal">
+			<binary name="log_terminal" />
+			<resource name="RAM" quantum="1M"/>
+			<provides><service name="Terminal"/></provides>
+		</start>
+		<start name="lz_rom">
+			<resource name="RAM" quantum="64M"/>
+			<provides> <service name="ROM"/> </provides>
+			<config>
+				<vfs> <tar name="coreutils.tar.lz.tar"/> </vfs>
+				<libc/>
+			</config>
+		</start>
+		<start name="noux">
+			<resource name="RAM" quantum="32M"/>
+			<config verbose="yes">
+				<fstab> <tar name="coreutils.tar" /> </fstab>
+				<start name="/bin/ls"> <arg value="-Rla"/> </start>
+			</config>
+			<route>
+				<service name="ROM" label="coreutils.tar">
+					<child name="lz_rom"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+
+		</start>
+	</config>
+}
+
+# Lzip the coreutils tarball
+exec lzip --force --keep bin/coreutils.tar
+
+# Tar the Lziped tarball because a zero padded ROM will not work
+exec tar cf bin/coreutils.tar.lz.tar -C bin coreutils.tar.lz
+
+build_boot_image {
+	core init ld.lib.so
+	coreutils.tar.lz.tar
+	libc.lib.so
+	libc_noux.lib.so
+	libm.lib.so
+	log_terminal
+	lz_rom
+	noux
+	timer
+}
+
+append qemu_args " -nographic -serial mon:stdio "
+
+if {[have_spec x86_64]} {
+	# coreutils.tar is really huge when built for x86_64
+	append qemu_args " -m 300 "
+}
+
+run_genode_until {child "noux" exited with exit value 0.*\n} 30
+
+exec rm bin/coreutils.tar.lz.tar bin/coreutils.tar.lz bin/coreutils.tar
