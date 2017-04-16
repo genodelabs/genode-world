@@ -1,0 +1,163 @@
+#
+# Build
+#
+if {![have_spec linux]} {
+	puts "Runs on Linux only"
+	exit 0
+}
+
+set build_components {
+	core init
+	app/cli_monitor
+	app/pike_loader
+	app/pointer
+	drivers/framebuffer
+	drivers/timer
+	server/dynamic_rom
+	server/loader
+	server/nit_fb
+	server/nitpicker
+	server/terminal
+	test/nitpicker
+}
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+append config {
+<config>
+	<parent-provides>
+		<service name="PD"/>
+		<service name="CPU"/>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="LOG"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+	</start>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="nitpicker">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config verbose="yes">
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="pike" layer="2" content="client" label="yes"/>
+			<domain name="default" layer="2" content="client" label="no" focus="click" hover="always" />
+
+			<policy label_prefix="pointer" domain="pointer"/>
+			<policy label_prefix="pike_loader" domain="pike"/>
+			<default-policy domain="default"/>
+			<global-key name="KEY_MENU" label="pike_loader -> input" />
+			<global-key name="KEY_LEFTALT" label="pike_loader -> input" />
+		</config>
+	</start>
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="Nitpicker"> <child name="nitpicker" /> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+	<start name="loader">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Loader"/> </provides>
+		<config>
+			<policy label_prefix="pike_loader">
+				<parent-rom name="cli_monitor"/>
+				<parent-rom name="terminal"/>
+				<parent-rom name="nit_fb"/>
+				<parent-rom name="init"/>
+				<parent-rom name="ld.lib.so"/>
+			</policy>
+		</config>
+	</start>
+	<start name="pike_loader">
+		<resource name="RAM" quantum="16M"/>
+		<route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config>
+			<start name="dummy">
+				<binary name="init"/>
+				<config verbose="true">
+					<parent-provides>
+						<service name="CPU"/>
+						<service name="LOG"/>
+						<service name="PD"/>
+						<service name="RAM"/>
+						<service name="RM"/>
+						<service name="ROM"/>
+						<service name="Nitpicker"/>
+						<service name="Timer"/>
+					</parent-provides>
+					<default-route>
+						<any-service> <parent/> <any-child/> </any-service>
+					</default-route>
+					<start name="nit_fb">
+						<resource name="RAM" quantum="4M"/>
+						<provides>
+							<service name="Framebuffer"/>
+							<service name="Input"/>
+						</provides>
+					</start>
+					<start name="terminal">
+						<resource name="RAM" quantum="4M"/>
+						<provides>
+							<service name="Terminal"/>
+						</provides>
+					</start>
+					<start name="cli_monitor">
+						<resource name="RAM" quantum="4M"/>
+						<config> <vfs/> </config>
+					</start>
+				</config>
+			</start>
+		</config>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core ld.lib.so init
+	cli_monitor
+	fb_sdl
+	loader
+	nit_fb
+	nitpicker
+	pike_loader
+	pointer
+	terminal
+	testnit
+	timer
+}
+
+
+build_boot_image $boot_modules
+
+run_genode_until forever
