@@ -18,7 +18,6 @@
 #include <base/session_label.h>
 #include <base/heap.h>
 #include <base/log.h>
-#include <base/snprintf.h>
 #include <util/list.h>
 
 namespace Log_tee {
@@ -44,13 +43,12 @@ class Log_tee::Session_component : public Rpc_object<Log_session>
 			{ }
 		} _log;
 
-		char _prefix[Session_label::capacity()+3];
+		Genode::String<Session_label::capacity()+3> _prefix;
 
 	public:
 
 		Session_component(Env &env, Session_label const &label, char const *args)
-		: _log(env, args)
-		{ snprintf(_prefix, sizeof(_prefix), "[%s] ", label.string()); }
+		: _log(env, args), _prefix("[", label.string(), "] ") { }
 
 		size_t write(Log_session::String const &msg) override
 		{
@@ -58,7 +56,7 @@ class Log_tee::Session_component : public Rpc_object<Log_session>
 			size_t n = _log.write(msg);
 
 			/* write to our own log session */
-			log(Cstring(_prefix), msg.string());
+			log(_prefix, msg.string());
 
 			return n;
 		}

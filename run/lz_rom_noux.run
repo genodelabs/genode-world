@@ -1,9 +1,12 @@
+set sha256sum     [check_installed sha256sum]
+
 build {
 	core init
 	drivers/timer
 	lib/libc_noux
 	noux-pkg/coreutils
 	noux/minimal
+	proxy/rom_verify
 	server/log_terminal
 	server/lz_rom
 }
@@ -12,9 +15,12 @@ build {
 exec sh -c "[cross_dev_prefix]strip bin/coreutils/bin/*"
 exec tar cfv bin/coreutils.tar -h -C bin/coreutils .
 
+# get the hash of the tarball to check against after decompression
+set tar_digest [lindex [exec $sha256sum bin/coreutils.tar] 0]
+
 create_boot_directory
 
-install_config {
+append config {
 	<config verbose="yes">
 		<parent-provides>
 			<service name="ROM"/>
@@ -47,6 +53,19 @@ install_config {
 				<libc/>
 			</config>
 		</start>
+		<start name="rom_verify">
+			<resource name="RAM" quantum="2M"/>
+			<provides> <service name="ROM"/> </provides>
+			<config>}
+append config "<policy label_suffix=\"coreutils.tar\" sha256=\"$tar_digest\"/>"
+append config {
+			</config>
+			<route>
+				<service name="ROM" label_suffix="coreutils.tar">
+					<child name="lz_rom"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
 		<start name="noux">
 			<resource name="RAM" quantum="32M"/>
 			<config verbose="yes">
@@ -55,13 +74,15 @@ install_config {
 			</config>
 			<route>
 				<service name="ROM" label="coreutils.tar">
-					<child name="lz_rom"/> </service>
+					<child name="rom_verify"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 
 		</start>
 	</config>
 }
+
+install_config $config
 
 # Lzip the coreutils tarball
 exec lzip --force --keep bin/coreutils.tar
@@ -78,6 +99,8 @@ build_boot_image {
 	log_terminal
 	lz_rom
 	noux
+	rom_verify
+	stdcxx.lib.so
 	timer
 }
 

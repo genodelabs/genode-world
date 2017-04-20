@@ -36,13 +36,15 @@ using namespace Genode;
 namespace Lz_rom {
 	using namespace Genode;
 
+	typedef Session_state::Args Args;
+	typedef String<Session_label::capacity()> Lz_path;
+
 	struct Session;
 	struct Main;
 
-	typedef Session_state::Args Args;
-
 	struct File_error { };
 	struct Decompression_error { };
+
 }
 
 
@@ -57,7 +59,7 @@ struct Lz_rom::Session :
 	Session(Id_space<Parent::Server> &server_space,
 	        Parent::Server::Id server_id,
 	        Libc::Env &env, Genode::Allocator &alloc,
-	        Session_label const &label,
+	        Lz_path const &path,
 	        LZ_Decoder *decoder);
 
 	Attached_ram_dataspace ram_ds;
@@ -79,7 +81,7 @@ struct Lz_rom::Session :
 Lz_rom::Session::Session(Id_space<Parent::Server> &server_space,
                          Parent::Server::Id server_id,
                          Libc::Env &env, Genode::Allocator &alloc,
-                         Session_label const &label,
+                         Lz_path const &path,
                          LZ_Decoder *decoder)
 :
 	server_id(*this, server_space, server_id),
@@ -92,7 +94,7 @@ Lz_rom::Session::Session(Id_space<Parent::Server> &server_space,
 
 	/* Get file size */
 	Vfs::Directory_service::Stat stat;
-	if (env.vfs().stat(label.string(), stat) != Stat_result::STAT_OK)
+	if (env.vfs().stat(path.string(), stat) != Stat_result::STAT_OK)
 		throw File_error();
 	if (!stat.size)
 		throw File_error();
@@ -100,7 +102,7 @@ Lz_rom::Session::Session(Id_space<Parent::Server> &server_space,
 	/* Open file */
 	Vfs_handle *fh;
 	Open_result res = env.vfs().open(
-		label.string(), Vfs::Directory_service::OPEN_MODE_RDONLY, &fh, alloc);
+		path.string(), Vfs::Directory_service::OPEN_MODE_RDONLY, &fh, alloc);
 	if (res != Open_result::OPEN_OK)
 		throw File_error();
 	Vfs_handle::Guard handle_guard(fh);
@@ -265,18 +267,16 @@ void Lz_rom::Main::handle_session_request(Xml_node request)
 		Args const args = request.sub_node("args").decoded_content<Args>();
 		Session_label const request_label =
 			label_from_args(args.string()).last_element();
-		char new_label[request_label.capacity()];
-		snprintf(new_label, sizeof(new_label), "/%s.lz", request_label.string());
-		Session_label const filename(new_label);
+		Lz_path const lz_path("/", request_label.string(), ".lz");
 
 		try {
 			Session *session = new (session_alloc)
-				Session(server_id_space, server_id, env, vfs_alloc, filename, decoder);
+				Session(server_id_space, server_id, env, vfs_alloc, lz_path, decoder);
 			env.parent().deliver_session_cap(
 				server_id, env.ep().manage(*session));
 			return;
 		} catch (File_error) {
-			log("failed to open or read file '", filename, "'");
+			log("failed to open or read file '", lz_path, "'");
 		} catch (Decompression_error) {
 			char const *msg = "";
 
@@ -305,7 +305,7 @@ void Lz_rom::Main::handle_session_request(Xml_node request)
 			case LZ_library_error:
 				msg = "a bug was detected in the library"; break;
 			}
-			error("failed to decompress '", filename, "', ", msg);
+			error("failed to decompress '", lz_path, "', ", msg);
 		} catch (...) { }
 		env.parent().session_response(server_id, Parent::INVALID_ARGS);
 	}

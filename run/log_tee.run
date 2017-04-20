@@ -1,12 +1,16 @@
-build "core init server/log_tee test/printf"
+build "core init server/log_tee test/log"
 
 create_boot_directory
 
 install_config {
 	<config>
 		<parent-provides>
+			<service name="CPU"/>
 			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="RAM"/>
 			<service name="RM"/>
+			<service name="ROM"/>
 		</parent-provides>
 		<default-route>
 			<any-service> <parent/> </any-service>
@@ -17,7 +21,7 @@ install_config {
 			<provides> <service name="LOG"/> </provides>
 		</start>
 
-		<start name="test-printf">
+		<start name="test-log">
 			<resource name="RAM" quantum="2M"/>
 			<route>
 				<any-service> <child name="log_tee"/> <parent/> </any-service>
@@ -26,8 +30,8 @@ install_config {
 	</config>
 }
 
-build_boot_image "core ld.lib.so init log_tee test-printf"
+build_boot_image "core ld.lib.so init log_tee test-log"
 
 append qemu_args "-nographic -m 64"
 
-run_genode_until {child "test-printf" exited with exit value 0} 10
+run_genode_until {\[test-log\] Test done.} 10

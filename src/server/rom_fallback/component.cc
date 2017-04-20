@@ -193,11 +193,10 @@ void Rom_fallback::Main::handle_session_request(Xml_node request)
 
 			size_t ram_quota = request.attribute_value("ram_quota", 0UL);
 
-			char buf[64];
-			snprintf(buf, sizeof(buf), "ram_quota=%ld", ram_quota);
+			String<64> args("ram_quota=", ram_quota);
 
 			// XXX handle Root::Invalid_args
-			env.upgrade(session.client_id.id(), buf);
+			env.upgrade(session.client_id.id(), args.string());
 			env.parent().session_response(server_id, Parent::SESSION_OK);
 		});
 	}

@@ -63,9 +63,8 @@ set config {
 		<binary name="test-libc"/>
 		<resource name="RAM" quantum="4M"/>
 		<config>
-			<libc stdout="/log">
-				<vfs> <fs/> </vfs>
-			</libc>
+			<libc stdout="/log"/>
+			<vfs> <fs/> </vfs>
 		</config>
 		<route>
 			<any-service>
@@ -78,9 +77,8 @@ set config {
 		<binary name="test-libc"/>
 		<resource name="RAM" quantum="4M"/>
 		<config>
-			<libc stdout="/log">
-				<vfs> <fs/> </vfs>
-			</libc>
+			<libc stdout="/log"/>
+			<vfs> <fs/> </vfs>
 		</config>
 		<route>
 			<any-service>
@@ -93,9 +91,8 @@ set config {
 		<binary name="test-libc"/>
 		<resource name="RAM" quantum="4M"/>
 		<config>
-			<libc stdout="/log">
-				<vfs> <fs/> </vfs>
-			</libc>
+			<libc stdout="/log"/>
+			<vfs> <fs/> </vfs>
 		</config>
 		<route>
 			<any-service>

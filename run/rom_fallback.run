@@ -63,9 +63,8 @@ append config {
 	<start name="test-libc">
 		<resource name="RAM" quantum="8M"/>
 		<config>
-			<libc stdout="/log" stderr="log">
-				<vfs> <log/> </vfs>
-			</libc>
+			<libc stdout="/log" stderr="log"/>
+			<vfs> <log/> </vfs>
 		</config>
 	</start>
 

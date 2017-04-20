@@ -15,8 +15,8 @@ create_boot_directory
 set sha256sum     [check_installed sha256sum]
 
 
-set rom_file bin/test-log
-set test_digest [exec $sha256sum $rom_file]
+set   ld_digest [lindex [exec $sha256sum bin/ld-linux.lib.so] 0]
+set test_digest [lindex [exec $sha256sum bin/test-log] 0]
 
 append config {
 <config>
@@ -35,36 +35,21 @@ append config {
 		<any-service><parent/><any-child/></any-service>
 	</default-route>
 	<start name="rom_verify">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="ROM"/> </provides>
 		<config>}
-append config "<policy label=\"init -> test-log\" sha256=\"$test_digest\"/>"
+append config "<policy label=\"ld.lib.so\" sha256=\"$ld_digest\"/>"
+append config "<policy label=\"test-log\" sha256=\"$test_digest\"/>"
 append config {
 		</config>
 	</start>
-	<start name="init" verbose="yes">
-		<resource name="RAM" quantum="2M"/>
+	<start name="test-log">
+		<resource name="RAM" quantum="1M"/>
 		<route>
-			<service name="ROM" label_suffix="test-log">
+			<service name="ROM">
 				<child name="rom_verify"/> </service>
-			<any-service>
-				<parent/>
-			</any-service>
+			<any-service> <parent/> </any-service>
 		</route>
-		<config>
-			<parent-provides>
-				<service name="CPU"/>
-				<service name="LOG"/>
-				<service name="PD"/>
-				<service name="RAM"/>
-				<service name="RM"/>
-				<service name="ROM"/>
-			</parent-provides>
-			<start name="test-log">
-				<resource name="RAM" quantum="1M"/>
-				<route> <any-service> <parent/> </any-service> </route>
-			</start>
-		</config>
 	</start>
 </config>
 }
