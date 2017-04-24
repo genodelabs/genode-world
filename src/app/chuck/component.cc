@@ -43,6 +43,7 @@
 #include "chuck_console.h"
 #include "chuck_globals.h"
 
+#include "util_hid.h"
 #include "util_math.h"
 #include "util_string.h"
 #include "util_thread.h"
@@ -57,13 +58,13 @@ struct Main : Chuck_System
 
 	Attached_rom_dataspace config_rom { env, "config" };
 
-	Timer::Connection timer;
+	Timer::Connection timer { env, "chuck" };
 
 	void load_config()
 	{
 		/* compile the config in sequence */
 		config_rom.xml().for_each_sub_node([&] (Xml_node const node) {
-			if (node.has_type("file"))
+			if (node.has_type("file")) {
 				try {
 					Xml_attribute path_attr = node.attribute("path");
 					std::string path(path_attr.value_base(), path_attr.value_size());
@@ -77,25 +78,27 @@ struct Main : Chuck_System
 					else
 						log("compiled ", path.c_str());
 				} catch (...) {
-					error("failed to parse file node");
+					error("failed to parse file node ",node);
 				}
+			}
 
-			else if (node.has_type("code"))
+			else if (node.has_type("code")) {
 				try {
-					Xml_attribute path_attr = node.attribute("path");
 					std::string code(node.content_base(), node.content_size());
 					std::string args;
 					if (node.has_attribute("args")) {
 						Xml_attribute args_attr = node.attribute("args");
 						args = std::string(args_attr.value_base(), args_attr.value_size());
 					}
-					if (!compileCode(code, args))
+					if (!compileCode(code, args)) {
 						error("compilation failed");
-					else
+						log(code.c_str());
+					} else
 						log("compiled ", code.c_str());
 				} catch (...) {
 					error("failed to parse code node");
 				}
+			}
 		});
 	}
 
@@ -390,12 +393,16 @@ Main::Main(Genode::Env &env) : env(env)
 	Genode::memset( input, 0, sizeof(SAMPLE)*buffer_size*adc_chans );
 	Genode::memset( output, 0, sizeof(SAMPLE)*buffer_size*dac_chans );
 
-	//timer.sigh(timeout_handler);
-	//timer.trigger_periodic(100000);
+	timer.sigh(timeout_handler);
+	timer.trigger_periodic(100000);
 };
 
+#include <RtAudio.h>
 
-void Libc::Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
+	init_rtaudio(env);
+	init_input(env);
+
 	static Main inst(env);
 }

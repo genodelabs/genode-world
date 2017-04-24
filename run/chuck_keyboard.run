@@ -1,0 +1,193 @@
+assert_spec x86
+
+# Xmllint throws errors on inline chuck code
+proc check_xml_syntax {xml_file} { }
+
+#
+# Build
+#
+
+set build_components {
+	core init
+	app/chuck
+	drivers/audio
+	drivers/timer
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+lappend_if [have_spec ps2] build_components drivers/input/spec/ps2
+lappend_if [have_spec sdl] build_components drivers/framebuffer/spec/sdl
+
+build $build_components
+
+create_boot_directory
+
+#
+# Config
+#
+
+append config {
+<config>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>}
+
+append_platform_drv_config
+
+append_if [have_spec ps2] config {
+	<start name="ps2_drv">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Input"/></provides>
+		<config verbose_keyboard="no" verbose_mouse="no" verbose_scancodes="no"/>
+		<route>
+			<service name="ROM">      <parent/>    </service>
+			<service name="CPU">      <parent/>    </service>
+			<service name="RAM">      <parent/>    </service>
+			<service name="PD">       <parent/>    </service>
+			<service name="IO_PORT">  <parent/>    </service>
+			<service name="LOG">      <parent/>    </service>
+			<service name="Platform"> <any-child/> </service>
+		</route>
+	</start>
+	<alias name="input_drv" child="ps2_drv"/>}
+
+append_if [have_spec sdl] config {
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Input"/> <service name="Framebuffer"/> </provides>
+		<route>
+			<service name="ROM">   <parent/> </service>
+			<service name="CPU">   <parent/> </service>
+			<service name="RAM">   <parent/> </service>
+			<service name="PD">    <parent/> </service>
+			<service name="LOG">   <parent/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+		</route>
+	</start>
+	<alias name="input_drv" child="fb_sdl"/>}
+
+append config {
+	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Audio_out"/> </provides>
+		<config/>
+	</start>
+	<start name="chuck">
+		<resource name="RAM" quantum="32M"/>
+		<config dac_channels="2" adc_channels="0">
+			<libc stdout="/log" stderr="/log"/>
+			<vfs> <log/>
+<inline name="test">
+// HID
+Hid hi;
+HidMsg msg;
+
+// which keyboard
+0 => int device;
+// get from command line
+if( me.args() ) me.arg(0) => Std.atoi => device;
+
+// open keyboard (get device number from command line)
+if( !hi.openKeyboard( device ) ) me.exit();
+<<< "keyboard '" + hi.name() + "' ready", "" >>>;
+
+// patch
+BeeThree organ => JCRev r => Echo e => Echo e2 => dac;
+r => dac;
+
+// set delays
+240::ms => e.max => e.delay;
+480::ms => e2.max => e2.delay;
+// set gains
+.6 => e.gain;
+.3 => e2.gain;
+.05 => r.mix;
+0 => organ.gain;
+
+// infinite event loop
+while( true )
+{
+    // wait for event
+    hi => now;
+
+    // get message
+    while( hi.recv( msg ) )
+    {
+        // check
+        if( msg.isButtonDown() )
+        {
+            Std.mtof( msg.which + 45 ) => float freq;
+            if( freq > 20000 ) continue;
+
+            freq => organ.freq;
+            .5 => organ.gain;
+            1 => organ.noteOn;
+
+            80::ms => now;
+        }
+        else
+        {
+            0 => organ.noteOff;
+        }
+    }
+}
+
+</inline>
+			</vfs>
+			<file path="/test"/>
+		</config>
+		<route>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+append boot_modules {
+	core init ld.lib.so
+	timer
+	chuck
+	libogg.lib.so
+	libFLAC.lib.so
+	libsndfile.lib.so
+	libvorbis.lib.so
+	pthread.lib.so
+	stdcxx.lib.so
+	libc.lib.so
+	libm.lib.so
+} [audio_drv_binary] {
+}
+
+lappend_if [have_spec ps2] boot_modules ps2_drv
+lappend_if [have_spec sdl] boot_modules fb_sdl
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -m 128 -nographic -soundhw es1370 "
+
+run_genode_until forever

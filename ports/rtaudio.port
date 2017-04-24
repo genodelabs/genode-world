@@ -4,9 +4,9 @@ DOWNLOADS := rtaudio.archive
 
 OWNER := ehmry
 REPO  := rtaudio
-REV   := bde69fff7cf263552e27b33ca0db63e8c239e20e
+REV   := 4dc7017ccbae09231a4f8a48ac11a388171e95b3
 URL(rtaudio) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
-SHA(rtaudio) := e519e49d636818d2dcb95fc0fc3daf1e8c59704b
+SHA(rtaudio) := 83414b09e48757d91f60fc936402501ec1a6bb8c
 DIR(rtaudio) := src/lib/rtaudio
 
 DIRS := include/RtAudio
