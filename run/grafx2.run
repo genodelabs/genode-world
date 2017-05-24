@@ -140,6 +140,5 @@ lappend_if [have_spec platform_rpi] boot_modules platform_drv
 
 build_boot_image $boot_modules
 
-append qemu_args " -m 256 "
 
 run_genode_until forever

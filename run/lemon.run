@@ -36,7 +36,7 @@ build_boot_image {
 	stdcxx.lib.so
 }
 
-append qemu_args " -nographic -m 64 "
+append qemu_args " -nographic  "
 
 run_genode_until "child \"test-lemon\" exited with exit value 0" 20
 

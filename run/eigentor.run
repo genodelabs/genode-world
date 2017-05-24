@@ -242,7 +242,7 @@ if {[have_include power_on/qemu]} {
 	exec sudo iptables -A FORWARD -i $netdev -o $tapdev -m state --state RELATED,ESTABLISHED -j ACCEPT
 	exec sudo sysctl -w net.ipv4.ip_forward=1
 
-	append qemu_args " -m 256 -nographic -net nic,model=e1000 -net tap,ifname=tap0,downscript=no,script=no "
+	append qemu_args " -nographic -net nic,model=e1000 -net tap,ifname=tap0,downscript=no,script=no "
 }
 
 
