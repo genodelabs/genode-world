@@ -1,3 +1,5 @@
+#include <base/attached_rom_dataspace.h>
+
 extern "C" {
 
 #include <stdio.h>
@@ -5,7 +7,9 @@ extern "C" {
 
 void gdef_GetHostName (char machine[], int n)
 {
-	strncpy(machine, "genode", n);
+	Genode::Attached_rom_dataspace config("config");
+	try { config.xml().attribute("hostname").value(machine, n); }
+	catch (...) { Genode::strncpy(machine, "genode", n); }
 }
 
 void gdef_WriteHostName (void) { }

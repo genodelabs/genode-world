@@ -38,8 +38,9 @@
 
 #include "htif.h"
 
-#include <os/attached_io_mem_dataspace.h>
-#include <os/config.h>
+#include <base/attached_rom_dataspace.h>
+#include <base/attached_io_mem_dataspace.h>
+#include <libc/component.h>
 
 #include <vector>
 #include <cassert>
@@ -50,15 +51,15 @@
 class Htif_zedboard_genode : public htif_t
 {
 	public:
-		Htif_zedboard_genode( std::string image = "image.elf" ):
-			htif_t( std::vector<std::string>( { image } ) ),
-		        _io_mem_dataspace( DEV_PADDR, 2 * sizeof( uintptr_t ), true ),
-		        dev_vaddr( _io_mem_dataspace.local_addr<uintptr_t>() )
 
-		{
-			write_reg( 31, 0 ); // reset
-		}
+		Htif_zedboard_genode(Libc::Env & env, std::string image = "image.elf")
+		: htif_t( std::vector<std::string>( { image } ) ),
+		  _io_mem_dataspace(env, DEV_PADDR, 2 * sizeof( uintptr_t ), true ),
+		  dev_vaddr( _io_mem_dataspace.local_addr<uintptr_t>() ) {
+			write_reg( 31, 0 ); /* reset */ }
+
 	protected:
+
 		ssize_t read( void *buf, size_t max_size )
 		{
 			uint32_t *x = ( uint32_t * )buf;
@@ -67,75 +68,68 @@ class Htif_zedboard_genode : public htif_t
 			uintptr_t c = read_reg( 0 );
 			uint32_t count = 0;
 
-			if ( c > 0 )
-			{
-				for ( count=0; count<c && count*sizeof( *x )<max_size; count++ )
-				{
-					x[count] = read_reg( 1 );
-				}
+			if ( c > 0 ) {
+				for ( count=0; count<c && count*sizeof( *x )<max_size; count++ ) {
+					x[count] = read_reg( 1 ); }
 			}
 
 			return count*sizeof( *x );
 		}
+
 		ssize_t write( const void *buf, size_t size )
 		{
 			const uint32_t *x = ( const uint32_t * )buf;
 			assert( size >= sizeof( *x ) );
 
-			for ( uint32_t i = 0; i < size/sizeof( *x ); i++ )
-			{
-				write_reg( 0, x[i] );
-			}
+			for ( uint32_t i = 0; i < size/sizeof( *x ); i++ ) {
+				write_reg( 0, x[i] ); }
 
 			return size;
 		}
 
-		size_t chunk_max_size() { return 64; }
-		size_t chunk_align() { return 64; }
-		uint32_t mem_mb() { return 256; }
-		uint32_t num_cores() { return 1; }
+		size_t   chunk_max_size() { return 64;  }
+		size_t   chunk_align()    { return 64;  }
+		uint32_t mem_mb()         { return 256; }
+		uint32_t num_cores()      { return 1;   }
 
 	private:
+
 		Genode::Attached_io_mem_dataspace _io_mem_dataspace;
 		volatile uintptr_t *dev_vaddr;
 
 		const static uintptr_t DEV_PADDR = 0x43C00000;
 };
 
-static const std::string image_name()
+
+static const std::string image_name(Libc::Env & env)
 {
 	static const size_t LEN = 128;
 	char buf[LEN];
 	Genode::memset( buf, 0, LEN );
 
-	try
-	{
-		Genode::config()->xml_node().sub_node( "fesrv" ).attribute( "image" ).value(
-		    buf, LEN - 1 );
-	}
-	catch ( ... )
-	{
+	try {
+		Genode::Attached_rom_dataspace config(env, "config");
+		config.xml().sub_node( "fesrv" ).attribute( "image" ).value(buf, LEN - 1 );
+	} catch ( ... ) {
 		throw std::runtime_error( "elf-image not configured" );
 	}
 
 	return std::string( buf );
 }
 
-int main()
+
+void Libc::Component::construct(Libc::Env & env)
 {
-	try
-	{
-		auto image = image_name();
-		Htif_zedboard_genode htif( image );
-		Genode::log( "Initialized Htif_zedboard with ", image.c_str() );
-		htif.run();
-	}
-	catch ( const std::runtime_error &e )
-	{
-		Genode::error( "Caught runtime error: ", e.what() );
-	}
-	catch ( ... )
-	{
-		Genode::error( "Unknown error occured" );
-	}
+	Libc::with_libc([&] () {
+		try {
+			std::string image = image_name(env);
+			Htif_zedboard_genode htif(env, image);
+			Genode::log( "Initialized Htif_zedboard with ", image.c_str() );
+			htif.run();
+		} catch ( const std::runtime_error &e ) {
+			Genode::error( "Caught runtime error: ", e.what() );
+		} catch ( ... ) {
+			Genode::error( "Unknown error occured" );
+		}
+	});
 }

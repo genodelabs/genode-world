@@ -19,7 +19,7 @@ SRC_CC = main.cc                 \
          term.cc
 
 TARGET   = fesrv
-LIBS     = stdcxx posix
+LIBS     = stdcxx libc
 INC_DIR += $(FESRV_SRC)
 
 # Some defines to keep the fesrv compilation process happy

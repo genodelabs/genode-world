@@ -1,7 +1,7 @@
 SRC_CC = main.cc 
 TARGET = remote_rom_server
 
-LIBS   += base config 
+LIBS   += base
 
 INC_DIR += $(REP_DIR)/include/remote_rom
 

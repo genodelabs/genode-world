@@ -3,7 +3,7 @@
 
 SRC_CC += backend/nic_ip/backend.cc 
 
-LIBS   += base config net 
+LIBS   += base net
 
-# include less specific configuration
+# include less specificuration
 include $(REP_DIR)/lib/mk/remote_rom_backend.inc

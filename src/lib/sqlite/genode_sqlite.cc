@@ -24,7 +24,7 @@
 #include <rtc_session/connection.h>
 #include <timer_session/connection.h>
 #include <os/path.h>
-#include <os/config.h>
+#include <base/attached_rom_dataspace.h>
 #include <base/env.h>
 #include <base/printf.h>
 #include <util/string.h>
@@ -525,15 +525,16 @@ int sqlite3_os_init(void)
 		return SQLITE_ERROR;
 	}
 
+	Genode::Attached_rom_dataspace config("config");
 	Vfs::Dir_file_system *genode_vfs = nullptr;
 	try {
-		Xml_node node = Genode::config()->xml_node().sub_node("sqlite").sub_node("vfs");
+		Xml_node node = config.xml().sub_node("sqlite").sub_node("vfs");
 		genode_vfs = new (Genode::env()->heap())
 			Vfs::Dir_file_system(node, Vfs::global_file_system_factory());
 
 	} catch (Genode::Xml_node::Nonexistent_sub_node) {
 		try {
-			Xml_node node = Genode::config()->xml_node().sub_node("vfs");
+			Xml_node node = config.xml().sub_node("vfs");
 			genode_vfs = new (Genode::env()->heap())
 				Vfs::Dir_file_system(node, Vfs::global_file_system_factory());
 			PWRN("additional VFS created for SQLite");

@@ -13,9 +13,9 @@ create_boot_directory
 install_config {
 <config>
 	<parent-provides>
-		<service name="CAP"/>
 		<service name="LOG"/>
-		<service name="RM"/>
+		<service name="PD"/>
+		<service name="CPU"/>
 		<service name="SIGNAL"/>
 
 		<!-- some timer implementations need kernel info pages -->
@@ -29,22 +29,19 @@ install_config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-
-
-       <start name="fesrv">
-                <resource name="RAM" quantum="10M"/>
+	<default caps="100"/>
+	<start name="fesrv">
+		<resource name="RAM" quantum="10M"/>
 		<config>
 			<fesrv image="riscv-image.elf" />
-		  
 			<libc stdout="/dev/log" stderr="/dev/log" >
 				<vfs>
 					<rom name="riscv-image.elf"/>
 				</vfs>
 			</libc>
 		</config>
-        </start>
-
-</config>}
+	</start>
+</config> }
 
 #
 # Boot image
