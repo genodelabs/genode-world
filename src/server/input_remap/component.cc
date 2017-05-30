@@ -40,7 +40,7 @@ struct Input::Remap
 	/*
 	 * Input session provided to our client
 	 */
-	Input::Session_component input_session_component;
+	Input::Session_component input_session_component { env, env.ram() };
 
 	/*
 	 * Attach root interface to the entry point
