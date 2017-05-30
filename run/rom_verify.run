@@ -20,17 +20,17 @@ set test_digest [lindex [exec $sha256sum bin/test-log] 0]
 
 append config {
 <config>
+	<default caps="128"/>
 	<parent-provides>
-		<service name="ROM"/>
-		<service name="RAM"/>
-		<service name="IRQ"/>
+		<service name="CPU"/>
 		<service name="IO_MEM"/>
 		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
 		<service name="PD"/>
 		<service name="RM"/>
-		<service name="CPU"/>
-		<service name="LOG"/>
-	</parent-provides>
+		<service name="ROM"/>
+</parent-provides>
 	<default-route>
 		<any-service><parent/><any-child/></any-service>
 	</default-route>

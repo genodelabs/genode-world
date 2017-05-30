@@ -47,7 +47,6 @@ append config {
 		<service name="IRQ"/>
 		<service name="LOG"/>
 		<service name="PD"/>
-		<service name="RAM"/>
 		<service name="ROM"/>
 	</parent-provides>
 	<default-route>
@@ -59,6 +58,7 @@ append config {
 		<service name="Nitpicker"> <child name="nitpicker" /> </service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="128"/>
 	<start name="fb_sdl">
 		<resource name="RAM" quantum="4M"/>
 		<provides>

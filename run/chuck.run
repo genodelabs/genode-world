@@ -27,6 +27,7 @@ create_boot_directory
 
 append config {
 <config>
+	<default caps="128"/>
 	<parent-provides>
 		<service name="CPU"/>
 		<service name="IO_MEM"/>
@@ -34,7 +35,6 @@ append config {
 		<service name="IRQ"/>
 		<service name="LOG"/>
 		<service name="PD"/>
-		<service name="RAM"/>
 		<service name="RM"/>
 		<service name="ROM"/>
 	</parent-provides>
