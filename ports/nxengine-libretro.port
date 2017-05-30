@@ -1,11 +1,11 @@
 LICENSE   := Unknown
-VERSION   := dev
+VERSION   := 1.0.0.6
 DOWNLOADS := nxengine-libretro.archive
 
 OWNER := libretro
 REPO := nxengine-libretro
-REV := 161102ed513120b2e398e1b4d1eae3ac656f9c4f
+REV := c0407ad1311796a028c269ee785f539ebc47e1cc
 URL(nxengine-libretro) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
-SHA(nxengine-libretro) := db57fb256c7886773b04317b83762bbf36b73461
+SHA(nxengine-libretro) := cf47a1320c3e2fa471f2c34581b76b2ca7d92172
 
 DIR(nxengine-libretro) := src/lib/nxengine-libretro
