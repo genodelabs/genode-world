@@ -14,7 +14,11 @@
 #ifndef _RETRO_FRONTEND__CALLBACKS_H_
 #define _RETRO_FRONTEND__CALLBACKS_H_
 
+/* local includes */
 #include "frontend.h"
+
+/* Genode includes */
+#include <base/sleep.h>
 
 /* vsnprintf */
 #include <stdio.h>
@@ -126,8 +130,10 @@ bool environment_callback(unsigned cmd, void *data)
 	}
 
 	case RETRO_ENVIRONMENT_SHUTDOWN:
+		global_frontend->exit();
 		global_frontend->env.parent().exit(0);
-		return true;
+		/* can't return here, this is a callback */
+		Genode::sleep_forever();
 
 	case RETRO_ENVIRONMENT_GET_VARIABLE:
 	{

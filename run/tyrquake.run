@@ -6,6 +6,12 @@ if {[expr [have_include "power_on/qemu"] && !$force_qemu]} {
 	exit
 }
 
+#
+# Check used commands
+#
+set wget  [check_installed wget]
+set unzip [check_installed unzip]
+
 set build_components {
 	core init
 	app/retro_frontend
@@ -41,6 +47,7 @@ create_boot_directory
 
 append config {
 <config verbose="yes">
+	<default caps="128"/>
 	<parent-provides>
 		<service name="CPU"/>
 		<service name="IO_MEM"/>
@@ -48,7 +55,6 @@ append config {
 		<service name="IRQ"/>
 		<service name="LOG"/>
 		<service name="PD"/>
-		<service name="RAM"/>
 		<service name="RM"/>
 		<service name="ROM"/>
 	</parent-provides>
@@ -92,6 +98,7 @@ append_if [have_spec ps2] config {
 
 append config {
 	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Audio_out"/> </provides>
 	</start>
@@ -164,7 +171,26 @@ append config {
 install_config $config
 
 #
-# Core variables ROM
+# Download and extract shareware Quake
+#
+if {![file exist "bin/quake.tar"]} {
+	if {![file exist bin/quake_sw.zip]} {
+		puts "Downloading shareware Quake..."
+		set zip_url "https://archive.org/download/quakeshareware/QUAKE_SW.zip"
+		catch { exec $wget $zip_url -O bin/quake_sw.zip }
+	}
+
+	puts "Extracting Quake data..."
+	exec mkdir -p bin/tmp/quake
+	exec $unzip -o bin/quake_sw.zip -d bin/tmp
+	exec mv "bin/tmp/QUAKE_SW/ID1/CONFIG.CFG" "bin/tmp/quake/config.cfg"
+	exec mv "bin/tmp/QUAKE_SW/ID1/PAK0.PAK" "bin/tmp/quake/pak0.pak"
+	exec tar cf bin/quake.tar -C bin/tmp/quake .
+	exec rm -rf bin/tmp
+}
+
+#
+# This core requires that some variables be set by the frontend
 #
 set variables_fd [open "bin/variables" w]
 puts $variables_fd {
@@ -176,22 +202,10 @@ puts $variables_fd {
 }
 close $variables_fd
 
-
-if {![file exists bin/quake.tar]} {
-	puts ""
-	puts "Content archive not present, please place a tarball containing the"
-	puts "files 'pak0.pak' and 'config.cfg' at 'bin/quake.tar'."
-	puts ""
-	puts "These can be found in the shareware version of Quake available at:"
-	puts "    https://archive.org/details/quakeshareware"
-	puts ""
-	exit 1
-}
-
 # generic modules
-set boot_modules {
+append boot_modules {
 	core init ld.lib.so
-	audio_drv
+	} [audio_drv_binary] {
 	fb_upscale
 	input_remap
 	libc.lib.so

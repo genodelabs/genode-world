@@ -40,6 +40,7 @@ create_boot_directory
 
 append config {
 <config verbose="yes">
+	<default caps="256"/>
 	<parent-provides>
 		<service name="CPU"/>
 		<service name="IO_MEM"/>
@@ -47,7 +48,6 @@ append config {
 		<service name="IRQ"/>
 		<service name="LOG"/>
 		<service name="PD"/>
-		<service name="RAM"/>
 		<service name="RM"/>
 		<service name="ROM"/>
 	</parent-provides>
@@ -92,6 +92,7 @@ append_if [have_spec ps2] config {
 
 append config {
 	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Audio_out"/> </provides>
 	</start>
@@ -132,16 +133,20 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
+	<start name="report_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Report"/> </provides>
+		<config verbose="yes"/>
+	</start>
 	<start name="retro_frontend">
 		<resource name="RAM" quantum="64M"/>
 		<config core="nxengine_libretro.lib.so">
-			<libc stdout="/dev/log" stderr="/dev/log">
-				<vfs>
-					<tar name="doukutsu.tar"/>
-					<dir name="dev"> <log/> </dir>
-					<ram/>
-				</vfs>
-			</libc>
+			<libc stdout="/dev/log" stderr="/dev/log"/>
+			<vfs>
+				<dir name="dev"> <log/> </dir>
+				<tar name="doukutsu.tar"/>
+				<ram/>
+			</vfs>
 		</config>
 		<route>
 			<service name="Framebuffer">
@@ -157,22 +162,23 @@ install_config $config
 
 if {![file exists bin/doukutsu.tar]} {
 	puts ""
-	puts "Please download an archive of Cave Story content from"
-	puts "   http://www.cavestory.org/download/cave-story.php"
+	puts "Please download a copy of the Cave Story game data from "
+	puts "	http://www.cavestory.org/download/cave-story.php"
 	puts "and re-archive the zip contents to './bin/doukutsu.tar'. Afterwards run this script again."
 	puts ""
 	exit 1
 }
 
 # generic modules
-set boot_modules {
+append boot_modules {
 	core init ld.lib.so
-	audio_drv
+} [audio_drv_binary] {
 	fb_upscale
 	input_remap
 	libc.lib.so
 	libm.lib.so
 	nxengine_libretro.lib.so
+	report_rom
 	retro_frontend
 	stdcxx.lib.so
 	timer

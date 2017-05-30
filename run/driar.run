@@ -46,6 +46,7 @@ create_boot_directory
 
 append config {
 <config verbose="yes">
+	<default caps="128"/>
 	<parent-provides>
 		<service name="CPU"/>
 		<service name="IO_MEM"/>
@@ -53,7 +54,6 @@ append config {
 		<service name="IRQ"/>
 		<service name="LOG"/>
 		<service name="PD"/>
-		<service name="RAM"/>
 		<service name="RM"/>
 		<service name="ROM"/>
 	</parent-provides>
@@ -98,6 +98,7 @@ append_if [have_spec ps2] config {
 
 append config {
 	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Audio_out"/></provides>
 	</start>
@@ -138,16 +139,20 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
+	<start name="report_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Report"/> </provides>
+		<config verbose="yes"/>
+	</start>
 	<start name="retro_frontend">
 		<resource name="RAM" quantum="64M"/>
 		<config core="fceumm_libretro.lib.so">
 			<game rom="Driar.nes"/>
-			<libc stdout="/log" stderr="/log">
-				<vfs>
-					<log/>
-					<!--<rom name="disksys.rom"/>-->
-				</vfs>
-			</libc>
+			<libc stdout="/log" stderr="/log"/>
+			<vfs>
+				<log/>
+				<!--<rom name="disksys.rom"/>-->
+			</vfs>
 		</config>
 		<route>
 			<service name="Framebuffer">
@@ -173,16 +178,17 @@ if {![file exist bin/Driar.nes]} {
 }
 
 # generic modules
-set boot_modules {
+append boot_modules {
 	core init ld.lib.so
-	audio_drv
+} [audio_drv_binary] {
 	fb_upscale
+	fceumm_libretro.lib.so
 	input_remap
 	libc.lib.so
 	libm.lib.so
+	report_rom
 	retro_frontend
 	stdcxx.lib.so
-	fceumm_libretro.lib.so
 	timer
 	zlib.lib.so
 

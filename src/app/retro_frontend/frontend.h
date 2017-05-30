@@ -116,7 +116,7 @@ struct Retro_frontend::Frontend
 	{
 
 		Dynamic_core(Genode::Env &env, Genode::Allocator &alloc, Name const &name)
-		: Genode::Shared_object(env, alloc, name.string(), BIND_NOW, DONT_KEEP)
+		: Genode::Shared_object(env, alloc, name.string(), BIND_LAZY, DONT_KEEP)
 		{
 			unsigned api_version = lookup<Retro_api_version>
 				("retro_api_version")();
