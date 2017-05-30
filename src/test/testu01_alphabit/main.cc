@@ -6,7 +6,7 @@ extern "C" {
 #include "bbattery.h"
 }
 
-void Libc::Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
 	using namespace Genode;
 

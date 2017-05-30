@@ -23,12 +23,12 @@ create_boot_directory
 
 set config {
 <config>
+	<default caps="128"/>
 	<parent-provides>
 		<service name="CAP"/>
 		<service name="CPU"/>
 		<service name="LOG"/>
 		<service name="PD"/>
-		<service name="RAM"/>
 		<service name="RM"/>
 		<service name="ROM"/>
 		<service name="SIGNAL"/>
@@ -46,9 +46,8 @@ append config {">
 		<exit propagate="yes"/>
 		<resource name="RAM" quantum="1G"/>
 		<config file="/jitterentropy">
-			<libc stdout="/log" stderr="/log">
-				<vfs> <log/> <jitterentropy/> </vfs>
-			</libc>
+			<libc stdout="/log" stderr="/log"/>
+			<vfs> <log/> <jitterentropy/> </vfs>
 		</config>
 	</start>
 </config>

@@ -12,7 +12,7 @@ extern "C" {
 Genode::size_t Libc::Component::stack_size() { return 64*1024*sizeof(Genode::addr_t); }
 
 
-void Libc::Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
 	using namespace Genode;
 

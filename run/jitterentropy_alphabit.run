@@ -1,4 +1,4 @@
-set test_name "testu01_alphabet"
+set test_name "testu01_alphabit"
 
 source ${genode_dir}/repos/world/run/jitterentropy_testu01.inc
 
