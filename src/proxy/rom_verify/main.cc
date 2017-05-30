@@ -14,6 +14,7 @@
 /* Crypto++ includes */
 #include <sha3.h>
 #include <sha.h>
+#include <hex.h>
 
 /* Genode includes */
 #include <os/session_policy.h>
@@ -24,11 +25,6 @@
 #include <base/session_label.h>
 #include <libc/component.h>
 #include <base/log.h>
-
-static char const alph[0x10] = {
-	'0','1','2','3','4','5','6','7',
-	'8','9','a','b','c','d','e','f'
-};
 
 namespace Rom_hash {
 	using namespace Genode;
@@ -49,44 +45,73 @@ struct Rom_hash::Session :
 	Id_space<Parent::Client>::Element client_id;
 	Id_space<Parent::Server>::Element server_id;
 
-	void verify(CryptoPP::HashTransformation &hash,
+	void verify(Session_label const &label,
+	            CryptoPP::HashTransformation &hash,
 	            Genode::Xml_attribute &attr);
 
 	Session(Id_space<Parent::Client> &client_space,
 	        Id_space<Parent::Server> &server_space,
 	        Parent::Server::Id server_id,
-	        Genode::Env &env, Args const &args,
-	        Session_policy const &policy);
+	        Genode::Env &env,
+	        Session_label  const &label,
+	        Session_policy const &policy,
+	        Args           const &args);
 };
 
 
-void Rom_hash::Session::verify(CryptoPP::HashTransformation &hash,
+void Rom_hash::Session::verify(Session_label const &label,
+                               CryptoPP::HashTransformation &hash,
                                Genode::Xml_attribute &attr)
 {
-	unsigned const digest_size = hash.DigestSize();
+	using namespace CryptoPP;
 
+	std::string const hex_target(attr.value_base(), attr.value_size());
+	std::string bin_target;
+	{
+		HexDecoder decoder;
+
+		decoder.Put((byte*)hex_target.data(), hex_target.size());
+		decoder.MessageEnd();
+
+		bin_target.resize(decoder.MaxRetrievable());
+		decoder.Get((byte*)bin_target.data(), bin_target.size());
+	}
+	log(label, " ", hex_target.c_str());
+
+	unsigned const digest_size = hash.DigestSize();
 	uint8_t digest[digest_size];
 
 	/* read the connection dataspace */
 	Rom_session_client rom(cap());
 	Attached_dataspace ds(_env.rm(), rom.dataspace());
 
+	Genode::log("'", ds.local_addr<const char>(), "'");
+
 	hash.CalculateDigest(digest, ds.local_addr<const byte>(), ds.size());
 
-	/* compare with hexadecimal */
-	char const *text = attr.value_base();
-	for (unsigned i = 0, j = 0; i < digest_size && j < attr.value_size(); ++i)
-		if ((alph[digest[i] >> 4] != text[j++]) ||
-		    (alph[digest[i]&0x0F] != text[j++]))
-			throw ~0;
+	for (unsigned i = 0; i < bin_target.size(); ++i) {
+		if ((uint8_t)digest[i] != (uint8_t)bin_target[i]) {
+			Genode::log("mismatch at index ", i);
+			std::string encoded;
+			HexEncoder encoder;
+			encoder.Put((byte*)digest, digest_size);
+			encoded.resize(encoder.MaxRetrievable());
+			encoder.Get((byte*)encoded.data(), encoded.size());
+
+			error(label, " ", encoded.c_str());
+			throw Service_denied();
+		}
+	}
 }
 
 
 Rom_hash::Session::Session(Id_space<Parent::Client> &client_space,
                            Id_space<Parent::Server> &server_space,
                            Parent::Server::Id server_id,
-                           Genode::Env &env, Args const &args,
-                           Session_policy const &policy)
+                           Genode::Env &env,
+                           Session_label  const &label,
+                           Session_policy const &policy,
+                           Args           const &args)
 :
 	Connection<Rom_session>(env, session(env.parent(), args.string())),
 	client_id(parent_client, client_space),
@@ -95,33 +120,33 @@ Rom_hash::Session::Session(Id_space<Parent::Client> &client_space,
 	try {
 		Xml_attribute attr = policy.attribute("sha3");
 		CryptoPP::SHA3 hash(attr.value_size()/2);
-		verify(hash, attr);
+		verify(label, hash, attr);
 		return;
 	} catch (Xml_node::Nonexistent_attribute) { }
 
 	try {
 		Xml_attribute attr = policy.attribute("sha512");
 		CryptoPP::SHA512 hash;
-		verify(hash, attr);
+		verify(label, hash, attr);
 		return;
 	} catch (Xml_node::Nonexistent_attribute) { }
 
 	try {
 		Xml_attribute attr = policy.attribute("sha256");
 		CryptoPP::SHA256 hash;
-		verify(hash, attr);
+		verify(label, hash, attr);
 		return;
 	} catch (Xml_node::Nonexistent_attribute) { }
 
 	try {
 		Xml_attribute attr = policy.attribute("sha1");
 		CryptoPP::SHA1 hash;
-		verify(hash, attr);
+		verify(label, hash, attr);
 		return;
 	} catch (Xml_node::Nonexistent_attribute) { }
 
 	error("no hash policy found");
-	throw ~0;
+	throw Service_denied();
 }
 
 
@@ -198,7 +223,7 @@ void Rom_hash::Main::handle_session_request(Xml_node request)
 			Session_policy const policy(label, config_rom.xml());
 
 			Session *session = new (alloc)
-				Session(env.id_space(), server_id_space, server_id, env, args, policy);
+				Session(env.id_space(), server_id_space, server_id, env, label, policy, args);
 			if (session) {
 				env.parent().deliver_session_cap(server_id, session->cap());
 				return;
@@ -208,7 +233,7 @@ void Rom_hash::Main::handle_session_request(Xml_node request)
 			warning("no policy for '",label,"'");
 		} catch (...) { }
 
-		env.parent().session_response(server_id, Parent::INVALID_ARGS);
+		env.parent().session_response(server_id, Parent::SERVICE_DENIED);
 	}
 
 	if (request.has_type("upgrade")) {
