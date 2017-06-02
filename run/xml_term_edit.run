@@ -1,0 +1,163 @@
+create_boot_directory
+
+import_from_depot \
+	genodelabs/src/[base_src] \
+	genodelabs/pkg/[drivers_interactive_pkg] \
+	ehmry/src/xml_editor \
+	ehmry/src/xml_term_edit \
+
+set build_components {
+	core init
+	drivers/timer
+	server/fs_rom
+	server/terminal
+	server/ram_fs
+	test/log
+	test/timer
+}
+
+build $build_components
+
+append config {
+<config>
+	<default caps="256"/>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="drivers" caps="4096">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides>
+			<service name="Input"/> <service name="Framebuffer"/>
+		</provides>
+	</start>
+
+	<start name="ram_fs">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="File_system"/></provides>
+		<config>
+			<policy label_prefix="xml_editor" root="/" writeable="yes"/>
+			<policy label_prefix="fs_rom" root="/" writeable="no"/>
+			<content>
+<inline name="init.config">
+<config>
+	<default caps="128"/>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+		<service name="Timer"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> </any-service>
+	</default-route>
+</config>
+</inline>
+			</content>
+		</config>
+	</start>
+
+	<start name="fs_rom">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="ROM"/></provides>
+	</start>
+	<start name="xml_editor">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Report"/> </provides>
+		<config output="init.config">
+			<vfs> <fs/> </vfs>
+		</config>
+		<route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+	<start name="init">
+		<resource name="RAM" quantum="4M"/>
+		<configfile name="init.config"/>
+		<route>
+			<service name="ROM" label="init.config"> <child name="fs_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="terminal">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Terminal"/></provides>
+		<config>
+			<keyboard layout="us"/>
+		</config>
+		<route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="xml_term_edit">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<vfs>
+				<inline name="test-log.subsystem">
+	<start name="test-log">
+		<resource name="RAM" quantum="2M"/>
+	</start>
+				</inline>
+				<inline name="test-timer.subsystem">
+	<start name="test-timer">
+		<resource name="RAM" quantum="2M"/>
+	</start>
+				</inline>
+				<inline name="junk">
+	<start name="junk"/>
+				</inline>
+			</vfs>
+		</config>
+		<route>
+			<service name="Report"> <child name="xml_editor"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+append boot_modules {
+	core ld.lib.so init
+	fs_rom
+	libc.lib.so
+	libm.lib.so
+	ram_fs
+	terminal
+	test-log
+	test-timer
+	timer
+}
+
+build_boot_image $boot_modules
+
+run_genode_until forever
