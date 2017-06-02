@@ -26,6 +26,7 @@ set boot_modules {
 	supertux
 	jpeg.lib.so
 	libc.lib.so
+	posix.lib.so
 	libm.lib.so
 	libpng.lib.so
 	pthread.lib.so

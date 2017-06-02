@@ -75,10 +75,7 @@ install_config $config
 
 build_boot_image {
 	core init test-glucose timer
-	ld.lib.so libc.lib.so
-	libm.lib.so
-	stdcxx.lib.so
-	zlib.lib.so
+	ld.lib.so libc.lib.so posix.lib.so libm.lib.so stdcxx.lib.so zlib.lib.so
 	Test.cnf
 }
 

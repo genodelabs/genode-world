@@ -16,6 +16,7 @@ set app_config {
 set boot_modules {
 	tuxmath
 	libc.lib.so
+	posix.lib.so
 	libm.lib.so
 	pthread.lib.so
 	libiconv.lib.so

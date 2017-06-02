@@ -75,9 +75,7 @@ class Log_tee::Root_component :
 		Log_tee::Session_component *_create_session(char const *args) override
 		{
 			Session_label const label = label_from_args(args);
-
-			try { return new (md_alloc()) Session_component(_env, label, args); }
-			catch (Genode::Parent::Service_denied) { throw Root::Unavailable(); }
+			return new (md_alloc()) Session_component(_env, label, args);
 		}
 
 	public:

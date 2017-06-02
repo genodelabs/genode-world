@@ -30,6 +30,7 @@ set boot_modules {
 	ram_fs
 	ltris
 	libc.lib.so
+	posix.lib.so
 	libm.lib.so
 	pthread.lib.so
 	sdl_mixer.lib.so

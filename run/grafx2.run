@@ -119,6 +119,7 @@ set boot_modules {
 	ld.lib.so
 	libc.lib.so
 	libm.lib.so
+	posix.lib.so
 	libpng.lib.so
 	pthread.lib.so
 	sdl_image.lib.so

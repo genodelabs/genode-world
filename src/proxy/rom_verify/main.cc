@@ -242,7 +242,6 @@ void Rom_hash::Main::handle_session_request(Xml_node request)
 
 			String<64> args("ram_quota=", ram_quota);
 
-			// XXX handle Root::Invalid_args
 			env.upgrade(session.client_id.id(), args.string());
 			env.parent().session_response(server_id, Parent::SESSION_OK);
 		});

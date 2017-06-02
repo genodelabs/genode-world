@@ -233,7 +233,7 @@ void Chroot::Main::handle_session_request(Xml_node request)
 		catch (...) {
 			if (session)
 				destroy(heap, session);
-			env.parent().session_response(server_id, Parent::INVALID_ARGS);
+			env.parent().session_response(server_id, Parent::SERVICE_DENIED);
 		}
 	}
 
@@ -245,7 +245,6 @@ void Chroot::Main::handle_session_request(Xml_node request)
 
 			String<64> args("ram_quota=", ram_quota);
 
-			// XXX handle Root::Invalid_args
 			env.upgrade(session.client_id.id(), args.string());
 			env.parent().session_response(server_id, Parent::SESSION_OK);
 		});

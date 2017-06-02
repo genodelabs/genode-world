@@ -183,7 +183,7 @@ set boot_modules {
 	usb_drv
 	uhexen2
 	ld.lib.so
-	libc.lib.so
+	libc.lib.so posix.lib.so
 	libm.lib.so lwip.lib.so sdl.lib.so sdl_mixer.lib.so pthread.lib.so
 	hexen2demo_data.tar
 }

@@ -307,7 +307,7 @@ void Lz_rom::Main::handle_session_request(Xml_node request)
 			}
 			error("failed to decompress '", lz_path, "', ", msg);
 		} catch (...) { }
-		env.parent().session_response(server_id, Parent::INVALID_ARGS);
+		env.parent().session_response(server_id, Parent::SERVICE_DENIED);
 	}
 
 	if (request.has_type("close")) {

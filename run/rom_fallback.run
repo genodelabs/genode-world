@@ -76,8 +76,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init ld.lib.so
-	libc.lib.so
-	libm.lib.so
+	libc.lib.so libm.lib.so posix.lib.so
 	report_rom
 	rom_fallback
 	test-libc

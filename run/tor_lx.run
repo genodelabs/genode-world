@@ -132,7 +132,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer rtc_drv
-	ld.lib.so libc.lib.so libm.lib.so zlib.lib.so
+	ld.lib.so libc.lib.so libm.lib.so zlib.lib.so posix.lib.so
 	libcrypto.lib.so libevent.lib.so libssl.lib.so pthread.lib.so
 	vfs_jitterentropy.lib.so lwip.lib.so
 	nic_drv ram_fs tor

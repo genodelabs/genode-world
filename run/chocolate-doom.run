@@ -188,7 +188,7 @@ set boot_modules {
 	core init timer tar_fs
 	chocolate-doom
 	ld.lib.so
-	libc.lib.so libm.lib.so sdl.lib.so sdl_net.lib.so
+	libc.lib.so posix.lib.so libm.lib.so sdl.lib.so sdl_net.lib.so
 	sdl_mixer.lib.so pthread.lib.so
 	data.tar
 }

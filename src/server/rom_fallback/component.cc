@@ -167,35 +167,32 @@ void Rom_fallback::Main::handle_session_request(Xml_node request)
 				return;
 			}
 
-			catch (Parent::Service_denied) {
+			catch (Service_denied) {
 				warning("'", new_label, "' was denied"); }
 
-			catch (Service::Unavailable) {
-				warning("'", new_label, "' is unavailable"); }
+			catch (Insufficient_ram_quota) {
+				warning("'", new_label, "' RAM quota donation was insufficient"); }
 
-			catch (Service::Invalid_args)   {
-				warning("'", new_label, "' received invalid args"); }
-
-			catch (Service::Quota_exceeded) {
-				warning("'", new_label, "' quota donation was insufficient"); }
+			catch (Insufficient_cap_quota) {
+				warning("'", new_label, "' cap quota donation was insufficient"); }
 
 			if (session)
 				destroy(heap, session);
 		}
 
 		error("no service found for ROM '", original.string(), "'");
-		env.parent().session_response(server_id, Parent::INVALID_ARGS);
+		env.parent().session_response(server_id, Parent::SERVICE_DENIED);
 	}
 
 	if (request.has_type("upgrade")) {
 
 		server_id_space.apply<Session>(server_id, [&] (Session &session) {
 
-			size_t ram_quota = request.attribute_value("ram_quota", 0UL);
+			Ram_quota ram_quota { request.attribute_value("ram_quota", 0UL) };
+			Cap_quota cap_quota { request.attribute_value("cap_quota", 0UL) };
 
-			String<64> args("ram_quota=", ram_quota);
+			String<80> args("ram_quota=", ram_quota, ", cap_quota=", cap_quota);
 
-			// XXX handle Root::Invalid_args
 			env.upgrade(session.client_id.id(), args.string());
 			env.parent().session_response(server_id, Parent::SESSION_OK);
 		});

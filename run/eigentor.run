@@ -200,6 +200,7 @@ set boot_modules {
 	init
 	ld.lib.so
 	libc.lib.so
+	posix.lib.so
 	libcrypto.lib.so
 	libevent.lib.so
 	libm.lib.so

@@ -142,7 +142,7 @@ class Tftp_rom::Session_component :
 		{
 			if (_pcb == NULL) {
 				Genode::error("failed to create UDP context");
-				throw Genode::Root::Unavailable();
+				throw Genode::Service_denied();
 			}
 
 			/* set callback */
@@ -477,7 +477,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 					ipaddr_aton(addr_str, &ipaddr);
 				} catch (...) {
 					Genode::error(label.string(), ": 'ip' not specified in policy");
-					throw Root::Unavailable();
+					throw Service_denied();
 				}
 
 				try { policy.attribute("port").value(&port); }
@@ -503,10 +503,10 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 						                  _timeout_dispatcher.elapsed_ms(), timeout*1000);
 					Genode::log(label.string(), " requested");
 				}
-
-			} catch (Session_policy::No_policy_defined) {
+			}
+			catch (Session_policy::No_policy_defined) {
 				Genode::error("no policy for defined for ", label.string());
-				throw Root::Unavailable();
+				throw Service_denied();
 			}
 
 			_timeout_dispatcher.insert(session);
@@ -531,7 +531,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 };
 
 
-void Libc::Component::construct(Genode::Env &env )
+void Libc::Component::construct(Libc::Env &env )
 {
 	static Genode::Sliced_heap sliced_heap(env.ram(), env.rm());
 	static Tftp_rom::Root root(env, sliced_heap);
