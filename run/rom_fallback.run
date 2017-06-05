@@ -4,21 +4,19 @@
 # \date   2016-07-21
 #
 
-
-set build_components {
-	core init
-	drivers/timer
-	server/rom_fallback
-	server/report_rom
-	test/libc
-}
-
-build $build_components
-
 create_boot_directory
+
+import_from_depot \
+	genodelabs/src/[base_src] \
+	genodelabs/src/init \
+	genodelabs/src/report_rom \
+	genodelabs/src/rom_fallback \
+
+build { server/rom_fallback test/libc }
 
 append config {
 <config verbose="yes">
+	<default caps="256"/>
 	<parent-provides>
 		<service name="CPU"/>
 		<service name="LOG"/>
@@ -61,8 +59,8 @@ append config {
 	</start>
 
 	<start name="test-libc">
-		<resource name="RAM" quantum="8M"/>
-		<config>
+		<resource name="RAM" quantum="4M"/>
+		<config ld_verbose="yes">
 			<libc stdout="/log" stderr="log"/>
 			<vfs> <log/> </vfs>
 		</config>
@@ -73,18 +71,16 @@ append config {
 
 install_config $config
 
-# generic modules
 set boot_modules {
-	core init ld.lib.so
-	libc.lib.so libm.lib.so posix.lib.so
-	report_rom
 	rom_fallback
+	libc.lib.so
+	libm.lib.so
+	posix.lib.so
 	test-libc
-	timer
 }
 
 build_boot_image $boot_modules
 
 append qemu_args " -nographic"
 
-run_genode_until {child "test-libc" exited with exit value 0} 60
+run_genode_until {--- libC test ---} 60
