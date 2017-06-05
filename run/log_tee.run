@@ -1,14 +1,19 @@
-build "core init server/log_tee test/log"
-
 create_boot_directory
+
+import_from_depot \
+	genodelabs/src/[base_src] \
+	genodelabs/src/init \
+	genodelabs/src/log_tee \
+
+build "test/log"
 
 install_config {
 	<config>
+		<default caps="128"/>
 		<parent-provides>
 			<service name="CPU"/>
 			<service name="LOG"/>
 			<service name="PD"/>
-			<service name="RAM"/>
 			<service name="RM"/>
 			<service name="ROM"/>
 		</parent-provides>
@@ -30,7 +35,7 @@ install_config {
 	</config>
 }
 
-build_boot_image "core ld.lib.so init log_tee test-log"
+build_boot_image "test-log"
 
 append qemu_args "-nographic "
 
