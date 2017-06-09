@@ -58,6 +58,7 @@ Retro_frontend::Frontend::Frontend(Libc::Env &env) : env(env)
 		shared_object.lookup<Retro_set_audio_sample_batch>
 			("retro_set_audio_sample_batch")(audio_sample_batch_callback);
 	} catch (...) {
+		Genode::error("failed to initialize audio");
 
 		shared_object.lookup<Retro_set_audio_sample>
 			("retro_set_audio_sample")(audio_sample_noop);
@@ -154,7 +155,8 @@ void Libc::Component::construct(Libc::Env &env)
 
 	init_keyboard_map();
 
-	try { static Frontend inst(env); }
+	/* run the frontend and core initialization in application context */
+	try { Libc::with_libc([&env] () { static Frontend inst(env); }); }
 
 	catch (Shared_object::Invalid_rom_module) {
 		error("failed to load core"); }

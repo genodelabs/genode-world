@@ -287,7 +287,7 @@ struct Retro_frontend::Frontend
 		    (framebuffer->mode.height() == 0))
 		{
 			Genode::error("zero framebuffer mode received, exiting");
-			exit();
+			Libc::with_libc([&] () { exit(); });
 			env.parent().exit(0);
 		}
 	}
@@ -302,7 +302,8 @@ struct Retro_frontend::Frontend
 	Retro_run retro_run =
 		shared_object.lookup<Retro_run>("retro_run");
 
-	void run() { retro_run(); }
+	/* switch to application context and advance the core */
+	void run() { Libc::with_libc([&] () { retro_run(); }); }
 
 	Genode::Signal_handler<Frontend> core_runner
 		{ env.ep(), *this, &Frontend::run };
@@ -422,13 +423,14 @@ struct Retro_frontend::Frontend
 			timer.sigh(Genode::Signal_context_capability());
 
 			/* stop playpack */
-			stereo_out->stop_stream();
+			if (stereo_out.constructed())
+				stereo_out->stop_stream();
 
 			/* set signal handler for unpausing */
 			controller.input.sigh(resume_handler);
 
 			/* a good time to flush memory to the FS */
-			save_memory();
+			Libc::with_libc([&] () { save_memory(); });
 		}
 	}
 

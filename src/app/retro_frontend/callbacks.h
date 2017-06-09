@@ -277,6 +277,12 @@ bool environment_callback(unsigned cmd, void *data)
 		return true;
 	}
 
+	case RETRO_ENVIRONMENT_GET_USERNAME:
+	{
+		*(char const **)data = NULL;
+		return true;
+	}
+
 	case RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER:
 	{
 		retro_framebuffer *fb = (retro_framebuffer*)data;
