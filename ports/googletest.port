@@ -1,0 +1,18 @@
+LICENSE   := BSD-3-Clause
+VERSION   := git
+DOWNLOADS := googletest.git
+
+URL(googletest) := https://github.com/google/googletest.git
+REV(googletest) := 10799abad25aa9ec7dcd08d9a46cad093f8bb074
+DIR(googletest) := src/lib/googletest
+
+DIRS += include/gtest
+DIR_CONTENT(include/gtest) := src/lib/googletest/googletest/include/gtest/**
+
+DIRS += include/gmock
+DIR_CONTENT(include/gmock) := src/lib/googletest/googlemock/include/gmock/**
+
+PATCHES += src/lib/googletest/gtest-port.h.patch
+
+# quick and dirty solution to enable colored console output
+PATCHES += src/lib/googletest/gtest.patch
