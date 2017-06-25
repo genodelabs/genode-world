@@ -1,0 +1,80 @@
+#
+# Build
+#
+
+set build_components {
+	core init
+	drivers/timer
+	drivers/rtc
+	server/ram_fs
+	test/gtest
+}
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="CAP"/>
+		<service name="RM"/>
+		<service name="PD"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+		<service name="IO_PORT"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="rtc_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="ram_fs">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config> <policy label="gtest -> " root="/" writeable="yes" /> </config>
+	</start>
+
+	<start name="gtest">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<vfs>
+				<dir name="dev"> <log/> <rtc/> </dir>
+				<fs/>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+		</config>
+	</start>
+</config>}
+
+#
+# Boot image
+#
+
+build_boot_image {
+	core init ld.lib.so
+	timer ram_fs
+	libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
+	rtc_drv
+	gtest
+}
+
+append qemu_args " -nographic "
+
+run_genode_until {.*child "gtest" exited with exit value 0} 1000

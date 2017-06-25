@@ -1,0 +1,24 @@
++++ src/lib/googletest/googletest/src/gtest.cc
+@@ -2922,21 +2922,7 @@ bool ShouldUseColor(bool stdout_is_tty) {
+     // console there does support colors.
+     return stdout_is_tty;
+ #else
+-    // On non-Windows platforms, we rely on the TERM variable.
+-    const char* const term = posix::GetEnv("TERM");
+-    const bool term_supports_color =
+-        String::CStringEquals(term, "xterm") ||
+-        String::CStringEquals(term, "xterm-color") ||
+-        String::CStringEquals(term, "xterm-256color") ||
+-        String::CStringEquals(term, "screen") ||
+-        String::CStringEquals(term, "screen-256color") ||
+-        String::CStringEquals(term, "tmux") ||
+-        String::CStringEquals(term, "tmux-256color") ||
+-        String::CStringEquals(term, "rxvt-unicode") ||
+-        String::CStringEquals(term, "rxvt-unicode-256color") ||
+-        String::CStringEquals(term, "linux") ||
+-        String::CStringEquals(term, "cygwin");
+-    return stdout_is_tty && term_supports_color;
++    return stdout_is_tty;
+ #endif  // GTEST_OS_WINDOWS
+   }
+ 
