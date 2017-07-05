@@ -192,8 +192,8 @@ class Fb_scaler::Root_component : Root_component_base
 		{
 			using namespace Genode;
 
-			unsigned      width = Arg_string::find_arg(args, "fb_width").ulong_value(0);
-			unsigned     height = Arg_string::find_arg(args, "fb_width").ulong_value(0);
+			unsigned  width = Arg_string::find_arg(args, "fb_width").ulong_value(0);
+			unsigned height = Arg_string::find_arg(args, "fb_height").ulong_value(0);
 
 			return new (md_alloc())
 				Session_component(_env, Mode(width, height, Mode::INVALID));
