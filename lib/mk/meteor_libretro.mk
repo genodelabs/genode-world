@@ -2,7 +2,7 @@ LIBS = libretro libc stdcxx
 
 SHARED_LIB = yes
 
-PORT_DIR := $(call select_from_ports,meteor-libretro)/src/lib/meteor-libretro
+PORT_DIR := $(call select_from_ports,meteor-libretro)/src/libretro/meteor
 
 CORE_DIR := $(PORT_DIR)
 -include $(PORT_DIR)/libretro/Makefile.common
