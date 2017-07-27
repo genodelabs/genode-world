@@ -66,7 +66,7 @@ int progress_callback(void   *clientp,
 	return CURLE_OK;
 }
 
-void Libc::Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
 	Genode::Attached_rom_dataspace config(env, "config");
 
@@ -142,7 +142,9 @@ void Libc::Component::construct(Genode::Env &env)
 			curl_easy_setopt(curl, CURLOPT_PROXY, proxy.string());
 		} catch (...) { }
 
-		res = curl_easy_perform(curl);
+		Libc::with_libc([&]() {
+			res = curl_easy_perform(curl);
+		});
 		close(fd);
 		if (res != CURLE_OK)
 			Genode::error(curl_easy_strerror(res));
