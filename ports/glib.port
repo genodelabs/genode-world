@@ -1,0 +1,99 @@
+LICENSE   := GPLv2
+VERSION   := 2.52.2
+DOWNLOADS := glib.archive
+
+URL(glib) := https://download.gnome.org/sources/glib/2.52/glib-$(VERSION).tar.xz
+SHA(glib) := 50a5af7569af1a489e17f207142cd5a4cdefbf68
+DIR(glib) := src/lib/glib
+
+default: macro_sanity
+
+# This is wacky automess kludge that
+# cannot be managed by hand.
+macro_sanity: $(DOWNLOADS)
+	$(VERBOSE)sed -i '/error/d' src/lib/glib/glib/gversionmacros.h
+
+DIRS := include/glib include/glib/glib include/glib/glib/deprecated
+
+DIR_CONTENT(include/glib) := src/lib/glib/glib/glib.h
+
+DIR_CONTENT(include/glib/glib) := \
+	src/lib/glib/glib/galloca.h \
+	src/lib/glib/glib/garray.h \
+	src/lib/glib/glib/gasyncqueue.h \
+	src/lib/glib/glib/gatomic.h \
+	src/lib/glib/glib/glib-autocleanups.h \
+	src/lib/glib/glib/gbacktrace.h \
+	src/lib/glib/glib/gbase64.h \
+	src/lib/glib/glib/gbitlock.h \
+	src/lib/glib/glib/gbookmarkfile.h \
+	src/lib/glib/glib/gbytes.h \
+	src/lib/glib/glib/gcharset.h \
+	src/lib/glib/glib/gchecksum.h \
+	src/lib/glib/glib/gconvert.h \
+	src/lib/glib/glib/gdataset.h \
+	src/lib/glib/glib/gdate.h \
+	src/lib/glib/glib/gdatetime.h \
+	src/lib/glib/glib/gdir.h \
+	src/lib/glib/glib/genviron.h \
+	src/lib/glib/glib/gerror.h \
+	src/lib/glib/glib/gfileutils.h \
+	src/lib/glib/glib/ggettext.h \
+	src/lib/glib/glib/ghash.h \
+	src/lib/glib/glib/ghmac.h \
+	src/lib/glib/glib/ghook.h \
+	src/lib/glib/glib/ghostutils.h \
+	src/lib/glib/glib/giochannel.h \
+	src/lib/glib/glib/gkeyfile.h \
+	src/lib/glib/glib/glist.h \
+	src/lib/glib/glib/gmacros.h \
+	src/lib/glib/glib/gmain.h \
+	src/lib/glib/glib/gmappedfile.h \
+	src/lib/glib/glib/gmarkup.h \
+	src/lib/glib/glib/gmem.h \
+	src/lib/glib/glib/gmessages.h \
+	src/lib/glib/glib/gnode.h \
+	src/lib/glib/glib/goption.h \
+	src/lib/glib/glib/gpattern.h \
+	src/lib/glib/glib/gpoll.h \
+	src/lib/glib/glib/gprimes.h \
+	src/lib/glib/glib/gqsort.h \
+	src/lib/glib/glib/gquark.h \
+	src/lib/glib/glib/gqueue.h \
+	src/lib/glib/glib/grand.h \
+	src/lib/glib/glib/gregex.h \
+	src/lib/glib/glib/gscanner.h \
+	src/lib/glib/glib/gsequence.h \
+	src/lib/glib/glib/gshell.h \
+	src/lib/glib/glib/gslice.h \
+	src/lib/glib/glib/gslist.h \
+	src/lib/glib/glib/gspawn.h \
+	src/lib/glib/glib/gstdio.h \
+	src/lib/glib/glib/gstrfuncs.h \
+	src/lib/glib/glib/gstring.h \
+	src/lib/glib/glib/gstringchunk.h \
+	src/lib/glib/glib/gtestutils.h \
+	src/lib/glib/glib/gthread.h \
+	src/lib/glib/glib/gthreadpool.h \
+	src/lib/glib/glib/gtimer.h \
+	src/lib/glib/glib/gtimezone.h \
+	src/lib/glib/glib/gtrashstack.h \
+	src/lib/glib/glib/gtree.h \
+	src/lib/glib/glib/gtypes.h \
+	src/lib/glib/glib/gunicode.h \
+	src/lib/glib/glib/gurifuncs.h \
+	src/lib/glib/glib/gutils.h \
+	src/lib/glib/glib/guuid.h \
+	src/lib/glib/glib/gvarianttype.h \
+	src/lib/glib/glib/gvariant.h \
+	src/lib/glib/glib/gversion.h \
+	src/lib/glib/glib/gversionmacros.h \
+	src/lib/glib/glib/gprintf.h \
+
+DIR_CONTENT(include/glib/glib/deprecated) := \
+	src/lib/glib/glib/deprecated/gallocator.h  \
+	src/lib/glib/glib/deprecated/gcache.h  \
+	src/lib/glib/glib/deprecated/gcompletion.h  \
+	src/lib/glib/glib/deprecated/gmain.h  \
+	src/lib/glib/glib/deprecated/grel.h  \
+	src/lib/glib/glib/deprecated/gthread.h
