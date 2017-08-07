@@ -133,6 +133,8 @@ namespace Component {
 
 	void construct(Genode::Env &env)
 	{
+		env.exec_static_constructors();
+
 		Genode::Attached_rom_dataspace config = { env, "config" };
 		try {
 			Genode::Xml_node remote_rom = config.xml().sub_node("remote_rom");

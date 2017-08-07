@@ -255,6 +255,7 @@ namespace Component {
 	Genode::size_t stack_size()    { return 2*1024*sizeof(long); }
 	void construct(Genode::Env &env)
 	{
+		env.exec_static_constructors();
 		static Remote_rom::Main main(env);
 	}
 }
