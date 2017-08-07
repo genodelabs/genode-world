@@ -19,6 +19,7 @@ install_config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="100" />
 	<start name="test-lemon">
 		<resource name="RAM" quantum="2M"/>
 		<config>
