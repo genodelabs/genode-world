@@ -1,30 +1,26 @@
 /*
- * \brief  Base driver for ZC702 Board
+ * \brief  Base driver for ZC706 Board
  * \author Johannes Schlatow
  * \date   2016-03-24
  */
 
 /*
- * Copyright (C) 2016 Genode Labs GmbH
+ * Copyright (C) 2016-2017 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
- * under the terms of the GNU General Public License version 2.
+ * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _INCLUDE__ZC702__DRIVERS__BOARD_BASE_H_
-#define _INCLUDE__ZC702__DRIVERS__BOARD_BASE_H_
+#ifndef _INCLUDE__ZC706__DRIVERS__BOARD_BASE_H_
+#define _INCLUDE__ZC706__DRIVERS__BOARD_BASE_H_
 
-#include <spec/zynq/drivers/board_base_support.h>
+#include <drivers/defs/zynq.h>
 
-namespace Genode { struct Board_base; }
+namespace Zynq_zc706 {
 
-/**
- * Base driver for the ZC702 platform
- */
-struct Genode::Board_base : Zynq::Board_base
-{
-	enum
-	{
+	using namespace Zynq;
+
+	enum {
 		/* clocks (assuming 6:2:1 mode) */
 		CPU_1X_CLOCK   = 111111100,
 		CPU_6X4X_CLOCK = 6*CPU_1X_CLOCK,
@@ -41,4 +37,4 @@ struct Genode::Board_base : Zynq::Board_base
 	};
 };
 
-#endif /* _INCLUDE__ZC702__DRIVERS__BOARD_BASE_H_ */
+#endif /* _INCLUDE__ZC706__DRIVERS__BOARD_BASE_H_ */

@@ -5,26 +5,23 @@
  */
 
 /*
- * Copyright (C) 2015 Genode Labs GmbH
+ * Copyright (C) 2015-2017 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
- * under the terms of the GNU General Public License version 2.
+ * under the terms of the GNU Affero General Public License version 3.
  */
 
 #ifndef _INCLUDE__ZEDBOARD__DRIVERS__BOARD_BASE_H_
 #define _INCLUDE__ZEDBOARD__DRIVERS__BOARD_BASE_H_
 
-#include <spec/zynq/drivers/board_base_support.h>
+#include <drivers/defs/zynq.h>
 
-namespace Genode { struct Board_base; }
+namespace Zynq_zedboard {
 
-/**
- * Base driver for the Zedboard platform
- */
-struct Genode::Board_base : Zynq::Board_base
-{
-	enum
-	{
+	using namespace Zynq;
+
+	enum {
+		/* clocks (assuming 6:2:1 mode) */
 		PS_CLOCK = 33333333,
 		ARM_PLL_CLOCK = 1333333*1000,
 		DDR_PLL_CLOCK = 1066667*1000,
