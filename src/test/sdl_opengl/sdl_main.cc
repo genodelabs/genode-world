@@ -1,0 +1,39 @@
+/**
+ * \brief  SDL startup code
+ * \author Josef Soentgen
+ * \date   2017-08-17
+ */
+
+/*
+ * Copyright (C) 2017 Genode Labs GmbH
+ *
+ * This file is part of the Genode OS framework, which is distributed
+ * under the terms of the GNU Affero General Public License version 3.
+ */
+
+/* Genode includes */
+#include <base/heap.h>
+#include <base/printf.h>
+#include <libc/component.h>
+
+
+/* potentially needed by MESA (i965 DRM backend) */
+Genode::Env                                      *genode_env;
+static Genode::Constructible<Genode::Entrypoint>  signal_ep;
+
+
+Genode::Entrypoint &genode_entrypoint()
+{
+	return *signal_ep;
+}
+
+
+/* provided by the application */
+extern "C" int main(int argc, char ** argv, char **envp);
+
+void Libc::Component::construct(Libc::Env &env)
+{
+	genode_env = &env;
+	signal_ep.construct(env, 1024*sizeof(long), "sdl_signal_ep");
+	Libc::with_libc([] () { main(0, nullptr, nullptr); });
+}
