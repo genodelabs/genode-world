@@ -1,0 +1,75 @@
+#
+# \brief   Scenario to wipe hard drive in target machine
+# \author  Emery Hemingway
+# \date    2017-08-26
+#
+
+
+#
+# Build
+#
+set build_components { app/blk_shred }
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot \
+	genodelabs/src/[base_src] \
+	genodelabs/src/init \
+	genodelabs/src/ahci_drv \
+
+#
+# Generate config
+#
+set config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+	<start name="timer">
+		<resource name="RAM" quantum="1M" />
+		<provides><service name="Timer" /></provides>
+	</start>}
+
+append_platform_drv_config
+
+append config {
+	<start name="ahci_drv">
+		<resource name="RAM" quantum="2M" />
+		<provides><service name="Block" /></provides>
+		<config>
+			<policy label_prefix="blk_shred" device="0" writeable="yes"/>
+		</config>
+	</start>
+	<start name="blk_shred">
+		<resource name="RAM" quantum="4M" />
+	</start>
+</config> }
+
+install_config $config
+
+#
+# Boot modules
+#
+set boot_modules { blk_shred }
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+run_genode_until forever
