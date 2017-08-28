@@ -105,7 +105,7 @@ struct Main : Chuck_System
 	void handle_config()
 	{
 		config_rom.update();
-		load_config();
+		Libc::with_libc([&] () { load_config(); });
 	}
 
 	//Signal_handler<Main> config_handler
@@ -125,10 +125,12 @@ struct Main : Chuck_System
 	Signal_handler<Main> timeout_handler
 		{ env.ep(), *this, &Main::handle_timeout };
 
-	Main(Genode::Env &env);
+	Main(Genode::Env &env) : env(env) { }
+
+	void run();
 };
 
-Main::Main(Genode::Env &env) : env(env)
+void Main::run()
 {
 	Genode::Xml_node config_node = config_rom.xml();
 
@@ -405,4 +407,6 @@ void Libc::Component::construct(Libc::Env &env)
 	init_input(env);
 
 	static Main inst(env);
+
+	Libc::with_libc([&] () { inst.run(); });
 }
