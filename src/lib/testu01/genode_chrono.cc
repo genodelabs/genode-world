@@ -1,12 +1,24 @@
-#include <timer_session/connection.h>
+#include <genode_init.h>
 #include <base/printf.h>
+
+Genode::Allocator *_heap = nullptr;
+Timer::Connection *_timer = nullptr;
+
+
+void testu01_init(Genode::Allocator &heap, Timer::Connection &timer)
+{
+	_heap = &heap;
+	_timer = &timer;
+}
+
 
 /* XXX: should be the CPU session time, but the timer works for now */
 static void Heure (unsigned long *tsec, unsigned long *tusec)
 {
-	static Timer::Connection timer;
+	if (!_timer)
+		Genode::error("library not initialized with 'testu01_init'!");
 
-	unsigned long ms = timer.elapsed_ms();
+	unsigned long ms = _timer->elapsed_ms();
 
 	*tsec = ms / 1000;
 	*tusec = ms * 1000;
@@ -25,13 +37,16 @@ void chrono_Init (chrono_Chrono *C) {
 
 chrono_Chrono * chrono_Create (void)
 {
-	chrono_Chrono *C  = new (Genode::env()->heap()) chrono_Chrono;
+	if (!_heap)
+		Genode::error("library not initialized with 'testu01_init'!");
+
+	chrono_Chrono *C  = new (*_heap) chrono_Chrono;
 	Heure(&C->second, &C->microsec);
 	return C;
 }
 
 
-void chrono_Delete (chrono_Chrono *C) { destroy(Genode::env()->heap(), C); }
+void chrono_Delete (chrono_Chrono *C) { destroy(*_heap, C); }
 
 
 double chrono_Val (chrono_Chrono *C, chrono_TimeFormat Unit)
