@@ -31,6 +31,7 @@ append config {
 		<service name="RM"/>
 		<service name="ROM"/>
 	</parent-provides>
+	<default caps="100"/>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
@@ -46,15 +47,11 @@ append config {
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
-	<start name="fetchurl">
+	<start name="fetchurl" caps="500">
 		<resource name="RAM" quantum="8M"/>
 		<config>
-			<libc stdout="/dev/log" stderr="/dev/log">
-				<vfs>
-					<dir name="dev">
-						<log/> <null/> </dir>
-				</vfs>
-			</libc>
+			<vfs> <dir name="dev"> <log/> <null/> </dir> </vfs>
+			<libc stdout="/dev/log" stderr="/dev/log"/>
 			<fetch url="http://genode.org/about/LICENSE" path="/dev/log"/>
 		</config>
 	</start>
