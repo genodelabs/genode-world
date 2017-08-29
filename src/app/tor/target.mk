@@ -18,7 +18,15 @@ SRC_C   = common/address.c \
           common/compat.c \
           common/compat_libevent.c \
           common/compat_pthreads.c \
+          common/compat_rust.c \
           common/compat_threads.c \
+          common/compat_time.c \
+          common/compress.c \
+          common/compress_lzma.c \
+          common/compress_none.c \
+          common/compress_zlib.c \
+          common/compress_zstd.c \
+          common/confline.c \
           common/container.c \
           common/crypto.c \
           common/crypto_curve25519.c \
@@ -32,8 +40,8 @@ SRC_C   = common/address.c \
           common/procmon.c \
           common/pubsub.c \
           common/sandbox.c \
+          common/storagedir.c \
           common/timers.c \
-          common/torgzip.c \
           common/tortls.c \
           common/util.c \
           common/util_bug.c \
@@ -88,8 +96,12 @@ SRC_C   = common/address.c \
           ext/timeouts/timeout.c \
           ext/trunnel/trunnel.c \
           or/addressmap.c \
+          or/bridges.c \
+          or/bridges.c \
           or/buffers.c \
           or/channel.c \
+          or/channelpadding.c \
+          or/channelpadding.c \
           or/channeltls.c \
           or/circpathbias.c \
           or/circuitbuild.c \
@@ -104,6 +116,9 @@ SRC_C   = common/address.c \
           or/connection.c \
           or/connection_edge.c \
           or/connection_or.c \
+          or/conscache.c \
+          or/consdiff.c \
+          or/consdiffmgr.c \
           or/control.c \
           or/cpuworker.c \
           or/dircollate.c \
@@ -117,6 +132,13 @@ SRC_C   = common/address.c \
           or/fp_pair.c \
           or/geoip.c \
           or/hibernate.c \
+          or/hs_cache.c \
+          or/hs_circuitmap.c \
+          or/hs_common.c \
+          or/hs_descriptor.c \
+          or/hs_intropoint.c \
+          or/hs_ntor.c \
+          or/hs_service.c \
           or/keypin.c \
           or/main.c \
           or/microdesc.c \
@@ -126,8 +148,10 @@ SRC_C   = common/address.c \
           or/onion_fast.c \
           or/onion_ntor.c \
           or/onion_tap.c \
+          or/parsecommon.c \
           or/periodic.c \
           or/policies.c \
+          or/protover.c \
           or/reasons.c \
           or/relay.c \
           or/rendcache.c \
@@ -143,12 +167,18 @@ SRC_C   = common/address.c \
           or/routerparse.c \
           or/routerset.c \
           or/scheduler.c \
+          or/shared_random.c \
+          or/shared_random_state.c \
           or/statefile.c \
           or/status.c \
           or/tor_main.c \
           or/torcert.c \
           or/transports.c \
+          trunnel/channelpadding_negotiation.c \
           trunnel/ed25519_cert.c \
+          trunnel/hs/cell_common.c \
+          trunnel/hs/cell_establish_intro.c \
+          trunnel/hs/cell_introduce1.c \
           trunnel/link_handshake.c \
           trunnel/pwbox.c
 

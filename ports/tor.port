@@ -2,7 +2,7 @@ LICENSE   := BSD-like
 VERSION   := git
 DOWNLOADS := tor.git
 URL(tor)  := https://github.com/torproject/tor.git
-REV(tor)  := cb8557f7c93abc8b770f1753d2e39dafb2a9fe3b
+REV(tor)  := 51d14b3d478a94c410a695f736445f42ccc23fb9
 DIR(tor)  := src/app/tor
 PATCHES   := src/app/tor/build.patch \
              src/app/tor/no_cloexec.patch \
