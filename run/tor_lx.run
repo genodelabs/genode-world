@@ -61,6 +61,7 @@ set config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="200"/>
 
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
@@ -74,7 +75,7 @@ set config {
 
 	<start name="config_fs" priority="-1">
 		<binary name="ram_fs"/>
-		<resource name="RAM" quantum="4M"/>
+		<resource name="RAM" quantum="20M"/>
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<content>
@@ -93,30 +94,29 @@ DataDirectory /tor
 	</start>
 
 	<start name="tor">
-		<resource name="RAM" quantum="20M"/>
+		<resource name="RAM" quantum="30M"/>
 		<config ld_verbose="yes">
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"}
-append config " ip_addr=\"$netprefix.2\" netmask=\"255.255.255.0\" gateway=\"$netprefix.1\">"
+append config " ip_addr=\"$netprefix.2\" netmask=\"255.255.255.0\" gateway=\"$netprefix.1\"/>"
 append config {
-				<vfs>
-					<dir name="dev">
-						<jitterentropy name="random"/>
-						<jitterentropy name="urandom"/>
-						<log/> <rtc/>
-					</dir>
-					<dir name="etc">
-						<dir name="tor"><fs label="conf" /></dir>
-					</dir>
-					<dir name="tor"> <fs label="data"/> </dir>
-				</vfs>
-			</libc>
+			<vfs>
+				<dir name="dev">
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+					<log/> <rtc/>
+				</dir>
+				<dir name="etc">
+					<dir name="tor"><fs label="conf" /></dir>
+				</dir>
+				<dir name="tor"> <fs label="data"/> </dir>
+			</vfs>
 		</config>
 	</start>}
 
 append_platform_drv_config
 
 append config {
-	<start name="nic_drv">
+	<start name="linux_nic_drv">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nic"/></provides>
 	</start>
@@ -135,7 +135,7 @@ set boot_modules {
 	ld.lib.so libc.lib.so libm.lib.so zlib.lib.so posix.lib.so
 	libcrypto.lib.so libevent.lib.so libssl.lib.so pthread.lib.so
 	vfs_jitterentropy.lib.so lwip.lib.so
-	nic_drv ram_fs tor
+	linux_nic_drv ram_fs tor
 }
 
 # platform-specific modules

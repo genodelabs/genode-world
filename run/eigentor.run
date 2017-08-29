@@ -47,6 +47,7 @@ set config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="200"/>
 
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
@@ -114,22 +115,21 @@ DataDirectory /tor
 	</start>
 
 	<start name="tor">
-		<resource name="RAM" quantum="20M"/>
+		<resource name="RAM" quantum="30M"/>
 		<config ld_verbose="yes">
+			<vfs>
+				<dir name="dev">
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+					<log/> <rtc/>
+				</dir>
+				<dir name="etc">
+					<dir name="tor"><fs label="conf" /></dir>
+				</dir>
+				<dir name="tor"> <fs label="data"/> </dir>
+			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"
-			      ip_addr="10.1.2.2" gateway="10.1.2.1" netmask="255.255.255.0">
-				<vfs>
-					<dir name="dev">
-						<jitterentropy name="random"/>
-						<jitterentropy name="urandom"/>
-						<log/> <rtc/>
-					</dir>
-					<dir name="etc">
-						<dir name="tor"><fs label="conf" /></dir>
-					</dir>
-					<dir name="tor"> <fs label="data"/> </dir>
-				</vfs>
-			</libc>
+			      ip_addr="10.1.2.2" gateway="10.1.2.1" netmask="255.255.255.0"/>
 		</config>
 		<route>
 			<any-service> <child name="nic_router"/> <parent/> <any-child/> </any-service>
@@ -157,12 +157,12 @@ DataDirectory /tor
 		<service name="Nic"/>
 		<service name="Timer"/>
 	</parent-provides>
-	<start name="fetchurl">
+	<start name="fetchurl" caps="500">
 		<resource name="RAM" quantum="8M"/>
-		<config>
+		<config verbose="true">
+			<vfs> <dir name="dev"> <log/> <null/> </dir> </vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"
 			      ip_addr="10.1.3.2" gateway="10.1.3.1" netmask="255.255.255.0">
-				<vfs> <dir name="dev"> <log/> <null/> </dir> </vfs>
 			</libc>
 			<fetch url="https://check.torproject.org/" path="/dev/log"
 			       proxy="socks5h://10.1.3.1:9050"/>
@@ -180,7 +180,7 @@ DataDirectory /tor
 	<start name="web-client">
 		<binary name="init"/>
 		<resource name="RAM" quantum="40M"/>
-		<configfile name="init.config"/>
+		<configfile name="init.config" caps="600"/>
 		<route>
 			<service name="ROM" label="init.config"> <child name="dynamic_rom"/> </service>
 			<service name="Nic"> <child name="nic_router"/> </service>
