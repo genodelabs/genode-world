@@ -67,7 +67,7 @@ append config {
 		<provides><service name="Nic"/></provides>
 	</start>
 
-	<start name="nic_router">
+	<start name="nic_router" caps="200">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="Nic"/></provides>
 		<config rtt_sec="3">
@@ -114,7 +114,7 @@ DataDirectory /tor
 		</config>
 	</start>
 
-	<start name="tor">
+	<start name="tor" caps="300">
 		<resource name="RAM" quantum="30M"/>
 		<config ld_verbose="yes">
 			<vfs>
@@ -159,11 +159,10 @@ DataDirectory /tor
 	</parent-provides>
 	<start name="fetchurl" caps="500">
 		<resource name="RAM" quantum="8M"/>
-		<config verbose="true">
+		<config>
 			<vfs> <dir name="dev"> <log/> <null/> </dir> </vfs>
 			<libc stdout="/dev/log" stderr="/dev/log"
-			      ip_addr="10.1.3.2" gateway="10.1.3.1" netmask="255.255.255.0">
-			</libc>
+			      ip_addr="10.1.3.2" gateway="10.1.3.1" netmask="255.255.255.0"/>
 			<fetch url="https://check.torproject.org/" path="/dev/log"
 			       proxy="socks5h://10.1.3.1:9050"/>
 		</config>
@@ -177,10 +176,10 @@ DataDirectory /tor
 
 	</start>
 
-	<start name="web-client">
+	<start name="web-client" caps="600">
 		<binary name="init"/>
 		<resource name="RAM" quantum="40M"/>
-		<configfile name="init.config" caps="600"/>
+		<configfile name="init.config"/>
 		<route>
 			<service name="ROM" label="init.config"> <child name="dynamic_rom"/> </service>
 			<service name="Nic"> <child name="nic_router"/> </service>
