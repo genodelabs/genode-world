@@ -71,6 +71,7 @@ void Libc::Component::construct(Libc::Env &env)
 	Genode::Attached_rom_dataspace config(env, "config");
 
 	Timer::Connection timer(env);
+
 	/* wait for DHCP */
 	timer.msleep(4000);
 
@@ -144,17 +145,20 @@ void Libc::Component::construct(Libc::Env &env)
 
 		Libc::with_libc([&]() {
 			res = curl_easy_perform(curl);
-		});
-		close(fd);
-		if (res != CURLE_OK)
-			Genode::error(curl_easy_strerror(res));
+			close(fd);
 
-		curl_easy_cleanup(curl);
+			if (res != CURLE_OK)
+				Genode::error(curl_easy_strerror(res));
+
+			curl_easy_cleanup(curl);
+		});
+		
+		
 	});
 
 	curl_global_cleanup();
 
-	Genode::warning("SSL certificates not verified");
+	//Genode::warning("SSL certificates not verified");
 
 	env.parent().exit(res ^ CURLE_OK);
 }
