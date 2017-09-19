@@ -1,0 +1,19 @@
+LICENSE   := Fraunhofer
+VERSION   := 0.1.5
+DOWNLOADS := fdk-aac.archive
+
+OWNER := mstorsjo
+REPO  := fdk-aac
+REV   := 74c1a2a4f831285cbd93ec1427f1670d3c5c5e52
+
+URL(fdk-aac) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(fdk-aac) := 246a647661776566c2f5657b0d4c46883f036b12
+DIR(fdk-aac) := src/lib/fdk-aac
+
+DIRS := include/fdk-aac
+DIR_CONTENT(include/fdk-aac) := \
+	src/lib/fdk-aac/libAACdec/include/aacdecoder_lib.h \
+	src/lib/fdk-aac/libAACenc/include/aacenc_lib.h \
+	src/lib/fdk-aac/libSYS/include/FDK_audio.h \
+	src/lib/fdk-aac/libSYS/include/genericStds.h \
+	src/lib/fdk-aac/libSYS/include/machine_type.h \
