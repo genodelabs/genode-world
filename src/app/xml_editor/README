@@ -2,11 +2,11 @@ This component edits a single XML file as instructed by clients via
 Report sessions. It is designed to allow insertion and removal of XML
 nodes without revealing the content the file being edited.
 
-The two edit actions are _add_ and _remove_, both operate over XML
+The three edit actions are _add_, _remove_, and toggle, all operate over XML
 nodes under the parent node in the file being edited. The content of
 edits are verified for corrent syntax and XML node type and _name_
-attribute are used to prevent the same node from being inserted
-twice or to find nodes to remove.
+attribute is used to prevent the same node from being inserted
+twice and to find nodes to remove or toggle.
 
 Add action
 ----------
@@ -19,7 +19,13 @@ Add action
 Remove action
 -------------
 ! <remove>
+!   <... name="..."/>
+! </remove>
+
+Toggle action
+-------------
+! <toggle>
 !   <... name="...">
 !      ...
 !   </...>
-! </remove>
+! </toggle>

@@ -38,6 +38,8 @@ namespace Xml_editor {
 
 #define REVISION_ATTR_NAME "edit_rev"
 
+Genode::Env *_env;
+
 struct Xml_editor::Xml_file
 {
 	Genode::Allocator &alloc;
@@ -95,8 +97,19 @@ struct Xml_editor::Xml_file
 	/**
 	 * Flush file changes
 	 */
-	void sync() {
-		vfs_handle.ds().sync(path.base()); }
+	void sync()
+	{
+		while (true) {
+			if (vfs_handle.fs().queue_sync(&vfs_handle))
+				break;
+			_env->ep().wait_and_dispatch_one_io_signal();
+		}
+		while (true) {
+			if (vfs_handle.fs().complete_sync(&vfs_handle) != Vfs::File_io_service::SYNC_QUEUED)
+				break;
+			_env->ep().wait_and_dispatch_one_io_signal();
+		}
+	}
 
 	void read_file()
 	{
@@ -107,25 +120,34 @@ struct Xml_editor::Xml_file
 		file_size const total = sb.size;
 
 		Buffer &next = next_buffer(total ? total : 4096);
+		buffer = &next;
 
 		if (total == 0) {
 			strncpy(next.ptr, "<config/>", next.size);
 		} else {
+			/*
+			 * Read in one pass, reading in multiple passes is
+			 * too complicated and error prone
+			 */
+			file_size out = 0;
+			while (!vfs_handle.fs().queue_read(&vfs_handle, total))
+				_env->ep().wait_and_dispatch_one_io_signal();
 
-			file_size offset = 0;
-			while (offset < total) {
-				vfs_handle.seek(offset);
-				file_size out = 0;
-				vfs_handle.fs().read(
-					&vfs_handle,
-					next.ptr + offset,
-					total - offset,
-					out);
-				offset += out;
+			for (;;) {
+				auto r = vfs_handle.fs().complete_read(
+					&vfs_handle, next.ptr, total, out);
+				switch (r) {
+				case Vfs::File_io_service::Read_result::READ_QUEUED:
+					_env->ep().wait_and_dispatch_one_io_signal();
+					break;
+				case Vfs::File_io_service::Read_result::READ_OK:
+					return;
+				default:
+					Genode::error("failed to read XML file");
+					throw r;
+				}
 			}
 		}
-
-		buffer = &next;
 	}
 
 	void write_file(Vfs::file_size length)
@@ -273,6 +295,24 @@ struct Xml_editor::Xml_file
 
 		return gen.used();
 	}
+
+	size_t toggle(Xml_node const &node)
+	{
+		Name const toggle_name = node.attribute_value("name", Name());
+		Xml_node const current = xml();
+		bool name_present = false;
+
+		current.for_each_sub_node([&] (Xml_node const &other) {
+			if (!name_present &&
+			    other.type() == node.type() &&
+			    toggle_name == other.attribute_value("name", Name()))
+			{
+				name_present = true;
+			}
+		});
+
+		return name_present ? remove(node) : add(node);
+	}
 };
 
 
@@ -323,9 +363,18 @@ struct Xml_editor::Report_session_component : Genode::Rpc_object<Report::Session
 			});
 		};
 
+		auto toggle_fn = [&] (Xml_node const &action) {
+			action.for_each_sub_node([&] (Xml_node const &subnode) {
+				if (verbose)
+					log("'", label, "' toggles '", subnode.attribute_value("name", Name()), "'");
+				content_size = xml_file.toggle(subnode);
+			});
+		};
+
 		try {
 			Xml_node edit_node(ram_ds.local_addr<char const>(), length);
 
+			edit_node.for_each_sub_node("toggle", toggle_fn);
 			edit_node.for_each_sub_node("remove", remove_fn);
 			edit_node.for_each_sub_node("add", add_fn);
 			if (content_size) {
@@ -515,6 +564,10 @@ struct Xml_editor::Main
 			die("OPEN_ERR_NAME_TOO_LONG"); break;
 		case Open_result::OPEN_ERR_NO_SPACE:
 			die("OPEN_ERR_NO_SPACE"); break;
+		case Open_result::OPEN_ERR_OUT_OF_RAM:
+			die("OPEN_ERR_OUT_OF_RAM"); break;
+		case Open_result::OPEN_ERR_OUT_OF_CAPS:
+			die("OPEN_ERR_OUT_OF_CAPS"); break;
 		}
 		throw ~0;
 	}
@@ -532,5 +585,8 @@ struct Xml_editor::Main
 };
 
 
-void Component::construct(Genode::Env &env) {
-	static Xml_editor::Main inst(env); }
+void Component::construct(Genode::Env &env)
+{
+	_env = &env;
+	static Xml_editor::Main inst(env);
+}

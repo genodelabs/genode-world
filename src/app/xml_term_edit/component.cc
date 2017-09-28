@@ -36,12 +36,14 @@ namespace Xml_term_edit {
 	struct Main;
 }
 
+Genode::Env *_env;
 
 struct Xml_term_edit::Command : Cli_monitor::Command
 {
 	Vfs::Dir_file_system &vfs;
 	Genode::Allocator    &alloc;
 	Reporter             &report;
+	Vfs::Vfs_handle      *root_handle = nullptr;
 
 	Command(char const *name,
 	        char const *desc,
@@ -53,23 +55,65 @@ struct Xml_term_edit::Command : Cli_monitor::Command
 		Cli_monitor::Command(name, desc),
 		vfs(vfs), alloc(alloc), report(report)
 	{
+		auto r = vfs.open(
+			"/", Vfs::Directory_service::OPEN_MODE_RDONLY, &root_handle, alloc);
+		if (r !=  Vfs::Directory_service::Open_result::OPEN_OK) {
+			Genode::error("failed to open VFS root directory");
+			throw r;
+		}
+
 		cmds.insert(this);
 	}
 
 	void _for_each_argument(Argument_fn const &fn) const override
 	{
-		Vfs::Directory_service::Dirent de;
-		for (Vfs::file_offset i = 0; ; ++i) {
-			if (vfs.dirent("/", i, de) != Vfs::Directory_service::DIRENT_OK)
-				break;
-			switch (de.type) {
-			case Vfs::Directory_service::DIRENT_TYPE_FILE:
-				fn(Argument(de.name, ""));
-				break;
-			case Vfs::Directory_service::DIRENT_TYPE_END:
+		typedef Vfs::File_io_service::Read_result Result;
+
+		enum { DIRENT_COUNT = 4096 / sizeof(Vfs::Directory_service::Dirent) };
+		Vfs::Directory_service::Dirent dirents[DIRENT_COUNT];
+		memset(dirents, 0x00, sizeof(dirents));
+
+		root_handle->seek(0);
+
+		for (;;) {
+			while (!vfs.queue_read(root_handle, sizeof(dirents))) {
+				_env->ep().wait_and_dispatch_one_io_signal();
+			}
+			Vfs::file_size read_count = 0;
+			Result r;
+			for (;;) {
+				r = vfs.complete_read(
+					root_handle, (char*)&dirents, sizeof(dirents), read_count);
+				if (r == Result::READ_QUEUED) {
+					_env->ep().wait_and_dispatch_one_io_signal();
+				}
+				else
+					break;
+			}
+
+			if (r != Result::READ_OK) {
+				Genode::error("failed to read subsystems");
 				return;
-			default:
-				break;
+			}
+
+			if (read_count == 0) return;
+			root_handle->advance_seek(read_count);
+			read_count = read_count / DIRENT_COUNT;
+
+			for (unsigned i = 0; i < read_count; i++) {
+				Vfs::Directory_service::Dirent const &e = dirents[i];
+
+				switch (e.type) {
+				case Vfs::Directory_service::DIRENT_TYPE_FILE:
+					/* check if the VFS returned junk */
+					if (e.name[0] != '\0')
+						fn(Argument(e.name, ""));
+					break;
+				case Vfs::Directory_service::DIRENT_TYPE_END:
+					return;
+				default:
+					break;
+				}
 			}
 		}
 	}
@@ -117,7 +161,7 @@ struct Xml_term_edit::Command : Cli_monitor::Command
 		while (offset < sb.size) {
 			file_size n = 0;
 			file_size count = min(sizeof(buf), sb.size-offset);
-			handle->fs().read(handle, buf, count, n);
+			handle->fs().complete_read(handle, buf, count, n);
 			if (!n)
 				return;
 			gen.append(buf, n);
@@ -262,5 +306,8 @@ void Xml_term_edit::Main::handle_term()
 	}
 }
 
-void Component::construct(Genode::Env &env) {
-	static Xml_term_edit::Main inst(env); }
+void Component::construct(Genode::Env &env)
+{
+	_env = &env;
+	static Xml_term_edit::Main inst(env);
+}
