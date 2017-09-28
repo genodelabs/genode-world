@@ -1,0 +1,173 @@
+create_boot_directory
+
+#
+# To use the themed decorator instead of the default one, replace 'pkg/wm'
+# with 'pkg/themed_wm'.
+#
+
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/pkg/[drivers_interactive_pkg] \
+                  genodelabs/pkg/wm \
+                  genodelabs/src/init \
+                  genodelabs/src/nitpicker \
+                  genodelabs/src/ram_fs \
+                  genodelabs/src/fs_rom \
+
+install_config {
+<config prio_levels="2">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides>
+			<service name="Input"/> <service name="Framebuffer"/>
+		</provides>
+	</start>
+
+	<start name="nitpicker">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config>
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="default" layer="2" content="client" label="no" hover="always" focus="click" />
+
+			<policy label_prefix="pointer" domain="pointer"/>
+			<default-policy domain="default"/>
+			<global-key name="KEY_SPACE" label="hotkey_edit -> input" />
+		</config>
+	</start>
+
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="wm" caps="1000">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<provides> <service name="Nitpicker"/> </provides>
+		<route>
+			<service name="ROM" label="config"> <parent label="wm.config"/> </service>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="ram_fs" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config verbose="yes">
+			<content>
+				<inline name="dynamic.init.config">
+<config prio_levels="2" verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="Timer"/>
+		<service name="Nitpicker"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+</config>
+				</inline>
+			</content>
+			<policy label_prefix="xml_editor -> " writeable="yes" root="/" />
+			<policy label_prefix="fs_rom -> " writeable="no" root="/" />
+		</config>
+	</start>
+
+	<start name="fs_rom" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="ROM"/> </provides>
+	</start>
+
+	<start name="init" priority="-1" caps="512">
+		<resource name="RAM" quantum="8M"/>
+		<route>
+			<service name="ROM" label="config">
+				<child name="fs_rom" label="dynamic.init.config"/> </service>
+			<any-service>
+				<child name="wm"/>
+				<parent/> <any-child/>
+			</any-service>
+		</route>
+	</start>
+
+	<start name="xml_editor" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Report"/> </provides>
+		<config verbose="yes" output="dynamic.init.config">
+			<vfs> <fs/> </vfs>
+		</config>
+	</start>
+
+	<start name="hotkey_edit" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<config>
+			<key name="KEY_SPACE">
+				<toggle>
+					<start name="testnit" caps="96">
+						<resource name="RAM" quantum="2M"/>
+						<route> <any-service> <parent/> </any-service> </route>
+					</start>
+				</toggle>
+			</key>
+		</config>
+		<route>
+			<any-service>
+				<child name="nitpicker"/>
+				<parent/> <any-child/>
+			</any-service>
+		</route>
+	</start>
+
+</config>}
+
+build {
+	app/hotkey_edit
+	app/xml_editor
+	test/nitpicker
+	init
+}
+
+build_boot_image {
+	init
+	hotkey_edit
+	testnit
+	xml_editor
+	libc.lib.so
+}
+
+run_genode_until forever
