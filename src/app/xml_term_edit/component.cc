@@ -98,7 +98,7 @@ struct Xml_term_edit::Command : Cli_monitor::Command
 
 			if (read_count == 0) return;
 			root_handle->advance_seek(read_count);
-			read_count = read_count / DIRENT_COUNT;
+			read_count = read_count / sizeof(Vfs::Directory_service::Dirent);
 
 			for (unsigned i = 0; i < read_count; i++) {
 				Vfs::Directory_service::Dirent const &e = dirents[i];
