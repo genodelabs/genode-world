@@ -49,6 +49,7 @@ set config {
 		<service name="CPU"/>
 		<service name="LOG"/>
 	</parent-provides>
+	<default caps="128"/>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
@@ -116,10 +117,8 @@ append config {
 	<start name="test-input">
 		<resource name="RAM" quantum="1M"/>
 		<route>
-			<service name="LOG">   <parent/> </service>
-			<service name="RM">    <parent/> </service>
-			<service name="Timer"> <child name="timer"/> </service>
 			<service name="Input"> <child name="usb_gamepad_input_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
 </config>}

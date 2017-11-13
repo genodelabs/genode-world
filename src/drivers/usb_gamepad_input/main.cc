@@ -38,6 +38,7 @@
 #include <retrolink_n64.h>
 #include <sony_ds3.h>
 #include <sony_ds4.h>
+#include <gravis_gamepadpro.h>
 
 
 static bool const verbose_intr = false;
@@ -77,8 +78,9 @@ struct Usb::Hid
 	Retrolink_n64      retrolink_n64      { input_session };
 	Sony_ds3           sony_ds3           { input_session };
 	Sony_ds4           sony_ds4           { input_session };
+	Gravis_gamepadpro  gravis_gamepadpro  { input_session };
 
-	enum { MAX_DEVICES = 8, };
+	enum { MAX_DEVICES = 9, };
 	Hid_device *devices[MAX_DEVICES] {
 		&generic,
 		&buffalo_snes,
@@ -88,6 +90,7 @@ struct Usb::Hid
 		&xboxone,
 		&sony_ds3,
 		&sony_ds4,
+		&gravis_gamepadpro
 	};
 
 	Hid_device *device = &generic;
@@ -541,7 +544,7 @@ struct Usb::Main
 	Env  &env;
 	Heap  heap { env.ram(), env.rm() };
 
-	Input::Session_component    input_session;
+	Input::Session_component    input_session { env, env.pd() };
 	Static_root<Input::Session> input_root { env.ep().manage(input_session) };
 
 	Usb::Hid hid { env, heap, input_session };
