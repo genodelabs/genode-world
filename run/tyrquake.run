@@ -24,7 +24,6 @@ build {
 	app/retro_frontend
 	libretro/tyrquake
 	server/fb_upscale
-	server/input_remap
 }
 
 #
@@ -76,45 +75,6 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-	<start name="input_remap">
-		<resource name="RAM" quantum="2M"/>
-		<provides> <service name="Input"/> </provides>
-		<config>
-			<!-- Map Genode keys to libretro keys.
-			     This is really awkward, keycodes from the 'retro_frontend -> input'
-			     report must be cross-referenced from libretro.h to the retro_frontend
-			     translation table. In the future the frontend may use logical
-			     names in the 'input' report or feature a built-in remapper.
-			  -->
-			<map from="KEY_A" to="BTN_LEFT"/>
-			<map from="KEY_W" to="BTN_FORWARD"/>
-			<map from="KEY_S" to="BTN_BACK"/>
-			<map from="KEY_D" to="BTN_RIGHT"/>
-
-			<map from="KEY_RIGHT" to="BTN_B"/>
-			<map from="KEY_DOWN" to="BTN_A"/>
-			<map from="KEY_LEFT" to="BTN_X"/>
-			<map from="KEY_UP" to="BTN_Y"/>
-
-			<map from="KEY_Q" to="BTN_TL"/>
-			<map from="KEY_E" to="BTN_TR"/>
-
-			<map from="KEY_LEFTSHIFT" to="BTN_THUMBL"/>
-
-			<map from="KEY_LEFTCTRL" to="BTN_TR2"/>
-			<map from="KEY_SPACE" to="BTN_TL2"/>
-
-
-			<map from="KEY_GRAVE" to="BTN_SELECT"/>
-			<map from="KEY_ESC" to="BTN_START"/>
-			<map from="KEY_ENTER" to="BTN_A"/>
-		</config>
-		<route>
-			<service name="Input">
-				<child name="drivers"/> </service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
 	<start name="report_rom">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Report"/> </provides>
@@ -130,12 +90,17 @@ append config {
 				<dir name="id1"> <tar name="quake.tar"/> </dir>
 				<ram/>
 			</vfs>
+			<variables>
+				<variable key="tyrquake_colored_lighting" value="disabled"/>
+				<variable key="tyrquake_resolution" value="640x400"/>
+			</variables>
+			<controller port="0" device="3"/>
 		</config>
 		<route>
 			<service name="Framebuffer">
 				<child name="fb_upscale"/> </service>
 			<service name="Input">
-				<child name="input_remap"/> </service>
+				<child name="drivers"/> </service>
 			<service name="Report">
 				<child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -164,34 +129,17 @@ if {![file exist "bin/quake.tar"]} {
 	exec rm -rf bin/tmp
 }
 
-#
-# This core requires that some variables be set by the frontend
-#
-set variables_fd [open "bin/variables" w]
-puts $variables_fd {
-<variables>
-	<variable key="tyrquake_colored_lighting" value="disabled"/>
-	<variable key="tyrquake_resolution" value="640x400"/>
-	<variable key="tyrquake_retropad_layout" value="1: New layout"/>
-</variables>
-}
-close $variables_fd
-
 # generic modules
 build_boot_image {
 	fb_upscale
-	input_remap
 	libc.lib.so
 	libm.lib.so
 	quake.tar
 	retro_frontend
 	stdcxx.lib.so
 	tyrquake_libretro.lib.so
-	variables
 }
 
 append qemu_args "  -soundhw es1370 "
 
 run_genode_until forever
-
-rm bin/variables

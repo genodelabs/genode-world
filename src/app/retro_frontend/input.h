@@ -14,139 +14,280 @@
 #ifndef _RETRO_FRONTEND__INPUT_H_
 #define _RETRO_FRONTEND__INPUT_H_
 
+/* local includes */
+#include "core.h"
+
 /* Genode includes */
 #include <input_session/connection.h>
 #include <input/event_queue.h>
 
+#include "input_maps.h"
+
 namespace Retro_frontend {
+
 #include <libretro.h>
 
-	struct Controller;
+const retro_controller_info *controller_info = nullptr;
 
-	static unsigned genode_map[Input::Keycode::KEY_MAX];
+/* callback to feed keyboard events to core */
+static retro_keyboard_event_t keyboard_callback;
+
+/* Genode keyboard mapped to Libretro keyboard */
+static retro_key key_map[Input::Keycode::KEY_MAX];
+
+/* array of currently configured controllers */
+enum { PORT_MAX = 7 };
+struct Controller;
+Controller *controllers[PORT_MAX+1] = { nullptr, };
+
+typedef Genode::String<32> Keyname;
+
+int lookup_genode_code(Keyname const &name)
+{
+	using namespace Input;
+
+	/* not the fastest way to do this, just the most terse */
+	for (int code = 0; code < Input::Keycode::KEY_MAX; ++code)
+		if (name == key_name((Input::Keycode)code)) return code;
+	return Input::KEY_UNKNOWN;
+}
 
 }
 
 struct Retro_frontend::Controller
 {
-	enum {
-		RETRO_JOYPAD_MAX = RETRO_DEVICE_ID_JOYPAD_R3+1,
-		RETRO_MOUSE_MAX = RETRO_DEVICE_ID_MOUSE_HORIZ_WHEELDOWN
-	};
+	bool input_state[Input::Keycode::KEY_MAX];
 
-	int16_t   joypad_state[RETRO_JOYPAD_MAX];
-	int16_t    mouse_state[RETRO_MOUSE_MAX];
-	int16_t keyboard_state[RETROK_LAST];
+	enum { JOYPAD_MAP_LEN = RETRO_DEVICE_ID_JOYPAD_R3 + 1 };
+	int16_t joypad_map[JOYPAD_MAP_LEN];
 
-	Input::Connection input;
+	enum { MOUSE_MAP_LEN = RETRO_DEVICE_ID_MOUSE_HORIZ_WHEELDOWN + 1 };
+	int16_t mouse_map[MOUSE_MAP_LEN];
+	int16_t mouse_x = 0;
+	int16_t mouse_y = 0;
+
+	/* TODO: analog axes */
+
+	Input::Connection input_conn;
 
 	Genode::Attached_dataspace input_ds;
 
 	Input::Event const * const events =
 		input_ds.local_addr<Input::Event>();
 
-	bool paused = false;
+	uint16_t keymods = RETROKMOD_NONE;
 
-	Controller(Genode::Env &env)
-	: input(env), input_ds(env.rm(), input.dataspace())
+	/**
+	 * Use the 'label' attribute on an input configuration as a session
+	 * label with a fallback to the port number.
+	 */
+	typedef Genode::String<Genode::Session_label::capacity()> Label;
+	static Label port_label(Genode::Xml_node const &config)
 	{
-		Genode::memset(  joypad_state, 0x00, sizeof(  joypad_state));
-		Genode::memset(   mouse_state, 0x00, sizeof(   mouse_state));
-		Genode::memset(keyboard_state, 0x00, sizeof(keyboard_state));
+		if (config.has_attribute("label"))
+			return config.attribute_value("label", Label());
+		else
+			return config.attribute_value("port", Label());
 	}
 
-	bool unpaused()
+	Controller(Genode::Xml_node const &config, unsigned port)
+	: input_conn(*genv, port_label(config).string()),
+	  input_ds(genv->rm(), input_conn.dataspace())
 	{
 		using namespace Input;
 
-		unsigned num_events = input.flush();
+		Genode::memset(input_state, 0x00, sizeof(input_state));
 
-		for (unsigned i = 0; i < num_events; ++i) {
-			Input::Event const &ev = events[i];
-			if ((ev.code() == KEY_PAUSE) && (ev.type() == Event::Type::RELEASE)) {
-				paused = false;
-				return true;
+		unsigned device = config.attribute_value("device", 0UL);
+		unsigned device_class = RETRO_DEVICE_MASK & device;
+
+		if (controller_info) {
+			/* validate that the controller conforms to the core expectations */
+			bool valid = false;
+			for (const retro_controller_info *info = controller_info;
+			     (info && (info->types)); ++info)
+			{
+				for (unsigned i = 0; i < info->num_types; ++i) {
+					const retro_controller_description *type = &info->types[i];
+					if (type->id == device) {
+						valid = true;
+						break;
+					}
+				}
 			}
+			if (valid)
+				retro_set_controller_port_device(port, device);
+			else
+				Genode::error("controller ", port, " device ", device, " is not valid for core");
 		}
-		return false;
+
+		/* set default joypad mapping */
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_B] = Keycode::BTN_B;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_Y] = Keycode::BTN_Y;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_SELECT] = Keycode::BTN_SELECT;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_START] = Keycode::BTN_START;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_UP] = Keycode::BTN_FORWARD;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_DOWN] = Keycode::BTN_BACK;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_LEFT] = Keycode::BTN_LEFT;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_RIGHT] = Keycode::BTN_RIGHT;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_A] = Keycode::BTN_A;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_X] = Keycode::BTN_X;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_L] = Keycode::BTN_TL;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_R] = Keycode::BTN_TR;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_L2] = Keycode::BTN_TL2;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_R2] = Keycode::BTN_TR2;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_L3] = Keycode::BTN_THUMBL;
+		joypad_map[RETRO_DEVICE_ID_JOYPAD_R3] = Keycode::BTN_THUMBR;
+
+		/* set default mouse mapping */;
+		mouse_map[RETRO_DEVICE_ID_MOUSE_LEFT] = Keycode::BTN_LEFT;
+		mouse_map[RETRO_DEVICE_ID_MOUSE_RIGHT] = Keycode::BTN_RIGHT;
+		mouse_map[RETRO_DEVICE_ID_MOUSE_WHEELUP] = Keycode::BTN_GEAR_UP;
+		mouse_map[RETRO_DEVICE_ID_MOUSE_WHEELDOWN] = Keycode::BTN_GEAR_DOWN;
+		mouse_map[RETRO_DEVICE_ID_MOUSE_MIDDLE] = Keycode::BTN_MIDDLE;
+
+		auto map_fn = [&] (Genode::Xml_node map_node) {
+			using namespace Genode;
+			using namespace Input;
+
+			Keyname const from = map_node.attribute_value("from", Keyname());
+			Keyname const   to = map_node.attribute_value("to", Keyname());
+
+			if ((from == "") || (to == "")) {
+				error("ignoring ", map_node);
+				return;
+			}
+
+			int from_code = lookup_genode_code(from);
+			int   to_code = lookup_input_code(device_class, to.string());
+
+			if (from_code == KEY_UNKNOWN) {
+				error("unknown key ", from.string());
+				return;
+			}
+			if (to_code == RETROK_LAST) {
+				error("unknown key ", to.string());
+				return;
+			}
+
+			/*
+			 * to_code and from_code are mapped reversed from the
+			 * frontend and oriented from the core perspective
+			 */
+			switch (device_class) {
+			case RETRO_DEVICE_JOYPAD:
+				if (to_code < JOYPAD_MAP_LEN) {
+					joypad_map[to_code] = from_code;
+				} else {
+					Genode::error(to, " is not mapped for joypads");
+				}
+				break;
+			case RETRO_DEVICE_MOUSE:
+				if (to_code < MOUSE_MAP_LEN) {
+					mouse_map[to_code] = from_code;
+				} else {
+					Genode::error(to, " is not mapped for mice");
+				}
+
+				break;
+			default:
+				Genode::error(map_node, " is invalid for device ",
+				              device, " class ", device_class);
+				break;
+			}
+		};
+
+		config.for_each_sub_node("map", map_fn);
 	}
 
-	void flush()
+	/* TODO: analog axes */
+
+	void poll()
 	{
 		using namespace Input;
 
-		mouse_state[RETRO_DEVICE_ID_MOUSE_X] =
-		mouse_state[RETRO_DEVICE_ID_MOUSE_Y] = 0;
-
-		unsigned num_events = input.flush();
+		unsigned num_events = input_conn.flush();
 		for (unsigned i = 0; i < num_events; ++i) {
 			Input::Event const &ev = events[i];
 
-			uint16_t v = 0; /* assume a release */
+			bool v = 0; /* assume a release */
 
 			switch (ev.type()) {
+
 			case Event::Type::MOTION:
-				if (ev.relative_motion()) {
-					mouse_state[RETRO_DEVICE_ID_MOUSE_X] += ev.rx();
-					mouse_state[RETRO_DEVICE_ID_MOUSE_Y] += ev.ry();
-				} else if (ev.absolute_motion()) {
-					mouse_state[RETRO_DEVICE_ID_MOUSE_X] += ev.ax();
-					mouse_state[RETRO_DEVICE_ID_MOUSE_Y] += ev.ay();
-				} break;
+				/* TODO */
+				continue;
 
 			case Event::Type::PRESS:
 				v = 1; /* not a release */
-			case Event::Type::RELEASE:
-				switch (ev.code()) {
-				case BTN_MIDDLE:    mouse_state[RETRO_DEVICE_ID_MOUSE_MIDDLE]    = v; break;
-				case BTN_GEAR_DOWN: mouse_state[RETRO_DEVICE_ID_MOUSE_WHEELDOWN] = v; break;
-				case BTN_GEAR_UP:   mouse_state[RETRO_DEVICE_ID_MOUSE_WHEELUP]   = v; break;
 
-				case BTN_B:         joypad_state[RETRO_DEVICE_ID_JOYPAD_B]       = v; break;
-				case BTN_Y:         joypad_state[RETRO_DEVICE_ID_JOYPAD_Y]       = v; break;
-				case BTN_SELECT:    joypad_state[RETRO_DEVICE_ID_JOYPAD_SELECT]  = v; break;
-				case BTN_START:     joypad_state[RETRO_DEVICE_ID_JOYPAD_START]   = v; break;
-				case BTN_FORWARD:   joypad_state[RETRO_DEVICE_ID_JOYPAD_UP]      = v; break;
-				case BTN_BACK:      joypad_state[RETRO_DEVICE_ID_JOYPAD_DOWN]    = v; break;
-				case BTN_LEFT:      joypad_state[RETRO_DEVICE_ID_JOYPAD_LEFT]    =
-				                     mouse_state[RETRO_DEVICE_ID_MOUSE_LEFT]     = v; break;
-				case BTN_RIGHT:     joypad_state[RETRO_DEVICE_ID_JOYPAD_RIGHT]   =
-				                     mouse_state[RETRO_DEVICE_ID_MOUSE_RIGHT]    = v; break;
-				case BTN_A:         joypad_state[RETRO_DEVICE_ID_JOYPAD_A]       = v; break;
-				case BTN_X:         joypad_state[RETRO_DEVICE_ID_JOYPAD_X]       = v; break;
-				case BTN_TL:        joypad_state[RETRO_DEVICE_ID_JOYPAD_L]       = v; break;
-				case BTN_TR:        joypad_state[RETRO_DEVICE_ID_JOYPAD_R]       = v; break;
-				case BTN_TL2:       joypad_state[RETRO_DEVICE_ID_JOYPAD_L2]      = v; break;
-				case BTN_TR2:       joypad_state[RETRO_DEVICE_ID_JOYPAD_R2]      = v; break;
-				case BTN_THUMBL:    joypad_state[RETRO_DEVICE_ID_JOYPAD_L3]      = v; break;
-				case BTN_THUMBR:    joypad_state[RETRO_DEVICE_ID_JOYPAD_R3]      = v; break;
+			case Event::Type::RELEASE: {
+				int code = ev.code();
+				if (code >= 0 && code < Input::KEY_MAX) {
+					retro_mod mod = RETROKMOD_NONE;
 
-				case KEY_PAUSE:      paused = true; return; /* stop handling events */
+					switch (code) {
+					case Input::KEY_PAUSE:
+						if (!v) /* pause/unpause on key release */
+							toggle_pause();
+						break;
 
-				default:
-					keyboard_state[genode_map[ev.code()]] = v; break;
-				} break;
+					case Input::KEY_LEFTSHIFT:
+					case Input::KEY_RIGHTSHIFT:
+						mod = RETROKMOD_SHIFT; break;
 
-		/*
-			case Event::Type::FOCUS:
-				if (ev.code() == 0) {
-					paused = true;
-					return;
+					case Input::KEY_LEFTCTRL:
+					case Input::KEY_RIGHTCTRL:
+						mod = RETROKMOD_CTRL; break;
+
+					case Input::KEY_LEFTALT:
+					case Input::KEY_RIGHTALT:
+						mod = RETROKMOD_ALT; break;
+
+					case Input::KEY_LEFTMETA:
+					case Input::KEY_RIGHTMETA:
+						mod = RETROKMOD_META; break;
+
+					case Input::KEY_NUMLOCK:
+						mod = RETROKMOD_NUMLOCK; break;
+
+					case Input::KEY_CAPSLOCK:
+						mod = RETROKMOD_CAPSLOCK; break;
+
+					case Input::KEY_SCROLLLOCK:
+						mod = RETROKMOD_SCROLLOCK; break;
+
+					default: break;
+					}
+
+					if (mod)
+						keymods = (keymods | mod) - (v ? 0 : mod);
+
+					input_state[code] = v;
+
+					if (keyboard_callback) {
+						/*
+						 * the keyboard_callback may drive the core
+						 * but this context is a libretro callback
+						 * so 'with_libc' must be in effect
+						 */
+						unsigned rk = key_map[code];
+						if (rk != RETROK_UNKNOWN) {
+							keyboard_callback(v, rk, 0, keymods);
+						}
+					}
 				}
-		 */
+			}
+
+			case Event::Type::CHARACTER:
+				if (keyboard_callback) {
+					/* event only supports UTF-8? */
+					keyboard_callback(v, RETROK_UNKNOWN, ev.utf8().b0, RETROKMOD_NONE);
+				}
+				break;
 
 			default: break;
 			}
-		}
-	}
-
-	int16_t event(unsigned device, unsigned index, unsigned id)
-	{
-		switch (device) {
-		case RETRO_DEVICE_JOYPAD:   return   joypad_state[id];
-		case RETRO_DEVICE_MOUSE:    return    mouse_state[id];
-		case RETRO_DEVICE_KEYBOARD: return keyboard_state[id];
-		default: return 0;
 		}
 	}
 };
@@ -154,132 +295,93 @@ struct Retro_frontend::Controller
 
 namespace Retro_frontend {
 
-	void init_keyboard_map()
-	{
-		using namespace Input;
-		for (unsigned i = 0; i < Input::Keycode::KEY_MAX; ++i) switch (i) {
-			case KEY_ESC:         genode_map[i] = RETROK_ESCAPE; break;
-			case KEY_1:           genode_map[i] = RETROK_1; break;
-			case KEY_2:           genode_map[i] = RETROK_2; break;
-			case KEY_3:           genode_map[i] = RETROK_3; break;
-			case KEY_4:           genode_map[i] = RETROK_4; break;
-			case KEY_5:           genode_map[i] = RETROK_5; break;
-			case KEY_6:           genode_map[i] = RETROK_6; break;
-			case KEY_7:           genode_map[i] = RETROK_7; break;
-			case KEY_8:           genode_map[i] = RETROK_8; break;
-			case KEY_9:           genode_map[i] = RETROK_9; break;
-			case KEY_0:           genode_map[i] = RETROK_0; break;
-			case KEY_MINUS:       genode_map[i] = RETROK_MINUS; break;
-			case KEY_EQUAL:       genode_map[i] = RETROK_EQUALS; break;
-			case KEY_BACKSPACE:   genode_map[i] = RETROK_BACKSPACE; break;
-			case KEY_TAB:         genode_map[i] = RETROK_TAB; break;
-			case KEY_Q:           genode_map[i] = RETROK_q; break;
-			case KEY_W:           genode_map[i] = RETROK_w; break;
-			case KEY_E:           genode_map[i] = RETROK_e; break;
-			case KEY_R:           genode_map[i] = RETROK_r; break;
-			case KEY_T:           genode_map[i] = RETROK_t; break;
-			case KEY_Y:           genode_map[i] = RETROK_y; break;
-			case KEY_U:           genode_map[i] = RETROK_u; break;
-			case KEY_I:           genode_map[i] = RETROK_i; break;
-			case KEY_O:           genode_map[i] = RETROK_o; break;
-			case KEY_P:           genode_map[i] = RETROK_p; break;
-			case KEY_LEFTBRACE:   genode_map[i] = RETROK_LEFTBRACKET; break;
-			case KEY_RIGHTBRACE:  genode_map[i] = RETROK_RIGHTBRACKET; break;
-			case KEY_ENTER:       genode_map[i] = RETROK_RETURN; break;
-			case KEY_LEFTCTRL:    genode_map[i] = RETROK_LCTRL; break;
-			case KEY_A:           genode_map[i] = RETROK_a; break;
-			case KEY_S:           genode_map[i] = RETROK_s; break;
-			case KEY_D:           genode_map[i] = RETROK_d; break;
-			case KEY_F:           genode_map[i] = RETROK_f; break;
-			case KEY_G:           genode_map[i] = RETROK_g; break;
-			case KEY_H:           genode_map[i] = RETROK_h; break;
-			case KEY_J:           genode_map[i] = RETROK_j; break;
-			case KEY_K:           genode_map[i] = RETROK_k; break;
-			case KEY_L:           genode_map[i] = RETROK_l; break;
-			case KEY_SEMICOLON:   genode_map[i] = RETROK_SEMICOLON; break;
-			case KEY_APOSTROPHE:  genode_map[i] = RETROK_QUOTE; break;
-			case KEY_GRAVE:       genode_map[i] = RETROK_BACKQUOTE; break;
-			case KEY_LEFTSHIFT:   genode_map[i] = RETROK_LSHIFT; break;
-			case KEY_BACKSLASH:   genode_map[i] = RETROK_BACKSLASH; break;
-			case KEY_Z:           genode_map[i] = RETROK_z; break;
-			case KEY_X:           genode_map[i] = RETROK_x; break;
-			case KEY_C:           genode_map[i] = RETROK_c; break;
-			case KEY_V:           genode_map[i] = RETROK_v; break;
-			case KEY_B:           genode_map[i] = RETROK_b; break;
-			case KEY_N:           genode_map[i] = RETROK_n; break;
-			case KEY_M:           genode_map[i] = RETROK_m; break;
-			case KEY_COMMA:       genode_map[i] = RETROK_COMMA; break;
-			case KEY_DOT:         genode_map[i] = RETROK_PERIOD; break;
-			case KEY_SLASH:       genode_map[i] = RETROK_SLASH; break;
-			case KEY_RIGHTSHIFT:  genode_map[i] = RETROK_RSHIFT; break;
-			case KEY_KPASTERISK:  genode_map[i] = RETROK_KP_MULTIPLY; break;
-			case KEY_LEFTALT:     genode_map[i] = RETROK_LALT; break;
-			case KEY_SPACE:       genode_map[i] = RETROK_SPACE; break;
-			case KEY_CAPSLOCK:    genode_map[i] = RETROK_CAPSLOCK; break;
-			case KEY_F1:          genode_map[i] = RETROK_F1; break;
-			case KEY_F2:          genode_map[i] = RETROK_F2; break;
-			case KEY_F3:          genode_map[i] = RETROK_F3; break;
-			case KEY_F4:          genode_map[i] = RETROK_F4; break;
-			case KEY_F5:          genode_map[i] = RETROK_F5; break;
-			case KEY_F6:          genode_map[i] = RETROK_F6; break;
-			case KEY_F7:          genode_map[i] = RETROK_F7; break;
-			case KEY_F8:          genode_map[i] = RETROK_F8; break;
-			case KEY_F9:          genode_map[i] = RETROK_F9; break;
-			case KEY_F10:         genode_map[i] = RETROK_F10; break;
-			case KEY_NUMLOCK:     genode_map[i] = RETROK_NUMLOCK; break;
-			case KEY_SCROLLLOCK:  genode_map[i] = RETROK_SCROLLOCK; break;
-			case KEY_KP7:         genode_map[i] = RETROK_KP7; break;
-			case KEY_KP8:         genode_map[i] = RETROK_KP8; break;
-			case KEY_KP9:         genode_map[i] = RETROK_KP9; break;
-			case KEY_KPMINUS:     genode_map[i] = RETROK_KP_MINUS; break;
-			case KEY_KP4:         genode_map[i] = RETROK_KP4; break;
-			case KEY_KP5:         genode_map[i] = RETROK_KP5; break;
-			case KEY_KP6:         genode_map[i] = RETROK_KP6; break;
-			case KEY_KPPLUS:      genode_map[i] = RETROK_KP_PLUS; break;
-			case KEY_KP1:         genode_map[i] = RETROK_KP1; break;
-			case KEY_KP2:         genode_map[i] = RETROK_KP2; break;
-			case KEY_KP3:         genode_map[i] = RETROK_KP3; break;
-			case KEY_KP0:         genode_map[i] = RETROK_KP0; break;
-			case KEY_KPDOT:       genode_map[i] = RETROK_KP_PERIOD; break;
+void initialize_controllers(Genode::Allocator &alloc,
+                            Genode::Xml_node config)
+{
+	using namespace Genode;
 
-			case KEY_F11:         genode_map[i] = RETROK_F11; break;
-			case KEY_F12:         genode_map[i] = RETROK_F12; break;
-			case KEY_KPENTER:     genode_map[i] = RETROK_KP_ENTER; break;
-			case KEY_RIGHTCTRL:   genode_map[i] = RETROK_RCTRL; break;
-			case KEY_KPSLASH:     genode_map[i] = RETROK_KP_DIVIDE; break;
-			case KEY_SYSRQ:       genode_map[i] = RETROK_SYSREQ; break;
-			case KEY_RIGHTALT:    genode_map[i] = RETROK_RALT; break;
-			case KEY_HOME:        genode_map[i] = RETROK_HOME; break;
-			case KEY_UP:          genode_map[i] = RETROK_UP; break;
-			case KEY_PAGEUP:      genode_map[i] = RETROK_PAGEUP; break;
-			case KEY_LEFT:        genode_map[i] = RETROK_LEFT; break;
-			case KEY_RIGHT:       genode_map[i] = RETROK_RIGHT; break;
-			case KEY_END:         genode_map[i] = RETROK_END; break;
-			case KEY_DOWN:        genode_map[i] = RETROK_DOWN; break;
-			case KEY_PAGEDOWN:    genode_map[i] = RETROK_PAGEDOWN; break;
-			case KEY_INSERT:      genode_map[i] = RETROK_INSERT; break;
-			case KEY_DELETE:      genode_map[i] = RETROK_DELETE; break;
-			case KEY_POWER:       genode_map[i] = RETROK_POWER; break;
-			case KEY_KPEQUAL:     genode_map[i] = RETROK_KP_EQUALS; break;
-			case KEY_KPPLUSMINUS: genode_map[i] = RETROK_KP_MINUS; break;
+	Genode::memset(key_map, 0x00, sizeof(key_map));
+	for (int i = 0; default_keymap[i].gk < Input::KEY_MAX; ++i) {
+		key_map[default_keymap[i].gk] = (retro_key)default_keymap[i].rk;
+	}
 
-			case KEY_LEFTMETA:    genode_map[i] = RETROK_LMETA; break;
-			case KEY_RIGHTMETA:   genode_map[i] = RETROK_RMETA; break;
-			case KEY_COMPOSE:     genode_map[i] = RETROK_COMPOSE; break;
-
-			case KEY_UNDO:        genode_map[i] = RETROK_UNDO; break;
-			case KEY_HELP:        genode_map[i] = RETROK_HELP; break;
-			case KEY_MENU:        genode_map[i] = RETROK_MENU; break;
-
-			case KEY_F13:         genode_map[i] = RETROK_F13; break;
-			case KEY_F14:         genode_map[i] = RETROK_F14; break;
-			case KEY_F15:         genode_map[i] = RETROK_F15; break;
-
-			case KEY_BREAK:       genode_map[i] = RETROK_BREAK; break;
-
-			default: genode_map[i] = RETROK_UNKNOWN; break;
+	for (int i = 0; i <= PORT_MAX; ++i) {
+		if (controllers[i] != nullptr) {
+			destroy(alloc, controllers[i]);
+			controllers[i] = nullptr;
+			retro_set_controller_port_device(i, RETRO_DEVICE_NONE);
 		}
 	}
+
+	config.for_each_sub_node("controller", [&] (Xml_node const &input_node) {
+		unsigned port = input_node.attribute_value("port", 0U);
+		unsigned device = input_node.attribute_value("device", 0U);
+
+		if (controllers[port] != nullptr) {
+			error("controller port ", port, " is already configured");
+			return;
+		}
+
+		controllers[port] = new (alloc) Controller(input_node, port);
+		if (device != RETRO_DEVICE_NONE)
+			retro_set_controller_port_device(port, device);
+	});
+}
+
+
+void input_poll_callback()
+{
+	for (int i = 0; i <= PORT_MAX; ++i) {
+		if (controllers[i])
+			controllers[i]->poll();
+	}
+}
+
+
+int16_t input_state_callback(unsigned port,  unsigned device,
+                             unsigned index, unsigned id)
+{
+	Controller *ctrl = (port < PORT_MAX) ? controllers[port] : 0;
+
+	if (ctrl) switch (RETRO_DEVICE_MASK & device) {
+	case RETRO_DEVICE_JOYPAD:
+		if (id < Controller::JOYPAD_MAP_LEN) {
+			auto code = ctrl->joypad_map[id];
+			if (code < Input::KEY_MAX) {
+				return ctrl->input_state[code];
+			}
+		}
+		break;
+	case RETRO_DEVICE_MOUSE:
+		switch (id) {
+		case RETRO_DEVICE_ID_MOUSE_X:
+			return ctrl->mouse_x;
+		case RETRO_DEVICE_ID_MOUSE_Y:
+			return ctrl->mouse_y;
+		default:
+			if (id < Controller::MOUSE_MAP_LEN) {
+				auto code = ctrl->mouse_map[id];
+				if (code < Input::KEY_MAX) {
+					return ctrl->input_state[code];
+				}
+			}
+			break;
+		}
+		break;
+	default: break;
+	}
+
+	return 0;
+}
+
+/* install a handler to wake the frontend from input events */
+void input_sigh(Genode::Signal_context_capability sig)
+{
+	for (int i = 0; i <= PORT_MAX; ++i) {
+		if (controllers[i])
+			controllers[i]->input_conn.sigh(sig);
+	}
+}
 
 };
 

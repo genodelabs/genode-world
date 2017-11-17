@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2016 Genode Labs GmbH
+ * Copyright (C) 2016-2017 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU General Public License version 2.
@@ -17,12 +17,12 @@
 /* Genode includes */
 #include <audio_out_session/connection.h>
 #include <base/attached_ram_dataspace.h>
-#include <util/reconstructible.h>
 #include <base/thread.h>
-#include <base/log.h>
+#include <util/reconstructible.h>
+
+#include "core.h"
 
 namespace Retro_frontend {
-	#include <libretro.h>
 
 	template <typename TYPE, Genode::size_t CAPACITY>
 	struct Ring_buffer;
@@ -48,8 +48,6 @@ struct Retro_frontend::Ring_buffer : Genode::Lock
 {
 	enum { BUFFER_SIZE = sizeof(TYPE)*CAPACITY };
 
-	Genode::Env &env;
-
 	Genode::addr_t map_first;
 	Genode::addr_t map_second;
 
@@ -58,21 +56,21 @@ struct Retro_frontend::Ring_buffer : Genode::Lock
 	Genode::size_t wpos = 0;
 	Genode::size_t rpos = 0;
 
-	Genode::Ram_dataspace_capability buffer_ds = env.ram().alloc(BUFFER_SIZE);
+	Genode::Ram_dataspace_capability buffer_ds = genv->ram().alloc(BUFFER_SIZE);
 
-	Ring_buffer(Genode::Env &env) : env(env)
+	Ring_buffer()
 	{
 		{
 			/* a hack to find the right sized void in the address space */
-			Genode::Attached_ram_dataspace filler(env.ram(), env.rm(), BUFFER_SIZE*2);
+			Genode::Attached_ram_dataspace filler(genv->ram(), genv->rm(), BUFFER_SIZE*2);
 			map_first = (Genode::addr_t)filler.local_addr<TYPE>();
 		}
 
 		map_second = map_first+BUFFER_SIZE;
 
 		/* attach the buffer in two consecutive regions */
-		map_first = env.rm().attach_at(buffer_ds, map_first, BUFFER_SIZE);
-		map_second = env.rm().attach_at(buffer_ds, map_second,  BUFFER_SIZE);
+		map_first = genv->rm().attach_at(buffer_ds, map_first, BUFFER_SIZE);
+		map_second = genv->rm().attach_at(buffer_ds, map_second,  BUFFER_SIZE);
 		if ((map_first+BUFFER_SIZE) != map_second) {
 			Genode::error("failed to map ring buffer to consecutive regions");
 			throw Genode::Exception();
@@ -83,9 +81,9 @@ struct Retro_frontend::Ring_buffer : Genode::Lock
 
 	~Ring_buffer()
 	{
-		env.rm().detach(map_second);
-		env.rm().detach(map_first);
-		env.ram().free(buffer_ds);
+		genv->rm().detach(map_second);
+		genv->rm().detach(map_first);
+		genv->ram().free(buffer_ds);
 	}
 
 	Genode::size_t read_avail() const
@@ -160,15 +158,14 @@ struct Retro_frontend::Stereo_out : Genode::Thread
 
 	void entry() override;
 
-	Stereo_out(Genode::Env &env)
+	Stereo_out()
 	:
-		Genode::Thread(env, "audio-sync", 8*1024,
-		               env.cpu().affinity_space().location_of_index(1),
+		Genode::Thread(*genv, "audio-sync", 8*1024,
+		               genv->cpu().affinity_space().location_of_index(1),
 		               Weight(Genode::Cpu_session::Weight::DEFAULT_WEIGHT-1),
-		               env.cpu()),
-		left( env,  "left", false, true),
-		right(env, "right", false, true),
-		buffer(env)
+		               genv->cpu()),
+		left( *genv,  "left", false, true),
+		right(*genv, "right", false, true)
 	{
 		start();
 	}
@@ -189,11 +186,10 @@ struct Retro_frontend::Stereo_out : Genode::Thread
 static Genode::Constructible<Retro_frontend::Stereo_out> stereo_out;
 
 
-static
 void audio_sample_noop(int16_t left, int16_t right) { }
 
 
-static /* not called in pratice */
+/* not called in pratice */
 void audio_sample_callback(int16_t left, int16_t right)
 {
 	stereo_out->buffer.lock();
@@ -203,11 +199,9 @@ void audio_sample_callback(int16_t left, int16_t right)
 }
 
 
-static
 size_t audio_sample_batch_noop(const int16_t *data, size_t frames) { return 0; }
 
 
-static
 size_t audio_sample_batch_callback(const int16_t *data, size_t frames)
 {
 	Genode::Lock::Guard guard(stereo_out->buffer);

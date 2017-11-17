@@ -6,4 +6,3 @@ LIBRETRO_INC := $(call select_from_ports,libretro)/include
 
 INC_DIR += $(LIBRETRO_INC)
 
-component.cc: $(LIBRETRO_INC)/libretro.h

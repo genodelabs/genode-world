@@ -1,0 +1,222 @@
+The `retro_frontend` component is a runtime for Libretro.
+It is the Genode analogue to the `Retroarch` reference frontend.
+
+A Libretro core is a game or other application that implements the Libretro API,
+and in this case, is linked as a dynamic library.  The runtime frontend loads a
+core and installs callbacks that allow the core to draw to a framebuffer, poll
+input, play audio, and reconfigure itself. The core executes not by its own main
+loop but is driven by the fronted to match a framerate recommended by the core.
+This architecture allows for game engines and emulators to further abstract
+their operating system interactions and hopefully improve their long-term binary
+compatibility.
+
+
+Shortcomings
+############
+
+To begin with, most features present in Retroarch are not found in this
+frontend. Some are appropriate to internalize and others are best
+implemented as additional components.
+
+To list a few :
+ - Analog input axes
+ - Mouse input axes
+ - Hardware accelerated rendering
+ - Pixel format conversion
+ - Shaders and pixel upscalers
+ - Time acceleration and dilation
+ - State rewinding
+ - Remote input over IP
+ - High-quality audio resampling
+ - User interface for frontend management
+
+Patches are welcome!
+
+
+Required environment
+####################
+
+'retro_frontend' requires at minimum 'Framebuffer' and 'Timer' services.
+'Input' and 'Audio_out' are optional. For use with 'Nitpicker' the 'nit_fb'
+component will provide 'Framebuffer' and 'Input'. The frontend uses 
+core-specific framebuffer dimensions so use of the 'fb_upscale' component
+is recommended to zoom framebuffer dimensions to a match. Multiple 'Input'
+sessions are requested when the frontend is configured with multiple
+controllers.
+
+
+Configuration
+#############
+
+The most important configuration option is the core, this is an attribute on
+the top-level configuration XML node. The filename specified here is loaded
+via a ROM session as a dynamic library.
+! <config core="core_libretro.lib.so">
+!   ...
+! </config>
+
+The second most import option is game data. A `game` node within the configuration
+specifies game to be loaded by a ROM image or by path. A third 'meta' option is
+present, its meaning is core-specific and is seldom used. When no 'game' node is
+present a game path of "/" is assumed.
+
+Load by ROM:
+! <config ...>
+!   <game rom="cartridge.bin"/>
+!   ...
+! </config>
+
+Load by path:
+! <config ...>
+!   <game path="/assets"/>
+!   ...
+! </config>
+
+
+Input
+=====
+
+The frontend supports multiple controllers and maps input codes from Genode to
+Libretro. Controllers are specified by 'controller' nodes within the configuration.
+
+For each controller it is recommended to specify a device type. The frontend and
+core will assume by default that the controller is a joypad and will likely only
+poll for joypad input. Defining a device type at the frontend does not restrict
+or mask controller input from other types, but determines which inputs the core
+will poll and how inputs are interpreted.  There are several basic device types
+and cores may define special device types by subclassing from a basic type. A 
+ore will publish its device types and descriptions through the frontend via the
+'controllers' report described later in this document. Cores may additionally
+publish textual descriptions of each button on each port via an 'input' report.
+
+Base supported device types:
+1 | Joypad
+2 | Mouse (axes not supported)
+3 | Keyboard
+
+Mapping input to a Libretro keyboard on port 0, a joypad with remapping to port 1,
+and a joypad derived device on port 2:
+! <config ...>
+!   <controller port="0" device="3"/>
+!   <controller port="1" device="1">
+!     <map from="BTN_TR" to="R2"/>
+!     <map from="BTN_TR2" to="R"/>
+!     <map from="BTN_TL" to="L2"/>
+!     <map from="BTN_TL2" to="L"/>
+!   </controller>
+!   <controller port="2" device="257"/>
+! </config>
+
+Port 1 in the example above port show four key remappings. In this example
+the four trigger or bumper buttons on a gamepad are vertically reversed.
+The 'from' attribute on a 'map' node indicates a Genode input code and the
+'to' attribute indicates a Libretro input code. Genode input codes may be
+determined externally using the 'test-input' component and Libretro input
+codes may be found in 'input' report described later. Mappings may only
+be made within the base device. Mapping keyboards to joypads is supported
+but remapping keyboard keys is not. The 'input_merger' or 'input_remap'
+component may be used to externally remap the Libretro keyboard type.
+
+
+Variables
+=========
+
+Cores usually request their own configuration options from the frontend
+and these are in turn resolved from the XML configuration provided to
+the frontend. These options are published by the core via the frontend
+'variables' report described later. A 'variable' node within the
+configuration binds a configuration value to a configuration key.
+
+! <config ... >
+!   <variable key="region" value="PAL"/>
+!   ...
+! </config>
+
+
+C runtime
+=========
+
+The frontend provides a POSIX environment for cores like any other
+component linked to the Genode C runtime. In this regard the frontend
+should be configured with a VFS and connections for standard I/O.
+
+! <config core="...">
+!   <vfs>
+!     <tar name="..."/>
+!     <dir name="dev"> <log/> </dir>
+!   </vfs>
+!   <libc stdout="/dev/log" stderr="/dev/log"/>
+! </config>
+
+
+Reports
+#######
+
+The frontend published information from the core in the form of 'Report'
+sessions. The reports are 'variables' 'controllers', and 'inputs'.
+
+
+Variables
+=========
+
+The variables report contains pairs of keys and possible values. These inform
+what variables should be included in the configuration passed to the frontend.
+Valid options for a given variable are seperated by the '|' character.
+
+! <variables>
+!   <variable key="nospritelimit" value="No Sprite Limit; disabled|enabled"/>
+!   <variable key="overscan_v" value="Crop Overscan (Vertical); enabled|disabled"/>
+!   <variable key="region" value="Region Override; Auto|NTSC|PAL|Dendy"/>
+! </variables>
+
+
+Controllers
+===========
+
+The controllers report conveys which device types a core recognizes or expects
+and informs how inputs to the frontend should be configured.
+
+! <controllers>
+!   <controller port="0">
+!     <type desc="Gamepad" id="1"/>
+!     <type desc="Keyboard/Mouse" id="3"/>
+!     <type desc="Zapper" id="258"/>
+!   </controller>
+! </controllers>
+
+
+Inputs
+======
+
+The input report describes the function of different inputs over different
+controller ports. The value of an 'id' attribute on a descriptor node may
+be used to map from a Genode input to a Libretro input as described
+previously.
+
+! <inputs>
+!   <descriptor port="0" device="JOYPAD" index="0" id="LEFT" description="D-Pad Left"/>
+!   <descriptor port="0" device="JOYPAD" index="0" id="UP" description="D-Pad Up"/>
+!   <.../>
+!   <descriptor port="0" device="JOYPAD" index="0" id="SELECT" description="Toggle console"/>
+!   <descriptor port="0" device="JOYPAD" index="0" id="START" description="Menu"/>
+! </inputs>
+
+
+Runtime
+#######
+
+Pausing
+========
+
+The frontend recognizes the *Pause* key found on standard keyboards and
+acts accordingly. When the frontend pauses the core is halted and
+save RAM is dumped to file for games that are loaded from ROM. When a
+game warns "do not turn of the power" it is recommended to tap pause
+twice after the warning to dump the RAM. When unpausing the frontend
+will load back save RAM and resynchronize the framebuffer and audio-out
+buffer, so giving *Pause* a double tap can also fix laggy audio.
+
+Please note that the *Pause* key is usually only found on keyboards.
+When connected directly to gamepad input drivers an additional
+controller port would need to be defined and routed to an 'Input'
+session where a keyboard is present to enable pause support.

@@ -5,50 +5,31 @@
  */
 
 /*
- * Copyright (C) 2016 Genode Labs GmbH
+ * Copyright (C) 2016-2017 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU General Public License version 2.
  */
 
-#ifndef _RETRO_FRONTEND__CALLBACKS_H_
-#define _RETRO_FRONTEND__CALLBACKS_H_
+#ifndef _RETRO_FRONTEND__ENVIRONMENT_H_
+#define _RETRO_FRONTEND__ENVIRONMENT_H_
 
 /* local includes */
-#include "frontend.h"
+#include "framebuffer.h"
+#include "input.h"
+#include "log.h"
+#include "core.h"
 
 /* Genode includes */
+#include <os/reporter.h>
 #include <base/sleep.h>
 
-/* vsnprintf */
-#include <stdio.h>
 
-
-static
-void log_printf_callback(Retro_frontend::retro_log_level level, const char *fmt, ...)
-{
-	using namespace Retro_frontend;
-
-	char buf[Genode::Log_session::MAX_STRING_LEN];
-
-	va_list vp;
-	va_start(vp, fmt);
-	::vsnprintf(buf, sizeof(buf), fmt, vp);
-	va_end(vp);
-
-	char const *msg = buf;
-
-	switch (level) {
-	case RETRO_LOG_DEBUG: Genode::log("Debug: ", msg); return;
-	case RETRO_LOG_INFO:  Genode::log(msg);            return;
-	case RETRO_LOG_WARN:  Genode::warning(msg);        return;
-	case RETRO_LOG_ERROR: Genode::error(msg);          return;
-	case RETRO_LOG_DUMMY: Genode::log("Dummy: ", msg); return;
-	}
+namespace Retro_frontend {
+	static unsigned variables_version = 0;
 }
 
 
-static
 bool environment_callback(unsigned cmd, void *data)
 {
 	using namespace Retro_frontend;
@@ -103,24 +84,42 @@ bool environment_callback(unsigned cmd, void *data)
 
 	case RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS:
 	{
-		try {
-			global_frontend->input_reporter.enabled(true);
-		} catch (...) {
+		static Genode::Reporter input_reporter { *genv, "inputs", "inputs", 8192 };
+
+		try { input_reporter.enabled(true); }
+		catch (...) {
 			Genode::error("input descriptors not reported");
 			return false;
 		}
 
 		/* TODO: translate device, index, and id to a string descriptor */
 
-		Genode::Reporter::Xml_generator gen(global_frontend->input_reporter, [&] () {
+		Genode::Reporter::Xml_generator gen(input_reporter, [&] () {
 			for (const struct retro_input_descriptor *desc = (retro_input_descriptor*)data;
 			     (desc && (desc->description != NULL)); ++desc)
 				{
+					char const *device_str = "UNKNOWN";
+					switch (desc->device) {
+					case RETRO_DEVICE_JOYPAD:
+						device_str = "JOYPAD"; break;
+					case RETRO_DEVICE_MOUSE:
+						device_str = "MOUSE"; break;
+					case RETRO_DEVICE_KEYBOARD:
+						device_str = "KEYBOARD"; break;
+					case RETRO_DEVICE_LIGHTGUN:
+						device_str = "LIGHTGUN"; break;
+					case RETRO_DEVICE_ANALOG:
+						device_str = "ANALOG"; break;
+					case RETRO_DEVICE_POINTER:
+						device_str = "POINTER"; break;
+					default: break;
+					}
+
 					gen.node("descriptor", [&] () {
 						gen.attribute("port",        desc->port);
-						gen.attribute("device",      desc->device);
+						gen.attribute("device",      device_str);
 						gen.attribute("index",       desc->index);
-						gen.attribute("id",          desc->id);
+						gen.attribute("id", lookup_input_text(desc->device, desc->id));
 						gen.attribute("description", desc->description);
 					});
 				}
@@ -130,10 +129,16 @@ bool environment_callback(unsigned cmd, void *data)
 	}
 
 	case RETRO_ENVIRONMENT_SHUTDOWN:
-		global_frontend->exit();
-		global_frontend->env.parent().exit(0);
+		shutdown();
 		/* can't return here, this is a callback */
 		Genode::sleep_forever();
+
+	case RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK:
+	{
+		auto *out = (retro_keyboard_callback const *)data;
+		keyboard_callback = out->callback;
+		return true;
+	}
 
 	case RETRO_ENVIRONMENT_GET_VARIABLE:
 	{
@@ -154,8 +159,9 @@ bool environment_callback(unsigned cmd, void *data)
 			}
 		};
 
-		global_frontend->variables().for_each_sub_node("variable", f);
+		config_variables().for_each_sub_node("variable", f);
 
+		variables_version = config_version;
 		return out->value != NULL;
 	}
 
@@ -165,14 +171,14 @@ bool environment_callback(unsigned cmd, void *data)
 		 ** Report variables set by core **
 		 **********************************/
 
-		try {
-			global_frontend->variable_reporter.enabled(true);
-		} catch (...) {
+		static Genode::Reporter variable_reporter { *genv, "variables", "variables", 8192 };
+		try { variable_reporter.enabled(true); }
+		catch (...) {
 			Genode::error("core variables not reported");
 			return false;
 		}
 
-		Genode::Reporter::Xml_generator gen(global_frontend->variable_reporter, [&] () {
+		Genode::Reporter::Xml_generator gen(variable_reporter, [&] () {
 			for (const struct retro_variable *var = (retro_variable*)data;
 			     (var && (var->key != NULL) && (var->value != NULL)); ++var)
 				{
@@ -187,14 +193,13 @@ bool environment_callback(unsigned cmd, void *data)
 	}
 
 	case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
+		*((bool *)data) = (variables_version != config_version);
+		return true;
+
+	case RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME:
 		return false;
 
-	//case RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME:
-	//	global_frontend->core.supports_null_load = data;
-	//	return true;
-
 	case RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE:
-		Genode::warning("Genode rumble interface not implemented");
 		return false;
 
 	case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
@@ -206,14 +211,14 @@ bool environment_callback(unsigned cmd, void *data)
 
 	case RETRO_ENVIRONMENT_SET_SUBSYSTEM_INFO:
 	{
-		try {
-			global_frontend->subsystem_reporter.enabled(true);
-		} catch (...) {
+		static Genode::Reporter  subsystem_reporter { *genv, "subsystems", "subsystems", 8192 };
+		try { subsystem_reporter.enabled(true); }
+		catch (...) {
 			Genode::error("core subsystems not reported");
 			return false;
 		}
 
-		Genode::Reporter::Xml_generator gen(global_frontend->subsystem_reporter, [&] () {
+		Genode::Reporter::Xml_generator gen(subsystem_reporter, [&] () {
 			for (const retro_subsystem_info *info = (retro_subsystem_info*)data;
 			     (info && (info->desc)); ++info)
 				{
@@ -248,14 +253,16 @@ bool environment_callback(unsigned cmd, void *data)
 
 	case RETRO_ENVIRONMENT_SET_CONTROLLER_INFO:
 	{
-		try {
-			global_frontend->controller_reporter.enabled(true);
-		} catch (...) {
-			Genode::error("core controllers not reported");
-			return false;
+		controller_info = (const retro_controller_info*)data;
+
+		static Genode::Reporter controller_reporter { *genv, "controllers" };
+		try { controller_reporter.enabled(true); }
+		catch (...) {
+			Genode::error("controller info not reported");
+			return true;
 		}
 
-		Genode::Reporter::Xml_generator gen(global_frontend->controller_reporter, [&] () {
+		Genode::Reporter::Xml_generator gen(controller_reporter, [&] () {
 			unsigned index = 0;
 			for (const retro_controller_info *info = (retro_controller_info*)data;
 			     (info && (info->types)); ++info)
@@ -306,51 +313,5 @@ bool environment_callback(unsigned cmd, void *data)
 	return false;
 }
 
-
-static
-void video_refresh_callback(const void *data,
-                            unsigned src_width, unsigned src_height,
-                            size_t src_pitch)
-{
-	if (!framebuffer.constructed())
-		return; /* tyrquake does this during 'retro_load_game' */
-
-	using namespace Retro_frontend;
-	using namespace Genode;
-
-	if (data == NULL) /* frame duping? */ {
-		return;
-	}
-
-	uint8_t const *src = (uint8_t const*)data;
-	uint8_t *dst = framebuffer->ds.local_addr<uint8_t>();
-
-	unsigned const dst_width  = framebuffer->mode.width();
-	unsigned const dst_height = framebuffer->mode.height();
-
-	unsigned const width  = min(src_width,  dst_width);
-	unsigned const height = min(src_height, dst_height);
-
-	if (dst != src) {
-		::size_t dst_pitch = dst_width<<1; /* x2 */
-
-		for (unsigned y = 0; y < height; ++y)
-			memcpy(&dst[y*dst_pitch], &src[y*src_pitch], dst_pitch);
-	}
-
-	framebuffer->session.refresh(0, 0, width, height);
-}
-
-
-static
-void input_poll_callback() { global_frontend->flush_input(); }
-
-
-static
-int16_t input_state_callback(unsigned port,  unsigned device,
-                             unsigned index, unsigned id)
-{
-	return global_frontend->controller.event(device, index, id);
-}
 
 #endif
