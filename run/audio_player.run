@@ -2,6 +2,11 @@
 # Build
 #
 
+if {[have_include power_on/qemu]} {
+	puts "\nAbort, using Qemu is not recommended.\n"
+	exit 0
+}
+
 set build_components {
 	core init
 	drivers/timer
@@ -40,6 +45,8 @@ append config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="100"/>
+
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
@@ -82,13 +89,12 @@ append config {
 				<inline description="initial config">
 <config ld_verbose="yes" state="playing" playlist_mode="repeat">
 	<report progress="yes" interval="1" playlist="yes"/>
-	<libc>
-		<vfs>
-			<rom name="foo.mp3"/>
-			<rom name="foo.flac"/>
-			<rom name="foo.ogg"/>
-		</vfs>
-	</libc>
+	<libc/>
+	<vfs>
+		<rom name="foo.mp3"/>
+		<rom name="foo.flac"/>
+		<rom name="foo.ogg"/>
+	</vfs>
 </config>
 				</inline>
 				<sleep milliseconds="10000"/>
@@ -109,18 +115,21 @@ append config {
 	</start>
 
 	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Audio_out"/> </provides>
-		<config/>
+		<!--
+		<config alsa_device="hw:CARD=PCH,DEV=0"/>
+		-->
 	</start>
 
-	<start name="audio_player">
-		<resource name="RAM" quantum="16M"/>
+	<start name="audio_player" caps="150">
+		<resource name="RAM" quantum="24M"/>
 		<configfile name="audio_player.config"/>
 		<route>
 			<service name="ROM" label="audio_player.config"> <child name="dynamic_rom"/> </service>
 			<service name="ROM" label="playlist"> <child name="dynamic_rom"/> </service>
-			<service name="Report" label="current_track"> <child name="report_rom"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -146,8 +155,8 @@ if {[expr ![file exists bin/foo.flac] || ![file exists bin/foo.mp3] || ![file ex
 # Boot modules
 #
 
-set boot_modules {
-	core init timer dynamic_rom report_rom audio_drv
+append boot_modules {
+	core init timer dynamic_rom report_rom } [audio_drv_binary] {
 	ld.lib.so libc.lib.so libm.lib.so zlib.lib.so
 	avcodec.lib.so avformat.lib.so avutil.lib.so
 	avresample.lib.so pthread.lib.so
@@ -158,5 +167,7 @@ set boot_modules {
 append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
+
+append qemu_args "  -soundhw es1370 "
 
 run_genode_until forever

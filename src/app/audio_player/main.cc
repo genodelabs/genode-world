@@ -79,8 +79,9 @@ struct Audio_player::Output
 	 *
 	 * \param sigh  progress signal handler
 	 */
-	Output(Genode::Signal_context_capability sigh)
-	: _left("left", true, true), _right("right", false, false)
+	Output(Genode::Env &env,
+	       Genode::Signal_context_capability sigh)
+	: _left(env, "left", true, true), _right(env, "right", false, false)
 	{
 		/*
 		 * We only care about the left (first) channel and sync all other
@@ -329,8 +330,6 @@ class Audio_player::Decoder
 
 	private:
 
-		Genode::Allocator &_alloc;
-
 		AVFrame         *_frame      = nullptr;
 		AVFrame         *_conv_frame = nullptr;
 		AVStream        *_stream     = nullptr;
@@ -344,13 +343,15 @@ class Audio_player::Decoder
 
 		Playlist::Track const &_track;
 
-		File_info *_track_info = nullptr;
+		Genode::Constructible<File_info> _track_info;
 
 		void _close()
 		{
-			avformat_close_input(&_format_ctx);
-			av_free(_conv_frame);
-			av_free(_frame);
+			Libc::with_libc([&] () {
+				avformat_close_input(&_format_ctx);
+				av_free(_conv_frame);
+				av_free(_frame);
+			}); /* with_libc */
 		}
 
 		/**
@@ -361,11 +362,13 @@ class Audio_player::Decoder
 			static bool registered = false;
 			if (registered) { return; }
 
-			/* initialise libav first so that all decoders are present */
-			av_register_all();
+			Libc::with_libc([&] () {
+				/* initialise libav first so that all decoders are present */
+				av_register_all();
 
-			/* make libav quiet so we do not need stderr access */
-			av_log_set_level(AV_LOG_QUIET);
+				/* make libav quiet so we do not need stderr access */
+				av_log_set_level(AV_LOG_QUIET);
+			}); /* with_libc */
 
 			registered = true;
 		}
@@ -375,102 +378,113 @@ class Audio_player::Decoder
 		/*
 		 * Constructor
 		 */
-		Decoder(Genode::Allocator &alloc, Playlist::Track const &playlist_track)
-		: _alloc(alloc), _track(playlist_track)
+		Decoder(Playlist::Track const &playlist_track)
+		: _track(playlist_track)
 		{
-			Decoder::init();
+			bool initialized = false;
 
-			_frame = av_frame_alloc();
-			if (!_frame) throw Not_initialized();
+			Libc::with_libc([&] () {
 
-			_conv_frame = av_frame_alloc();
-			if (!_conv_frame) {
-				av_free(_frame);
-				throw Not_initialized();
-			}
+				Decoder::init();
 
-			int err = 0;
-			err = avformat_open_input(&_format_ctx, _track.path.string(), NULL, NULL);
-			if (err != 0) {
-				Genode::error("could not open '", _track.path.string(), "'");
-				av_free(_conv_frame);
-				av_free(_frame);
-				throw Not_initialized();
-			}
-
-			err = avformat_find_stream_info(_format_ctx, NULL);
-			if (err < 0) {
-				Genode::error("could not find the stream info");
-				_close();
-				throw Not_initialized();
-			}
-
-			for (unsigned i = 0; i < _format_ctx->nb_streams; ++i)
-				if (_format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-					_stream = _format_ctx->streams[i];
-					break;
+				_frame = av_frame_alloc();
+				if (!_frame) { return; }
+				
+				_conv_frame = av_frame_alloc();
+				if (!_conv_frame) {
+					av_free(_frame);
+					return;
 				}
 
-			if (_stream == nullptr) {
-				Genode::error("could not find any audio stream");
-				_close();
-				throw Not_initialized();
-			}
+				int err = 0;
+				err = avformat_open_input(&_format_ctx, _track.path.string(), NULL, NULL);
+				if (err != 0) {
+					Genode::error("could not open '", _track.path.string(), "'");
+					av_free(_conv_frame);
+					av_free(_frame);
+					return;
+				}
 
-			_codec_ctx        = _stream->codec;
-			_codec_ctx->codec = avcodec_find_decoder(_codec_ctx->codec_id);
-			if (_codec_ctx->codec == NULL) {
-				Genode::error("could not find decoder");
-				_close();
-				throw Not_initialized();
-			}
+				err = avformat_find_stream_info(_format_ctx, NULL);
+				if (err < 0) {
+					Genode::error("could not find the stream info");
+					_close();
+					return;
+				}
 
-			err = avcodec_open2(_codec_ctx, _codec_ctx->codec, NULL);
-			if (err != 0) {
-				Genode::error("could not open decoder");
-				_close();
-				throw Not_initialized();
-			}
+				for (unsigned i = 0; i < _format_ctx->nb_streams; ++i)
+					if (_format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+						_stream = _format_ctx->streams[i];
+						break;
+					}
 
-			_avr = avresample_alloc_context();
-			if (!_avr) {
-				_close();
-				throw Not_initialized();
-			}
+				if (_stream == nullptr) {
+					Genode::error("could not find any audio stream");
+					_close();
+					return;
+				}
 
-			av_opt_set_int(_avr, "in_channel_layout",  AV_CH_LAYOUT_STEREO,     0);
-			av_opt_set_int(_avr, "out_channel_layout", AV_CH_LAYOUT_STEREO,     0);
-			av_opt_set_int(_avr, "in_sample_rate",     _codec_ctx->sample_rate, 0);
-			av_opt_set_int(_avr, "out_sample_rate",    Audio_out::SAMPLE_RATE,  0);
-			av_opt_set_int(_avr, "in_sample_fmt",      _codec_ctx->sample_fmt,  0);
-			av_opt_set_int(_avr, "out_sample_fmt",     AV_SAMPLE_FMT_FLT,       0);
+				_codec_ctx        = _stream->codec;
+				_codec_ctx->codec = avcodec_find_decoder(_codec_ctx->codec_id);
+				if (_codec_ctx->codec == NULL) {
+					Genode::error("could not find decoder");
+					_close();
+					return;
+				}
 
-			if (avresample_open(_avr) < 0) {
-				_close();
-				throw Not_initialized();
-			}
+				err = avcodec_open2(_codec_ctx, _codec_ctx->codec, NULL);
+				if (err != 0) {
+					Genode::error("could not open decoder");
+					_close();
+					return;
+				}
 
-			_conv_frame->channel_layout = AV_CH_LAYOUT_STEREO;
-			_conv_frame->sample_rate    = Audio_out::SAMPLE_RATE;
-			_conv_frame->format         = AV_SAMPLE_FMT_FLT;
+				_avr = avresample_alloc_context();
+				if (!_avr) {
+					_close();
+					return;
+				}
 
-			av_init_packet(&_packet);
+				av_opt_set_int(_avr, "in_channel_layout",  AV_CH_LAYOUT_STEREO,     0);
+				av_opt_set_int(_avr, "out_channel_layout", AV_CH_LAYOUT_STEREO,     0);
+				av_opt_set_int(_avr, "in_sample_rate",     _codec_ctx->sample_rate, 0);
+				av_opt_set_int(_avr, "out_sample_rate",    Audio_out::SAMPLE_RATE,  0);
+				av_opt_set_int(_avr, "in_sample_fmt",      _codec_ctx->sample_fmt,  0);
+				av_opt_set_int(_avr, "out_sample_fmt",     AV_SAMPLE_FMT_FLT,       0);
 
-			/* extract metainformation */
-			bool const is_vorbis = _codec_ctx->codec_id == AV_CODEC_ID_VORBIS;
+				if (avresample_open(_avr) < 0) {
+					_close();
+					return;
+				}
 
-			AVDictionary *md = is_vorbis ? _stream->metadata : _format_ctx->metadata;
-			int const flags  = AV_DICT_IGNORE_SUFFIX;
+				_conv_frame->channel_layout = AV_CH_LAYOUT_STEREO;
+				_conv_frame->sample_rate    = Audio_out::SAMPLE_RATE;
+				_conv_frame->format         = AV_SAMPLE_FMT_FLT;
 
-			AVDictionaryEntry *artist = av_dict_get(md, "artist", NULL, flags);
-			AVDictionaryEntry *album  = av_dict_get(md, "album", NULL, flags);
-			AVDictionaryEntry *title  = av_dict_get(md, "title", NULL, flags);
-			AVDictionaryEntry *track  = av_dict_get(md, "track", NULL, flags);
+				av_init_packet(&_packet);
 
-			_track_info = new (&_alloc) File_info(_track,
-				artist ? artist->value : "", album ? album->value : "",
-				title ? title->value : "", track ? track->value : "",
-				_format_ctx->duration / 1000);
+				/* extract metainformation */
+				bool const is_vorbis = _codec_ctx->codec_id == AV_CODEC_ID_VORBIS;
+
+				AVDictionary *md = is_vorbis ? _stream->metadata : _format_ctx->metadata;
+				int const flags  = AV_DICT_IGNORE_SUFFIX;
+
+				AVDictionaryEntry *artist = av_dict_get(md, "artist", NULL, flags);
+				AVDictionaryEntry *album  = av_dict_get(md, "album", NULL, flags);
+				AVDictionaryEntry *title  = av_dict_get(md, "title", NULL, flags);
+				AVDictionaryEntry *track  = av_dict_get(md, "track", NULL, flags);
+
+				_track_info.construct(_track,
+				                      artist ? artist->value : "",
+				                      album  ? album->value  : "",
+				                      title  ? title->value  : "",
+				                      track  ? track->value  : "",
+				                      _format_ctx->duration / 1000);
+
+				initialized = true;
+			}); /* with_libc */
+
+			if (!initialized) { throw Not_initialized(); }
 		}
 
 		/**
@@ -478,20 +492,25 @@ class Audio_player::Decoder
 		 */
 		~Decoder()
 		{
-			avresample_close(_avr);
-			avresample_free(&_avr);
-			avcodec_close(_codec_ctx);
-			avformat_close_input(&_format_ctx);
-			av_free(_conv_frame);
-			av_free(_frame);
-
-			Genode::destroy(&_alloc, _track_info);
+			Libc::with_libc([&] () {
+				avresample_close(_avr);
+				avresample_free(&_avr);
+				avcodec_close(_codec_ctx);
+				avformat_close_input(&_format_ctx);
+				av_free(_conv_frame);
+				av_free(_frame);
+			}); /* with_libc */
 		}
 
 		/**
 		 * Dump format information - needs <libc stderr="/dev/log"> configuration
 		 */
-		void dump_info() const { av_dump_format(_format_ctx, 0, _track.path.string(), 0); }
+		void dump_info() const
+		{
+			Libc::with_libc([&] () {
+				av_dump_format(_format_ctx, 0, _track.path.string(), 0);
+			}); /* with_libc */
+		}
 
 		/**
 		 * Return metainformation of the file
@@ -520,35 +539,53 @@ class Audio_player::Decoder
 		 * \param frame_data reference to destination buffer
 		 * \param min minimal number of bytes that have to be decoded at least
 		 */
-		int fill_buffer(Frame_data &frame_data, size_t min)
+		int fill_buffer(Genode::Env &env, Frame_data &frame_data, size_t min)
 		{
 			size_t written = 0;
-			while (written < min
-			       && (av_read_frame(_format_ctx, &_packet) == 0)) {
 
-				if (_packet.stream_index == _stream->index) {
-					int finished = 0;
-					avcodec_decode_audio4(_codec_ctx, _frame, &finished, &_packet);
+			Libc::with_libc([&] {
+				while (written < min) {
 
-					if (finished) {
+					if (av_read_frame(_format_ctx, &_packet) != 0) { break; }
 
-						if (avresample_convert_frame(_avr, _conv_frame, _frame) < 0) {
-							Genode::error("could not resample frame");
-							return 0;
+					if (_packet.stream_index == _stream->index) {
+						int finished = 0;
+						avcodec_decode_audio4(_codec_ctx, _frame, &finished, &_packet);
+
+						if (finished) {
+
+							/*
+							 * We have to read all available samples, otherwise we
+							 * end up leaking memory. Draining all available sample will
+							 * lead to distorted audio; checking for > 64 works(tm) but
+							 * we might still leak some memory (hopefully the song's duration
+							 * is not too long.) FWIW, it seems to be happening only when
+							 * resampling vorbis files with FLTP format.
+							 */
+							AVFrame *in = _frame;
+							do {
+								if (avresample_convert_frame(_avr, _conv_frame, in) < 0) {
+									Genode::error("could not resample frame");
+									return 0;
+								}
+
+								void   const *data  = _conv_frame->extended_data[0];
+								size_t const  bytes = _conv_frame->linesize[0];
+								size_t const      s = 2 /* stereo */ * sizeof(float);
+
+								_samples_decoded += bytes / s;
+								written += frame_data.write(data, bytes);
+
+								in = nullptr;
+							} while (avresample_available(_avr) > 64);
 						}
-
-						void   const *data  = _conv_frame->extended_data[0];
-						size_t const  bytes = _conv_frame->linesize[0];
-						size_t const      s = 2 /* stereo */ * sizeof(float);
-
-						_samples_decoded += bytes / s;
-
-						written += frame_data.write(data, bytes);
 					}
-				}
 
-				av_free_packet(&_packet);
-			}
+					av_free_packet(&_packet);
+				}
+				/* keep compiler for complaining b/c of lambda deduction */
+				return 0;
+			}); /* with_libc */
 
 			return written;
 		}
@@ -566,7 +603,7 @@ struct Audio_player::Main
 	Genode::Signal_handler<Main> progress_dispatcher = {
 		env.ep(), *this, &Main::handle_progress };
 
-	Output      output { progress_dispatcher };
+	Output      output { env, progress_dispatcher };
 	Frame_data  frame_data;
 	Decoder    *decoder = nullptr;
 
@@ -575,7 +612,7 @@ struct Audio_player::Main
 
 	void scan_playlist();
 
-	Genode::Reporter playlist_reporter { "playlist" };
+	Genode::Reporter playlist_reporter { env, "playlist" };
 	bool report_playlist = false;
 
 	void handle_playlist();
@@ -583,14 +620,14 @@ struct Audio_player::Main
 	Genode::Signal_handler<Main> playlist_dispatcher = {
 		env.ep(), *this, &Main::handle_playlist };
 
-	Genode::Attached_rom_dataspace playlist_rom { "playlist" };
+	Genode::Attached_rom_dataspace playlist_rom { env, "playlist" };
 
 	bool is_paused  = false;
 	bool is_stopped = false;
 
 	bool state_changed = false;
 
-	Genode::Reporter reporter { "current_track" };
+	Genode::Reporter reporter { env, "current_track" };
 
 	unsigned report_progress_interval = 0; /* in Audio_out packets */
 	bool     report_progress          = false;
@@ -626,7 +663,7 @@ void Audio_player::Main::scan_playlist()
 	try {
 		Genode::Reporter::Xml_generator xml(playlist_reporter, [&] () {
 			playlist.for_each_track([&] (Playlist::Track const &t) {
-				Decoder d(alloc, t);
+				Decoder d(t);
 				Decoder::File_info const &info = d.file_info();
 
 				xml.node("track", [&] () {
@@ -715,7 +752,7 @@ void Audio_player::Main::handle_progress()
 		Genode::retry<Decoder::Not_initialized>(
 		[&] {
 			if (track.valid()) {
-				decoder = new (&alloc) Decoder(alloc, track);
+				decoder = new (&alloc) Decoder(track);
 				report_track(decoder);
 				packet_count = 0;
 			}
@@ -742,7 +779,7 @@ void Audio_player::Main::handle_progress()
 		if (decoder && frame_data.read_avail() <= output.frame_size()) {
 
 			size_t const req_size = output.frame_size();
-			int const n = decoder->fill_buffer(frame_data, req_size);
+			int const n = decoder->fill_buffer(env, frame_data, req_size);
 			if (n == 0) {
 				Genode::destroy(&alloc, decoder);
 				decoder = nullptr;
@@ -767,7 +804,7 @@ void Audio_player::Main::handle_config()
 
 	if (!config_rom.valid()) { return; }
 
-	Genode::Xml_node config(config_rom.local_addr<char>(), config_rom.size());
+	Genode::Xml_node config = config_rom.xml();
 
 	/* handle playlist scan request */
 	try {
@@ -852,7 +889,7 @@ void Audio_player::Main::handle_config()
  ** Component **
  ***************/
 
-void Libc::Component::construct(Genode::Env &env)
+void Libc::Component::construct(Libc::Env &env)
 {
 	static Audio_player::Main main(env);
 }
