@@ -507,7 +507,8 @@ struct Xml_editor::Main
 	Vfs::Global_file_system_factory vfs_factory { heap };
 
 	Vfs::Dir_file_system vfs_root {
-		env, heap, vfs_config(), io_response_handler, vfs_factory };
+		env, heap, vfs_config(), io_response_handler,
+		vfs_factory, Vfs::Dir_file_system::Root() };
 
 	/* Handle on the output file */
 	Vfs::Vfs_handle *vfs_handle;
