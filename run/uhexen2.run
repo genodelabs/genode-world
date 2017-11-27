@@ -15,10 +15,6 @@ set build_components {
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
 
-set usb_only 0
-
-lappend_if [expr !$usb_only] build_components server/input_merger
-
 build $build_components
 
 create_boot_directory
@@ -45,6 +41,8 @@ append config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="100"/>
+
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
@@ -82,51 +80,17 @@ append_if [have_spec pl11x] config {
 		<provides><service name="Framebuffer"/></provides>
 	</start>}
 
-append_if [expr [have_spec ps2] && !$usb_only] config {
+append_if [have_spec ps2] config {
 	<start name="ps2_drv">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Input"/></provides>
 	</start>}
 
 append config {
-	<start name="usb_drv">
-		<resource name="RAM" quantum="12M"/>
-		<provides><service name="Input"/></provides>
-		<config uhci="yes" ehci="yes" xhci="yes">
-			<hid/>
-		</config>
-		<route>
-			<service name="IRQ"><child name="acpi" /></service>
-			<any-service> <parent /> <any-child /></any-service>
-		</route>
-	</start>}
-
-append_if [expr !$usb_only] config {
-	<start name="input_merger">
-		<resource name="RAM" quantum="1M" />
-		<provides>
-			<service name="Input" />
-		</provides>
-		<config>
-			<input label="ps2" />
-			<input label="usb_hid" />
-		</config>
-		<route>
-			<service name="Input" label="ps2">
-				<child name="ps2_drv"/>
-			</service>
-			<service name="Input" label="usb_hid">
-				<child name="usb_drv"/>
-			</service>
-			<any-service> <parent /> <any-child /> </any-service>
-		</route>
-	</start>}
-
-append config {
 	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Audio_out"/></provides>
-		<config/>
 	</start>
 	<start name="uhexen2">
 		<resource name="RAM" quantum="128M"/>
@@ -139,11 +103,7 @@ append config {
 			</vfs>
 			</libc>
 		</config>
-		<route>}
-
-append_if [expr !$usb_only] config {
-			<service name="Input"><child name="input_merger" /></service>}
-append config {
+		<route>
 			<any-service> <parent /> <any-child /></any-service>
 		</route>
 	</start>
@@ -176,22 +136,15 @@ if {![file exists bin/hexen2demo_data.tar]} {
 #
 
 # generic modules
-set boot_modules {
-	core init
-	timer
-	audio_drv
-	usb_drv
-	uhexen2
-	ld.lib.so
-	libc.lib.so posix.lib.so
-	libm.lib.so lwip.lib.so sdl.lib.so sdl_mixer.lib.so pthread.lib.so
-	hexen2demo_data.tar
+append boot_modules {
+	core init timer } [audio_drv_binary] {
+	ld.lib.so libc.lib.so libm.lib.so lwip.lib.so
+	pthread.lib.so sdl.lib.so sdl_mixer.lib.so
+	uhexen2 hexen2demo_data.tar
 }
 
 # platform-specific modules
 append_platform_drv_boot_modules
-
-lappend_if [expr !$usb_only] boot_modules input_merger
 
 lappend_if [have_spec linux] boot_modules fb_sdl
 lappend_if [have_spec vesa]  boot_modules fb_drv

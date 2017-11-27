@@ -2,7 +2,7 @@ TARGET  := tuxmath
 
 TUXMATH_DIR := $(call select_from_ports,tuxmath)/src/app/tuxmath
 
-LIBS    += posix sdl sdl_image sdl_mixer sdl_ttf sdl_net tuxmath_t4k
+LIBS    += libc libm sdlmain sdl sdl_image sdl_mixer sdl_ttf sdl_net tuxmath_t4k
 
 INC_DIR += $(REP_DIR)/src/app/tuxmath \
            $(TUXMATH_DIR)/t4k/src
@@ -13,7 +13,7 @@ CC_OPT  += -DDATA_PREFIX=\"/data\" \
 SRC_C   := tuxmath.c setup.c titlescreen.c menu.c menu_lan.c game.c \
            factoroids.c fileops_media.c options.c credits.c highscore.c \
            audio.c network.c mathcards.c campaign.c multiplayer.c fileops.c \
-           SDL_rotozoom.c lessons.c server.c component_support.cc
+           SDL_rotozoom.c lessons.c server.c
 
 #
 # Disable sound during the game because the current version of sdl_mixer is

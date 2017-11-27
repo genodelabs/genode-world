@@ -31,8 +31,15 @@ Genode::Entrypoint &genode_entrypoint()
 /* provided by the application */
 extern "C" int main(int argc, char ** argv, char **envp);
 
+
+/* provided by our SDL backend */
+extern void sdl_init_genode(Genode::Env &env);
+
+
 void Libc::Component::construct(Libc::Env &env)
 {
+	sdl_init_genode(env);
+
 	genode_env = &env;
 	signal_ep.construct(env, 1024*sizeof(long), "sdl_signal_ep");
 	Libc::with_libc([] () { main(0, nullptr, nullptr); });

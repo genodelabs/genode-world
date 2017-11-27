@@ -48,7 +48,8 @@ append config {
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>}
+	</default-route>
+	<default caps="100"/>}
 
 append_if [have_spec sdl] config {
 	<start name="fb_sdl">
@@ -84,6 +85,7 @@ append_if [have_spec ps2] config {
 
 append config {
 	<start name="audio_drv">
+		<binary name="} [audio_drv_binary] {"/>
 		<resource name="RAM" quantum="6M"/>
 		<provides><service name="Audio_out"/></provides>
 	</start>
@@ -91,7 +93,7 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
-	<start name="abuse">
+	<start name="abuse" caps="200">
 		<resource name="RAM" quantum="128M"/>
 		<config>
 			<sdl_audio_volume value="100"/>
@@ -121,14 +123,12 @@ install_config $config
 file copy -force app/abuse/abuse.tar bin
 
 # generic modules
-set boot_modules {
-	core init
-	audio_drv
+append boot_modules {
+	core init } [audio_drv_binary] {
 	jpeg.lib.so
 	ld.lib.so
 	libc.lib.so
 	libm.lib.so
-	posix.lib.so
 	libpng.lib.so
 	pthread.lib.so
 	sdl_image.lib.so

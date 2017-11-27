@@ -8,7 +8,7 @@ set app_config {
 	<config> <default-policy writeable="yes" root="/"/> </config>
 </start>
 
-<start name="supertux" priority="-2">
+<start name="supertux" priority="-2" caps="200">
 	<resource name="RAM" quantum="64M"/>
 	<config>
 		<libc stdout="/dev/log" stderr="/dev/log" >
@@ -26,7 +26,6 @@ set boot_modules {
 	supertux
 	jpeg.lib.so
 	libc.lib.so
-	posix.lib.so
 	libm.lib.so
 	libpng.lib.so
 	pthread.lib.so

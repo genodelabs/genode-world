@@ -1,7 +1,7 @@
 set build_components { app/tuxmath }
 
 set app_config {
-	<start name="tuxmath" priority="-2">
+	<start name="tuxmath" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
 			<libc stdout="/dev/log" stderr="/dev/log" >
@@ -16,7 +16,6 @@ set app_config {
 set boot_modules {
 	tuxmath
 	libc.lib.so
-	posix.lib.so
 	libm.lib.so
 	pthread.lib.so
 	libiconv.lib.so

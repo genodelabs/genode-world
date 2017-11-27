@@ -40,6 +40,8 @@ append config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="100"/>
+
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
@@ -87,10 +89,10 @@ append config {
 	<start name="ram_fs" priority="-1">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="File_system"/> </provides>
-		<config> <policy writeable="yes" root="/"/> </config>
+		<config> <default-policy writeable="yes" root="/"/> </config>
 	</start>
 
-	<start name="grafx2" priority="-2">
+	<start name="grafx2" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
 			<libc stdout="/dev/log" stderr="/dev/log" >
@@ -119,7 +121,6 @@ set boot_modules {
 	ld.lib.so
 	libc.lib.so
 	libm.lib.so
-	posix.lib.so
 	libpng.lib.so
 	pthread.lib.so
 	sdl_image.lib.so

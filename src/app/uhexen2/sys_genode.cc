@@ -736,12 +736,3 @@ int main(int argc, char **argv)
 extern "C" int _sigprocmask(int, const sigset_t*, sigset_t*) { return -1; }
 /* arm */
 extern "C" int sigprocmask(int, const sigset_t*, sigset_t*) { return -1; }
-
-
-/*
- * Hexen 2 needs a stack of at least 128 KiB while loading PAK files but
- * the libc application stack is merely so large on 32Bit.
- */
-#include <base/component.h>
-
-Genode::size_t Component::stack_size() { return 256UL * 1024; }
