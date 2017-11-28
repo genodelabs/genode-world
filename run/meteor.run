@@ -17,7 +17,6 @@ set build_components {
 	drivers/audio
 	libretro/meteor
 	server/fb_upscale
-	server/input_remap
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -165,7 +164,6 @@ if {![file exists bin/game.gba]} {
 # generic modules
 append boot_modules {
 	fb_upscale
-	input_remap
 	libc.lib.so
 	libm.lib.so
 	meteor_libretro.lib.so

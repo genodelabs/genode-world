@@ -114,8 +114,8 @@ The 'from' attribute on a 'map' node indicates a Genode input code and the
 determined externally using the 'test-input' component and Libretro input
 codes may be found in 'input' report described later. Mappings may only
 be made within the base device. Mapping keyboards to joypads is supported
-but remapping keyboard keys is not. The 'input_merger' or 'input_remap'
-component may be used to externally remap the Libretro keyboard type.
+but remapping keyboard keys is not. The 'input_merger' component may be
+used to externally remap the Libretro keyboard type.
 
 
 Variables

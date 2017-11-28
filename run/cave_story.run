@@ -15,7 +15,6 @@ set build_components {
 	drivers/timer
 	libretro/nxengine
 	server/fb_upscale
-	server/input_remap
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -109,30 +108,6 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-	<start name="input_remap">
-		<resource name="RAM" quantum="2M"/>
-		<provides> <service name="Input"/> </provides>
-		<config>
-			<!-- Retroarch mappings -->
-			<map from="KEY_Z" to="BTN_B"/>
-			<map from="KEY_A" to="BTN_Y"/>
-			<map from="KEY_X" to="BTN_A"/>
-			<map from="KEY_S" to="BTN_X"/>
-			<map from="KEY_Q" to="BTN_TL"/>
-			<map from="KEY_W" to="BTN_TR"/>
-			<map from="KEY_ENTER" to="BTN_START"/>
-			<map from="KEY_RIGHTSHIFT" to="BTN_SELECT"/>
-			<map from="KEY_LEFT" to="BTN_LEFT"/>
-			<map from="KEY_RIGHT" to="BTN_RIGHT"/>
-			<map from="KEY_UP" to="BTN_FORWARD"/>
-			<map from="KEY_DOWN" to="BTN_BACK"/>
-		</config>
-		<route>
-			<service name="Input">
-				<child name="input_drv"/> </service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
 	<start name="report_rom">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Report"/> </provides>
@@ -141,6 +116,18 @@ append config {
 	<start name="retro_frontend">
 		<resource name="RAM" quantum="64M"/>
 		<config core="nxengine_libretro.lib.so">
+			<controller port="0" device="1">
+				<map from="KEY_LEFT" to="LEFT"/>
+				<map from="KEY_RIGHT" to="RIGHT"/>
+				<map from="KEY_UP" to="UP"/>
+				<map from="KEY_DOWN" to="DOWN"/>
+
+				<map from="KEY_Z" to="B"/>
+				<map from="KEY_X" to="A"/>
+
+				<map from="KEY_ENTER" to="START"/>
+				<map from="KEY_RIGHTSHIFT" to="SELECT"/>
+			</controller>
 			<libc stdout="/dev/log" stderr="/dev/log"/>
 			<vfs>
 				<dir name="dev"> <log/> </dir>
@@ -152,7 +139,7 @@ append config {
 			<service name="Framebuffer">
 				<child name="fb_upscale"/> </service>
 			<service name="Input">
-				<child name="input_remap"/> </service>
+				<child name="input_drv"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -174,7 +161,6 @@ append boot_modules {
 	core init ld.lib.so
 } [audio_drv_binary] {
 	fb_upscale
-	input_remap
 	libc.lib.so
 	libm.lib.so
 	nxengine_libretro.lib.so
