@@ -17,7 +17,7 @@ set build_components {
 	app/launchpad
 	app/pointer
 	app/rom_logger
-	app/xray_trigger
+	app/global_keys_handler
 	drivers/framebuffer
 	drivers/timer
 	server/log_tee
@@ -80,9 +80,10 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
-			<policy label="xray_trigger -> hover"    report="nitpicker -> hover"/>
-			<policy label="nitpicker_config -> xray" report="xray_trigger -> xray"/>
-			<policy label="log_fader_config -> xray" report="xray_trigger -> xray"/>
+			<policy label="global_keys_handler -> hover"  report="nitpicker -> hover"/>
+			<policy label="decorator_config -> xray"      report="global_keys_handler -> xray"/>
+			<policy label="nitpicker_config -> xray" report="global_keys_handler -> xray"/>
+			<policy label="log_fader_config -> xray" report="global_keys_handler -> xray"/>
 		</config>
 		<route> <any-service> <parent/> <any-child/> </any-service> </route>
 	</start>
@@ -119,14 +120,16 @@ append config {
 					<policy label_prefix="log_" domain="log"/>
 					<policy label_prefix="pointer" domain="pointer"/>
 					<default-policy domain="default"/>
-					<global-key name="KEY_SCROLLLOCK" label="xray_trigger -> input"/>
-					<global-key name="KEY_F1"         label="xray_trigger -> input" />
-					<global-key name="KEY_F2"         label="xray_trigger -> input" />
+					<global-key name="KEY_SCROLLLOCK" label="global_keys_handler -> input"/>
+					<global-key name="KEY_F1"         label="global_keys_handler -> input" />
+					<global-key name="KEY_F2"         label="global_keys_handler -> input" />
 				</inline>
 			</output>
 		</config>
 		<route>
-			<service name="ROM" label="xray"> <child name="report_rom"/> </service>
+			<service name="ROM" label="xray">
+				<child name="report_rom"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
@@ -144,19 +147,26 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-
-	<start name="xray_trigger">
+	<start name="global_keys_handler">
 		<resource name="RAM" quantum="1M"/>
 		<config>
-			<press   name="KEY_F1" xray="on"/>
-			<release name="KEY_F1" xray="off"/>
-			<press   name="KEY_F2" xray="toggle"/>
-			<hover domain="panel"/>
+			<bool name="xray" initial="no"/>
+
+			<press   name="KEY_SCROLLLOCK" bool="xray" change="toggle"/>
+			<press   name="KEY_F1"         bool="xray" change="on"/>
+			<release name="KEY_F1"         bool="xray" change="off"/>
+			<press   name="KEY_F2"         bool="xray" change="toggle"/>
+
+			<report name="xray" delay_ms="125">
+				<hovered domain="panel"/>
+				<hovered domain="decorator"/>
+				<bool name="xray"/>
+			</report>
 		</config>
 		<route>
-			<service name="Nitpicker"> <child name="nitpicker"/> </service>
-			<service name="Report"> <child name="report_rom"/> </service>
 			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
+			<service name="Nitpicker"> <child name="nitpicker"/>  </service>
+			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -248,14 +258,14 @@ append config {
 		</route>
 	</start>
 
-	<start name="launchpad">
+	<start name="launchpad" caps="512">
 		<resource name="RAM" quantum="32M"/>
 		<config>
-			<launcher name="testnit" ram_quota="768K" />
-			<launcher name="rom_logger" ram_quota="768K">
+			<launcher name="testnit" ram_quota="768K" caps="128"/>
+			<launcher name="rom_logger" ram_quota="768K" caps="128">
 				<config rom="nitpicker.config"/>
 			</launcher>
-			<launcher name="rom_logger" ram_quota="768K">
+			<launcher name="rom_logger" ram_quota="768K" caps="128">
 				<config rom="log_fader.config"/>
 			</launcher>
 		</config>
@@ -286,7 +296,7 @@ set boot_modules {
 	terminal_log
 	testnit
 	timer
-	xray_trigger
+	global_keys_handler
 }
 
 build_boot_image $boot_modules
