@@ -1,7 +1,7 @@
 assert_spec x86
 
 # Xmllint throws errors on inline chuck code
-proc check_xml_syntax {xml_file} { }
+proc check_xml_with_schema {xml_file} { }
 
 #
 # Build
