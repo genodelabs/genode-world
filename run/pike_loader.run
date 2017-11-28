@@ -45,6 +45,7 @@ append config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
+	<default caps="128"/>
 	<start name="fb_sdl">
 		<resource name="RAM" quantum="4M"/>
 		<provides>
@@ -91,7 +92,7 @@ append config {
 			</policy>
 		</config>
 	</start>
-	<start name="pike_loader">
+	<start name="pike_loader" caps="512">
 		<resource name="RAM" quantum="16M"/>
 		<route>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -113,6 +114,7 @@ append config {
 					<default-route>
 						<any-service> <parent/> <any-child/> </any-service>
 					</default-route>
+					<default caps="128"/>
 					<start name="nit_fb">
 						<resource name="RAM" quantum="4M"/>
 						<provides>
