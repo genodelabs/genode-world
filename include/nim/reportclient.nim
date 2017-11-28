@@ -28,9 +28,6 @@ type
 proc construct(c: Connection, label: cstring, bufferSize: csize) {.
   importcpp: "#.construct(*genodeEnv, @)", tags: [RpcEffect].}
 
-proc destruct(c: Connection) {.tags: [RpcEffect],
-  importcpp: "#.destruct()".}
-
 proc dataspace(c: Connection): DataspaceCapability {.tags: [RpcEffect],
   importcpp: "#->dataspace()".}
 

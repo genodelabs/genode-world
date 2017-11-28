@@ -29,9 +29,6 @@ type
 proc construct(c: Connection, label: cstring) {.
   importcpp: "#.construct(*genodeEnv, @)", tags: [RpcEffect].}
 
-proc destruct(c: Connection) {.tags: [RpcEffect],
-  importcpp: "#.destruct()".}
-
 proc dataspace(c: Connection): DataspaceCapability {.tags: [RpcEffect],
   importcpp: "#->dataspace()".}
   ## Return the current dataspace capability from the ROM server.

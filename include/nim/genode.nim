@@ -24,12 +24,11 @@ type RpcEffect* = object of RootEffect
 type Constructible* {.
   importcpp: "Genode::Constructible", header: "<util/reconstructible.h>", final, pure.} [T] = object
 
-template defineConstructible*(Final, Base: untyped) =
-  type Final* = Constructible[Base]
-  proc construct*(obj: Final) {.importcpp: "#.construct()".}
-  proc construct*(obj: ref Final) {.importcpp: "(*#).construct()".}
-  proc destruct*(obj: Final) {.importcpp: "#.destruct()".}
-  proc destruct*(obj: ref Final) {.importcpp: "(*#).destruct()".}
+proc construct*[T](x: Constructible[T]) {.importcpp.}
+  ## Construct a constructible C++ object.
+
+proc destruct*[T](x: Constructible[T]) {.importcpp.}
+  ## Destruct a constructible C++ object.
 
 #
 # Signals

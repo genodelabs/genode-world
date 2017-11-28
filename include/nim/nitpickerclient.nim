@@ -27,9 +27,6 @@ type
 proc construct(conn: Connection; label: cstring) {.
   importcpp: "#.construct(#)".}
 
-proc destruct(conn: Connection) {.
-  importcpp: "#.destruct()".}
-
 proc newNitpickerClient*(label = ""): NitpickerClient =
   new result
   construct result.conn, label
