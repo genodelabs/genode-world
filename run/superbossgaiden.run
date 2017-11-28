@@ -12,16 +12,19 @@ if {[expr [have_include "power_on/qemu"] && !$force_qemu]} {
 set wget  [check_installed wget]
 set unzip [check_installed unzip]
 
+create_boot_directory
+
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/pkg/snes9x_libretro \
+                  genodelabs/src/fb_upscale \
+                  genodelabs/src/init \
+                  genodelabs/src/report_rom \
+                  genodelabs/src/retro_frontend \
+
 set build_components {
-	core init
-	app/retro_frontend
 	drivers/audio
 	drivers/framebuffer
 	drivers/input
-	drivers/timer
-	libretro/snes9x
-	server/fb_upscale
-	server/report_rom
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -38,8 +41,6 @@ proc platform_drv_policy {} {
 append_platform_drv_build_components
 
 build $build_components
-
-create_boot_directory
 
 #
 # Generate config
@@ -171,19 +172,8 @@ if {![file exist "bin/superbossgaiden.sfc"]} {
 
 # generic modules
 append boot_modules {
-	core init ld.lib.so
-} [audio_drv_binary] {
-	core init ld.lib.so
-	audio_drv
-	fb_upscale
-	libc.lib.so
-	libm.lib.so
-	report_rom
-	retro_frontend
-	stdcxx.lib.so
-	snes9x_libretro.lib.so
 	superbossgaiden.sfc
-	timer
+} [audio_drv_binary] {
 }
 
 # platform-specific modules

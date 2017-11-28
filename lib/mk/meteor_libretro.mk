@@ -1,4 +1,4 @@
-LIBS = libretro libc stdcxx
+LIBS = libc stdcxx
 
 SHARED_LIB = yes
 

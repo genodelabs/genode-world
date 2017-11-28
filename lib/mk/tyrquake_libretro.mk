@@ -1,15 +1,16 @@
-LIBS = libretro libc libm stdcxx
+LIBS = libc libm stdcxx
 
 SHARED_LIB = yes
 
-PORT_DIR := $(call select_from_ports,tyrquake-libretro)/src/lib/tyrquake-libretro
+PORT_DIR := $(call select_from_ports,tyrquake-libretro)/src/libretro/tyrquake
 CORE_DIR := $(PORT_DIR)
 
 -include $(PORT_DIR)/Makefile.common
 
 INC_DIR += \
 	$(REP_DIR)/src/libretro/tyrquake \
-	$(PORT_DIR)/libretro-common/include
+	$(PORT_DIR)/common \
+	$(PORT_DIR)/libretro-common/include \
 
 CC_OPT = \
 	-DHAVE_STRINGS_H \

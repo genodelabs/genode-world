@@ -6,17 +6,20 @@ if {[expr [have_include "power_on/qemu"] && !$force_qemu]} {
 	exit
 }
 
-#
-# Check used commands
-#
-set wget  [check_installed wget]
-set unzip [check_installed unzip]
+create_boot_directory
+
+import_from_depot \
+	genodelabs/src/[base_src] \
+	genodelabs/pkg/[drivers_interactive_pkg] \
+	genodelabs/pkg/meteor_libretro \
+	genodelabs/src/fb_upscale \
+	genodelabs/src/init \
+	genodelabs/src/report_rom \
+	genodelabs/src/retro_frontend \
+
 
 set build_components {
-	app/retro_frontend
 	drivers/audio
-	libretro/meteor
-	server/fb_upscale
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -31,13 +34,6 @@ proc platform_drv_policy {} {
 
 build $build_components
 
-create_boot_directory
-
-import_from_depot \
-	genodelabs/src/[base_src] \
-	genodelabs/pkg/[drivers_interactive_pkg] \
-	genodelabs/src/init \
-	genodelabs/src/report_rom \
 
 #
 # Generate config
@@ -163,12 +159,6 @@ if {![file exists bin/game.gba]} {
 
 # generic modules
 append boot_modules {
-	fb_upscale
-	libc.lib.so
-	libm.lib.so
-	meteor_libretro.lib.so
-	retro_frontend
-	stdcxx.lib.so
 } [audio_drv_binary] {
 	game.gba
 }

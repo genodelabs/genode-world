@@ -17,14 +17,11 @@ create_boot_directory
 import_from_depot \
 	genodelabs/src/[base_src] \
 	genodelabs/pkg/[drivers_interactive_pkg] \
+	genodelabs/pkg/tyrquake_libretro \
+	genodelabs/src/fb_upscale \
 	genodelabs/src/init \
 	genodelabs/src/report_rom \
-
-build {
-	app/retro_frontend
-	libretro/tyrquake
-	server/fb_upscale
-}
+	genodelabs/src/retro_frontend \
 
 #
 # Generate config
@@ -131,13 +128,7 @@ if {![file exist "bin/quake.tar"]} {
 
 # generic modules
 build_boot_image {
-	fb_upscale
-	libc.lib.so
-	libm.lib.so
 	quake.tar
-	retro_frontend
-	stdcxx.lib.so
-	tyrquake_libretro.lib.so
 }
 
 append qemu_args "  -soundhw es1370 "
