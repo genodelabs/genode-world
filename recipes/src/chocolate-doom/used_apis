@@ -1,0 +1,12 @@
+base
+os
+timer_session
+so
+libc
+vfs
+sdl
+sdl_mixer
+sdl_net
+audio_out_session
+framebuffer_session
+input_session

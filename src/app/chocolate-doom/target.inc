@@ -83,6 +83,6 @@ INC_DIR += $(CHOCOLATE_DOOM_DIR)/src
 INC_DIR += $(CHOCOLATE_DOOM_DIR)/src/$(GAME)
 INC_DIR += $(CHOCOLATE_DOOM_DIR)/textscreen
 
-LIBS = sdl sdlmain libc sdl_mixer sdl_net
+LIBS := base sdl sdlmain libc libm sdl_mixer sdl_net
 
 # vi:set ft=make :
