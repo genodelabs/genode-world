@@ -12,7 +12,7 @@ OWNER := ccrma
 REPO  := chuck
 REV   := 53f99be5498c6b1deb59aa2c223e75326820a30b
 URL(chuck) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
-SHA(chuck) := 1ecea44425eb9048a6ae9f2f37a3c21376511a13
+SHA(chuck) := 6b47779bb8c800261b7dac0e80302e96f9c9fc42
 DIR(chuck) := src/app/chuck
 
 DIRS := include/chuck
