@@ -1,8 +1,5 @@
 assert_spec x86
 
-# Xmllint throws errors on inline chuck code
-proc check_xml_with_schema {xml_file} { }
-
 #
 # Build
 #
@@ -20,6 +17,8 @@ append_platform_drv_build_components
 build $build_components
 
 create_boot_directory
+
+exec cp [genode_dir]/repos/world/src/test/chuck/demo.ck bin/test-chuck-demo.ck
 
 #
 # Config
@@ -60,40 +59,9 @@ append config {
 		<config dac_channels="2" adc_channels="0">
 			<libc stdout="/log" stderr="/log"/>
 			<vfs> <log/>
-<inline name="test">
-// another candidate for lamest demo
-
-// patch
-SinOsc s => JCRev r => dac;
-.5 => r.gain;
-.075 => r.mix;
-
-// note number
-20 => float note;
-
-// go up to 127
-while( note < 128 )
-{
-    // convert MIDI note to hz
-    Std.mtof( note ) => s.freq;
-    // turn down the volume gradually
-    .5 - (note/256.0) => s.gain;
-
-    // move up by whole step
-    note + 2 => note;
-
-    // advance time
-    .125::second => now;
-}
-
-// turn off s
-0 => s.gain;
-// wait a bit
-2::second => now;
-
-</inline>
+				<rom name="test-chuck-demo.ck"/>
 			</vfs>
-			<file path="/test"/>
+			<file path="/test-chuck-demo.ck"/>
 		</config>
 		<route>
 			<any-service><parent/><any-child/></any-service>
@@ -119,6 +87,7 @@ append boot_modules {
 	stdcxx.lib.so
 	libc.lib.so
 	libm.lib.so
+	test-chuck-demo.ck
 } [audio_drv_binary] {
 }
 

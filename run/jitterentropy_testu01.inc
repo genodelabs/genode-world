@@ -10,9 +10,6 @@
 # $test_name
 #
 
-# Skip schema check
-proc check_xml_with_schema {xml_file} { }
-
 set build_components {
 	core init drivers/timer
 	lib/vfs/jitterentropy
