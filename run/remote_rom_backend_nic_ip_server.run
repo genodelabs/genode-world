@@ -2,11 +2,16 @@
 # Build
 #
 
-build { core init drivers/timer
+set build_components { core init drivers/timer
 	server/dynamic_rom
 	proxy/remote_rom/backend/nic_ip/server
 	drivers/nic
 }
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
 
 create_boot_directory
 
@@ -66,6 +71,7 @@ install_config {
 		</config>
 	</start>
 	<start name="nic_drv">
+		<binary name="} [nic_drv_binary] {" />
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nic"/></provides>
 		<config>
@@ -78,11 +84,14 @@ install_config {
 # Boot image
 #
 
-build_boot_image { core ld.lib.so init timer
+append boot_modules { core ld.lib.so init timer
 	remote_rom_server
 	dynamic_rom
-	nic_drv
+	} [nic_drv_binary] {
 }
+
+append_platform_drv_boot_modules
+build_boot_image $boot_modules
 
 append qemu_args " -nographic "
 append qemu_args " -net tap,ifname=tap2 "

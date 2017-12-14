@@ -128,7 +128,7 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 		{
 			Ethernet_frame::src(src);
 			Ethernet_frame::dst(dst);
-			Ethernet_frame::type(IPV4);
+			Ethernet_frame::type(Ethernet_frame::Type::IPV4);
 		}
 
 		void prepare_ipv4(const Ipv4_address &src, const Ipv4_address &dst=Ipv4_packet::BROADCAST)
