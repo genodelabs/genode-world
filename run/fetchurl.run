@@ -9,6 +9,8 @@ set build_components {
 	app/fetchurl
 	drivers/nic
 	drivers/timer
+	lib/vfs/lxip 
+	server/vfs
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
@@ -47,12 +49,48 @@ append config {
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
-	<start name="fetchurl" caps="500">
+	<start name="vfs" caps="200" priority="0">
+		<resource name="RAM" quantum="30M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<lxip dhcp="yes"/>
+			</vfs>
+			<libc/>
+			<default-policy writeable="yes" />
+		</config>
+	</start>
+	<start name="fetchurl" caps="200">
 		<resource name="RAM" quantum="8M"/>
 		<config>
-			<vfs> <dir name="dev"> <log/> <null/> </dir> </vfs>
-			<libc stdout="/dev/log" stderr="/dev/log"/>
-			<fetch url="http://genode.org/about/LICENSE" path="/dev/log"/>
+			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"
+				ip_addr="10.10.10.132"
+				netmask="255.255.255.0"
+				gateway="10.10.10.196"
+			>
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<dir name="socket"> <fs/>  </dir>
+				</vfs>
+			</libc>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
+			<fetch url="http://10.10.10.196/" path="/dev/log"/>
 		</config>
 	</start>
 </config>
@@ -71,9 +109,12 @@ set boot_modules {
 	libm.lib.so
 	libssh.lib.so
 	libssl.lib.so
-	lwip.lib.so
+	libc_resolv.lib.so
 	nic_drv
 	timer
+	vfs_lxip.lib.so 
+	lxip.lib.so
+	vfs
 	zlib.lib.so
 }
 
