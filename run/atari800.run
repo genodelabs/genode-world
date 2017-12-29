@@ -1,0 +1,36 @@
+set build_components { app/atari800 }
+
+set app_config {
+
+<start name="atari800" priority="-2" caps="200">
+	<resource name="RAM" quantum="64M"/>
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		<vfs>
+			<tar name="atari800_rom.tar" />
+			<dir name="dev"> <log/> <inline name="rtc">2000-01-01 00:00</inline> </dir>
+			<ram/>
+		</vfs>
+		<arg value="atari800"/>
+		<arg value="-osb_rom"/>   <arg value="ATARIOSB.ROM"/>
+		<arg value="-xlxe_rom"/>  <arg value="ATARIXL.ROM"/>
+		<arg value="-basic_rom"/> <arg value="ATARIBAS.ROM"/>
+		<arg value="-basic"/>
+		<arg value="-showspeed"/>
+		<arg value="-nosound"/>
+		<arg value="-win-width"/>  <arg value="640"/>
+		<arg value="-win-height"/> <arg value="480"/>
+	</config>
+</start>}
+
+set boot_modules {
+	atari800 atari800_rom.tar
+	libc.lib.so
+	libm.lib.so
+	libpng.lib.so
+	pthread.lib.so
+	sdl.lib.so
+	zlib.lib.so
+}
+
+source ${genode_dir}/repos/world/run/framebuffer_app.inc
