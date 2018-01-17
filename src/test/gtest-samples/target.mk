@@ -11,3 +11,5 @@ vpath sample1_unittest.cc $(GTEST_DIR)/samples
 INC_DIR += $(GTEST_DIR)/samples
 
 LIBS = posix stdcxx gtest
+
+CC_CXX_WARN_STRICT =

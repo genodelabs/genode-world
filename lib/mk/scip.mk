@@ -212,3 +212,5 @@ vpath %.c   $(SCIP_DIR)
 vpath %.cpp $(SCIP_DIR)
 
 SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

@@ -19,3 +19,5 @@ $(TARGET): tyrian.tar
 
 tyrian.tar:
 	$(VERBOSE) tar cf $@ -C $(OPENTYRIAN_DIR)/tyrian21 .
+
+CC_CXX_WARN_STRICT =

@@ -7,3 +7,5 @@ LIBS   += base net
 
 # include less specificuration
 include $(REP_DIR)/lib/mk/remote_rom_backend.inc
+
+CC_CXX_WARN_STRICT =

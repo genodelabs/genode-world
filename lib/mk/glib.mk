@@ -58,3 +58,5 @@ vpath %.c $(GLIB_SRC_DIR)
 vpath %.c $(GLIB_SRC_DIR)/deprecated
 vpath %.c $(GLIB_SRC_DIR)/pcre
 vpath %.c $(GLIB_SRC_DIR)/libcharset
+
+CC_CXX_WARN_STRICT =

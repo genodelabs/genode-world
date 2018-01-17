@@ -11,3 +11,5 @@ SRC_CC  += main.cc
 LIBS    += base
 
 vpath %.cc $(OS_DIR)/src/drivers/sd_card
+
+CC_CXX_WARN_STRICT =

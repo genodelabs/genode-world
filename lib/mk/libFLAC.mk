@@ -46,3 +46,4 @@ SRC_C = \
 
 vpath %.c $(LIBFLAC_SRC_DIR)
 
+CC_CXX_WARN_STRICT =

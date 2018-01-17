@@ -8,3 +8,5 @@ LIBS     = libc libc_lwip_nic_dhcp
 
 vpath uSynergy.c $(SYNERGY_SRC_DIR)
 vpath main.cc    $(PRG_DIR)
+
+CC_CXX_WARN_STRICT =

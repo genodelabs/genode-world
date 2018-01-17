@@ -17,3 +17,5 @@ vpath %.c $(T4K_DIR)/src
 vpath %.c $(T4K_DIR)/src/linebreak
 vpath %.c $(T4K_DIR)/src/linebreak/unistr
 vpath %.c $(T4K_DIR)/src/linebreak/uniwidth
+
+CC_CXX_WARN_STRICT =

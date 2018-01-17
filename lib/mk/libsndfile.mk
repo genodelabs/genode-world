@@ -24,3 +24,5 @@ INC_DIR += $(SNDFILE_SRC_DIR) $(REP_DIR)/src/lib/libsndfile
 vpath %.c $(SNDFILE_SRC_DIR)
 
 SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

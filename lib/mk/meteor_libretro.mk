@@ -16,3 +16,5 @@ INC_DIR += $(PORT_DIR)/libretro $(PORT_DIR)/ameteor/include
 SRC_CC := $(notdir $(SOURCES_CXX))
 
 vpath %.cpp $(sort $(dir $(SOURCES_CXX)))
+
+CC_CXX_WARN_STRICT =

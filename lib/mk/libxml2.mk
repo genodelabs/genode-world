@@ -53,3 +53,5 @@ CC_WARN := -Wall -Wno-implicit-function-declaration -Wno-unused-function \
            -Wno-unused-but-set-variable -Wno-format-extra-args -Wno-format
 
 vpath %.c $(LIBXML2_DIR)
+
+CC_CXX_WARN_STRICT =

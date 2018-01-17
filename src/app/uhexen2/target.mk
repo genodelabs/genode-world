@@ -124,3 +124,5 @@ vpath % $(UHEXEN2_DIR)/common
 vpath % $(UHEXEN2_DIR)/engine/hexen2
 vpath % $(UHEXEN2_DIR)/engine/h2shared
 vpath % $(UHEXEN2_DIR)/libs/common
+
+CC_CXX_WARN_STRICT =

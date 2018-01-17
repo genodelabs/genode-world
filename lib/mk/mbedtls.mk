@@ -81,3 +81,5 @@ SRC_C = aes.c\
 vpath %.c $(MBEDTLS_DIR)/library
 
 SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

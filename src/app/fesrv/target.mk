@@ -28,4 +28,4 @@ CC_OPT_htif += -DPREFIX=\"\"
 
 vpath %.cc $(FESRV_SRC)
 
-
+CC_CXX_WARN_STRICT =

@@ -25,3 +25,5 @@ CC_OPT = \
 SRC_C  := $(notdir $(SOURCES_C))
 
 vpath %.c   $(sort $(dir $(SOURCES_C)))
+
+CC_CXX_WARN_STRICT =

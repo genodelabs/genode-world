@@ -19,3 +19,5 @@ vpath %.cpp $(CORE_DIR)/apu/bapu/dsp
 vpath %.cpp $(CORE_DIR)/apu/bapu/smp
 vpath %.cpp $(CORE_DIR)/libretro
 vpath %.cpp $(CORE_DIR)
+
+CC_CXX_WARN_STRICT =

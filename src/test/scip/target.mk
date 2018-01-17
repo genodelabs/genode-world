@@ -6,3 +6,5 @@ INC_DIR  += $(EX_DIR)
 SRC_CC = queens.cpp queens_main.cpp
 
 vpath %.cpp $(EX_DIR)
+
+CC_CXX_WARN_STRICT =

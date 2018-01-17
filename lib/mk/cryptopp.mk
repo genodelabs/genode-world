@@ -11,3 +11,5 @@ SRC_CC := $(filter-out $(CRYPTOPP_FILTER),$(CRYPTOPP_SRC_CC))
 CC_WARN += -Wno-delete-non-virtual-dtor
 
 vpath %.cpp $(CRYPTOPP_SRC_DIR)
+
+CC_CXX_WARN_STRICT =

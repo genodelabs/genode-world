@@ -3,3 +3,5 @@ vpath %.cc $(REP_DIR)/src/lib/vfs/gtotp
 SHARED_LIB = yes
 
 LIBS += cryptopp stdcxx
+
+CC_CXX_WARN_STRICT =

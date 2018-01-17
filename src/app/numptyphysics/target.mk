@@ -65,3 +65,4 @@ numptyphysics_data.tar:
 
 CC_OPT += -DINSTALL_BASE_PATH='"/"' -DUSER_BASE_PATH='"/"'
 
+CC_CXX_WARN_STRICT =

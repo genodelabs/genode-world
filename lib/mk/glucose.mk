@@ -11,3 +11,5 @@ vpath %.cc $(GLUCOSE_DIR)/core
 vpath %.cc $(GLUCOSE_DIR)/utils
 
 #SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

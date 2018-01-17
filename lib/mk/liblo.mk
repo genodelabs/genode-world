@@ -18,3 +18,5 @@ SRC_C := \
 	blob.c bundle.c timetag.c pattern_match.c version.c
 
 vpath %.c   $(LIBLO_SRC_DIR)
+
+CC_CXX_WARN_STRICT =

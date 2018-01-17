@@ -39,3 +39,5 @@ SRC_CC := $(filter-out util_console.cpp,$(CHUCK_SRC_CC)) dummies.cc component.cc
 
 vpath %.c   $(CHUCK_DIR)
 vpath %.cpp $(CHUCK_DIR)
+
+CC_CXX_WARN_STRICT =

@@ -51,3 +51,5 @@ $(TARGET): abuse.tar
 
 abuse.tar:
 	$(VERBOSE) tar cf $@ -C $(ABUSE_DIR)/data .
+
+CC_CXX_WARN_STRICT =

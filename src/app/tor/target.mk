@@ -189,3 +189,5 @@ SRC_C +=  ext/curve25519_donna/curve25519-donna.c
 endif # 64bit
 
 vpath %.c $(TOR_DIR)/src
+
+CC_CXX_WARN_STRICT =

@@ -27,3 +27,5 @@ vpath %.c $(CORE_DIR)/drivers/libretro/libretro-common/streams
 vpath %.c $(CORE_DIR)/input
 vpath %.c $(CORE_DIR)/mappers
 
+
+CC_CXX_WARN_STRICT =

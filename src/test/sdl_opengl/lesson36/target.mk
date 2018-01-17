@@ -9,3 +9,5 @@ SRC_CC = sdl_main.cc
 INC_DIR += $(PRG_DIR)
 
 vpath sdl_main.cc $(PRG_DIR)/../
+
+CC_CXX_WARN_STRICT =

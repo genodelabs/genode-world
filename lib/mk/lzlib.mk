@@ -8,3 +8,5 @@ SRC_C = lzlib.c
 INC_DIR += $(LZLIB_SRC_DIR)
 
 vpath %.c $(LZLIB_SRC_DIR)
+
+CC_CXX_WARN_STRICT =

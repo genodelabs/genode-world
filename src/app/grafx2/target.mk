@@ -16,3 +16,5 @@ grafx2_data.tar:
 	$(VERBOSE)cd $(GRAFX2_DIR)/../; tar cf $(PWD)/bin/$@ share
 
 vpath %.c $(GRAFX2_DIR)
+
+CC_CXX_WARN_STRICT =

@@ -17,3 +17,5 @@ vpath %.c $(LTRIS_DIR)/src
 $(TARGET): ltris_data.tar
 ltris_data.tar:
 	$(VERBOSE)cd $(LTRIS_DIR)/src; tar cf $(PWD)/bin/$@ gfx sounds figures
+
+CC_CXX_WARN_STRICT =

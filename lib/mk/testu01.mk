@@ -22,3 +22,5 @@ vpath %.c $(TESTU01_SRC_DIR)/testu01
 vpath %.c $(TESTU01_SRC_DIR)/probdist
 vpath %.c $(TESTU01_SRC_DIR)/mylib
 vpath %.c $(TESTU01_SRC_DIR)/examples
+
+CC_CXX_WARN_STRICT =

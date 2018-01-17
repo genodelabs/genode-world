@@ -17,3 +17,5 @@ NR_OF_CPUS = 1
 vpath bootstrap/spec/zynq_parallella/platform.cc $(REP_DIR)/src/
 
 include $(BASE_HW_DIR)/lib/mk/bootstrap-hw.inc
+
+CC_CXX_WARN_STRICT =

@@ -11,3 +11,4 @@ SRC_C := $(notdir $(G72x_SOURCES))
 
 vpath %.c $(SNDFILE_SRC_DIR)/G72x
 
+CC_CXX_WARN_STRICT =

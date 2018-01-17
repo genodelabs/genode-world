@@ -37,3 +37,5 @@ CC_WARN += \
 	-Wno-unused-but-set-variable \
 	-Wno-unused-function \
 	-Wno-narrowing
+
+CC_CXX_WARN_STRICT =

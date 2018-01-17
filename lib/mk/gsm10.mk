@@ -14,3 +14,4 @@ SRC_C := $(notdir $(GSM610_SOURCES))
 
 vpath %.c $(SNDFILE_SRC_DIR)/GSM610
 
+CC_CXX_WARN_STRICT =

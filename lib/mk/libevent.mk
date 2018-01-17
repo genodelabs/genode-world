@@ -31,3 +31,5 @@ SHARED_LIB = yes
 
 vpath %.c $(LIBEVENT_DIR)
 
+
+CC_CXX_WARN_STRICT =

@@ -9,3 +9,5 @@ CC_WARN  =
 vpath %.cc $(LEMON_DIR)
 
 #SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

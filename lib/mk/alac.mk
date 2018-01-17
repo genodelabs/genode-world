@@ -16,3 +16,5 @@ SRC_C := $(notdir $(ALAC_SOURCES))
 INC_DIR += $(SNDFILE_SRC_DIR) $(REP_DIR)/src/lib/libsndfile
 
 vpath %.c $(SNDFILE_SRC_DIR)/ALAC
+
+CC_CXX_WARN_STRICT =

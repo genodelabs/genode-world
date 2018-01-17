@@ -19,3 +19,5 @@ supertux_data.tar:
 CC_OPT += -DNOOPENGL -DDATA_PREFIX='"/data"' -fpermissive
 
 CC_CXX_OPT_STD = -std=gnu++98
+
+CC_CXX_WARN_STRICT =

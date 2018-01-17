@@ -14,3 +14,5 @@ NR_OF_CPUS = 1
 
 # include less specific configuration
 include $(BASE_HW_DIR)/lib/mk/spec/zynq/core-hw.inc
+
+CC_CXX_WARN_STRICT =

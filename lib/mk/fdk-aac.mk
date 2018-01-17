@@ -119,3 +119,5 @@ vpath %.cpp $(FDK_AAC_SRC_DIR)/libSBRenc/src
 vpath %.cpp $(FDK_AAC_SRC_DIR)/libSYS/src
 
 SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

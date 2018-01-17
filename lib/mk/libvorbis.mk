@@ -18,3 +18,5 @@ vpath %.c $(LIBVORBIS_SRC_DIR)/books
 vpath %.c $(LIBVORBIS_SRC_DIR)/modes
 
 SHARED_LIB = yes
+
+CC_CXX_WARN_STRICT =

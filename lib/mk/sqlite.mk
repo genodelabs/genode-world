@@ -16,3 +16,5 @@ CC_OPT_sqlite3 += -Wno-unused
 
 vpath %.c  $(SQLITE_DIR)
 vpath %.cc $(REP_DIR)/src/lib/sqlite
+
+CC_CXX_WARN_STRICT =

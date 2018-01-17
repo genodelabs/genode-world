@@ -17,3 +17,5 @@ INC_DIR += $(GTEST_DIR)/include
 INC_DIR += $(GTEST_DIR)/include/internal
 
 LIBS += stdcxx
+
+CC_CXX_WARN_STRICT =

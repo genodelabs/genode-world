@@ -4,3 +4,5 @@ SRC_NIM = main.nim
 
 # Peek inside Input::Client
 CC_OPT += -Dprivate=public
+
+CC_CXX_WARN_STRICT =

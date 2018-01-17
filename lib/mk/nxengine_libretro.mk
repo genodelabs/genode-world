@@ -21,3 +21,5 @@ SRC_CC := $(notdir $(SOURCES_CXX))
 
 vpath %.cpp $(sort $(dir $(SOURCES_CXX)))
 vpath %.c   $(sort $(dir $(SOURCES_C)))
+
+CC_CXX_WARN_STRICT =

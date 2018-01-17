@@ -25,3 +25,5 @@ SRC_C   = 	k.tab.c \
 
 CC_OPT = -O2 -w  -DCRYPTO -DHAVE_CONFIG_H
 vpath %.c $(KEYNOTE_DIR)
+
+CC_CXX_WARN_STRICT =

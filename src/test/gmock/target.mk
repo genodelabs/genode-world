@@ -11,3 +11,5 @@ INC_DIR += $(GMOCK_DIR) $(GTEST_DIR)
 CC_OPT  += -DGTEST_HAS_PTHREAD=0
 
 LIBS = posix stdcxx gtest gmock
+
+CC_CXX_WARN_STRICT =

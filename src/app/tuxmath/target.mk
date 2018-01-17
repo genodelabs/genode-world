@@ -35,3 +35,5 @@ $(TARGET): tuxmath_data.tar
 tuxmath_data.tar:
 	$(VERBOSE)cd $(TUXMATH_DIR);     tar cf $(PWD)/bin/$@ data
 	$(VERBOSE)cd $(TUXMATH_DIR)/t4k; tar rf $(PWD)/bin/$@ data
+
+CC_CXX_WARN_STRICT =
