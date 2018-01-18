@@ -1,0 +1,96 @@
+create_boot_directory
+
+#
+# Download test FLIF file
+#
+if {![file exist bin/test.flif]} {
+        set pdf_url "https://github.com/sveinbjornt/Phew/raw/master/sample-images/train.flif"
+        catch { exec wget $pdf_url -O bin/test.flif }
+}
+
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/pkg/[drivers_interactive_pkg] \
+                  genodelabs/src/init \
+                  genodelabs/src/nitpicker \
+
+build { app/flif_view }
+
+install_config {
+<config prio_levels="2">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides>
+			<service name="Input"/> <service name="Framebuffer"/>
+		</provides>
+	</start>
+
+	<start name="nitpicker">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config>
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="default" layer="2" content="client" label="no" hover="always" focus="click" />
+
+			<policy label_prefix="pointer" domain="pointer"/>
+			<default-policy domain="default"/>
+		</config>
+	</start>
+
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="flif_view" priority="-1" caps="512">
+		<resource name="RAM" quantum="64M"/>
+		<config progressive="no">
+			<libc/>
+			<vfs>
+				<rom name="test.flif"/>
+			</vfs>
+		</config>
+	</start>
+
+</config>}
+
+build_boot_image {
+	flif_view
+	libc.lib.so
+	zlib.lib.so
+	libm.lib.so
+	libpng.lib.so
+	libflif.lib.so
+	test.flif
+	stdcxx.lib.so
+}
+
+run_genode_until forever
