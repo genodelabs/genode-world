@@ -1,0 +1,88 @@
+diff --git a/src/fileio.hpp b/src/fileio.hpp
+index 6e38b3b..3ac2975 100644
+--- a/src/fileio.hpp
++++ b/src/fileio.hpp
+@@ -49,7 +49,7 @@ public:
+     long ftell() {
+       return ::ftell(file);
+     }
+-    int getc() {
++    int get_c() {
+       return fgetc(file);
+     }
+     char * gets(char *buf, int n) {
+@@ -94,7 +94,7 @@ public:
+     long ftell() const {
+         return seek_pos;
+     }
+-    int getc() {
++    int get_c() {
+         if(seek_pos >= data_array_size)
+             return EOS;
+         return data[seek_pos++];
+@@ -205,7 +205,7 @@ public:
+     int ftell() const {
+         return seek_pos;
+     }
+-    int getc() {
++    int get_c() {
+         if(seek_pos >= bytes_used)
+             return EOS;
+         return data[seek_pos++];
+diff --git a/src/flif-dec.cpp b/src/flif-dec.cpp
+index 1439701..de68509 100644
+--- a/src/flif-dec.cpp
++++ b/src/flif-dec.cpp
+@@ -925,7 +925,7 @@ size_t read_big_endian_varint(IO& io) {
+     size_t result = 0;
+     int bytes_read = 0;
+     while (bytes_read++ < 10) {
+-      int number = io.getc();
++      int number = io.get_c();
+       if (number < 0) break;
+       if (number < 128) return result+number;
+       number -= 128;
+@@ -938,7 +938,7 @@ size_t read_big_endian_varint(IO& io) {
+ 
+ template <typename IO>
+ int read_chunk(IO& io, MetaData& metadata) {
+-    metadata.name[0] = io.getc();
++    metadata.name[0] = io.get_c();
+ //    printf("chunk: %s\n", metadata.name);
+     if (metadata.name[0] < 32) {
+       if (metadata.name[0] > 0) {
+@@ -958,7 +958,7 @@ int read_chunk(IO& io, MetaData& metadata) {
+ //    printf("chunk length: %lu\n", metadata.length);
+     metadata.contents.resize(metadata.length);
+     for(size_t i = 0; i < metadata.length; i++) {
+-        metadata.contents[i] = io.getc();
++        metadata.contents[i] = io.get_c();
+     }
+     return 0; // read next chunk
+ }
+diff --git a/src/io.hpp b/src/io.hpp
+index a356011..811f16e 100644
+--- a/src/io.hpp
++++ b/src/io.hpp
+@@ -29,7 +29,7 @@ int get_verbosity();
+ template<class IO>
+ bool ioget_int_8bit (IO& io, int* result)
+ {
+-    int c = io.getc();
++    int c = io.get_c();
+     if (c == io.EOS) {
+         e_printf ("Unexpected EOS");
+         return false;
+diff --git a/src/maniac/rac.hpp b/src/maniac/rac.hpp
+index ca4e8fa..3bdc1e6 100644
+--- a/src/maniac/rac.hpp
++++ b/src/maniac/rac.hpp
+@@ -61,7 +61,7 @@ private:
+     rac_t low;
+ private:
+     rac_t read_catch_eof() {
+-        rac_t c = io.getc();
++        rac_t c = io.get_c();
+         // no reason to branch here to catch end-of-stream, just return garbage (0xFF I guess) if a premature EOS happens
+         //if(c == io.EOS) return 0;
+         return c;

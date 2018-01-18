@@ -1,0 +1,14 @@
+LICENSE   := LGPLv3
+VERSION   := 0.3
+DOWNLOADS := flif.archive
+
+URL(flif) := https://github.com/FLIF-hub/FLIF/archive/v$(VERSION).tar.gz
+SHA(flif) := 10918ea2695fdc97ad70d2e4cde021fcaa22838c
+DIR(flif) := src/lib/flif
+
+DIRS := include/flif
+
+DIR_CONTENT(include/flif) := src/lib/flif/src/library/*.h
+
+PATCHES := src/lib/flif/getc.patch
+PATCH_OPT := -p1 -d src/lib/flif
