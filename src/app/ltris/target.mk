@@ -1,5 +1,5 @@
 TARGET = ltris
-LIBS   = libc libm stdcxx sdlmain sdl sdl_mixer
+LIBS   = libc libm stdcxx sdlmain sdl sdl_mixer pthread
 
 LTRIS_DIR := $(call select_from_ports,ltris)/src/app/ltris
 
@@ -7,7 +7,7 @@ LTRIS_DIR := $(call select_from_ports,ltris)/src/app/ltris
 VERSION := $(shell grep "^ VERSION" $(LTRIS_DIR)/configure | sed "s/.*=//")
 
 CC_OPT += -DHI_DIR=\"/var\" -DSRC_DIR=\"/\" \
-          -DVERSION=\"$(VERSION)\"
+          -DVERSION=\"$(VERSION)\" -Dinline=
 
 INC_DIR   += $(LTRIS_DIR)/src
 SRC_C     := $(notdir $(wildcard $(LTRIS_DIR)/src/*.c))

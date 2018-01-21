@@ -4,12 +4,13 @@ set app_config {
 	<start name="tuxmath" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
-			<libc stdout="/dev/log" stderr="/dev/log" >
-				<vfs>
-					<tar name="tuxmath_data.tar" />
-					<dir name="dev"> <log/> </dir>
-				</vfs>
-			</libc>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+			<vfs>
+				<tar name="tuxmath_data.tar" />
+				<dir name="dev">
+					<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
+			</vfs>
 		</config>
 	</start>}
 

@@ -13,16 +13,17 @@ set app_config {
 		</config>
 	</start>
 
-	<start name="ltris" priority="-2">
+	<start name="ltris" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
-			<libc stdout="/dev/log" stderr="/dev/log" >
-				<vfs>
-					<tar name="ltris_data.tar" />
-					<dir name="dev"> <log/> </dir>
-					<fs/>
-				</vfs>
-			</libc>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+			<vfs>
+				<tar name="ltris_data.tar" />
+				<dir name="dev">
+					<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
+				<fs/>
+			</vfs>
 		</config>
 	</start> }
 
@@ -38,5 +39,7 @@ set boot_modules {
 	zlib.lib.so
 	ltris_data.tar
 }
+
+set fb_config {<config buffered="yes" width="640" height="480"/>}
 
 source ${genode_dir}/repos/world/run/framebuffer_app.inc

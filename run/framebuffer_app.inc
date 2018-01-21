@@ -9,45 +9,22 @@
 # app_config       - start node(s) of init for running the application
 #
 
+create_boot_directory
+
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/pkg/[drivers_interactive_pkg] \
+                  genodelabs/src/init
+
+
 if {![info exists fb_config]} {
 	set fb_config {<config buffered="yes" width="640" height="480"/>} }
 
-
-#
-# Build
-#
-
-append build_components {
-	core init
-	drivers/timer
-	drivers/framebuffer drivers/input
-}
-
-lappend_if [have_spec usb] build_components drivers/usb
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-
-# override default platform driver policy
-proc platform_drv_policy {} {
-	return {
-			<policy label_prefix="ps2_drv"> <device name="PS2"/> </policy>
-			<policy label_prefix="usb_drv"> <pci class="USB"/> </policy>
-			<policy label_prefix="fb_drv">  <pci class="VGA"/> </policy>
-			<policy label_prefix="audio_drv"> <pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>}
-}
-
-append_platform_drv_build_components
-
-build $build_components
-
-create_boot_directory
+set fd [open [run_dir]/genode/fb_drv.config w]
+puts $fd $fb_config
+close $fd
 
 
-#
-# Generate config
-#
-
-append config {
+install_config {
 <config prio_levels="4">
 	<parent-provides>
 		<service name="ROM"/>
@@ -60,82 +37,38 @@ append config {
 		<service name="CPU"/>
 		<service name="LOG"/>
 	</parent-provides>
+
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="100"/>}
 
-append_platform_drv_config
+	<default caps="100"/>
 
-if {[have_spec sdl]} {
-append config {
-	<start name="fb_sdl">
-		<resource name="RAM" quantum="4M"/>
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
 		<provides>
-			<service name="Input"/>
-			<service name="Framebuffer"/>
-		</provides>}
-append config $fb_config
-append config {
-	</start>}
-}
+			<service name="Input"/> <service name="Framebuffer"/>
+		</provides>
+	</start>
 
-if {[have_spec framebuffer]} {
-append config {
-	<start name="fb_drv" priority="-1">
-		<resource name="RAM" quantum="6M"/>
-		<resource name="CPU" quantum="10"/>
-		<provides><service name="Framebuffer"/></provides>}
-append config $fb_config
-append config {
-	</start>}
-}
-
-append_if [have_spec ps2] config {
-	<start name="ps2_drv" priority="-1">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Input"/></provides>
-	</start>}
-
-append_if [expr ![have_spec ps2] && [have_spec usb]] config {
-	<start name="usb_drv">
-		<resource name="RAM" quantum="12M"/>
-		<resource name="CPU" quantum="50"/>
-		<provides><service name="Input"/></provides>
-		<config ehci="yes" uhci="yes" xhci="no"> <hid/> </config>
-	</start> }
-
-append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<resource name="CPU" quantum="10"/>
 		<provides><service name="Timer"/></provides>
-	</start>}
+	</start>
 
-append config $app_config
+} $app_config {
 
-append config {
 </config>}
 
-install_config $config
-
-
-#
-# Boot modules
-#
-
-# generic modules
-append boot_modules { core init timer ld.lib.so }
-
-# platform-specific modules
-lappend_if [have_spec        linux] boot_modules fb_sdl
-lappend_if [have_spec  framebuffer] boot_modules fb_drv
-lappend_if [have_spec          ps2] boot_modules ps2_drv
-lappend_if [have_spec          usb] boot_modules usb_drv
-
-append_platform_drv_boot_modules
+build $build_components
 
 build_boot_image $boot_modules
-
 
 run_genode_until forever

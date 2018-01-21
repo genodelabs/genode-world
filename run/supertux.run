@@ -11,13 +11,14 @@ set app_config {
 <start name="supertux" priority="-2" caps="200">
 	<resource name="RAM" quantum="64M"/>
 	<config>
-		<libc stdout="/dev/log" stderr="/dev/log" >
-			<vfs>
-				<tar name="supertux_data.tar" />
-				<dir name="dev"> <log/> </dir>
-				<fs/>
-			</vfs>
-		</libc>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		<vfs>
+			<tar name="supertux_data.tar" />
+			<dir name="dev">
+				<log/> <inline name="rtc">2000-01-01 00:00</inline>
+			</dir>
+			<fs/>
+		</vfs>
 	</config>
 </start>}
 
