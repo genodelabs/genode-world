@@ -46,6 +46,7 @@ type
     cap {.importcpp.}: SignalContextCapability
 
   SignalDispatcher* = ref object
+    ## Nim object enclosing a Genode signal dispatcher.
     cpp: SignalDispatcherCpp
     handler*: proc() {.closure.}
 
@@ -54,14 +55,19 @@ proc init(cpp: SignalDispatcherCpp; sh: SignalDispatcher)
 
 proc deinit(sd: SignalDispatcherCpp) {.importcpp.}
 
-proc newSignalDispatcher*(): SignalDispatcher =
+proc newSignalDispatcher*(label = "unspecified"): SignalDispatcher =
+  ## Create a new signal dispatcher. A label is recommended for
+  ## debugging purposes. A signal dispatcher will not be garbage
+  ## collected until after it has been dissolved.
   new result
   init result.cpp, result
+  GCref result
 
 proc dissolve*(sig: SignalDispatcher) =
   ## Dissolve signal dispatcher from entrypoint.
   deinit sig.cpp
   sig.handler = nil
+  GCunref sig
 
 proc cap*(sig: SignalDispatcher): SignalContextCapability = sig.cpp.cap
   ## Signal context capability. Can be delegated to external components.
@@ -112,7 +118,7 @@ proc detach*(p: ByteAddress) {.
 
 type
   DataspaceStream* = ref DataspaceStreamObj
-    ## a stream that provides safe access to dataspace content
+    ## A stream that provides safe access to dataspace content
   DataspaceStreamObj* = object of StreamObj
     cap: DataspaceCapability
     base: ByteAddress

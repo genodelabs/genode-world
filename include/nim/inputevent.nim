@@ -34,5 +34,6 @@ proc `$`*(c: KeyCode): string = $key_name(c)
 proc lookupKey*(s: string): KeyCode =
   result = KEY_UNKNOWN.KeyCode
   for k in 0..<KEY_MAX.KeyCode:
-    if $k == s:
-      return k
+    if $(k.KeyCode) == s:
+      result = k.KeyCode
+      break
