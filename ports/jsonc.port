@@ -1,0 +1,14 @@
+LICENSE   := MIT
+VERSION   := git
+DOWNLOADS := jsonc.git
+
+URL(jsonc) := https://github.com/json-c/json-c.git
+REV(jsonc) := f8eb1dec64440d68149ce6ac70756af18a90bfb9
+DIR(jsonc) := src/lib/jsonc
+
+DIRS += include/jsonc
+DIR_CONTENT(include/jsonc) := src/lib/jsonc/*.h
+
+PATCHES += src/lib/jsonc/jsonc_config.patch
+PATCHES += src/lib/jsonc/jsonc_json_config.patch
+
