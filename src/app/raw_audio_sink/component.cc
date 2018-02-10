@@ -52,7 +52,17 @@ struct Raw_audio::Sink
 	Audio_out::Connection _out_right { _env, "right", false };
 	Audio_out::Connection *_out[NUM_CHANNELS];
 
-	Magic_ring_buffer<char, AUDIO_OUT_BUFFER_SIZE> _pcm { _env };
+	size_t _buffer_size()
+	{
+		size_t n = AUDIO_OUT_BUFFER_SIZE;
+		enum { RESERVATION = AUDIO_OUT_BUFFER_SIZE+((sizeof(addr_t)*16)<<10) };
+		Ram_quota avail = _env.pd().avail_ram();
+		if (avail.value > RESERVATION)
+			n = avail.value - RESERVATION;
+		return n;
+	}
+
+	Magic_ring_buffer<char> _pcm { _env, _buffer_size() };
 
 	/**
 	 * Process client data, blocks until all data is consumed.
