@@ -1,0 +1,12 @@
+<runtime ram="8M" caps="100" binary="lwext4_fs">
+
+	<requires> <block/> </requires>
+
+	<config/>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="lwext4_fs"/>
+	</content>
+
+</runtime>
