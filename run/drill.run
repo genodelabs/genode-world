@@ -1,0 +1,101 @@
+if {[have_spec linux]} {
+	puts "The [run_name] scenario requires QEMU networking."
+	exit 1
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+
+set build_components {
+	core init
+	app/drill
+	drivers/timer
+	drivers/nic
+	drivers/rtc
+	lib/vfs/jitterentropy
+}
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+append config {
+<config>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service>  <parent/> <any-child/></any-service>
+	</default-route>
+	<default caps="100"/>}
+
+append_platform_drv_config
+
+append config {
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="nic_drv">
+		<binary name="} [nic_drv_binary] {"/>
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Nic"/> </provides>
+	</start>
+	<start name="rtc_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+	<start name="drill" caps="256">
+		<resource name="RAM" quantum="32M"/>
+		<config>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+			<vfs>
+				<dir name="dev">
+					<log/> <rtc/>
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+				</dir>
+				<dir name="socket"> <lxip dhcp="yes"/> </dir>
+			</vfs>
+			<arg value="drill"/>
+			<arg value="-T"/>
+			<arg value="genode.org"/>
+			<arg value="@10.0.2.3"/>
+		</config>
+	</start>
+</config>
+}
+
+install_config $config
+
+set boot_modules {
+	core init ld.lib.so
+	drill
+	libc.lib.so
+	libcrypto.lib.so
+	libm.lib.so
+	libssl.lib.so
+	posix.lib.so
+	rtc_drv
+	timer
+	vfs_jitterentropy.lib.so
+	vfs_lxip.lib.so lxip.lib.so
+}
+
+# platform-specific modules
+append_platform_drv_boot_modules
+lappend boot_modules [nic_drv_binary]
+
+build_boot_image $boot_modules
+
+append qemu_args " -nographic -net nic,model=e1000 -net user -net dump,file=[run_dir]/dump.pcap"
+
+run_genode_until {child "drill" exited with exit value 0.*\n} 120

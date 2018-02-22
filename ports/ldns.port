@@ -1,0 +1,50 @@
+LICENSE   = BSD
+DOWNLOADS = ldns.archive
+VERSION   = 1.7.0
+
+URL(ldns) := https://www.nlnetlabs.nl/downloads/ldns/ldns-$(VERSION).tar.gz
+SHA(ldns) := ceeeccf8a27e61a854762737f6ee02f44662c1b8
+DIR(ldns) := src/lib/ldns
+
+DIRS := include/ldns
+DIR_CONTENT(include/ldns) = src/lib/ldns/ldns/*.h
+
+default: include/ldns/common.h include/ldns/net.h include/ldns/util.h
+
+include/ldns/common.h: src/lib/ldns/ldns/common.h.in
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)mkdir -p include/ldns
+	$(VERBOSE)sed \
+		-e 's/@ldns_build_config_have_ssl@/1/' \
+		-e 's/@ldns_build_config_have_inttypes_h@/1/' \
+		-e 's/@ldns_build_config_have_attr_format@/1/' \
+		-e 's/@ldns_build_config_have_attr_unused@/1/' \
+		-e 's/@ldns_build_config_have_socklen_t@/1/' \
+		-e 's/@ldns_build_config_use_dane@/1/' \
+		-e 's/@ldns_build_config_have_b32_pton@/0/' \
+		-e 's/@ldns_build_config_have_b32_ntop@/0/' \
+		$< > $@
+
+include/ldns/net.h: src/lib/ldns/ldns/net.h.in
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)mkdir -p include/ldns
+	$(VERBOSE)sed \
+		-e 's?@include_sys_socket_h@?#include <sys/socket.h>?' \
+		$< > $@
+
+include/ldns/util.h: src/lib/ldns/ldns/util.h.in
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)mkdir -p include/ldns
+	$(VERBOSE)sed \
+		-e 's?@include_inttypes_h@?#include <inttypes.h>?' \
+		-e 's?@include_systypes_h@?#include <sys/types.h>?' \
+		-e 's?@include_unistd_h@?#include <unistd.h>?' \
+		-e 's?@PACKAGE_VERSION@?$(VERSION)?' \
+		-e 's?@LDNS_VERSION_MAJOR@?1?' \
+		-e 's?@LDNS_VERSION_MINOR@?7?' \
+		-e 's?@LDNS_VERSION_MICRO@?0?' \
+		$< > $@
+
+src/lib/ldns/ldns/common.h.in: $(DOWNLOADS)
+src/lib/ldns/ldns/net.h.in: $(DOWNLOADS)
+src/lib/ldns/ldns/util.h.in: $(DOWNLOADS)
