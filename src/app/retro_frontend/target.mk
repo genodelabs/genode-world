@@ -1,9 +1,0 @@
-TARGET = retro_frontend
-SRC_CC = component.cc
-LIBS   = base libc
-
-LIBRETRO_INC := $(call select_from_ports,libretro)/include
-
-INC_DIR += $(LIBRETRO_INC)
-
-CC_CXX_WARN_STRICT =
