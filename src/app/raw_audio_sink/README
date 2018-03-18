@@ -1,0 +1,27 @@
+This component is a write-only Terminal server that sends its input
+to an Audio_out session. The input is assumed to be interleaved
+stereo samples in 32-bit floating point format. It can be combined
+with the _pipe_ utitily to play audio files.
+
+! <start name="raw_audio_sink">
+!   <resource name="RAM" quantum="4M"/>
+!   <provides>
+!     <service name="Terminal"/>
+!   </provides>
+!   <route>
+!     <any-service> <parent/> <any-child/> </any-service>
+!   </route>
+! </start>
+! <start name="pipe">
+!   <resource name="RAM" quantum="4M"/>
+!   <config>
+!     <libc stdin="/fs/test.f32" stdout="/terminal"/>
+!     <vfs>
+!       <dir name="fs"> <fs/> </dir>
+!       <terminal/>
+!     </vfs>
+!   </config>
+!   <route>
+!     <any-service> <parent/> <any-child/> </any-service>
+!   </route>
+! </start>
