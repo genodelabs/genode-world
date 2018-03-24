@@ -1,0 +1,25 @@
+LICENSE   := LGPLv2.1
+VERSION   := 1.25.10
+DOWNLOADS := mpg123.archive
+
+API_VERSION := 44 # found in configure.ac
+
+URL(mpg123) := http://downloads.sourceforge.net/project/mpg123/mpg123/$(VERSION)/mpg123-$(VERSION).tar.bz2
+SHA(mpg123) := 604784ddbcfe282bffdc595d1d45c677c7cf381f
+DIR(mpg123) := src/lib/mpg123
+
+DIRS := include
+DIR_CONTENT(include) = src/lib/mpg123/src/libmpg123/fmt123.h
+
+default: include/mpg123.h
+
+include/mpg123.h: src/lib/mpg123/src/libmpg123/mpg123.h.in
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)mkdir -p $(dir $@)
+	$(VERBOSE)sed \
+		-e 's/@API_VERSION@/$(API_VERSION)/' \
+		-e '/@.*@/d' \
+		$< > $@
+
+src/lib/mpg123/src/libmpg123/mpg123.h.in: $(DOWNLOADS)
+src/lib/mpg123/src/config.h.in: $(DOWNLOADS)
