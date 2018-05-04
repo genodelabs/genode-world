@@ -6,10 +6,10 @@
  */
 
 /*
- * Copyright (C) 2014-2016 Genode Labs GmbH
+ * Copyright (C) 2014-2018 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
- * under the terms of the GNU General Public License version 2.
+ * under the terms of the GNU Affero General Public License version 3.
  */
 
 /* Genode includes */
@@ -47,7 +47,8 @@ struct Input_normalizer::Main
 		return value;
 	}
 
-	unsigned const period_us = config_period_ms() * 1000;
+	Microseconds const period_us =
+		Microseconds{config_period_ms() * 1000};
 
 	/* input session provided by our parent  */
 	Input::Connection parent_input { env };
@@ -64,47 +65,45 @@ struct Input_normalizer::Main
 	/* Timer session for delaying events */
 	Timer::Connection timer { env };
 
-	enum { STAY_ACTIVE = 10 };
-	int timer_active = 0;
+	/* submit after delay */
+	void handle_timeout(Duration)
+	{
+		if (!queue.empty())
+			queue.submit_signal();
+	}
 
-	/* signaled by input */
+	Timer::One_shot_timeout<Main> burst_timeout =
+		{ timer, *this, &Main::handle_timeout };
+
+	/* signaled by input signal */
 	void handle_input()
 	{
 		using namespace Input;
 
-		/* forward the queue */
+		/*
+		 * laggy pointing is upleasant, so signal downstream if
+		 * there is anything other than button presses upstream,
+		 * otherwise notify downstream after a timeout
+		 */
+		bool notify = false;
+
 		parent_input.for_each_event([&] (Event const &e) {
-			/*
-			 * laggy pointing is upleasant, so signal the client if
-			 * there is anything other than button presses queued,
-			 * otherwise notify the client when the timer fires
-			 */
-			queue.add(e, (e.type() != Event::PRESS) && (e.type() != Event::RELEASE));
+			if (!e.press() && !e.release())
+				notify = true;
+			enum { SUBMIT_NOW = false };
+			queue.add(e, SUBMIT_NOW);
 		});
 
-		if (timer_active < 1) /* wake up the timer */
-			timer.trigger_periodic(period_us);
-
-		timer_active = STAY_ACTIVE;
+		if (notify) {
+			queue.submit_signal();
+			burst_timeout.discard();
+		} else if (!burst_timeout.scheduled()) {
+			burst_timeout.schedule(period_us);
+		}
 	}
 
 	Signal_handler<Main> input_handler =
 		{ env.ep(), *this, &Main::handle_input };
-
-	/* signaled by timer */
-	void handle_timer()
-	{
-		if (queue.empty()) {
-			--timer_active;
-			/* stop the timer if nothing is happening */
-			if (timer_active < 1)
-				timer.trigger_periodic(0);
-		} else
-			queue.submit_signal();
-	}
-
-	Signal_handler<Main> timer_handler =
-		{ env.ep(), *this, &Main::handle_timer };
 
 	/**
 	 * Constructor
@@ -115,9 +114,6 @@ struct Input_normalizer::Main
 
 		/* register input handler */
 		parent_input.sigh(input_handler);
-
-		/* register timeout handler */
-		timer.sigh(timer_handler);
 
 		/* announce service */
 		env.parent().announce(env.ep().manage(input_root));
