@@ -1,0 +1,14 @@
+diff --git a/src/core/midiio_rtmidi.cpp b/src/core/midiio_rtmidi.cpp
+index d5e2aca..9fcec93 100644
+--- a/src/core/midiio_rtmidi.cpp
++++ b/src/core/midiio_rtmidi.cpp
+@@ -1001,4 +1001,9 @@ MidiIn::~MidiIn()
+     
+ }
+ 
++t_CKBOOL MidiIn::open( Chuck_VM *, t_CKUINT )
++{
++    return FALSE;
++}
++
+ #endif // __DISABLE_MIDI__

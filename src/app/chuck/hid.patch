@@ -1,0 +1,61 @@
+diff --git a/src/core/util_hid.cpp b/src/core/util_hid.cpp
+index 4bfa8c8..a0753ef 100644
+--- a/src/core/util_hid.cpp
++++ b/src/core/util_hid.cpp
+@@ -7733,6 +7733,56 @@ const char * Keyboard_name( int k )
+     return keyboards->at( k )->name;
+ }
+ 
++#elif defined(__PLATFORM_GENODE__)
++
++void Hid_init() { }
++void Hid_poll() { }
++void Hid_quit() { }
++
++void Joystick_init() { }
++void Joystick_poll() { }
++void Joystick_quit() { }
++void Joystick_probe() { }
++int Joystick_count() { return -1; }
++int Joystick_open( int js ) { return -1; }
++int Joystick_open_async( int js ) { return -1; }
++int Joystick_open( const char * name ) { return -1; }
++int Joystick_close( int js ) { return -1; };
++int Joystick_send( int js, const HidMsg * msg ) { return -1; }
++const char * Joystick_name( int js ) { return ""; }
++
++void Mouse_init() { }
++void Mouse_poll() { }
++void Mouse_quit() { }
++void Mouse_probe() { }
++int Mouse_count() { return -1; }
++int Mouse_open( int m ) { return -1; }
++int Mouse_open( const char * name ) { return -1; }
++int Mouse_close( int m ) { return -1; }
++int Mouse_send( int m, const HidMsg * msg ) { return -1; }
++const char * Mouse_name( int m ) { return ""; }
++int Mouse_buttons( int m ) { return -1; }
++
++void Keyboard_init() { }
++void Keyboard_poll() { }
++void Keyboard_quit() { }
++void Keyboard_probe() { }
++int Keyboard_count() { return -1; }
++int Keyboard_open( int kb ) { return -1; }
++int Keyboard_open( const char * name ) { return -1; }
++int Keyboard_close( int kb ) { return -1; }
++const char * Keyboard_name( int kb ) { return ""; }
++
++t_CKINT TiltSensor_setPollRate( t_CKINT usec )
++{
++    return -1;
++}
++
++t_CKINT TiltSensor_getPollRate( )
++{
++    return -1;
++}
++
+ #endif
+ 
+ 

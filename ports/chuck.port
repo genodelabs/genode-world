@@ -1,5 +1,5 @@
 LICENSE   := GPL2
-VERSION   := 1.3.5.2
+VERSION   := 1.4.0.0
 DOWNLOADS := chuck.archive
 
 #
@@ -8,28 +8,26 @@ DOWNLOADS := chuck.archive
 $(call check_tool,lex)
 $(call check_tool,bison)
 
-OWNER := ccrma
-REPO  := chuck
-REV   := 53f99be5498c6b1deb59aa2c223e75326820a30b
-URL(chuck) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
-SHA(chuck) := 6b47779bb8c800261b7dac0e80302e96f9c9fc42
+URL(chuck) := http://chuck.cs.princeton.edu/release/files/chuck-$(VERSION).tgz
+SHA(chuck) := 2caee332b8d48e2fddad0f8a0a1811b6cf4c5afab73ae8a17b85ec759cce27ac
 DIR(chuck) := src/app/chuck
 
-DIRS := include/chuck
-DIR_CONTENT(include/chuck) := src/app/chuck/src/*.h
-
-PATCHES := src/app/chuck/patch
+PATCHES := $(wildcard $(REP_DIR)/src/app/chuck/*.patch)
 PATCH_OPT := -p1 -d src/app/chuck
 
-CHUCK_TAB = src/app/chuck/src/chuck.tab.c src/app/chuck/src/chuck.tab.h
+CHUCK_TAB = src/app/chuck/src/core/chuck.tab.c src/app/chuck/src/core/chuck.tab.h
 
-_dirs: $(DOWNLOADS) $(CHUCK_TAB) src/app/chuck/src/chuck.yy.c
-	$(VERBOSE) find src/app/chuck -name RtAudio.h -delete
+_dirs: $(DOWNLOADS) $(CHUCK_TAB) src/app/chuck/src/core/chuck.yy.c src/app/chuck/src/host/RtAudio.deleted
 
-$(CHUCK_TAB): src/app/chuck/src/chuck.y $(DOWNLOADS)
+src/app/chuck/src/host/RtAudio.deleted: src/app/chuck/src/host/RtAudio
+	$(VERBOSE)rm -r $<
+
+.PHONEY: src/app/chuck/src/host/RtAudio.deleted
+
+$(CHUCK_TAB): src/app/chuck/src/core/chuck.y $(DOWNLOADS)
 	@$(MSG_GENERATE)$(notdir $@)
-	$(VERBOSE)$(YACC) -dv -b src/app/chuck/src/chuck $<
+	$(VERBOSE)$(YACC) -dv -b src/app/chuck/src/core/chuck $<
 
-src/app/chuck/src/chuck.yy.c: src/app/chuck/src/chuck.lex $(DOWNLOADS)
+src/app/chuck/src/core/chuck.yy.c: src/app/chuck/src/core/chuck.lex $(DOWNLOADS)
 	@$(MSG_GENERATE)$(notdir $@)
 	$(VERBOSE)$(LEX)  -o$@ $<

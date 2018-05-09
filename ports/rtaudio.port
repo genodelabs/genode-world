@@ -6,7 +6,7 @@ OWNER := ehmry
 REPO  := rtaudio
 REV   := 4dc7017ccbae09231a4f8a48ac11a388171e95b3
 URL(rtaudio) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
-SHA(rtaudio) := 83414b09e48757d91f60fc936402501ec1a6bb8c
+SHA(rtaudio) := 83f628cb81ce31685f8100c1abcfd75485f4041db18290a46226d4ba2cea111c
 DIR(rtaudio) := src/lib/rtaudio
 
 DIRS := include/RtAudio

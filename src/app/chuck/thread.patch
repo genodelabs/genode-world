@@ -1,0 +1,35 @@
+diff --git a/src/core/util_thread.cpp b/src/core/util_thread.cpp
+index d2467c1..939e936 100644
+--- a/src/core/util_thread.cpp
++++ b/src/core/util_thread.cpp
+@@ -389,7 +389,7 @@ void XWriteThread::flush_data_buffer()
+ // name: write_cb()
+ // desc: thread function
+ //-----------------------------------------------------------------------------
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+ void * XWriteThread::write_cb(void * _thiss)
+ #elif defined(__PLATFORM_WIN32__)
+ unsigned XWriteThread::write_cb(void * _thiss)
+diff --git a/src/core/util_thread.h b/src/core/util_thread.h
+index c6f4a3c..24999de 100644
+--- a/src/core/util_thread.h
++++ b/src/core/util_thread.h
+@@ -43,7 +43,7 @@ class FastCircularBuffer;
+ template<typename T> class CircularBuffer;
+ 
+ 
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+   #include <pthread.h>
+   #define THREAD_TYPE
+   typedef pthread_t THREAD_HANDLE;
+@@ -174,7 +174,7 @@ private:
+     void flush_data_buffer();
+ 
+ 	// callback
+-#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) )
++#if ( defined(__PLATFORM_MACOSX__) || defined(__PLATFORM_LINUX__) || defined(__WINDOWS_PTHREAD__) || defined(__PLATFORM_GENODE__) )
+     static void * write_cb( void * _thiss );
+ #elif defined(__PLATFORM_WIN32__)
+     static unsigned THREAD_TYPE write_cb( void * _thiss );

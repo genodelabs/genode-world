@@ -6,7 +6,7 @@ LIBS += libc libogg
 
 SHARED_LIB = yes
 
-CC_OPT += -DHAVE_CONFIG_H
+CC_DEF += -DHAVE_CONFIG_H
 
 INC_DIR += \
 	$(LIBFLAC_SRC_DIR)/include \
