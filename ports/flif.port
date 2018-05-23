@@ -3,7 +3,7 @@ VERSION   := 0.3
 DOWNLOADS := flif.archive
 
 URL(flif) := https://github.com/FLIF-hub/FLIF/archive/v$(VERSION).tar.gz
-SHA(flif) := 10918ea2695fdc97ad70d2e4cde021fcaa22838c
+SHA(flif) := aa02a62974d78f8109cff21ecb6d805f1d23b05b2db7189cfdf1f0d97ff89498
 DIR(flif) := src/lib/flif
 
 DIRS := include/flif

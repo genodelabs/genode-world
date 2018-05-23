@@ -3,7 +3,7 @@ VERSION := 2.3
 DOWNLOADS := keynote.archive
 
 URL(keynote) := https://www.cs.columbia.edu/~angelos/Code/keynote.tar.gz
-SHA(keynote) :=1b51066ffc66d04660cc206254c41531a17e8b04
+SHA(keynote) :=62f7a9d57ceb6bcdd47b604b637a7ac8ed337cef0ab02f1fa28b7e61c9b15821
 DIR(keynote) := src/lib/keynote
 
 

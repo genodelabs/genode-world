@@ -5,7 +5,7 @@ DOWNLOADS := mpg123.archive
 API_VERSION := 44 # found in configure.ac
 
 URL(mpg123) := http://downloads.sourceforge.net/project/mpg123/mpg123/$(VERSION)/mpg123-$(VERSION).tar.bz2
-SHA(mpg123) := 604784ddbcfe282bffdc595d1d45c677c7cf381f
+SHA(mpg123) := 6c1337aee2e4bf993299851c70b7db11faec785303cfca3a5c3eb5f329ba7023
 DIR(mpg123) := src/lib/mpg123
 
 DIRS := include

@@ -3,7 +3,7 @@ DOWNLOADS = ldns.archive
 VERSION   = 1.7.0
 
 URL(ldns) := https://www.nlnetlabs.nl/downloads/ldns/ldns-$(VERSION).tar.gz
-SHA(ldns) := ceeeccf8a27e61a854762737f6ee02f44662c1b8
+SHA(ldns) := c19f5b1b4fb374cfe34f4845ea11b1e0551ddc67803bd6ddd5d2a20f0997a6cc
 DIR(ldns) := src/lib/ldns
 
 DIRS := include/ldns

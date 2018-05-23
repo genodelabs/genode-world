@@ -3,9 +3,9 @@ VERSION   := 2.1.20130907
 DOWNLOADS := opentyrian.archive tyrian.archive
 
 URL(opentyrian) := http://www.camanis.net/opentyrian/releases/opentyrian-$(VERSION)-src.tar.gz
-SHA(opentyrian) := c5b97aea3931db6889acb639e59e619162b05183
+SHA(opentyrian) := f54b6b3cedcefa187c9f605d6164aae29ec46a731a6df30d351af4c008dee45f
 DIR(opentyrian) := src/app/opentyrian
 
 URL(tyrian) := http://camanis.net/tyrian/tyrian21.zip
-SHA(tyrian) := 29827de99c92cdba7ac8d8b1307776c8f473cd44
+SHA(tyrian) := 7790d09a2a3addcd33c66ef063d5900eb81cc9c342f4807eb8356364dd1d9277
 DIR(tyrian) := src/app/opentyrian

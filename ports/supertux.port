@@ -4,5 +4,5 @@ DOWNLOADS := supertux.archive
 
 
 URL(supertux) := https://github.com/SuperTux/supertux/releases/download/v$(VERSION)/supertux-$(VERSION).tar.bz2
-SHA(supertux) := ad783011fbf15a8a56ca8680769a8c2a15abc515
+SHA(supertux) := 0092588351776626955339caaa62d12ce5954bb80c5f6952f60a122f53c2ad97
 DIR(supertux) := src/app/supertux

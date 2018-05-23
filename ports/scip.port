@@ -3,7 +3,7 @@ VERSION   := 3.1.0
 DOWNLOADS := scip.archive
 
 URL(scip) := http://scip.zib.de/download/release/scip-$(VERSION).tgz
-SHA(scip) := 6a5b3f26bfa978bc46978c702c27444ca0b16120
+SHA(scip) := ac23f5c7bf4d2cb9c1943d942334c567d0b7a44e2c9a98d35b18d489f7d3fe05
 DIR(scip) := src/lib/scip
 
 PATCHES := src/lib/scip/clock.patch

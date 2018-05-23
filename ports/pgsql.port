@@ -3,5 +3,5 @@ DOWNLOADS := postgres.archive
 VERSION   := 9.3.0
 
 URL(postgres) := https://ftp.postgresql.org/pub/source/v9.3.0/postgresql-$(VERSION).tar.bz2
-SHA(postgres) := 63a7b8788cd18247d7af5fd4a320abebb0535a44
+SHA(postgres) := 784e5db7d8fd69b08ddb125c4452211e04b089516359a5cf72d292cade7c728e
 DIR(postgres) := src/lib/postgres

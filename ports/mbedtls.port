@@ -3,7 +3,7 @@ VERSION   := 2.2.0
 DOWNLOADS := mbedtls.archive
 
 URL(mbedtls) := https://tls.mbed.org/download/mbedtls-2.2.0-apache.tgz
-SHA(mbedtls) := eceecfc82cbdea8f91ce416489e0f6fee964049c
+SHA(mbedtls) := 3c6d3487ab056da94450cf907afc84f026aff7880182baffe137c98e3d00fb55
 DIR(mbedtls) := src/lib/mbedtls
 
 DIRS := include/mbedtls

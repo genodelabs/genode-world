@@ -7,7 +7,7 @@ REPO  := fdk-aac
 REV   := 74c1a2a4f831285cbd93ec1427f1670d3c5c5e52
 
 URL(fdk-aac) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
-SHA(fdk-aac) := 246a647661776566c2f5657b0d4c46883f036b12
+SHA(fdk-aac) := 2f17d138a3bdc17817bcfdac67c37511b7c10f74ff17d01da65ac6cf96d76b47
 DIR(fdk-aac) := src/lib/fdk-aac
 
 DIRS := include/fdk-aac

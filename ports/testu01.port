@@ -3,7 +3,7 @@ VERSION := 1.2.3
 DOWNLOADS := testu01.archive
 
 URL(testu01) := http://www.iro.umontreal.ca/~simardr/testu01/TestU01.zip
-SHA(testu01) := f41af4bc71841e16dacc195930e6c3a191c9ab99
+SHA(testu01) := eee829985b7a41427e224dbc3d2592dc88444dfab0acd269190c4ea83ab1a037
 DIR(testu01) := src/lib/testu01
 
 TESTU01_DIR := src/lib/testu01/TestU01-1.2.3

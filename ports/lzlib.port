@@ -4,7 +4,7 @@ DOWNLOADS := lzlib.archive
 
 URL(lzlib) := http://download.savannah.gnu.org/releases/lzip/lzlib/lzlib-$(VERSION).tar.gz
 SIG(lzlib) := http://download.savannah.gnu.org/releases/lzip/lzlib/lzlib-$(VERSION).tar.gz.sig
-SHA(lzlib) := 66c99fd24060926de0b00f19d57ef265d6d55dd3
+SHA(lzlib) := 41bfa82c6ee184ed0884437dc4074ad505e64cb747432cefa97976b89045cbad
 DIR(lzlib) := src/lib/lzlib
 
 TAR_OPT(lzlib) := --strip-components 1

@@ -3,7 +3,7 @@ VERSION    := 1.3
 DOWNLOADS  := lemon.archive
 
 URL(lemon) := http://lemon.cs.elte.hu/pub/sources/lemon-$(VERSION).tar.gz
-SHA(lemon) := c833604b790e6f45d5cf8da304d9b23ba74eae6c
+SHA(lemon) := 6c190dbb1e17bdb71597e79c409b2e798ffcbdb7d764ea45d6299339b12d3e05
 DIR(lemon) := src/lib/lemon
 
 PATCHES := $(addprefix src/lib/lemon/,BpGraphReader.patch BpGraphWriter.patch)
