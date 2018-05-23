@@ -4,14 +4,15 @@
 
 	<content>
 		<rom label="ld.lib.so"/>
-		<rom label="init"/>
+		<rom label="chuck"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libFLAC.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="libogg.lib.so"/>
-		<rom label="libsdl.lib.so"/>
 		<rom label="libsndfile.lib.so"/>
 		<rom label="libvorbis.lib.so"/>
+		<rom label="pthread.lib.so"/>
+		<rom label="sdl.lib.so"/>
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
 	</content>
