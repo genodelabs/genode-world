@@ -175,7 +175,7 @@ if {![file exists bin/data.tar]} {
 # generic modules
 append boot_modules {
 	core init timer } [audio_drv_binary] {
-	ld.lib.so libc.lib.so libm.lib.so pthread.lib.so
+	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so pthread.lib.so
 	sdl.lib.so sdl_net.lib.so sdl_mixer.lib.so
 	chocolate-doom doom1.wad
 }

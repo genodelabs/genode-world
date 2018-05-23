@@ -91,9 +91,9 @@ append boot_modules {
 	timer
 	test-libpq_list_db
 	ld.lib.so
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libpq.lib.so
-	lwip.lib.so
+	lwip_legacy.lib.so
 	libm.lib.so
 	pthread.lib.so
 	stdcxx.lib.so

@@ -79,7 +79,7 @@ install_config $config
 set boot_modules {
 	core init ld.lib.so
 	drill
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libcrypto.lib.so
 	libm.lib.so
 	libssl.lib.so

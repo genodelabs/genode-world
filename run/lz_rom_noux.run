@@ -93,7 +93,7 @@ exec tar cf bin/coreutils.tar.lz.tar -C bin coreutils.tar.lz
 build_boot_image {
 	core init ld.lib.so
 	coreutils.tar.lz.tar
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libc_noux.lib.so
 	libm.lib.so
 	log_terminal

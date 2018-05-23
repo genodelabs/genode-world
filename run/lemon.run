@@ -32,7 +32,7 @@ install_config {
 
 build_boot_image {
 	core init test-lemon
-	ld.lib.so libc.lib.so posix.lib.so libm.lib.so stdcxx.lib.so
+	ld.lib.so libc.lib.so vfs.lib.so posix.lib.so libm.lib.so stdcxx.lib.so
 }
 
 append qemu_args " -nographic  "

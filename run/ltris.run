@@ -30,7 +30,7 @@ set app_config {
 set boot_modules {
 	ram_fs
 	ltris
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libm.lib.so
 	pthread.lib.so
 	sdl_mixer.lib.so

@@ -167,7 +167,7 @@ build_boot_image {
 	hotkey_edit
 	testnit
 	xml_editor
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 }
 
 run_genode_until forever

@@ -119,7 +119,7 @@ set boot_modules {
 	grafx2
 	jpeg.lib.so
 	ld.lib.so
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libm.lib.so
 	libpng.lib.so
 	pthread.lib.so

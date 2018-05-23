@@ -149,7 +149,7 @@ install_config $config
 append boot_modules {
 	core ld.lib.so init
 	fs_rom
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libm.lib.so
 	ram_fs
 	terminal

@@ -84,7 +84,7 @@ install_config {
 
 build_boot_image {
 	flif_view
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	zlib.lib.so
 	libm.lib.so
 	libpng.lib.so

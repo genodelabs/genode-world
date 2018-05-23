@@ -47,7 +47,7 @@ install_config {
 
 build_boot_image {
 	glib.lib.so
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libiconv.lib.so
 	libm.lib.so
 	posix.lib.so

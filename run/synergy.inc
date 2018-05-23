@@ -32,7 +32,7 @@ proc append_synergy_config { } {
 
 proc append_synergy_boot_modules { } {
 	global boot_modules
-	append boot_modules { nic_drv libc.lib.so lwip.lib.so synergy_input }
+	append boot_modules { nic_drv libc.lib.so vfs.lib.solwip_legacy.lib.so synergy_input }
 }
 
 

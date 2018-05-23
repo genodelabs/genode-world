@@ -58,7 +58,7 @@ install_config $config
 # generic modules
 set boot_modules {
 	core init timer
-	ld.lib.so libc.lib.so libm.lib.so
+	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so
 	vfs_jitterentropy.lib.so
 }
 

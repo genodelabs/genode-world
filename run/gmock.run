@@ -72,7 +72,7 @@ install_config {
 build_boot_image {
 	core init ld.lib.so
 	timer ram_fs
-	libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
+	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
 	rtc_drv
 	gmock.lib.so
 	gmock

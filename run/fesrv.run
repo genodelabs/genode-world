@@ -47,7 +47,7 @@ install_config {
 # Boot image
 #
 
-build_boot_image { core init fesrv riscv-image.elf libm.lib.so stdcxx.lib.so libc.lib.so ld.lib.so }
+build_boot_image { core init fesrv riscv-image.elf libm.lib.so stdcxx.lib.so libc.lib.so vfs.lib.so ld.lib.so }
 
 append qemu_args " -nographic "
 

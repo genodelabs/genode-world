@@ -138,7 +138,7 @@ if {![file exists bin/hexen2demo_data.tar]} {
 # generic modules
 append boot_modules {
 	core init timer } [audio_drv_binary] {
-	ld.lib.so libc.lib.so libm.lib.so lwip.lib.so
+	ld.lib.so libc.lib.so vfs.lib.so libm.lib.solwip_legacy.lib.so
 	pthread.lib.so sdl.lib.so sdl_mixer.lib.so
 	uhexen2 hexen2demo_data.tar
 }

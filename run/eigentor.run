@@ -198,14 +198,14 @@ set boot_modules {
 	fetchurl
 	init
 	ld.lib.so
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	posix.lib.so
 	libcrypto.lib.so
 	libevent.lib.so
 	libm.lib.so
 	libssh.lib.so
 	libssl.lib.so
-	lwip.lib.so
+	lwip_legacy.lib.so
 	nic_drv
 	nic_router
 	pthread.lib.so

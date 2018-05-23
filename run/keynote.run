@@ -49,7 +49,7 @@ install_config $config
 set boot_modules {
 	core init
 	test-keynote
-	ld.lib.so libc.lib.so keynote.lib.so libm.lib.so libcrypto.lib.so
+	ld.lib.so libc.lib.so vfs.lib.so keynote.lib.so libm.lib.so libcrypto.lib.so
 }
 
 

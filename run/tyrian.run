@@ -126,7 +126,7 @@ append boot_modules {
 } [audio_drv_binary] {
 	dummy_input_drv
 	ld.lib.so
-	libc.lib.so
+	libc.lib.so vfs.lib.so
 	libm.lib.so
 	libpng.lib.so
 	pthread.lib.so
