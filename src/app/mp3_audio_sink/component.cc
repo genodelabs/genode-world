@@ -24,6 +24,7 @@
 #include <libc/component.h>
 #include <audio_out_session/connection.h>
 #include <terminal_session/connection.h>
+#include <base/attached_rom_dataspace.h>
 #include <base/attached_ram_dataspace.h>
 #include <base/sleep.h>
 
@@ -64,6 +65,8 @@ struct Mp3_audio_sink::Decoder
 		for (int i = 0; i < NUM_CHANNELS; ++i) func(i); }
 
 	Genode::Env &_env;
+
+	Attached_rom_dataspace _config_rom { _env, "config" };
 
 	Audio_out::Connection _out_left  { _env, "left",  true, true };
 	Audio_out::Connection _out_right { _env, "right", false, false };
@@ -187,11 +190,39 @@ struct Mp3_audio_sink::Decoder
 	Io_signal_handler<Decoder> _progress_handler {
 		_env.ep(), *this, &Decoder::submit_audio };
 
+	Signal_handler<Decoder> _config_handler {
+		_env.ep(), *this, &Decoder::_handle_config };
+
+	void _handle_config()
+	{
+		_config_rom.update();
+		Xml_node const config = _config_rom.xml();
+
+		enum { EQ_COUNT = 32 };
+
+		mpg123_reset_eq(_mh);
+		config.for_each_sub_node("eq", [&] (Xml_node const &node) {
+			unsigned band = node.attribute_value("band", 32U);
+			double value = node.attribute_value("value", 0.0);
+			if (band < EQ_COUNT && value != 0.0) {
+				mpg123_eq(_mh, MPG123_LR , band, value);
+				log("EQ ", band, ": ", mpg123_geteq(_mh, MPG123_LR , band));
+			}
+		});
+
+		double volume = 0.5;
+		config.for_each_sub_node("volume", [&] (Xml_node const &node) {
+			volume = node.attribute_value("linear", volume); });
+		mpg123_volume(_mh, 0.5);
+	}
+
 	Decoder(Genode::Env &env) : _env(env)
 	{
 		_out[LEFT]  = &_out_left;
 		_out[RIGHT] = &_out_right;
 		_out_left.progress_sigh(_progress_handler);
+		_config_rom.sigh(_config_handler);
+		_handle_config();
 	}
 };
 
