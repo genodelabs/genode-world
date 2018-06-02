@@ -53,3 +53,6 @@ abuse.tar:
 	$(VERBOSE) tar cf $@ -C $(ABUSE_DIR)/data .
 
 CC_CXX_WARN_STRICT =
+
+# A hack to make (this == NULL) work again.
+CC_OLEVEL = -O0
