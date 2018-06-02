@@ -235,17 +235,13 @@ struct Flif_view::Main
 	void handle_input_signal()
 	{
 		input.for_each_event([&] (Input::Event const &ev) {
-			if (ev.type() == Input::Event::PRESS) {
-				switch (ev.code()) {
-				case Input::KEY_PAGEDOWN:
-					++pending_page_index;
-					app_transmitter.submit();
-					break;
-				case Input::KEY_PAGEUP:
-					--pending_page_index;
-					app_transmitter.submit();
-					break;
-				}
+			if (ev.key_press(Input::KEY_PAGEDOWN)) {
+				++pending_page_index;
+				app_transmitter.submit();
+			} else
+			if (ev.key_press(Input::KEY_PAGEUP)) {
+				--pending_page_index;
+				app_transmitter.submit();
 			}
 		});
 	}

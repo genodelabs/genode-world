@@ -1,4 +1,7 @@
 _/src/flif_view
+_/src/libc
 _/src/libflif
 _/src/libpng
+_/src/stdcxx
+_/src/vfs
 _/src/zlib
