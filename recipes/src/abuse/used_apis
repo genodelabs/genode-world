@@ -1,0 +1,9 @@
+base
+libc
+sdl
+sdl_image
+sdl_mixer
+sdl_net
+stdcxx
+os
+vfs

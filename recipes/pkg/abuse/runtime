@@ -1,0 +1,72 @@
+<runtime ram="64M" caps="512" binary="init">
+
+	<requires>
+		<audio_out/>
+		<file_system/>
+		<nitpicker/>
+		<timer/>
+	</requires>
+
+	<content>
+		<rom label="abuse"/>
+		<rom label="abuse.tar"/>
+		<rom label="init"/>
+		<rom label="jpeg.lib.so"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libpng.lib.so"/>
+		<rom label="nit_fb"/>
+		<rom label="pthread.lib.so"/>
+		<rom label="sdl_image.lib.so"/>
+		<rom label="sdl.lib.so"/>
+		<rom label="sdl_mixer.lib.so"/>
+		<rom label="sdl_net.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="ROM"/>
+			<service name="Nitpicker"/>
+			<service name="Report"/>
+			<service name="Timer"/>
+			<service name="Audio_out"/>
+			<service name="File_system"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+		<start name="nit_fb" caps="96">
+			<resource name="RAM" quantum="4M"/>
+			<provides>
+				<service name="Framebuffer"/>
+				<service name="Input"/>
+			</provides>
+			<config initial_width="640" initial_height="400"/>
+		</start>
+		<start name="abuse" caps="200">
+			<resource name="RAM" quantum="128M"/>
+			<config>
+				<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+				<vfs>
+					<tar name="abuse.tar"/>
+					<fs/>
+					<dir name="dev">
+						<log/>
+						<inline name="rtc">1996-02-29 12:00</inline>
+					</dir>
+				</vfs>
+				<arg value="abuse"/>
+				<arg value="-datadir"/> <arg value="/"/>
+			</config>
+		</start>
+	</config>
+
+</runtime>
