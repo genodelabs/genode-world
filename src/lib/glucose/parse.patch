@@ -1,0 +1,10 @@
++++ src/lib/glucose/core/Dimacs.h	2018-06-13 13:12:39.770427200 +0200
+@@ -52,7 +52,7 @@
+     int cnt     = 0;
+     for (;;){
+         skipWhitespace(in);
+-        if (*in == EOF) break;
++        if (*in == EOF or *in == 0) break;
+         else if (*in == 'p'){
+             if (eagerMatch(in, "p cnf")){
+                 vars    = parseInt(in);

@@ -4,7 +4,7 @@ create_boot_directory
 
 set fd [open "bin/Test.cnf" w]
 puts $fd {
-p cnf 15 20
+p cnf 15 22
 -1 10 11 8 9 0
 -2 10 11 8 9 0
 -2 4 0
@@ -29,8 +29,6 @@ p cnf 15 20
 10 11 -14 -15  0
 }
 close $fd
-
-set filesize [exec stat -c "%s" bin/Test.cnf]
 
 append config {
 <config>
@@ -66,7 +64,7 @@ append config "
 			<libc stdin=\"/dev/null\" stdout=\"/dev/log\" stderr=\"/dev/log\" />
 			<vfs>
 				<dir name=\"dev\"> <log/> <null/> </dir>
-				<rom name=\"Test.cnf\" size=\"$filesize\"/>
+				<rom name=\"Test.cnf\" />
 			</vfs>
 		</config>
 	</start>
