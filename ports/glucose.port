@@ -6,7 +6,7 @@ URL(glucose) := http://www.labri.fr/perso/lsimon/downloads/softwares/glucose-$(V
 SHA(glucose) := e721005535f8ca96d58c0c7e3923924e948a231fb305960b1bf4af49cbc936a6
 DIR(glucose) := src/lib/glucose
 
-PATCHES := $(addprefix src/lib/glucose/,c++11.patch pow.patch map.patch buffer_size.patch copy_constructor.patch cputime.patch)
+PATCHES := $(addprefix src/lib/glucose/,c++11.patch pow.patch map.patch buffer_size.patch copy_constructor.patch cputime.patch parse.patch)
 
 DIRS := include/glucose/core include/glucose/mtl include/glucose/utils
 
