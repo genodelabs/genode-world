@@ -42,6 +42,7 @@ namespace Remote_rom {
 };
 
 /* Packet format we use for inter-system communication */
+/* FIXME do not inherit from Ethernet_frame and Ipv4_packet but use construct_at_data with size_guard */
 class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 {
 	public:
@@ -73,8 +74,8 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 
 		Packet_base(size_t size) 
 		:
-			Ethernet_frame(sizeof(Packet_base) + size),
-			Ipv4_packet(sizeof(Packet_base) + size - sizeof(Ethernet_frame)),
+			Ethernet_frame(),
+			Ipv4_packet(),
 			_payload_size(size)
 		{ }
 
@@ -124,14 +125,14 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 		 */
 		void *addr() { return payload; }
 
-		void prepare_ethernet(const Mac_address &src, const Mac_address &dst=Ethernet_frame::BROADCAST)
+		void prepare_ethernet(const Mac_address &src, const Mac_address &dst=Ethernet_frame::broadcast())
 		{
 			Ethernet_frame::src(src);
 			Ethernet_frame::dst(dst);
 			Ethernet_frame::type(Ethernet_frame::Type::IPV4);
 		}
 
-		void prepare_ipv4(const Ipv4_address &src, const Ipv4_address &dst=Ipv4_packet::BROADCAST)
+		void prepare_ipv4(const Ipv4_address &src, const Ipv4_address &dst=Ipv4_packet::broadcast())
 		{
 			Ipv4_packet::version(4);
 			Ipv4_packet::header_length(5);
@@ -143,7 +144,7 @@ class Remote_rom::Packet_base : public Ethernet_frame, public Ipv4_packet
 
 		void set_checksums()
 		{
-			Ipv4_packet::checksum(Ipv4_packet::calculate_checksum(*this));
+			Ipv4_packet::update_checksum();
 		}
 
 		/**
@@ -242,7 +243,7 @@ class Remote_rom::Backend_base
 
 						/* check IP */
 						Ipv4_packet &ip_packet = *(Packet_base*)content;
-						if (_accept_ip == Ipv4_packet::BROADCAST || _accept_ip == ip_packet.dst())
+						if (_accept_ip == Ipv4_packet::broadcast() || _accept_ip == ip_packet.dst())
 							_handler.receive(*(Packet_base*)content);
 
 						_nic.rx()->acknowledge_packet(_rx_packet);
@@ -329,9 +330,9 @@ class Remote_rom::Backend_base
 				_accept_ip = _src_ip;
 			} catch (...) {
 				Genode::warning("No IP configured, falling back to broadcast mode!");
-				_src_ip = Ipv4_packet::CURRENT;
-				_dst_ip = Ipv4_packet::BROADCAST;
-				_accept_ip = Ipv4_packet::BROADCAST;
+				_src_ip = Ipv4_packet::current();
+				_dst_ip = Ipv4_packet::broadcast();
+				_accept_ip = Ipv4_packet::broadcast();
 			}
 		}
 
@@ -373,7 +374,7 @@ class Remote_rom::Backend_server : public Backend_server_base, public Backend_ba
 				Nic::Packet_descriptor pd = alloc_tx_packet(DataPacket::packet_size(size));
 				DataPacket *packet = new (_nic.tx()->packet_content(pd)) DataPacket();
 
-				packet->prepare_ethernet(_mac_address, Ethernet_frame::BROADCAST);
+				packet->prepare_ethernet(_mac_address, Ethernet_frame::broadcast());
 				packet->prepare_ipv4(_src_ip, _dst_ip);
 				packet->prepare(_forwarder->module_name(), offset, size);
 
