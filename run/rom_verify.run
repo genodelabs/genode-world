@@ -12,7 +12,7 @@ build {
 
 create_boot_directory
 
-set sha256sum     [check_installed sha256sum]
+set sha256sum     [installed_command sha256sum]
 
 
 set   ld_digest [lindex [exec $sha256sum bin/ld-linux.lib.so] 0]

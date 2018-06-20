@@ -1,4 +1,4 @@
-set sha256sum     [check_installed sha256sum]
+set sha256sum     [installed_command sha256sum]
 
 build {
 	core init
