@@ -63,6 +63,13 @@ struct Python::Main
 			Py_SetPath(wbuf);
 		}
 
+		if (_config.xml().has_attribute("verbose")) {
+			bool verbose;
+			_config.xml().attribute("verbose").value(&verbose);
+			if (verbose)
+				Py_VerboseFlag = 1;
+		}
+
 		mbstowcs(wbuf, filename, strlen(filename));
 
 		FILE * fp = fopen(filename, "r");
@@ -89,7 +96,6 @@ struct Python::Main
 		_handle_config();
 	}
 };
-
 
 void Libc::Component::construct(Libc::Env &env)
 {
