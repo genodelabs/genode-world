@@ -207,11 +207,17 @@ $(PYTHON3_ZIP):
 	$(MSG_MERGE)$(notdir $@)
 	$(VERBOSE)cd $(PYTHON_DIR)/Lib; zip -rq $(PYTHON3_ZIP) *
 
+PYTHON3_TAR = $(BUILD_BASE_DIR)/bin/python3.tar
+
+$(PYTHON3_TAR):
+	$(MSG_MERGE)$(notdir $@)
+	$(VERBOSE)tar cfh $@ -C $(PYTHON_DIR) Lib
+
 #
 # Generate python3.zip at the build stage, not the dependency stage, of the
 # build system.
 #
 ifeq ($(called_from_lib_mk),yes)
-python3.lib.tag: $(PYTHON3_ZIP)
+python3.lib.tag: $(PYTHON3_ZIP) $(PYTHON3_TAR)
 endif
 
