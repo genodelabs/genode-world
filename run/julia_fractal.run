@@ -1,18 +1,21 @@
 create_boot_directory
 
-import_from_depot genodelabs/pkg/wm
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/pkg/[drivers_interactive_pkg] \
+                  genodelabs/pkg/wm \
+                  genodelabs/src/init \
+                  genodelabs/src/libc \
+                  genodelabs/src/vfs \
+                  genodelabs/src/stdcxx \
+                  genodelabs/src/nitpicker
 
-build "core init drivers/timer server/nitpicker server/wm app/julia_fractal"
-
-# Only supports the linux kernel, for now;
-# instantiates an fb_sdl explicitly, rather than using custom code or a package.
 install_config {
 <config>
   <parent-provides>
     <service name="IO_MEM"/>
     <service name="IO_PORT"/>
     <service name="IRQ"/>
-    
+
     <service name="ROM"/>
     <service name="PD"/>
     <service name="RM"/>
@@ -20,12 +23,12 @@ install_config {
     <service name="CPU"/>
     <service name="LOG"/>
   </parent-provides>
-  
+
   <default-route>
     <any-service> <parent/> <any-child/> </any-service>
   </default-route>
   <default caps="125"/>
-  
+
   <start name="julia_fractal">
     <resource name="RAM" quantum="4M"/>
     <route>
@@ -40,13 +43,19 @@ install_config {
     <provides> <service name="Timer"/> </provides>
   </start>
 
-  <start name="fb_sdl">
-    <resource name="RAM" quantum="8M"/>
+  <start name="drivers" caps="1000">
+    <resource name="RAM" quantum="32M" constrain_phys="yes"/>
+    <binary name="init"/>
+    <route>
+      <service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+      <service name="Timer"> <child name="timer"/> </service>
+      <any-service> <parent/> </any-service>
+    </route>
     <provides>
-      <service name="Input"/>
-      <service name="Framebuffer"/>
+      <service name="Input"/> <service name="Framebuffer"/>
     </provides>
   </start>
+
   <start name="nitpicker">
     <resource name="RAM" quantum="2M"/>
     <provides> <service name="Nitpicker"/> </provides>
@@ -57,6 +66,7 @@ install_config {
       <default-policy domain="general"/>
     </config>
   </start>
+
   <start name="pointer">
     <resource name="RAM" quantum="2M"/>
     <route>
@@ -64,6 +74,7 @@ install_config {
       <any-service> <parent/> <any-child/> </any-service>
     </route>
   </start>
+
   <start name="wm" caps="1000">
     <resource name="RAM" quantum="32M"/>
     <binary name="init"/>
@@ -81,5 +92,8 @@ set fd [open [run_dir]/genode/focus w]
 puts $fd "<focus label=\"wm -> wm -> \"/>"
 close $fd
 
-build_boot_image "core ld.lib.so libc.lib.so vfs.lib.so libm.lib.so stdcxx.lib.so init timer fb_sdl nitpicker wm pointer julia_fractal"
+build { app/julia_fractal }
+
+build_boot_image { julia_fractal }
+
 run_genode_until forever
