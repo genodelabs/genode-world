@@ -8,6 +8,11 @@
 if {![have_spec x86]} {
 	puts "Run script is only supported on x86"; exit 0 }
 
+proc depot_user {} { return [get_cmd_arg --depot-user local] }
+
+create_boot_directory
+
+import_from_depot [depot_user]/pkg/python3
 
 #
 # Build
@@ -15,13 +20,11 @@ if {![have_spec x86]} {
 
 build {
 	core init
-	app/python3
-	lib/vfs/jitterentropy
 	drivers/timer
 	drivers/rtc
+	server/dynamic_rom
 }
 
-create_boot_directory
 
 #
 # Generate config
@@ -49,11 +52,41 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
-	<start name="python3">
-		<resource name="RAM" quantum="16M"/>
+	<start name="dynamic_rom">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM" /> </provides>
 		<config>
-			<pythonpath name="/python/Lib:" />
-			<file name="hello.py" />
+			<rom name="hello.py">
+				<inline>
+print(" \r\n\r");
+print("        -============================-");
+print("        ||                          ||");
+print("        ||    Python Core 3         ||");
+print("        ||                          ||");
+print("        ||       Genode 18.05       ||");
+print("        ||                          ||");
+print("        -============================-");
+print(" \r");
+print("   2018 by Genode Labs www.genode-labs.com");
+print(" \r\n\r");
+				</inline>
+				<sleep milliseconds="4000" />
+				<inline>
+print("Hello again")
+				</inline>
+				<sleep milliseconds="4000" />
+			</rom>
+		</config>
+	</start>
+	<start name="python3" caps="200">
+		<resource name="RAM" quantum="16M"/>
+		<route>
+			<service name="ROM" label="hello.py"> <child name="dynamic_rom" /> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config>
+			<pythonpath name="/python/Lib/:" />
+			<file name="hello.py" on-rom-update="hello.py" />
 			<vfs>
 				<dir name="dev">
 					<log/>
@@ -65,19 +98,7 @@ set config {
 				<dir name="python">
 					<tar name="python3.tar" />
 				</dir>
-				<inline name="hello.py">
-print(" \r\n\r");
-print("        -============================-");
-print("        ||                          ||");
-print("        ||    Python Core 3         ||");
-print("        ||                          ||");
-print("        ||       Genode 17.11       ||");
-print("        ||                          ||");
-print("        -============================-");
-print(" \r");
-print("   2018 by Genode Labs www.genode-labs.com");
-print(" \r\n\r");
-				</inline>
+				<rom name="hello.py" />
 			</vfs>
 			<libc stdin="/dev/zero" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 		</config>
@@ -92,15 +113,12 @@ install_config $config
 #
 
 # generic modules
-set boot_modules {
+append boot_modules {
 	core init
-	ld.lib.so libc.lib.so libm.lib.so python3.lib.so 
-	python3
-	vfs_jitterentropy.lib.so
+	ld.lib.so 
 	timer
 	rtc_drv
-	python3.tar
-	vfs.lib.so
+	dynamic_rom
 }
 
 build_boot_image $boot_modules
@@ -111,7 +129,7 @@ build_boot_image $boot_modules
 
 append qemu_args "  -nographic "
 
-run_genode_until {.*Executed .*} 60
+run_genode_until {.*Hello again.*} 60
 
 grep_output {python3\]  }
 compare_output_to {
@@ -120,7 +138,7 @@ compare_output_to {
 [init -> python3]         ||                          ||
 [init -> python3]         ||    Python Core 3         ||
 [init -> python3]         ||                          ||
-[init -> python3]         ||       Genode 17.11       ||
+[init -> python3]         ||       Genode 18.05       ||
 [init -> python3]         ||                          ||
 [init -> python3]         -============================-
 [init -> python3]
