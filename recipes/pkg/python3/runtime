@@ -1,0 +1,17 @@
+<runtime ram="32M" caps="200" binary="python3" config="python3.config">
+
+	<requires> <file_system/> <rtc /> </requires>
+
+	<content>
+		<rom label="python3"/>
+		<rom label="python3.lib.so"/>
+		<rom label="python3.config"/>
+		<rom label="ld.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_jitterentropy.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="python3.tar"/>
+	</content>
+
+</runtime>
