@@ -21,12 +21,16 @@ namespace Zynq_zc706 {
 	using namespace Zynq;
 
 	enum {
-		/* clocks (assuming 6:2:1 mode) */
+		/* clocks (assuming 6:2:1 mode) with
+		 *   - 33.33333Mhz PS_CLK
+		 *   - PLL = 40 * PS_CLK
+		 *   - CPU_6x4x = PLL / 2
+		 */
 		CPU_1X_CLOCK   = 111111100,
 		CPU_3X2X_CLOCK = 3*CPU_1X_CLOCK,
 		CPU_6X4X_CLOCK = 6*CPU_1X_CLOCK,
 
-		CORTEX_A9_CLOCK             = CPU_6X4X_CLOCK,
+		CORTEX_A9_CLOCK             = 2*CPU_6X4X_CLOCK,
 		CORTEX_A9_PRIVATE_TIMER_CLK = CPU_3X2X_CLOCK,
 		CORTEX_A9_PRIVATE_TIMER_DIV = 100,
 
