@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<VirtualBox xmlns="http://www.virtualbox.org/" version="1.14-freebsd">
+  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="ubuntu_16_04_64" OSType="Ubuntu_64" snapshotFolder="Snapshots" lastStateChange="2018-01-23T18:40:00Z">
+    <MediaRegistry>
+      <HardDisks>
+        <HardDisk uuid="{c1628a8d-7306-4534-b501-9a6ded486aed}" location="TempleOS.vdi" format="VDI" type="Normal"/>
+      </HardDisks>
+      <DVDImages>
+        <Image uuid="{81763434-9a51-49e8-9444-528a5a28c4bc}" location="TempleOS.ISO"/>
+      </DVDImages>
+    </MediaRegistry>
+    <Hardware>
+      <CPU count="1">
+        <PAE enabled="true"/>
+        <LongMode enabled="true"/>
+        <HardwareVirtExLargePages enabled="false"/>
+      </CPU>
+      <Memory RAMSize="512"/>
+      <HID Pointing="USBTablet"/>
+      <Display VRAMSize="20"/>
+      <RemoteDisplay enabled="false"/>
+      <BIOS>
+        <IOAPIC enabled="true"/>
+      </BIOS>
+      <USB>
+        <Controllers>
+          <Controller name="OHCI" type="OHCI"/>
+        </Controllers>
+      </USB>
+      <Network>
+        <Adapter slot="0" enabled="true" MACAddress="0800271D7901" cable="true" type="82540EM">
+          <BridgedInterface/>
+        </Adapter>
+      </Network>
+      <UART>
+        <Port slot="0" enabled="false" IOBase="0x3f8" IRQ="4" hostMode="Disconnected"/>
+        <Port slot="1" enabled="false" IOBase="0x2f8" IRQ="3" hostMode="Disconnected"/>
+      </UART>
+      <LPT>
+        <Port slot="0" enabled="false" IOBase="0x378" IRQ="7"/>
+        <Port slot="1" enabled="false" IOBase="0x378" IRQ="7"/>
+      </LPT>
+      <AudioAdapter controller="HDA" driver="OSS" enabled="false"/>
+      <RTC localOrUTC="UTC"/>
+    </Hardware>
+    <StorageControllers>
+      <StorageController name="IDE" type="PIIX4" PortCount="2" useHostIOCache="true" Bootable="true">
+        <AttachedDevice passthrough="false" type="DVD" hotpluggable="false" port="1" device="0" Bootable="true">
+          <Image uuid="{81763434-9a51-49e8-9444-528a5a28c4bc}"/>
+        </AttachedDevice>
+      </StorageController>
+    </StorageControllers>
+  </Machine>
+</VirtualBox>
