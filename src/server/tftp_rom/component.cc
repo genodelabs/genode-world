@@ -21,17 +21,18 @@
 #include <base/attached_rom_dataspace.h>
 #include <base/heap.h>
 #include <root/component.h>
-#include <libc/component.h>
+#include <base/component.h>
 #include <util/list.h>
 #include <util/string.h>
 #include <util/endian.h>
 
-/* lwIP raw API */
-#include <lwip/genode.h>
+/* LwIP includes */
 #include <lwip/api.h>
 #include <lwip/inet.h>
 #include <lwip/udp.h>
 #include <lwip/init.h>
+#include <lwip/genode_init.h>
+#include <lwip/nic_netif.h>
 
 
 namespace Tftp_rom {
@@ -48,11 +49,11 @@ namespace Tftp_rom {
 }
 
 
-extern "C" void rrq_cb(void *arg, udp_pcb *upcb, pbuf *pbuf,
-                       ip_addr_t *addr, Genode::uint16_t port);
+extern "C" void rrq_cb(void *arg, struct udp_pcb *pcb, struct pbuf *p,
+                       const ip_addr_t *addr, u16_t port);
 
-extern "C" void data_cb(void *arg, udp_pcb *upcb, pbuf *pbuf,
-                        ip_addr_t *addr, Genode::uint16_t port);
+extern "C" void data_cb(void *arg, struct udp_pcb *pcb, struct pbuf *p,
+                        const ip_addr_t *addr, u16_t port);
 
 
 class Tftp_rom::Session_component :
@@ -185,7 +186,7 @@ class Tftp_rom::Session_component :
 			udp_send(_pcb, ack);
 		}
 
-		void first_response(pbuf *data, ip_addr_t *addr, uint16_t port)
+		void first_response(pbuf *data, ip_addr_t const *addr, uint16_t port)
 		{
 			/*
 			 * we now know the port the server will use,
@@ -325,8 +326,8 @@ class Tftp_rom::Session_component :
  ********************/
 
 
-extern "C" void rrq_cb(void *arg, udp_pcb *upcb, pbuf *data,
-                       ip_addr_t *addr, Genode::uint16_t port)
+extern "C" void rrq_cb(void *arg, struct udp_pcb *pcb, struct pbuf *data,
+                       const ip_addr_t *addr, u16_t port)
 {
 	Tftp_rom::Session_component *session = (Tftp_rom::Session_component*)arg;
 
@@ -347,7 +348,7 @@ extern "C" void rrq_cb(void *arg, udp_pcb *upcb, pbuf *data,
 
 
 extern "C" void data_cb(void *arg, udp_pcb *upcb, pbuf *data,
-                        ip_addr_t *addr, Genode::uint16_t port)
+                        ip_addr_t const *addr, Genode::uint16_t port)
 {
 	Tftp_rom::Session_component *session = (Tftp_rom::Session_component*)arg;
 	if (session->add_block(data)) return;
@@ -364,6 +365,11 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 		Genode::Env                    &_env;
 		Genode::Attached_rom_dataspace  _config_rom { _env, "config" };
+
+		/**
+		 * LwIP connection to Nic service
+		 */
+		Lwip::Nic_netif _netif { _env, *md_alloc(), _config_rom.xml() };
 
 		class Timeout_dispatcher : Genode::Thread, Genode::Lock
 		{
@@ -456,6 +462,9 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 		Session_component *_create_session(const char *args) override
 		{
+			while (!_netif.ready())
+				_env.ep().wait_and_dispatch_one_io_signal();
+
 			Session_component *session;
 
 			_config_rom.update();
@@ -531,9 +540,14 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 };
 
 
-void Libc::Component::construct(Libc::Env &env )
+void Component::construct(Genode::Env &env)
 {
-	static Genode::Sliced_heap sliced_heap(env.ram(), env.rm());
-	static Tftp_rom::Root root(env, sliced_heap);
-}
+	env.exec_static_constructors();
 
+	static Genode::Heap heap(env.ram(), env.rm());
+	static Timer::Connection timer(env, "lwip");
+
+	Lwip::genode_init(heap, timer);
+
+	static Tftp_rom::Root root(env, heap);
+}

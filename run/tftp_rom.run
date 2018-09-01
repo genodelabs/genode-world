@@ -39,6 +39,7 @@ append config {
 		<service name="ROM"/>
 		<service name="SIGNAL"/>
 	</parent-provides>
+	<default caps="256"/>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
@@ -57,18 +58,21 @@ append config {
 	<start name="tftp_rom">
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="ROM"/> </provides>
-		<config verbose="yes">
+		<config verbose="yes" dhcp="yes">
 			<libc stdout="/log" stderr="/log">
 				<vfs> <log/> </vfs>
 			</libc>
-			<policy label_prefix="init" ip="10.0.2.2" port="69"
+			<default-policy label_prefix="init" ip="10.0.2.2" port="69"
 			         dir="/genode" timeout="10"/>
 		</config>	
 	</start>
 	<start name="init">
-		<exit propagate="yes"/>
 		<resource name="RAM" quantum="6M"/>
 		<route>
+			<service name="ROM" unscoped_label="ld.lib.so">
+				<parent/> </service>
+			<service name="ROM" label_suffix="ld.lib.so">
+				<parent/> </service>
 			<any-service>
 				<child name="tftp_rom"/>
 				<parent/>
@@ -88,6 +92,7 @@ append config {
 			<default-route>
 				<any-service> <parent/> </any-service>
 			</default-route>
+			<default caps="256"/>
 			<start name="test-libc">
 				<resource name="RAM" quantum="4M"/>
 				<config>
