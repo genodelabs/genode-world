@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <VirtualBox xmlns="http://www.virtualbox.org/" version="1.14-freebsd">
-  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="ubuntu_16_04_64" OSType="Ubuntu_64" snapshotFolder="Snapshots" lastStateChange="2018-01-23T18:40:00Z">
+  <Machine uuid="{37ab43a5-38d8-4491-93f5-5b0b077f5c32}" name="TempleOS" OSType="Ubuntu_64" snapshotFolder="Snapshots" lastStateChange="2018-01-23T18:40:00Z">
     <MediaRegistry>
       <HardDisks>
         <HardDisk uuid="{c1628a8d-7306-4534-b501-9a6ded486aed}" location="TempleOS.vdi" format="VDI" type="Normal"/>
@@ -10,7 +10,7 @@
       </DVDImages>
     </MediaRegistry>
     <Hardware>
-      <CPU count="1">
+      <CPU count="2">
         <PAE enabled="true"/>
         <LongMode enabled="true"/>
         <HardwareVirtExLargePages enabled="false"/>
@@ -27,11 +27,7 @@
           <Controller name="OHCI" type="OHCI"/>
         </Controllers>
       </USB>
-      <Network>
-        <Adapter slot="0" enabled="true" MACAddress="0800271D7901" cable="true" type="82540EM">
-          <BridgedInterface/>
-        </Adapter>
-      </Network>
+      <Network/>
       <UART>
         <Port slot="0" enabled="false" IOBase="0x3f8" IRQ="4" hostMode="Disconnected"/>
         <Port slot="1" enabled="false" IOBase="0x2f8" IRQ="3" hostMode="Disconnected"/>
