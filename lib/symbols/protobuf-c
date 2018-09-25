@@ -1,0 +1,19 @@
+protobuf_c_buffer_simple_append T
+protobuf_c_empty_string R 1
+protobuf_c_enum_descriptor_get_value T
+protobuf_c_enum_descriptor_get_value_by_name T
+protobuf_c_message_check T
+protobuf_c_message_descriptor_get_field T
+protobuf_c_message_descriptor_get_field_by_name T
+protobuf_c_message_free_unpacked T
+protobuf_c_message_get_packed_size T
+protobuf_c_message_init T
+protobuf_c_message_pack T
+protobuf_c_message_pack_to_buffer T
+protobuf_c_message_unpack T
+protobuf_c_service_descriptor_get_method_by_name T
+protobuf_c_service_destroy T
+protobuf_c_service_generated_init T
+protobuf_c_service_invoke_internal T
+protobuf_c_version T
+protobuf_c_version_number T

@@ -1,0 +1,19 @@
+LICENSE   := BSDv2
+VERSION   := 1.3.1
+DOWNLOADS := protobuf-c.archive
+
+BASE_URL := https://github.com/protobuf-c/protobuf-c/releases/download
+URL(protobuf-c) := $(BASE_URL)/v$(VERSION)/protobuf-c-$(VERSION).tar.gz
+SHA(protobuf-c) := 51472d3a191d6d7b425e32b612e477c06f73fe23e07f6a6a839b11808e9d2267
+DIR(protobuf-c) := src/lib/protobuf-c
+
+DIRS := include/protobuf-c
+
+DIR_CONTENT(include/protobuf-c) := src/lib/protobuf-c/protobuf-c/protobuf-c.h
+
+default: change_path
+
+# make building as a recipe easier
+change_path: _dirs
+	$(VERBOSE)sed -i 's;de "protobuf-c.h";de <protobuf-c/protobuf-c.h>;' \
+		src/lib/protobuf-c/protobuf-c/protobuf-c.c
