@@ -1,0 +1,10 @@
+_/src/libc
+_/src/libconfig
+_/src/libcrypto
+_/src/libssl
+_/src/posix
+_/src/protobuf-c
+_/src/vfs
+_/src/vfs_lwip
+_/src/vfs_jitterentropy
+_/src/zlib

@@ -1,0 +1,133 @@
+if {![have_include power_on/qemu]} {
+	puts "\n Run script is not supported on this platform. \n"
+	exit 0
+}
+
+#
+# Build
+#
+
+set build_components {
+	core init
+	drivers/timer
+	drivers/nic
+	lib/vfs/lwip
+	app/umurmur
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>}
+
+append_platform_drv_config
+
+append config {
+	<start name="nic_drv" caps="130">
+		<resource name="RAM" quantum="20M"/>
+		<provides><service name="Nic"/></provides>
+	</start>
+
+	<start name="umurmur" caps="120">
+		<resource name="RAM" quantum="4M"/>
+		<config>
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2018-09-24 00:00</inline>
+					<inline name="random">012345678</inline>
+				</dir>
+
+				<dir name="socket"> <lwip dhcp="yes"/> </dir>
+
+				<dir name="etc">
+					<inline name="umurmur.conf">
+max_bandwidth = 48000;
+welcometext = "Welcome to uMurmur!";
+# certificate = "/etc/umurmur/cert.crt";
+# private_key = "/etc/umurmur/key.key";
+password = "";
+max_users = 10;
+channels = ( {
+		name = "Root";
+		parent = "";
+		description = "Root channel. No entry.";
+		noenter = true;
+	},
+	{
+		name = "Lobby";
+		parent = "Root";
+		description = "Lobby channel";
+	}
+);
+default_channel = "Lobby";
+					</inline>
+					<ram/>
+				</dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+		</config>
+	</start>}
+
+append config {
+</config>}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+# generic modules
+set boot_modules {
+	core init timer nic_drv
+	ld.lib.so libc.lib.so vfs.lib.so vfs_lwip.lib.so
+	libcrypto.lib.so libssl.lib.so
+	libm.lib.so posix.lib.so
+	libconfig.lib.so protobuf-c.lib.so
+	umurmur
+}
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+#
+# Execute test case
+#
+
+# qemu config
+append qemu_args " -nographic -net nic,model=e1000 "
+append qemu_args " -net user -redir tcp:64738::64738 "
+
+run_genode_until forever
+
+# vi: set ft=tcl :
