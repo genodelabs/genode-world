@@ -1,0 +1,11 @@
+LICENSE   := LGPLv2.1
+VERSION   := 1.7.2
+DOWNLOADS := libconfig.archive
+
+URL(libconfig) := https://github.com/hyperrealm/libconfig/archive/v1.7.2.tar.gz
+SHA(libconfig) := f67ac44099916ae260a6c9e290a90809e7d782d96cdd462cac656ebc5b685726
+DIR(libconfig) := src/lib/libconfig
+
+DIRS := include
+
+DIR_CONTENT(include) := src/lib/libconfig/lib/libconfig.h
