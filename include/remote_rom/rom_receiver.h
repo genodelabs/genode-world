@@ -15,13 +15,14 @@
 #define __INCLUDE__REMOTE_ROM__ROM_RECEIVER_H_
 
 #include <base/stdint.h>
+#include <util/interface.h>
 
 namespace Remote_rom {
 	using Genode::size_t;
 	struct Rom_receiver_base;
 }
 
-struct Remote_rom::Rom_receiver_base
+struct Remote_rom::Rom_receiver_base : Genode::Interface
 {
 	virtual const char *module_name() const = 0;
 	virtual char* start_new_content(size_t len) = 0;

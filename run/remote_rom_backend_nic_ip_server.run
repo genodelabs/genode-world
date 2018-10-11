@@ -62,12 +62,15 @@ install_config {
 	<start name="remote_rom_server">
 		<resource name="RAM" quantum="8M"/>
 		<route>
-			<service name="ROM" label_suffix="test"> <child name="dynamic_rom"/> </service>
+			<service name="ROM" label_suffix="test">
+				<child name="dynamic_rom"/>
+			</service>
 			<service name="Nic"> <child name="nic_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<config>
-			<remote_rom localname="test" name="remote" src="192.168.42.10" dst="192.168.42.11" />
+			<remote_rom localname="test" name="remote"
+			            src="192.168.42.10" dst="192.168.42.11" />
 		</config>
 	</start>
 	<start name="nic_drv">

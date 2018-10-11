@@ -1,32 +1,35 @@
-The remote ROM allows providing ROM services over a network or similar communication
-medium and thus implements publisher/subscriber communication in a distributed system.
+The remote ROM allows providing ROM services over a network or similar
+communication medium and thus implements publisher/subscriber communication in
+a distributed system.
 
-The remote_rom server connects to a local ROM service and provides a remote ROM service
-via the specified backend. The remote_rom client connects to a remote ROM service via
-the specified backend and provides a ROM service via local RPC.
+The remote_rom server connects to a local ROM service and provides a remote ROM
+service via the specified backend. The remote_rom client connects to a remote
+ROM service via the specified backend and provides a ROM service via local RPC.
 
 Backends
 --------
 
-The remote_rom can be compiled with one of multiple back ends that use different session
-interfaces or libraries to forward and receive the packets. By exchanging the backend,
-we can also easily change the publication strategy (e.g., notification+polling vs. multicast).
-Furthermore, a back end is responsible for access control and optionally allows the
-specification of a policy for this.
+The remote_rom can be compiled with one of multiple back ends that use
+different session interfaces or libraries to forward and receive the packets.
+By exchanging the backend, we can also easily change the publication strategy
+(e.g., notification+polling vs. multicast). Furthermore, a back end is
+responsible for access control and optionally allows the specification of a
+policy for this.
 
 :'nic_ip':
-  This back end uses a Nic_session to transmit network packets with IPv4 headers.
+	This back end uses a Nic_session to transmit network packets with IPv4
+	headers.
 
 Configuration
 -------------
 
-Both the client and the server evaluate the '<remote_rom>' node of their config.
-The _name_ attribute specifies the ROMs module name. The '<remote_rom>' node may
-further contain a '<default>' node that can be used to populate the ROM with a default
-content.
+Both the client and the server evaluate the '<remote_rom>' node of their
+config.  The _name_ attribute specifies the ROMs module name. The
+'<remote_rom>' node may further contain a '<default>' node that can be used to
+populate the ROM with a default content.
 
 Example
 ~~~~~~~
 
-For an example that illustrates the use of these components, please refer to the
-_run/remote_rom_backend_nic_ip.run_ script.
+For an example that illustrates the use of these components, please refer to
+the _run/remote_rom_backend_nic_ip.run_ script.
