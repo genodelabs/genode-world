@@ -4,10 +4,10 @@
  * \date   2016-02-15
  *
  * Usage scenario:
- * __________    ________________                 _________________    __________
- * | server | -> |  remote_rom  | -> (network) -> |   remote_rom  | -> | client |
- * |        |    |    server    |                 |    client     |    |        |
- * ----------    ----------------                 -----------------    ----------
+ * __________    ______________                 ______________    __________
+ * | server | -> | remote_rom | -> (network) -> | remote_rom | -> | client |
+ * |        |    |   server   |                 |   client   |    |        |
+ * ----------    --------------                 --------------    ----------
  */
 
 /*
@@ -46,7 +46,8 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 
 		Attached_rom_dataspace &_config;
 
-		Rom_forwarder(Attached_rom_dataspace &rom, Backend_server_base &backend, Attached_rom_dataspace &config)
+		Rom_forwarder(Attached_rom_dataspace &rom, Backend_server_base &backend,
+		              Attached_rom_dataspace &config)
 			: _rom(rom), _backend(backend), _config(config)
 		{
 			_backend.register_forwarder(this);
@@ -74,11 +75,14 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 				if (binary)
 					return _rom.size();
 				else
-					return Genode::min(1+Genode::strlen(_rom.local_addr<char>()), _rom.size());
+					return Genode::min(1+Genode::strlen(_rom.local_addr<char>()),
+					                   _rom.size());
 			}
 			else {
 				try {
-					Genode::Xml_node default_content = _config.xml().sub_node("remote_rom").sub_node("default");
+					Genode::Xml_node default_content = _config.xml().
+					                                    sub_node("remote_rom").
+					                                    sub_node("default");
 					return default_content.content_size();
 				} catch (...) { }
 			}
@@ -95,8 +99,11 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			else {
 				/* transfer default content if set */
 				try {
-					Genode::Xml_node default_content = _config.xml().sub_node("remote_rom").sub_node("default");
-					size_t const len = Genode::min(dst_len, default_content.content_size()-offset);
+					Genode::Xml_node default_content = _config.xml().
+					                                   sub_node("remote_rom").
+					                                   sub_node("default");
+					size_t const remainder = default_content.content_size()-offset;
+					size_t const len = Genode::min(dst_len, remainder);
 					Genode::memcpy(dst, default_content.content_base() + offset, len);
 					return len;
 				} catch (...) { }
@@ -115,7 +122,8 @@ struct Remote_rom::Main
 	Attached_rom_dataspace _rom;
 	Rom_forwarder          _forwarder;
 
-	Genode::Signal_handler<Rom_forwarder> _dispatcher = { _env.ep(), _forwarder, &Rom_forwarder::update };
+	Genode::Signal_handler<Rom_forwarder> _dispatcher = {_env.ep(), _forwarder,
+	                                                     &Rom_forwarder::update};
 
 	Main(Genode::Env &env)
 		: _env(env),
@@ -133,17 +141,19 @@ namespace Component {
 
 	void construct(Genode::Env &env)
 	{
-		env.exec_static_constructors();
+		using Remote_rom::modulename;
+		using Remote_rom::remotename;
 
 		Genode::Attached_rom_dataspace config = { env, "config" };
 		try {
 			Genode::Xml_node remote_rom = config.xml().sub_node("remote_rom");
 			if (remote_rom.has_attribute("localname"))
-				remote_rom.attribute("localname").value(Remote_rom::modulename, sizeof(Remote_rom::modulename));
+				remote_rom.attribute("localname").value(modulename,
+				                                        sizeof(modulename));
 			else
-				remote_rom.attribute("name").value(Remote_rom::modulename, sizeof(Remote_rom::modulename));
+				remote_rom.attribute("name").value(modulename, sizeof(modulename));
 
-			remote_rom.attribute("name").value(Remote_rom::remotename, sizeof(Remote_rom::remotename));
+			remote_rom.attribute("name").value(remotename, sizeof(remotename));
 			try {
 				remote_rom.attribute("binary").value(&Remote_rom::binary);
 			} catch (...) { }

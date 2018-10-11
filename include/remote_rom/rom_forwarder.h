@@ -15,17 +15,19 @@
 #define __INCLUDE__REMOTE_ROM__ROM_FORWARDER_H_
 
 #include <base/stdint.h>
+#include <util/interface.h>
 
 namespace Remote_rom {
 	using Genode::size_t;
 	struct Rom_forwarder_base;
 }
 
-struct Remote_rom::Rom_forwarder_base
+struct Remote_rom::Rom_forwarder_base : Genode::Interface
 {
 	virtual const char *module_name() const = 0;
 	virtual size_t content_size() const = 0;
-	virtual size_t transfer_content(char *dst, size_t dst_len, size_t offset=0) const = 0;
+	virtual size_t transfer_content(char *dst, size_t dst_len,
+	                                size_t offset=0) const = 0;
 };
 
 #endif
