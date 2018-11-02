@@ -1,0 +1,20 @@
+udp_log is a LOG server that sends client log messages as UDP
+packets to a destination IP and port.
+
+This component implements the standard notion of session policies.
+The policy specifies the destination IP, UDP port and MAC address
+as shown in the following example that shows the default values.
+
+! <start name="udp_log">
+!    <resource name="RAM" quantum="1M"/>
+!    <provides> <service name="LOG"/> </provides>
+!    <config src_ip="0.0.0.0" verbose="no">
+!      <default_policy ip="0.0.0.0" mac="ff:ff:ff:ff:ff:ff" port="9" />
+!    </config>
+! </start>
+
+The component also gets its source IP address from the config ROM.
+The verbose mode acts as a pass-through mode of the LOG messages to the 
+component's LOG session.
+
+The UDP packets can be received with netcat or with log_udp.
