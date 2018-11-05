@@ -1,0 +1,13 @@
+log_udp is a LOG client that receives log messages as UDP
+packets and forwards the messages to a local LOG session.
+
+By default, this component listens on UDP port 9 and
+forwards every message (irrespective of IP addresses).
+It also responds to ARP messages that are directed to
+its IP address.
+
+! <start name="log_udp">
+!    <resource name="RAM" quantum="1M"/>
+!    <config ip="192.168.32.180" port="9" />
+!    </config>
+! </start>

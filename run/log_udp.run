@@ -1,0 +1,73 @@
+proc nic_drv_opt {} {
+	if {[have_spec linux]} {
+		return "ld=\"no\""
+	}
+	return ""
+}
+
+#
+# Test logging to file system
+#
+
+set build_components {
+	core init timer
+	proxy/log_udp
+	test/bomb
+	drivers/nic
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+
+install_config {
+<config prio_levels="2">
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+		<service name="IO_PORT"/>
+		<service name="IO_MEM"/>
+		<service name="IRQ"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+	<start name="timer">
+		<resource name="CPU" quantum="10"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="nic_drv" } [nic_drv_opt] {>
+		<binary name="} [nic_drv_binary] {" />
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nic"/></provides>
+		<config>
+			<nic tap="tap1"/>
+		</config>
+	</start>
+	<start name="log_udp">
+		<resource name="RAM" quantum="2M"/>
+		<config ip="192.168.42.11" />
+	</start>
+</config>}
+
+append boot_modules {
+	core init ld.lib.so bomb timer log_udp
+	} [nic_drv_binary] {
+}
+
+append_platform_drv_boot_modules
+build_boot_image $boot_modules
+
+append qemu_args " -nographic"
+append qemu_args " -net tap,ifname=tap1 "
+
+run_genode_until forever
