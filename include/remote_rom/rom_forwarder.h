@@ -24,10 +24,13 @@ namespace Remote_rom {
 
 struct Remote_rom::Rom_forwarder_base : Genode::Interface
 {
-	virtual const char *module_name() const = 0;
-	virtual size_t content_size() const = 0;
-	virtual size_t transfer_content(char *dst, size_t dst_len,
-	                                size_t offset=0) const = 0;
+	virtual void        start_transmission()  = 0;
+	virtual void        finish_transmission() = 0;
+	virtual const char *module_name()  const = 0;
+	virtual size_t      content_size() const = 0;
+	virtual unsigned    content_hash() const = 0;
+	virtual size_t      transfer_content(char *dst, size_t dst_len,
+	                                     size_t offset=0) const = 0;
 };
 
 #endif

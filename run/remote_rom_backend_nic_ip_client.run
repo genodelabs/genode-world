@@ -1,3 +1,10 @@
+proc nic_drv_opt {} {
+	if {[have_spec linux]} {
+		return "ld=\"no\""
+	}
+	return ""
+}
+
 #
 # Build
 #
@@ -58,7 +65,7 @@ install_config {
 			<remote_rom name="remote" src="192.168.42.11" dst="192.168.42.10" />
 		</config>
 	</start>
-	<start name="nic_drv">
+	<start name="nic_drv" } [nic_drv_opt] {>
 		<binary name="} [nic_drv_binary] {" />
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nic"/></provides>

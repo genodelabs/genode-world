@@ -18,15 +18,20 @@ policy for this.
 
 :'nic_ip':
 	This back end uses a Nic_session to transmit network packets with IPv4
-	headers.
+	and UDP headers.
 
 Configuration
 -------------
 
 Both the client and the server evaluate the '<remote_rom>' node of their
-config.  The _name_ attribute specifies the ROMs module name. The
-'<remote_rom>' node may further contain a '<default>' node that can be used to
-populate the ROM with a default content.
+config. The _name_ attribute specifies the ROMs module name. The source IP
+address is specified by the _src_ attribute and the destination IP address
+by the _dst_ attribute. The _dst_mac_ attribute may specify the destination
+MAC address (default: broadcast). Attribute _udp_port_ specifies the
+destination port (default: 9009).
+A boolean _binary_ attribute can be used to switch between transmission of
+the entire ROM dataspace (binary="true") or transmission of string content
+using strlen.
 
 Example
 ~~~~~~~

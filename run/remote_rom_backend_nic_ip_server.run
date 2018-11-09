@@ -1,3 +1,10 @@
+proc nic_drv_opt {} {
+	if {[have_spec linux]} {
+		return "ld=\"no\""
+	}
+	return ""
+}
+
 #
 # Build
 #
@@ -62,18 +69,18 @@ install_config {
 	<start name="remote_rom_server">
 		<resource name="RAM" quantum="8M"/>
 		<route>
-			<service name="ROM" label_suffix="test">
-				<child name="dynamic_rom"/>
+			<service name="ROM" label_suffix="remote">
+				<child name="dynamic_rom" label="test"/>
 			</service>
 			<service name="Nic"> <child name="nic_drv"/> </service>
-			<any-service> <parent/> </any-service>
+			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 		<config>
-			<remote_rom localname="test" name="remote"
+			<remote_rom name="remote"
 			            src="192.168.42.10" dst="192.168.42.11" />
 		</config>
 	</start>
-	<start name="nic_drv">
+	<start name="nic_drv" } [nic_drv_opt] {>
 		<binary name="} [nic_drv_binary] {" />
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nic"/></provides>

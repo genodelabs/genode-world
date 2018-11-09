@@ -1,3 +1,10 @@
+proc nic_drv_opt {} {
+	if {[have_spec linux]} {
+		return "ld=\"no\""
+	}
+	return ""
+}
+
 #
 # Build
 #
@@ -36,6 +43,7 @@ install_config {
 		<service name="IRQ" />
 	</parent-provides>
 	<default-route>
+		<service name="Nic"> <child name="nic_bridge"/> </service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="100" />
@@ -64,36 +72,22 @@ install_config {
 	<start name="remote_rom_server">
 		<resource name="RAM" quantum="8M"/>
 		<route>
-			<service name="ROM" label_suffix="test">
-				<child name="dynamic_rom"/>
+			<service name="ROM" label_suffix="remote">
+				<child name="dynamic_rom" label="test"/>
 			</service>
 			<service name="Nic"> <child name="nic_bridge"/> </service>
-			<any-service> <parent/> </any-service>
+			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 		<config>
-			<remote_rom localname="test" name="remote"
-			            src="192.168.42.10" dst="192.168.42.11">
-				<default>
-					<default />
-				</default>
-			</remote_rom>
+			<remote_rom name="remote"
+			            src="192.168.42.10" dst="192.168.42.11" />
 		</config>
 	</start>
 	<start name="remote_rom_client">
 		<resource name="RAM" quantum="8M"/>
-		<route>
-			<service name="Nic">
-				<child name="nic_bridge"/>
-			</service>
-			<any-service> <parent/> </any-service>
-		</route>
 		<provides><service name="ROM"/></provides>
 		<config>
-			<remote_rom name="remote" src="192.168.42.11" dst="192.168.42.10">
-				<default>
-					<default />
-				</default>
-			</remote_rom>
+			<remote_rom name="remote" src="192.168.42.11" dst="192.168.42.10" />
 		</config>
 	</start>
 	<start name="nic_bridge">
@@ -105,7 +99,7 @@ install_config {
 		</route>
 		<config> <default-policy/> </config>
 	</start>
-	<start name="nic_drv">
+	<start name="nic_drv" } [nic_drv_opt] {>
 		<binary name="} [nic_drv_binary] {" />
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nic"/></provides>
