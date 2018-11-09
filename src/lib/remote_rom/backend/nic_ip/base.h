@@ -1,8 +1,15 @@
 /*
  * \brief  Common base for client and server
  * \author Johannes Schlatow
+ * \author Edgard Schmidt
  * \date   2016-02-18
  */
+
+#include <net/ethernet.h>
+#include <net/arp.h>
+#include <net/ipv4.h>
+#include <net/udp.h>
+#include <net/port.h>
 
 #include <base/env.h>
 #include <base/log.h>
@@ -11,8 +18,7 @@
 #include <nic/packet_allocator.h>
 #include <nic_session/connection.h>
 
-#include <net/ethernet.h>
-#include <net/ipv4.h>
+#include <timer_session/connection.h>
 
 #include <packet.h>
 
@@ -27,6 +33,9 @@ namespace Remote_rom {
 	using  Net::Mac_address;
 	using  Net::Ipv4_address;
 	using  Net::Size_guard;
+	using  Net::Arp_packet;
+	using  Net::Udp_packet;
+	using  Net::Port;
 
 	class  Backend_base;
 };
@@ -39,24 +48,11 @@ class Remote_rom::Backend_base : public Genode::Interface
 		Genode::Signal_handler<Backend_base> _link_state_handler;
 		Genode::Signal_handler<Backend_base> _rx_packet_handler;
 
-		void _handle_rx_packet()
-		{
-			while (_nic.rx()->packet_avail() && _nic.rx()->ready_to_ack()) {
-				Packet_descriptor _rx_packet = _nic.rx()->get_packet();
+		Port                        _udp_port;
+		Port                  const _src_port    { 51234 };
 
-				char *content = _nic.rx()->packet_content(_rx_packet);
-				Size_guard edguard(_rx_packet.size());
-				Ethernet_frame &eth = Ethernet_frame::cast_from(content, edguard);
-
-				/* check IP */
-				Ipv4_packet &ip_packet = eth.data<Ipv4_packet>(edguard);
-				if (_accept_ip == Ipv4_packet::broadcast()
-				    || _accept_ip == ip_packet.dst())
-					receive(ip_packet.data<Packet>(edguard), edguard);
-
-				_nic.rx()->acknowledge_packet(_rx_packet);
-			}
-		}
+		/* rx packet handler */
+		void _handle_rx_packet();
 
 		void _handle_link_state()
 		{
@@ -76,99 +72,122 @@ class Remote_rom::Backend_base : public Genode::Interface
 	protected:
 
 		enum {
-			PACKET_SIZE = 1024,
+			PACKET_SIZE = 1600,
 			BUF_SIZE = Nic::Session::QUEUE_SIZE * PACKET_SIZE
 		};
+
+		Timer::Connection     _timer;
 
 		const bool            _verbose = false;
 		Nic::Packet_allocator _tx_block_alloc;
 		Nic::Connection       _nic;
 		Mac_address           _mac_address;
+		Mac_address           _dst_mac;
 		Ipv4_address          _src_ip;
 		Ipv4_address          _accept_ip;
 		Ipv4_address          _dst_ip;
+		bool                  _chksum_offload { false };
 
 		/**
 		 * Handle accepted network packet from the other side
 		 */
 		virtual void receive(Packet &packet, Size_guard &) = 0;
 
-		Ipv4_packet &_prepare_upper_layers(void *base, Size_guard &size_guard)
+		Ethernet_frame &prepare_eth(void *base, Size_guard &size_guard)
 		{
 			Ethernet_frame &eth = Ethernet_frame::construct_at(base, size_guard);
 			eth.src(_mac_address);
-			eth.dst(Ethernet_frame::broadcast());
+			eth.dst(_dst_mac);
 			eth.type(Ethernet_frame::Type::IPV4);
 
+			return eth;
+		}
+
+		Ipv4_packet &prepare_ipv4(Ethernet_frame &eth, Size_guard &size_guard)
+		{
 			Ipv4_packet &ip = eth.construct_at_data<Ipv4_packet>(size_guard);
 			ip.version(4);
-			ip.header_length(5);
+			ip.header_length(sizeof(Ipv4_packet) / 4);
 			ip.time_to_live(10);
+			ip.protocol(Ipv4_packet::Protocol::UDP);
 			ip.src(_src_ip);
 			ip.dst(_dst_ip);
 
 			return ip;
 		}
 
-		size_t _upper_layer_size(size_t size)
+		Udp_packet &prepare_udp(Ipv4_packet &ip, Size_guard &size_guard)
 		{
-			return sizeof(Ethernet_frame) + sizeof(Ipv4_packet) + size;
-		}
+			Udp_packet &udp = ip.construct_at_data<Udp_packet>(size_guard);
+			udp.src_port(_src_port);
+			udp.dst_port(_udp_port);
 
-		void _finish_ipv4(Ipv4_packet &ip, size_t payload)
-		{
-			ip.total_length(sizeof(ip) + payload);
-			ip.update_checksum();
+			return udp;
 		}
 
 		template <typename T>
-		void _transmit_notification_packet(Packet::Type type, T *frontend)
+		void transmit_notification(Packet::Type type,
+		                           T const &frontend)
 		{
-			size_t frame_size = _upper_layer_size(sizeof(Packet));
+			size_t const frame_size = sizeof(Ethernet_frame)
+			                        + sizeof(Ipv4_packet)
+			                        + sizeof(Udp_packet)
+			                        + sizeof(Packet)
+			                        + sizeof(NotificationPacket);
 			Nic::Packet_descriptor pd = alloc_tx_packet(frame_size);
 			Size_guard size_guard(pd.size());
 
 			char *content = _nic.tx()->packet_content(pd);
-			Ipv4_packet &ip = _prepare_upper_layers(content, size_guard);
-			Packet &pak = ip.construct_at_data<Packet>(size_guard);
+			Ethernet_frame &eth = prepare_eth(content, size_guard);
+
+			size_t const ip_off = size_guard.head_size();
+			Ipv4_packet    &ip  = prepare_ipv4(eth, size_guard);
+
+			size_t const udp_off = size_guard.head_size();
+			Udp_packet     &udp = prepare_udp(ip, size_guard);
+
+			Packet &pak = udp.construct_at_data<Packet>(size_guard);
 			pak.type(type);
-			pak.module_name(frontend->module_name());
-			_finish_ipv4(ip, sizeof(Packet));
+			pak.module_name(frontend.module_name());
+			pak.content_hash(frontend.content_hash());
+
+			NotificationPacket &npak =
+				pak.construct_at_data<NotificationPacket>(size_guard);
+			npak.content_size(frontend.content_size());
+
+			/* fill in header values that need the packet to be complete already */
+			udp.length(size_guard.head_size() - udp_off);
+			if (!_chksum_offload)
+				udp.update_checksum(ip.src(), ip.dst());
+
+			ip.total_length(size_guard.head_size() - ip_off);
+			ip.update_checksum();
 
 			submit_tx_packet(pd);
 		}
 
-		explicit Backend_base(Genode::Env &env, Genode::Allocator &alloc)
+		explicit Backend_base(Genode::Env &env,
+		                      Genode::Allocator &alloc,
+		                      Genode::Xml_node config,
+		                      Genode::Xml_node policy)
 		:
 		  _link_state_handler(env.ep(), *this, &Backend_base::_handle_link_state),
 		  _rx_packet_handler(env.ep(), *this, &Backend_base::_handle_rx_packet),
+		  _udp_port(policy.attribute_value("udp_port", Port(9009))),
+		  _timer(env),
 
 		  _tx_block_alloc(&alloc),
 		  _nic(env, &_tx_block_alloc, BUF_SIZE, BUF_SIZE),
 
 		  _mac_address(_nic.mac_address()),
-		  _src_ip(Ipv4_packet::current()),
-		  _accept_ip(Ipv4_packet::broadcast()),
-		  _dst_ip(Ipv4_packet::broadcast())
+		  _dst_mac  (policy.attribute_value("dst_mac", Ethernet_frame::broadcast())),
+		  _src_ip   (policy.attribute_value("src", Ipv4_packet::current())),
+		  _accept_ip(policy.attribute_value("src", Ipv4_packet::broadcast())),
+		  _dst_ip   (policy.attribute_value("dst", Ipv4_packet::broadcast())),
+		  _chksum_offload(config.attribute_value("chksum_offload", _chksum_offload))
 		{
 			_nic.link_state_sigh(_link_state_handler);
 			_nic.rx_channel()->sigh_packet_avail(_rx_packet_handler);
-			_nic.rx_channel()->sigh_ready_to_ack(_rx_packet_handler);
-
-			Genode::Attached_rom_dataspace config = {env, "config"};
-			try {
-				char ip_string[15];
-				Genode::Xml_node remoterom = config.xml().sub_node("remote_rom");
-				remoterom.attribute("src").value(ip_string, sizeof(ip_string));
-				_src_ip = Ipv4_packet::ip_from_string(ip_string);
-
-				remoterom.attribute("dst").value(ip_string, sizeof(ip_string));
-				_dst_ip = Ipv4_packet::ip_from_string(ip_string);
-
-				_accept_ip = _src_ip;
-			} catch (...) {
-				Genode::warning("No IP configured, falling back to broadcast mode!");
-			}
 		}
 
 		Nic::Packet_descriptor alloc_tx_packet(Genode::size_t size)
@@ -186,10 +205,50 @@ class Remote_rom::Backend_base : public Genode::Interface
 
 		void submit_tx_packet(Nic::Packet_descriptor packet)
 		{
-			_nic.tx()->submit_packet(packet);
 			/* check for acknowledgements */
 			_tx_ack();
+
+			if (!_nic.tx()->ready_to_submit()) {
+				Genode::error("not ready to submit");
+				return;
+			}
+
+			_nic.tx()->submit_packet(packet);
 		}
+
+		/**
+		 * Handle an Ethernet packet
+		 *
+		 * \param src   Ethernet frame's address
+		 * \param size  Ethernet frame's size.
+		 */
+		void handle_ethernet(void* src, Genode::size_t size);
+
+		/*
+		 * Handle an ARP packet
+		 *
+		 * \param eth   Ethernet frame containing the ARP packet.
+		 * \param size  size guard
+		 */
+		void handle_arp(Ethernet_frame &eth,
+		                Size_guard     &edguard);
+
+		/*
+		 * Handle an IP packet
+		 *
+		 * \param eth   Ethernet frame containing the IP packet.
+		 * \param size  size guard
+		 */
+		void handle_ip(Ethernet_frame &eth,
+		               Size_guard     &edguard);
+
+		/**
+		 * Send ethernet frame
+		 *
+		 * \param eth   ethernet frame to send.
+		 * \param size  ethernet frame's size.
+		 */
+		void send(Ethernet_frame *eth, Genode::size_t size);
 };
 
 #endif

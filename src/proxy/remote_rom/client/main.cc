@@ -33,16 +33,18 @@
 #include <base/component.h>
 
 #include <backend_base.h>
+#include <util.h>
 
 namespace Remote_rom {
 	using Genode::size_t;
-	using Genode::Constructible;
+	using Genode::Attached_ram_dataspace;
+	using Genode::Rom_dataspace_capability;
 	using Genode::Signal_context_capability;
 
 	class  Session_component;
 	class  Root;
 	struct Main;
-	struct Read_buffer;
+	struct Rom_module;
 
 	typedef Genode::List_element<Session_component> Session_element;
 	typedef Genode::List<Session_element>           Session_list;
@@ -53,10 +55,68 @@ namespace Remote_rom {
  * Interface used by the sessions to obtain the ROM data received from the
  * remote server
  */
-struct Remote_rom::Read_buffer : Genode::Interface
+class Remote_rom::Rom_module
 {
-	virtual size_t content_size() const = 0;
-	virtual size_t export_content(char *dst, size_t dst_len) const = 0;
+	private:
+		Genode::Ram_allocator &_ram;
+		Attached_ram_dataspace _fg; /* dataspace delivered to clients */
+		Attached_ram_dataspace _bg; /* dataspace for receiving data */
+
+		unsigned _bg_hash { 0 };
+		size_t   _bg_size { 0 };
+
+	public:
+		Rom_module(Genode::Ram_allocator &ram, Genode::Env &env)
+		: _ram(ram),
+		  _fg(_ram, env.rm(), 0),
+		  _bg(_ram, env.rm(), 4096)
+		{ }
+
+		Rom_dataspace_capability fg_dataspace() const
+		{
+			using namespace Genode;
+
+			if (!_fg.size())
+				return Rom_dataspace_capability();
+
+			Dataspace_capability ds_cap = _fg.cap();
+			return static_cap_cast<Rom_dataspace>(ds_cap);
+		}
+
+		/**
+		 * Return pointer to buffer that is ready to be filled with data.
+		 *
+		 * Data is written into the background dataspace.
+		 * Once it is ready, the 'commit_bg()' function is called.
+		 */
+		char* base(size_t size)
+		{
+			/* let background buffer grow if needed */
+			if (_bg.size() < size)
+				_bg.realloc(&_ram, size);
+
+			_bg_size = size;
+			return _bg.local_addr<char>();
+		}
+
+		/**
+		 * Commit data contained in background dataspace
+		 * (swap foreground and background dataspace)
+		 */
+		bool commit_bg()
+		{
+			if (_bg_hash != cksum(_bg.local_addr<char>(), _bg_size)) {
+				Genode::error("checksum error");
+				return false;
+			}
+
+			_fg.swap(_bg);
+			return true;
+		}
+
+		unsigned hash() const { return _bg_hash; }
+		void hash(unsigned v) { _bg_hash = v; }
+
 };
 
 class Remote_rom::Session_component :
@@ -67,22 +127,19 @@ class Remote_rom::Session_component :
 
 		Signal_context_capability _sigh;
 
-		Read_buffer const &_buffer;
+		Rom_module const &_rom_module;
 
 		Session_list &_sessions;
 		Session_element _element;
-
-		Constructible<Genode::Attached_ram_dataspace> _ram_ds;
 
 	public:
 
 		static int version() { return 1; }
 
 		Session_component(Genode::Env &env, Session_list &sessions,
-		                  Read_buffer const &buffer)
+		                  Rom_module const &rom_module)
 		:
-		  _env(env), _sigh(), _buffer(buffer), _sessions(sessions), _element(this),
-		  _ram_ds()
+		  _env(env), _sigh(), _rom_module(rom_module), _sessions(sessions), _element(this)
 		{
 			_sessions.insert(&_element);
 		}
@@ -101,27 +158,7 @@ class Remote_rom::Session_component :
 
 		Genode::Rom_dataspace_capability dataspace() override
 		{
-			using namespace Genode;
-
-			/* replace dataspace by new one as needed */
-			if (!_ram_ds.is_constructed()
-			 || _buffer.content_size() > _ram_ds->size()) {
-
-				_ram_ds.construct(_env.ram(), _env.rm(), _buffer.content_size());
-			}
-
-			char             *dst = _ram_ds->local_addr<char>();
-			size_t const dst_size = _ram_ds->size();
-
-			/* fill with content of current evaluation result */
-			size_t const copied_len = _buffer.export_content(dst, dst_size);
-
-			/* clear remainder of dataspace */
-			Genode::memset(dst + copied_len, 0, dst_size - copied_len);
-
-			/* cast RAM into ROM dataspace capability */
-			Dataspace_capability ds_cap = static_cap_cast<Dataspace>(_ram_ds->cap());
-			return static_cap_cast<Rom_dataspace>(ds_cap);
+			return _rom_module.fg_dataspace();
 		}
 		
 		void sigh(Genode::Signal_context_capability sigh) override
@@ -130,13 +167,12 @@ class Remote_rom::Session_component :
 		}
 };
 
-
 class Remote_rom::Root : public Genode::Root_component<Session_component>
 {
 	private:
 
 		Genode::Env    &_env;
-		Read_buffer    &_buffer;
+		Rom_module     &_rom_module;
 		Session_list    _sessions;
 
 	protected:
@@ -150,16 +186,16 @@ class Remote_rom::Root : public Genode::Root_component<Session_component>
 			 * */
 
 			return new (Root::md_alloc())
-			            Session_component(_env, _sessions, _buffer);
+			            Session_component(_env, _sessions, _rom_module);
 		}
 
 	public:
 
-		Root(Genode::Env &env, Genode::Allocator &md_alloc, Read_buffer &buffer)
+		Root(Genode::Env &env, Genode::Allocator &md_alloc, Rom_module &rom_module)
 		:
 		  Genode::Root_component<Session_component>(&env.ep().rpc_ep(), &md_alloc),
 		  _env(env),
-		  _buffer(buffer),
+		  _rom_module(rom_module),
 		  _sessions()
 		{ }
 
@@ -170,14 +206,12 @@ class Remote_rom::Root : public Genode::Root_component<Session_component>
 		}
 };
 
-struct Remote_rom::Main : public Read_buffer, public Rom_receiver_base
+struct Remote_rom::Main : public Rom_receiver_base
 {
 	Genode::Env &env;
-	Genode::Heap heap   = { &env.ram(), &env.rm() };
-	Root remote_rom_root = { env, heap, *this };
-
-	Genode::Constructible<Genode::Attached_ram_dataspace> _ds;
-	size_t                                                _ds_content_size;
+	Genode::Heap heap            { &env.ram(), &env.rm() };
+	Rom_module   rom_module      { env.ram(), env };
+	Root         remote_rom_root { env, heap, rom_module };
 
 	Genode::Attached_rom_dataspace _config = { env, "config" };
 
@@ -186,8 +220,8 @@ struct Remote_rom::Main : public Read_buffer, public Rom_receiver_base
 	char remotename[255];
 
 	Main(Genode::Env &env) :
-	  env(env), _ds(), _ds_content_size(1024),
-	  _backend(backend_init_client(env, heap))
+	  env(env),
+	  _backend(backend_init_client(env, heap, _config.xml()))
 	{
 		try {
 			Genode::Xml_node remote_rom = _config.xml().sub_node("remote_rom");
@@ -202,71 +236,27 @@ struct Remote_rom::Main : public Read_buffer, public Rom_receiver_base
 		_backend.register_receiver(this);
 	}
 
-	const char* module_name() const { return remotename; }
+	const char* module_name()  const { return remotename; }
+	unsigned    content_hash() const { return rom_module.hash(); }
 
-	char* start_new_content(size_t len)
+	char* start_new_content(unsigned hash, size_t len)
 	{
-		 /* Create buffer for new data */
-		_ds_content_size = len;
+		/* save expected hash */
+		/* TODO (optional) skip if we already have the same data */
+		rom_module.hash(hash);
 
-		// TODO (optional) implement double buffering
-		if (!_ds.is_constructed() || _ds_content_size > _ds->size())
-			_ds.construct(env.ram(), env.rm(), _ds_content_size);
-
-		// TODO set write lock
-
-		return _ds->local_addr<char>();
+		return rom_module.base(len);
 	}
 
 	void commit_new_content(bool abort=false)
 	{
 		if (abort)
-			Genode::error("abort not supported");
+			return;
 
-		// TODO release write lock
-
-		remote_rom_root.notify_clients();
+		if (rom_module.commit_bg())
+			remote_rom_root.notify_clients();
 	}
 
-	size_t content_size() const
-	{
-		if (_ds.is_constructed()) {
-			return _ds_content_size;
-		}
-		else {
-			/* transfer default content if set */
-			try {
-				Genode::Xml_node default_content = _config.xml().
-				                                   sub_node("remote_rom").
-				                                   sub_node("default");
-				return default_content.content_size();
-			} catch (...) { }
-		}
-
-		return 0;
-	}
-
-	size_t export_content(char *dst, size_t dst_len) const
-	{
-		if (_ds.is_constructed()) {
-			size_t const len = Genode::min(dst_len, _ds_content_size);
-			Genode::memcpy(dst, _ds->local_addr<char>(), len);
-			return len;
-		}
-		else {
-			/* transfer default content if set */
-			try {
-				Genode::Xml_node default_content = _config.xml().
-				                                   sub_node("remote_rom").
-				                                   sub_node("default");
-				size_t const len = Genode::min(dst_len,
-				                               default_content.content_size());
-				Genode::memcpy(dst, default_content.content_base(), len);
-				return len;
-			} catch (...) { }
-		}
-		return 0;
-	}
 };
 
 namespace Component {

@@ -21,10 +21,11 @@
 #include <base/env.h>
 #include <base/heap.h>
 
-#include <backend_base.h>
-
 #include <base/component.h>
 #include <base/attached_rom_dataspace.h>
+
+#include <backend_base.h>
+#include <util.h>
 
 namespace Remote_rom {
 	using Genode::size_t;
@@ -34,7 +35,6 @@ namespace Remote_rom {
 	struct Main;
 
 	static char modulename[255];
-	static char remotename[255];
 	static bool binary = false;
 
 };
@@ -43,6 +43,10 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 {
 		Attached_rom_dataspace &_rom;
 		Backend_server_base    &_backend;
+
+		unsigned                _current_hash    { 0 };
+		bool                    _transmitting    { false };
+		bool                    _update_received { false };
 
 		Attached_rom_dataspace &_config;
 
@@ -56,17 +60,42 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			update();
 		}
 
-		const char *module_name() const { return remotename; }
+		void start_transmission()  { _transmitting = true; }
+		void finish_transmission()
+		{
+			_transmitting = false;
+
+			/* if we received and update during transmission,
+			 * we are now able to process it */
+			if (_update_received)
+				update();
+		}
+
+		const char *module_name() const { return modulename; }
 
 		void update()
 		{
-			/* TODO don't update ROM if a transfer is still in progress */
+			if (_transmitting) {
+				/* if transmission is ongoing, do not update ROM */
+				_update_received = true;
+				return;
+			}
+			_update_received = false;
 
-			/* refresh dataspace if valid*/
+			/* refresh dataspace if valid */
 			_rom.update();
 
-			/* trigger backend_server */
-			_backend.send_update();
+			if (_rom.is_valid()) {
+				_current_hash = cksum(_rom.local_addr<char>(), content_size());
+
+				/* trigger backend_server */
+				_backend.send_update();
+			}
+		}
+
+		unsigned content_hash() const
+		{
+			return _current_hash;
 		}
 
 		size_t content_size() const
@@ -75,16 +104,8 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 				if (binary)
 					return _rom.size();
 				else
-					return Genode::min(1+Genode::strlen(_rom.local_addr<char>()),
+					return Genode::min(Genode::strlen(_rom.local_addr<char>()),
 					                   _rom.size());
-			}
-			else {
-				try {
-					Genode::Xml_node default_content = _config.xml().
-					                                    sub_node("remote_rom").
-					                                    sub_node("default");
-					return default_content.content_size();
-				} catch (...) { }
 			}
 			return 0;
 		}
@@ -94,21 +115,12 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			if (_rom.is_valid()) {
 				size_t const len = Genode::min(dst_len, content_size()-offset);
 				Genode::memcpy(dst, _rom.local_addr<char>() + offset, len);
-				return len;
+				/* clear remaining buffer to prevent data leakage */
+				if (dst_len > len) {
+					Genode::memset(dst + len, 0, dst_len-len);
+				}
+				return dst_len;
 			}
-			else {
-				/* transfer default content if set */
-				try {
-					Genode::Xml_node default_content = _config.xml().
-					                                   sub_node("remote_rom").
-					                                   sub_node("default");
-					size_t const remainder = default_content.content_size()-offset;
-					size_t const len = Genode::min(dst_len, remainder);
-					Genode::memcpy(dst, default_content.content_base() + offset, len);
-					return len;
-				} catch (...) { }
-			}
-			
 			return 0;
 		}
 };
@@ -128,7 +140,8 @@ struct Remote_rom::Main
 	Main(Genode::Env &env)
 		: _env(env),
 	     _rom(env, modulename),
-	     _forwarder(_rom, backend_init_server(env, _heap), _config)
+	     _forwarder(_rom, backend_init_server(env, _heap, _config.xml()),
+	                _config)
 	{
 		/* register update dispatcher */
 		_rom.sigh(_dispatcher);
@@ -142,18 +155,11 @@ namespace Component {
 	void construct(Genode::Env &env)
 	{
 		using Remote_rom::modulename;
-		using Remote_rom::remotename;
 
 		Genode::Attached_rom_dataspace config = { env, "config" };
 		try {
 			Genode::Xml_node remote_rom = config.xml().sub_node("remote_rom");
-			if (remote_rom.has_attribute("localname"))
-				remote_rom.attribute("localname").value(modulename,
-				                                        sizeof(modulename));
-			else
-				remote_rom.attribute("name").value(modulename, sizeof(modulename));
-
-			remote_rom.attribute("name").value(remotename, sizeof(remotename));
+			remote_rom.attribute("name").value(modulename, sizeof(modulename));
 			try {
 				remote_rom.attribute("binary").value(&Remote_rom::binary);
 			} catch (...) { }

@@ -1,6 +1,7 @@
 /*
  * \brief Packet format we use for inter-system communication
  * \author Johannes Schlatow
+ * \author Edgard Schmidt
  * \date   2018-11-05
  */
 
@@ -13,12 +14,18 @@
 
 namespace Remote_rom {
 	using Genode::size_t;
+	using Genode::uint8_t;
 	using Genode::uint16_t;
 	using Genode::uint32_t;
 
-	struct Packet;
-	struct DataPacket;
+	class Window_state;
+
+	class Packet;
+	class NotificationPacket;
+	class AckPacket;
+	class DataPacket;
 }
+
 
 class Remote_rom::Packet
 {
@@ -31,17 +38,15 @@ class Remote_rom::Packet
 			SIGNAL    = 1,           /* signal that ROM content has changed     */
 			UPDATE    = 2,           /* request transmission of updated content */
 			DATA      = 3,           /* data packet                             */
+			ACK       = 4,           /* acknowledge data packets                */
 		} Type;
 
 	private:
 		char         _module_name[MAX_NAME_LEN];   /* the ROM module name */
+		uint32_t     _content_hash;                /* serves as version */
 		Type         _type;                        /* packet type */
 
-		/*****************************************************
-		 ** 'payload' must be the last member of this class **
-		 *****************************************************/
-
-		char payload[0];
+		char         _data[0];
 
 	public:
 		/**
@@ -59,6 +64,9 @@ class Remote_rom::Packet
 			_type = type;
 		}
 
+		void     content_hash(uint32_t hash) { _content_hash = hash; }
+		uint32_t content_hash() const        { return _content_hash; }
+
 		void module_name(const char *module)
 		{
 			Genode::strncpy(_module_name, module, MAX_NAME_LEN);
@@ -68,30 +76,66 @@ class Remote_rom::Packet
 		T const &data(Net::Size_guard &size_guard) const
 		{
 			size_guard.consume_head(sizeof(T));
-			return *(T const *)(payload);
+			return *(T const *)(_data);
 		}
 
 		template <typename T>
 		T &construct_at_data(Net::Size_guard &size_guard)
 		{
 			size_guard.consume_head(sizeof(T));
-			return *Genode::construct_at<T>(payload);
+			return *Genode::construct_at<T>(_data);
 		}
 
 } __attribute__((packed));
 
 
+class Remote_rom::NotificationPacket
+{
+	private:
+		uint32_t     _content_size;   /* ROM content size in bytes */
+
+	public:
+
+		void   content_size(size_t size) { _content_size = size; }
+		size_t content_size() const      { return _content_size; }
+
+} __attribute__((packed));
+
+class Remote_rom::AckPacket
+{
+	private:
+		uint16_t     _window_id;   /* refers to this window id */
+		uint16_t     _ack_until;   /* acknowledge until this packet id - 1 */
+
+		/**
+		 * TODO Implement selective ARQ by using a Bit_array to save
+		 *      the ACK state in the window.
+		 *      We should, however, not use the Bit_array directly as a
+		 *      Packet member.
+		 */
+
+	public:
+
+		void window_id(size_t window_id) { _window_id = window_id; }
+		void ack_until(size_t packet_id) { _ack_until = packet_id; }
+
+		size_t window_id() const { return _window_id; }
+		size_t ack_until() const { return _ack_until; }
+
+} __attribute__((packed));
+
 class Remote_rom::DataPacket
 {
 	public:
-		static const size_t MAX_PAYLOAD_SIZE = 1024;
+		static const size_t MAX_PAYLOAD_SIZE = 1350;
 
 	private:
-		uint32_t     _content_size;                /* ROM content size in bytes */
-		uint32_t     _offset;                      /* offset in bytes */
-		uint16_t     _payload_size;                /* payload size in bytes */
+		uint16_t     _payload_size;    /* payload size in bytes */
+		uint16_t     _window_id;       /* window id */
+		uint16_t     _packet_id;       /* packet number within window */
+		uint16_t     _window_length;   /* 0: no ARQ, >0: ARQ window length */
 
-		char payload[0];
+		char _data[0];
 
 	public:
 		/**
@@ -99,18 +143,13 @@ class Remote_rom::DataPacket
 		 */
 		size_t size() const { return _payload_size + sizeof(*this); }
 
-		/**
-		 * Return content_size of the packet
-		 */
-		size_t content_size() const { return _content_size; }
+		void   window_length(size_t len) { _window_length = len; }
+		void   window_id(size_t id)      { _window_id = id; }
+		void   packet_id(size_t id)      { _packet_id = id; }
 
-		/**
-		 * Return offset of the packet
-		 */
-		size_t offset() const { return _offset; }
-
-		void content_size(size_t size) { _content_size = size; }
-		void offset(size_t offset) { _offset = offset; }
+		size_t window_length() const { return _window_length; }
+		size_t window_id()     const { return _window_id; }
+		size_t packet_id()     const { return _packet_id; }
 
 		/**
 		 * Set payload size of the packet
@@ -126,17 +165,10 @@ class Remote_rom::DataPacket
 		size_t payload_size() const { return _payload_size; }
 
 		/**
-		 * Return address of the payload
-		 */
-		void *addr() { return payload; }
-		const void *addr() const { return payload; }
-
-		/**
-		 * Return packet size for given payload
-		 */
-		static size_t packet_size(size_t payload) {
-			return sizeof(DataPacket) + Genode::min(payload, MAX_PAYLOAD_SIZE);
-		}
+		* Return address of the payload
+		*/
+		void *addr() { return _data; }
+		const void *addr() const { return _data; }
 
 } __attribute__((packed));
 
