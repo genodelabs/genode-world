@@ -1,0 +1,15 @@
+<runtime ram="4M" caps="128" binary="nit_entropy">
+
+	<requires>
+		<nitpicker/>
+		<terminal/>
+	</requires>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="nit_entropy"/>
+	</content>
+
+	<config/>
+
+</runtime>
