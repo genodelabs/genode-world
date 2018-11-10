@@ -1,0 +1,99 @@
+create_boot_directory
+
+import_from_depot genodelabs/src/[base_src] \
+                  genodelabs/pkg/[drivers_interactive_pkg] \
+                  genodelabs/src/nitpicker \
+                  genodelabs/src/init
+
+append config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<service name="Nitpicker"> <child name="nitpicker"/> </service>
+		<service name="Timer">     <child name="timer"/> </service>
+		<service name="Terminal">  <child name="terminal"/> </service>
+		<service name="Platform">  <child name="platform_drv"/> </service>
+		<any-service><parent/></any-service>
+	</default-route>
+
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides>
+			<service name="Input"/> <service name="Framebuffer"/>
+		</provides>
+	</start>
+
+	<start name="nitpicker">
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config>
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="default" layer="2" content="client" label="no" focus="click" hover="always" />
+			<policy label_prefix="pointer" domain="pointer"/>
+			<default-policy domain="default"/>
+		</config>
+		<route>
+			<service name="Input">       <child name="drivers"/> </service>
+			<service name="Framebuffer"> <child name="drivers"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+
+	<start name="nit_entropy">
+		<resource name="RAM" quantum="4M"/>
+		<route>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="jitter_sponge">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Terminal"/></provides>
+		<route>
+			<any-service> <parent/> <any-child/></any-service>
+		</route>
+	</start>
+
+</config>}
+
+build {
+	app/nit_entropy
+	server/jitter_sponge
+}
+
+install_config $config
+
+build_boot_image {
+	jitter_sponge
+	nit_entropy
+	libkeccak.lib.so
+}
+
+run_genode_until forever
