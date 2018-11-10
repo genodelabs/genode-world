@@ -1,0 +1,24 @@
+LICENSE   := CC0
+VERSION   := HEAD
+DOWNLOADS := xkcp.archive
+
+OWNER := XKCP
+REPO  := XKCP
+REV   := 645e825ae47d7c91780aa5e48eb07e0b035165ea
+URL(xkcp) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(xkcp) := 883f13c471b31e6ca0329634e74abe5e11cadd50674625b51b40522834a2d6ab
+DIR(xkcp) = tmp
+
+_dirs: generic32/libkeccak.a generic64/libkeccak.a
+
+generic32/libkeccak.a: tmp/bin/generic32_libkeccak.a.tar.gz
+	tar fx $<
+
+generic64/libkeccak.a: tmp/bin/generic64_libkeccak.a.tar.gz
+	tar fx $<
+
+tmp/bin/generic32_libkeccak.a.tar.gz: tmp
+	make -C $< generic32/libkeccak.a.pack
+
+tmp/bin/generic64_libkeccak.a.tar.gz: tmp
+	make -C $< generic64/libkeccak.a.pack
