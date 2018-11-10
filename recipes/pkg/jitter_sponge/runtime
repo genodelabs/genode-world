@@ -1,0 +1,12 @@
+<runtime ram="4M" caps="128" binary="jitter_sponge">
+
+	<provides> <terminal/> </provides>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="jitter_sponge"/>
+	</content>
+
+	<config/>
+
+</runtime>
