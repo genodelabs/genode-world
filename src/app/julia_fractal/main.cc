@@ -89,7 +89,7 @@ public:
 	 Title_String_T title, Nitpicker::Area wsize)
     : _env{env}, _npconn{env},
       _mode{(int)wsize.w(), (int)wsize.h(), Framebuffer::Mode::RGB565},
-      _draw{painter}, _ds{env.rm(), _npconn.framebuffer()->dataspace()}
+      _draw{painter}
   {
     using Nitpicker::Session;
 
