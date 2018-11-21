@@ -1,0 +1,17 @@
+_/raw/cmus
+_/src/cmus
+_/src/gui_fb
+_/src/init
+_/src/libc
+_/src/libflac
+_/src/libiconv
+_/src/libmad
+_/src/libogg
+_/src/libvorbis
+_/src/ncurses
+_/src/opus
+_/src/posix
+_/src/terminal
+_/src/vfs
+_/src/vfs_oss
+_/src/vfs_pipe

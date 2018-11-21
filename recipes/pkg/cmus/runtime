@@ -1,0 +1,44 @@
+<runtime ram="64M" caps="500" binary="init" config="cmus.config">
+
+	<requires>
+		<file_system label="media"/>
+		<file_system label="home"/>
+		<file_system label="fonts"/>
+		<gui/>
+		<audio_out/>
+		<rom    label="clipboard"/>
+		<report label="clipboard"/>
+		<timer/>
+		<rtc/>
+		<rm/>
+	</requires>
+
+	<content>
+		<rom label="cmus"/>
+		<rom label="cmus.config"/>
+		<rom label="cmus_ip_flac.lib.so"/>
+		<rom label="cmus_ip_mad.lib.so"/>
+		<rom label="cmus_ip_opus.lib.so"/>
+		<rom label="cmus_ip_vorbis.lib.so"/>
+		<rom label="cmus_op_oss.lib.so"/>
+		<rom label="gui_fb"/>
+		<rom label="init"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libFLAC.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libiconv.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libmad.lib.so"/>
+		<rom label="libogg.lib.so"/>
+		<rom label="libvorbis.lib.so"/>
+		<rom label="ncurses.lib.so"/>
+		<rom label="opus.lib.so"/>
+		<rom label="posix.lib.so"/>
+		<rom label="rc"/>
+		<rom label="terminal"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+	</content>
+
+</runtime>

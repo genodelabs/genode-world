@@ -1,0 +1,10 @@
+base
+libc
+posix
+ncurses
+libiconv
+opus
+libmad
+libogg
+libvorbis
+libflac

@@ -1,0 +1,9 @@
+LICENSE   := GPLv2
+VERSION   := git
+DOWNLOADS := cmus.git
+
+URL(cmus) := https://github.com/cmus/cmus.git
+REV(cmus) := e7682e4353558943deac78b617a5062708294c89
+DIR(cmus) := src/app/cmus
+
+PATCHES   := src/app/cmus/cmus.patch
