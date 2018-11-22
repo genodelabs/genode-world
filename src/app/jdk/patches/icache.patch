@@ -1,0 +1,30 @@
+diff --git a/hotspot/src/cpu/arm/vm/icache_arm.cpp b/hotspot/src/cpu/arm/vm/icache_arm.cpp
+index ae16361..734ba32 100644
+--- a/hotspot/src/cpu/arm/vm/icache_arm.cpp
++++ b/hotspot/src/cpu/arm/vm/icache_arm.cpp
+@@ -66,11 +66,25 @@ static int icache_flush(address addr, int lines, int magic) {
+ 
+ #else
+ 
++#ifndef __GENODE__
++
+ static int icache_flush(address addr, int lines, int magic) {
+   __builtin___clear_cache(addr, addr + (lines << ICache::log2_line_size));
+   return magic;
+ }
+ 
++#else
++
++#include <cpu/cache.h>
++
++static int icache_flush(address addr, int lines, int magic) {
++  Genode::cache_coherent((Genode::addr_t)addr, lines << ICache::log2_line_size);
++
++  return magic;
++}
++
++#endif // __GENODE__
++
+ #endif // AARCH64
+ 
+ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
