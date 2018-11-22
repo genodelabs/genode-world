@@ -7,5 +7,5 @@ REV(atari800) := ATARI800_3_1_0
 DIR(atari800) := src/app/atari800
 
 URL(xformer) := http://prdownloads.sf.net/atari800/xf25.zip
-SHA(xformer) := e65923fd3a4845c1c72d1677db0fda969187eb42
+SHA(xformer) := 98ae0ad10413dd6f35ed80f5662dba6d790def70c7829046e52012a03b574b8a
 DIR(xformer) := src/app/atari800/xformer
