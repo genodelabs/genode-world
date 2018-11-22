@@ -9,7 +9,7 @@ DOWNLOADS := grafx2.archive
 #
 
 URL(grafx2) := http://usr.sysret.de/jws/grafx2-$(VERSION)-src.tgz
-SHA(grafx2) := 7b6aa4e47aa67664947c0a20f32323107cc35440
+SHA(grafx2) := 5818caea63cd3cf3318baf01dd20f81ec61e4514443000c80a41b68ab3f17a6b
 DIR(grafx2) := src/app/grafx2
 
 PATCHES   := src/app/grafx2/genode.patch
