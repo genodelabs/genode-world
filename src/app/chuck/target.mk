@@ -1,6 +1,6 @@
 TARGET := chuck
 
-LIBS += base libc libm pthread stdcxx rtaudio liblo sdl
+LIBS += base libc libm stdcxx rtaudio liblo sdl
 LIBS += libsndfile libogg libvorbis libFLAC
 
 CHUCK_SRC_DIR = $(call select_from_ports,chuck)/src/app/chuck/src

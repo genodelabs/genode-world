@@ -1,5 +1,5 @@
 TARGET = test-glib
-LIBS = libc pthread glib posix
+LIBS = libc glib posix
 SRC_C = main.c
 
 # Strength through pointer arithmetic

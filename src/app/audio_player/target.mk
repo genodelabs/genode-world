@@ -1,6 +1,6 @@
 TARGET   = audio_player
 SRC_CC   = main.cc
 INC_DIR += $(PRG_DIR)
-LIBS     := base libc avcodec avformat avutil avresample pthread
+LIBS     := base libc avcodec avformat avutil avresample
 
 CC_CXX_WARN_STRICT =
