@@ -1,0 +1,46 @@
+mad_author R 48
+mad_bit_crc T
+mad_bit_init T
+mad_bit_length T
+mad_bit_nextbyte T
+mad_bit_read T
+mad_bit_skip T
+mad_build R 20
+mad_copyright R 52
+mad_decoder_finish T
+mad_decoder_init T
+mad_decoder_message T
+mad_decoder_run T
+mad_f_abs T
+mad_f_div T
+mad_frame_decode T
+mad_frame_finish T
+mad_frame_init T
+mad_frame_mute T
+mad_header_decode T
+mad_header_init T
+mad_huff_pair_table D 512
+mad_huff_quad_table D 16
+mad_layer_I T
+mad_layer_II T
+mad_layer_III T
+mad_stream_buffer T
+mad_stream_errorstr T
+mad_stream_finish T
+mad_stream_init T
+mad_stream_skip T
+mad_stream_sync T
+mad_synth_frame T
+mad_synth_init T
+mad_synth_mute T
+mad_timer_abs T
+mad_timer_add T
+mad_timer_compare T
+mad_timer_count T
+mad_timer_fraction T
+mad_timer_multiply T
+mad_timer_negate T
+mad_timer_set T
+mad_timer_string T
+mad_timer_zero R 16
+mad_version R 33
