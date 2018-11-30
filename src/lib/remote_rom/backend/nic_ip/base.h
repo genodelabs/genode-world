@@ -54,6 +54,10 @@ class Remote_rom::Backend_base : public Genode::Interface
 		/* rx packet handler */
 		void _handle_rx_packet();
 
+		void _handle_arp_request(Ethernet_frame &eth,
+		                         Size_guard     &guard,
+		                         Arp_packet     &arp);
+
 		void _handle_link_state()
 		{
 			Genode::log("link state changed");
@@ -79,6 +83,7 @@ class Remote_rom::Backend_base : public Genode::Interface
 		Timer::Connection     _timer;
 
 		const bool            _verbose = false;
+		bool                  _arp_waiting { false };
 		Nic::Packet_allocator _tx_block_alloc;
 		Nic::Connection       _nic;
 		Mac_address           _mac_address;
@@ -93,8 +98,41 @@ class Remote_rom::Backend_base : public Genode::Interface
 		 */
 		virtual void receive(Packet &packet, Size_guard &) = 0;
 
+		inline void arp_request()
+		{
+			if (_dst_mac == Ethernet_frame::broadcast() && !_arp_waiting) {
+				size_t const frame_size = sizeof(Ethernet_frame)
+			                           + sizeof(Arp_packet);
+				Nic::Packet_descriptor pd = alloc_tx_packet(frame_size);
+				Size_guard size_guard(pd.size());
+
+				char *content = _nic.tx()->packet_content(pd);
+				Ethernet_frame &eth = Ethernet_frame::construct_at(content,
+				                                                   size_guard);
+				eth.src(_mac_address);
+				eth.dst(Ethernet_frame::broadcast());
+				eth.type(Ethernet_frame::Type::ARP);
+
+				Arp_packet &arp = eth.construct_at_data<Arp_packet>(size_guard);
+				arp.hardware_address_type(Arp_packet::ETHERNET);
+				arp.protocol_address_type(Arp_packet::IPV4);
+				arp.hardware_address_size(sizeof(Mac_address));
+				arp.protocol_address_size(sizeof(Ipv4_address));
+				arp.opcode(Arp_packet::REQUEST);
+				arp.src_mac(_mac_address);
+				arp.src_ip(_src_ip);
+				arp.dst_mac(Ethernet_frame::broadcast());
+				arp.dst_ip(_dst_ip);
+
+				_arp_waiting = true;
+				submit_tx_packet(pd);
+			}
+		}
+
 		Ethernet_frame &prepare_eth(void *base, Size_guard &size_guard)
 		{
+			arp_request();
+
 			Ethernet_frame &eth = Ethernet_frame::construct_at(base, size_guard);
 			eth.src(_mac_address);
 			eth.dst(_dst_mac);
