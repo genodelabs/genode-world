@@ -1,5 +1,5 @@
 TARGET  = gtotp_report
-LIBS   += base cryptopp stdcxx
+LIBS   += cryptopp stdcxx libc base
 SRC_CC += component.cc
 
 # Effc++ not compatible with CryptoPP headers
