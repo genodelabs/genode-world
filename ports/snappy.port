@@ -1,0 +1,15 @@
+LICENSE   := BSD
+VERSION   := 1.1.7
+DOWNLOADS := snappy.archive
+
+URL(snappy) := https://github.com/google/snappy/archive/$(VERSION).tar.gz
+SHA(snappy) := 3dfa02e873ff51a11ee02b9ca391807f0c8ea0529a4924afa645fbf97163f9d4
+DIR(snappy) := src/lib/snappy
+
+PATCHES := src/lib/snappy/header.patch
+PATCH_OPT := -p1 -d src/lib/snappy
+
+DIRS := include/snappy
+DIR_CONTENT(include/snappy) := \
+	src/lib/snappy/snappy.h \
+	src/lib/snappy/snappy-stubs-public.h \
