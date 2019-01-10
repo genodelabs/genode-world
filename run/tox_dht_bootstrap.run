@@ -1,0 +1,144 @@
+#
+# \brief  Test of Tox DHT bootstrap daemon
+# \author Emery Hemingway
+#
+
+if {[have_spec odroid_xu] || [have_spec linux] ||
+    [expr [have_spec imx53] && [have_spec trustzone]]} {
+	puts "Run script does not support this platform."
+	exit 0
+}
+
+set build_components {
+	app/tox_dht_bootstrap
+	drivers/nic
+	lib/vfs/import
+	lib/vfs/lwip
+	server/report_rom
+}
+
+proc gpio_drv { } { if {[have_spec rpi] && [have_spec hw]}  { return hw_gpio_drv }
+                    if {[have_spec rpi] && [have_spec foc]} { return foc_gpio_drv }
+                    return gpio_drv }
+
+lappend_if [have_spec gpio] build_components drivers/gpio
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+lappend_if [expr {[nic_drv_binary] == "nic_drv"}] build_components drivers/nic
+lappend_if [expr {[nic_drv_binary] == "usb_drv"}] build_components drivers/usb
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot \
+	genodelabs/src/[base_src] \
+	genodelabs/src/init \
+
+append config {
+<config>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default caps="100"/>
+	<default-route>
+		<service name="Report"> <child name="report_rom"/> </service>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>}
+
+append_platform_drv_config
+
+append_if [have_spec gpio] config "
+	<start name=\"[gpio_drv]\" caps=\"140\">
+		<resource name=\"RAM\" quantum=\"4M\"/>
+		<provides><service name=\"Gpio\"/></provides>
+		<config/>
+	</start>"
+
+append config {
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="nic_drv" caps="120">
+		<binary name="} [nic_drv_binary] {"/>
+		<resource name="RAM" quantum="16M"/>
+		<provides> <service name="Nic"/> </provides>
+		} [nic_drv_config] {
+	</start>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Report"/> </provides>
+		<config verbose="yes"/>
+	</start>
+
+	<start name="tox_dht_bootstrap" caps="500">
+		<resource name="RAM" quantum="32M"/>
+		<config>
+			<report dht="yes"/>
+			<vfs>
+				<ram/>
+				<dir name="dev">
+					<log/>
+					<null/>
+					<inline name="rtc">2000-01-01 00:00</inline>
+					<inline name="random">01234567890123456789</inline>
+					<inline name="urandom">01234567890123456789</inline>
+				</dir>
+				<dir name="socket"> <lwip dhcp="yes"/> </dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+			<bootstrap key="257744DBF57BE3E117FE05D145B5F806089428D4DCE4E3D0D50616AA16D9417E" ip="95.31.18.227"/>
+			<bootstrap key="3CEE1F054081E7A011234883BC4FC39F661A55B73637A5AC293DDF1251D9432B" ip="194.249.212.109"/>
+			<bootstrap key="B38255EE4B054924F6D79A5E6E5889EC94B6ADF6FE9906F97A3D01E3D083223A" ip="80.87.193.193"/>
+			<bootstrap key="2555763C8C460495B14157D234DD56B86300A2395554BCAE4621AC345B8C1B1B" ip="185.14.30.213" port="443"/>
+			<bootstrap key="02807CF4F8BB8FB390CC3794BDF1E8449E9A8392C5D3F2200019DA9F1E812E46" ip="78.46.73.141"/>
+			<bootstrap key="8E7D0B859922EF569298B4D261A8CCB5FEA14FB91ED412A7603A585A25698832" ip="85.172.30.117"/>
+			<bootstrap key="1D5A5F2F5D6233058BF0259B09622FB40B482E4FA0931EB8FD3AB8E7BF7DAF6F" ip="198.98.51.198"/>
+			<bootstrap key="E59A0E71ADA20D35BD1B0957059D7EF7E7792B3D680AE25C6F4DBBA09114D165" ip="37.97.185.116"/>
+		</config>
+	</start>
+</config>
+}
+
+install_config $config
+
+# generic modules
+set boot_modules {
+	libc.lib.so
+	libm.lib.so
+	libsodium.lib.so
+	posix.lib.so
+	c-toxcore.lib.so
+	tox_dht_bootstrap
+	vfs.lib.so
+	vfs_lwip.lib.so
+	report_rom
+}
+
+# platform-specific modules
+append_platform_drv_boot_modules
+
+lappend boot_modules [nic_drv_binary]
+
+lappend_if [have_spec gpio] boot_modules [gpio_drv]
+
+build_boot_image $boot_modules
+
+append_if [have_spec x86]     qemu_args " -net nic,model=e1000 "
+append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "
+append                        qemu_args " -net user -net dump,file=[run_dir].pcap"
+append                        qemu_args " -nographic"
+
+run_genode_until forever

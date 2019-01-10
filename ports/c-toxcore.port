@@ -1,0 +1,13 @@
+LICENSE   := GPLv3
+VERSION   := 0.2.8
+DOWNLOADS := c-toxcore.archive
+
+OWNER := TokTok
+REPO  := c-toxcore
+REV   := 3f35a84968f100e1e6d3c9df467fd3c82a9ebb13
+URL(c-toxcore) := https://github.com/$(OWNER)/$(REPO)/archive/$(REV).tar.gz
+SHA(c-toxcore) := ff67bf686f5322c3b5a08d0562d5e6fd20e26cf9f4aebba78b948c8f365dae8e
+DIR(c-toxcore) := src/lib/c-toxcore
+
+DIRS := include/toxcore
+DIR_CONTENT(include/toxcore) = src/lib/c-toxcore/toxcore/*.h
