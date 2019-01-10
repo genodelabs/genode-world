@@ -1,0 +1,14 @@
+LICENSE        := ISC
+VERSION        := 1.0.16
+DOWNLOADS      := libsodium.archive
+URL(libsodium) := https://download.libsodium.org/libsodium/releases/libsodium-$(VERSION).tar.gz
+SHA(libsodium) := eeadc7e1e1bcef09680fb4837d448fbdf57224978f865ac1c16745868fbd0533
+DIR(libsodium) := src/lib/libsodium
+
+#PATCHES := src/lib/libsodium/patch
+#PATCH_OPT := -p1 -d src/lib/libsodium
+
+DIRS := include/libsodium
+DIR_CONTENT(include/libsodium) = \
+	src/lib/libsodium/src/libsodium/include/sodium.h \
+	src/lib/libsodium/src/libsodium/include/sodium \
