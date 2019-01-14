@@ -4,7 +4,7 @@
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/rtc
 	server/ram_fs
 	test/gtest

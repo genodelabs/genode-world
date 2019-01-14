@@ -8,7 +8,7 @@ import_from_depot \
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	server/fs_rom
 	server/terminal
 	server/ram_fs

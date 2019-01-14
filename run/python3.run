@@ -20,7 +20,7 @@ import_from_depot [depot_user]/pkg/python3
 
 build {
 	core init
-	drivers/timer
+	timer
 	drivers/rtc
 	server/dynamic_rom
 }

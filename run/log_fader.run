@@ -19,7 +19,7 @@ set build_components {
 	app/rom_logger
 	app/global_keys_handler
 	drivers/framebuffer
-	drivers/timer
+	timer
 	server/log_tee
 	server/nit_fader
 	server/nit_fb

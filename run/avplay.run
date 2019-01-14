@@ -4,7 +4,7 @@
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/framebuffer drivers/input drivers/audio
 	app/avplay drivers/acpi
 }

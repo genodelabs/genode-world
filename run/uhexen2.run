@@ -5,7 +5,7 @@
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/audio
 	drivers/usb
 	drivers/framebuffer drivers/input

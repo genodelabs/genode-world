@@ -12,7 +12,7 @@ if {[have_include power_on/qemu] && $use_i965} {
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/input
 	drivers/framebuffer
 	drivers/gpu/intel

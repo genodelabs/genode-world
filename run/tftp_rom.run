@@ -12,7 +12,7 @@ if {![have_include "load/tftp"]} {
 set build_components {
 	core init
 	drivers/nic
-	drivers/timer
+	timer
 	server/tftp_rom
 	test/libc
 }

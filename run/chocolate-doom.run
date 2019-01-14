@@ -17,7 +17,7 @@ set use_audio [expr ![have_spec arm]]
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/framebuffer
 	drivers/input
 

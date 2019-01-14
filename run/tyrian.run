@@ -8,7 +8,7 @@ set build_components {
 	drivers/framebuffer
 	drivers/input
 	drivers/input/dummy
-	drivers/timer
+	timer
 	app/opentyrian
 }
 

@@ -12,7 +12,7 @@ set build_components {
 	app/pike_loader
 	app/pointer
 	drivers/framebuffer
-	drivers/timer
+	timer
 	server/dynamic_rom
 	server/loader
 	server/nit_fb

@@ -6,7 +6,7 @@ assert_spec x86
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	server/dynamic_rom
 	server/input_normalizer
 	test/input

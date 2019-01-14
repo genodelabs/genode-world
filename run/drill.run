@@ -8,7 +8,7 @@ source ${genode_dir}/repos/base/run/platform_drv.inc
 set build_components {
 	core init
 	app/drill
-	drivers/timer
+	timer
 	drivers/nic
 	drivers/rtc
 	lib/vfs/jitterentropy

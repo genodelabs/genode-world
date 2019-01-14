@@ -26,7 +26,7 @@ if { [info exists ::env(NET) ] } {
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/rtc
 	drivers/nic
 	server/ram_fs

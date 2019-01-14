@@ -2,7 +2,7 @@ set sha256sum     [installed_command sha256sum]
 
 build {
 	core init
-	drivers/timer
+	timer
 	lib/libc_noux
 	noux-pkg/coreutils
 	noux/minimal

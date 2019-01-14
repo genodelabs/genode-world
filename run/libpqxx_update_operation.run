@@ -5,7 +5,7 @@
 set build_components {
 	core
 	init
-	drivers/timer
+	timer
 	test/libpqxx/update_operation
 }
 

@@ -2,7 +2,7 @@
 # Build
 #
 
-set build_components { core init drivers/timer
+set build_components { core init timer
 	app/rom_logger
 	proxy/remote_rom/backend/nic_ip/client
 	drivers/nic

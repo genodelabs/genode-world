@@ -11,7 +11,7 @@
 #
 
 set build_components {
-	core init drivers/timer
+	core init timer
 	lib/vfs/jitterentropy
 }
 

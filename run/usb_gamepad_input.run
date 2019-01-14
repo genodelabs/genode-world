@@ -16,7 +16,7 @@ set use_qemu [have_include "power_on/qemu"]
 
 set build_components {
 	core init
-	drivers/timer
+	timer
 	drivers/usb
 	drivers/usb_gamepad_input
 	server/report_rom
