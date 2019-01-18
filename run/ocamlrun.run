@@ -1,0 +1,69 @@
+set ocamlc [installed_command ocamlc]
+
+create_boot_directory
+
+proc depot_user {} { return [get_cmd_arg --depot-user genodelabs] }
+
+import_from_depot \
+	[depot_user]/src/[base_src] \
+	[depot_user]/src/init \
+
+append build_components {
+	app/ocamlrun
+}
+
+build $build_components
+
+install_config {
+	<config verbose="yes">
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="LOG"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="PD"/>
+			<service name="IRQ"/>
+			<service name="IO_MEM"/>
+			<service name="IO_PORT"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <any-child/> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides><service name="Timer"/></provides>
+		</start>
+		<start name="ocamlrun" caps="500">
+			<resource name="RAM" quantum="1G"/>
+			<config verbose="yes">
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<tar name="bytecode.tar"/>
+				</vfs>
+				<arg value="ocamlrun"/>
+				<arg value="a.out"/>
+			</config>
+		</start>
+	</config>
+}
+
+#
+# Compile some bytecode and TAR it
+#
+
+set fd [open [run_dir]/hello.ml w]
+puts $fd "print_string \"Hello world!\n\";;"
+close $fd
+
+exec ocamlc -o [run_dir]/a.out [run_dir]/hello.ml
+exec tar cf [run_dir]/genode/bytecode.tar -C [run_dir] a.out
+
+build_boot_image {
+	ocamlrun libc.lib.so vfs.lib.so libm.lib.so posix.lib.so
+}
+
+append qemu_args " -nographic -serial mon:stdio "
+
+run_genode_until {child "ocamlrun" exited with exit value 0.*\n} 30

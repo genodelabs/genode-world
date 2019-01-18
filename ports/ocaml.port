@@ -1,0 +1,7 @@
+LICENSE = LGPLv2.1
+VERSION = 4.07.1
+DOWNLOADS = ocaml.archive
+
+URL(ocaml) := http://caml.inria.fr/pub/distrib/ocaml-4.07/ocaml-4.07.1.tar.xz
+SHA(ocaml) := dfe48b1da31da9c82d77612582fae74c80e8d1ac650e1c24f5ac9059e48307b8
+DIR(ocaml) := src/ocaml
