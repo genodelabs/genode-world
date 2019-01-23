@@ -1,0 +1,10 @@
+_/src/flif_capture
+_/src/init
+_/src/libc
+_/src/libflif
+_/src/libpng
+_/src/nit_fb
+_/src/nitpicker
+_/src/stdcxx
+_/src/vfs
+_/src/zlib

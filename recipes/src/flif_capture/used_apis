@@ -1,0 +1,11 @@
+base
+os
+blit
+framebuffer_session
+input_session
+libc
+libflif
+libpng
+stdcxx
+vfs
+zlib

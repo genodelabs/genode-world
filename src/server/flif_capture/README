@@ -1,0 +1,14 @@
+The 'flif_capture' server captures screenshots of a framebuffer session by
+proxying a 'Framebuffer' and an 'Input' session. Screenshots are triggered
+when the "Print Screen" ("PrtSc" on Thinkpads) key event is intercepted
+and are written to a VFS instance in the FLIF image format.
+
+Usage
+-----
+
+Only few Genode components make direct 'Input' and 'Framebuffer' connections,
+the recommendation is to use these session bundled in a 'Nitpicker' connection.
+Therefore to screenshot 'Nitpicker' clients a Nitpicker server must be running
+as a client of the 'flif_capture' server, and a window manager may be necessary
+as well. The 'flif_capture', 'nitpicker', and 'wm' stack may be hosted recursively
+by using the 'nit_fb' server beneath 'flif_capture'.

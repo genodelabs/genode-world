@@ -1,0 +1,89 @@
+<runtime ram="72M" caps="768" binary="init">
+
+	<requires>
+		<nitpicker/> <file_system/> <rtc/>
+	</requires>
+
+	<provides> <nitpicker/> </provides>
+
+	<content>
+		<rom label="flif_capture"/>
+		<rom label="init"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libflif.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libpng.lib.so"/>
+		<rom label="nit_fb"/>
+		<rom label="nitpicker"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+
+	<config>
+		<parent-provides>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="ROM"/>
+			<service name="Rtc"/>
+			<service name="Nitpicker"/>
+			<service name="File_system"/>
+			<service name="Timer"/>
+		</parent-provides>
+		<service name="Nitpicker">
+			<default-policy> <child name="nitpicker"/> </default-policy>
+		</service>
+
+		<start name="nit_fb" caps="128">
+			<resource name="RAM" quantum="6M"/>
+			<provides>
+				<service name="Framebuffer"/>
+				<service name="Input"/>
+			</provides>
+			<config initial_width="800" initial_height="600"/>
+			<route> <any-service> <parent/> </any-service> </route>
+		</start>
+
+		<start name="nitpicker" caps="256">
+			<resource name="RAM" quantum="6M"/>
+			<provides>
+				<service name="Nitpicker"/>
+			</provides>
+			<config>
+				<domain name="default" layer="1" label="no" hover="always" focus="click" />
+				<default-policy domain="default"/>
+			</config>
+			<route>
+				<any-service>
+					<parent/>
+					<child name="flif_capture"/>
+				</any-service>
+			</route>
+		</start>
+
+		<start name="flif_capture" caps="256">
+			<resource name="RAM" quantum="64M"/>
+			<!--need plenty of RAM here to account for large framebuffers -->
+			<provides>
+				<service name="Framebuffer"/>
+				<service name="Input"/>
+			</provides>
+			<config>
+				<libc rtc="/dev/rtc"/>
+				<vfs>
+					<fs/>
+					<dir name="dev"> <rtc/> </dir>
+				</vfs>
+			</config>
+			<route>
+				<any-service>
+					<parent/>
+					<child name="nit_fb"/>
+				</any-service>
+			</route>
+		</start>
+
+	</config>
+
+</runtime>
