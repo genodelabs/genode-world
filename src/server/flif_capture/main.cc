@@ -44,23 +44,30 @@ namespace Flif_capture {
 }
 
 
-class Flif_capture::Encoder : Genode::Thread
+class Flif_capture::Encoder
 {
 	private:
 
 		Genode::Env &_env;
+
+		// TODO: reuse FLIF_IMAGE, do not reallocate
 		FLIF_IMAGE  *_image = nullptr;
 		Semaphore    _semaphore { };
 		Lock         _lock { Lock::LOCKED };
 
-		static size_t stack_size()
-		{
-			auto info = Thread::mystack();
-			return info.top - info.base;
-		}
+	public:
 
-	protected:
+		bool capture_pending = false;
 
+		/* safety noise */
+		Encoder(Encoder const &);
+		Encoder &operator = (Encoder const &);
+
+		Encoder(Genode::Env &env) : _env(env) { }
+
+		/**
+		 * Encode loop called from initial thread
+		 */
 		void entry()
 		{
 			for (;;) {
@@ -81,6 +88,7 @@ class Flif_capture::Encoder : Genode::Thread
 				});
 
 				FLIF_ENCODER* encoder = flif_create_encoder();
+				flif_encoder_set_lookback(encoder, 0);
 				if (!encoder) {
 					Genode::error("failed to create FLIF encoder");
 					continue;
@@ -100,31 +108,17 @@ class Flif_capture::Encoder : Genode::Thread
 			}
 		}
 
-	public:
-
-		bool capture_pending = false;
-
-		/* safety noise */
-		Encoder(Encoder const &);
-		Encoder &operator = (Encoder const &);
-
-		Encoder(Genode::Env &env)
-		:
-			Thread(env, Thread::Name("encoder"), stack_size(),
-			       env.cpu().affinity_space().location_of_index(1),
-			       (Thread::Weight)Thread::Weight::DEFAULT_WEIGHT,
-			       env.cpu()),
-			_env(env)
-		{
-			start();
-		}
-
+		/**
+		 * Cross-thread copy called by service entrypoint
+		 */
 		void queue(Dataspace_capability fb_cap, Mode const mode)
 		{
-			Lock::Guard guard(_lock);
 
+			/* drop this frame if there is encoding in progress */
 			if (_image != nullptr)
 				return;
+
+			Lock::Guard guard(_lock);
 
 			/* TODO: attach/detach each capture? */
 			Genode::Attached_dataspace fb_ds(_env.rm(), fb_cap);
@@ -157,6 +151,7 @@ class Flif_capture::Encoder : Genode::Thread
 				flif_image_write_row_RGBA8(_image, y, row, sizeof(row));
 			}
 
+			capture_pending = false;
 			_semaphore.up();
 		}
 };
@@ -170,7 +165,7 @@ class Flif_capture::Framebuffer_session_component
 
 		Genode::Env                  &_env;
 		Framebuffer::Session         &_parent;
-		Flif_capture::Encoder         &_encoder;
+		Flif_capture::Encoder        &_encoder;
 
 		Genode::Dataspace_capability  _dataspace { };
 		Framebuffer::Mode             _mode { };
@@ -210,12 +205,8 @@ class Flif_capture::Framebuffer_session_component
 		void refresh(int x, int y, int w, int h) override
 		{
 			_parent.refresh(x, y, w, h);
-			if (_encoder.capture_pending) {
-				if (_dataspace.valid()) {
-					_encoder.queue(_dataspace, _mode);
-					_encoder.capture_pending = false;
-				}
-			}
+			if (_encoder.capture_pending)
+				_encoder.queue(_dataspace, _mode);
 		}
 
 		void sync_sigh(Genode::Signal_context_capability sigh) override
@@ -231,6 +222,21 @@ class Flif_capture::Main
 
 		Genode::Env &_env;
 
+		/*
+		 * Allocate an additional entrypoint to
+		 * separate Libc and RPC activity. Offset the
+		 * affinity by one to place the entrypoint on
+		 * the next processor core.
+		 *
+		 * TODO: place the initial entrypoint instead
+		 * to avoid cross-CPU RPC?
+		 */
+		enum { SERVICE_STACK_SIZE = sizeof(addr_t) << 12 };
+		Entrypoint _service_ep {
+			_env, SERVICE_STACK_SIZE, "service-entrypoint",
+			_env.cpu().affinity_space().location_of_index(1)
+		};
+
 		Flif_capture::Encoder   _encoder      { _env };
 		Framebuffer::Connection _parent_fb    { _env, Mode(0, 0, Mode::RGB565) };
 		Input::Connection       _parent_input { _env };
@@ -241,11 +247,11 @@ class Flif_capture::Main
 		Input::Session_component _input_session {
 			_env, _env.ram() };
 
-		Framebuffer::Session_capability _fb_cap { _env.ep().manage(_fb_session) };
-		Input::Session_capability    _input_cap { _env.ep().manage(_input_session) };
+		Framebuffer::Session_capability _fb_cap { _service_ep.manage(_fb_session) };
+		Input::Session_capability    _input_cap { _service_ep.manage(_input_session) };
 
 		Genode::Signal_handler<Main> _input_handler {
-			_env.ep(), *this, &Main::_handle_input };
+			_service_ep, *this, &Main::_handle_input };
 
 		Input::Keycode _capture_code = Input::KEY_PRINT;
 
@@ -268,10 +274,10 @@ class Flif_capture::Main
 		}
 
 		Genode::Static_root<Framebuffer::Session> _fb_root {
-			_env.ep().manage(_fb_session) };
+			_service_ep.manage(_fb_session) };
 
 		Genode::Static_root<Input::Session> _input_root {
-			_env.ep().manage(_input_session) };
+			_service_ep.manage(_input_session) };
 
 	public:
 
@@ -285,11 +291,13 @@ class Flif_capture::Main
 
 			_input_session.event_queue().enabled(true);
 
-			env.parent().announce(env.ep().manage(_fb_root));
-			env.parent().announce(env.ep().manage(_input_root));
+			env.parent().announce(_service_ep.manage(_fb_root));
+			env.parent().announce(_service_ep.manage(_input_root));
 
 			Genode::log("--- screenshot capture key is ", Input::key_name(_capture_code), " ---");
 		}
+
+		void spin() { _encoder.entry(); }
 };
 
 
@@ -297,5 +305,8 @@ class Flif_capture::Main
  ** Component **
  ***************/
 
-void Libc::Component::construct(Libc::Env &env) {
-		static Flif_capture::Main inst(env); }
+void Libc::Component::construct(Libc::Env &env)
+{
+		static Flif_capture::Main inst(env);
+		inst.spin();
+}
