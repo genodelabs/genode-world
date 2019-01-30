@@ -1,0 +1,48 @@
+build "core init server/log_terminal test/aunit"
+
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+
+		<start name="terminal">
+			<binary name="log_terminal"/>
+			<resource name="RAM" quantum="2M"/>
+			<provides><service name="Terminal"/></provides>
+		</start>
+
+		<start name="test-aunit">
+			<resource name="RAM" quantum="10M"/>
+			<config>
+				<vfs>
+					<ram/>
+					<dir name="dev"> <log/> </dir>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+			</config>
+			<route>
+				<service name="Terminal"> <child name="terminal"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+build_boot_image {
+	core init test-aunit log_terminal
+	libc.lib.so vfs.lib.so ld.lib.so ada.lib.so libaunit.lib.so
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until "child \"test-aunit\" exited with exit value 0" 20
