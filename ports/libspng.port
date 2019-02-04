@@ -1,0 +1,11 @@
+LICENSE   := BSD-2-Clause
+VERSION   := 0.4.3
+DOWNLOADS := libspng.archive
+
+BASE_URL := https://gitlab.com/randy408/libspng/-/archive
+URL(libspng) := $(BASE_URL)/v$(VERSION)/libspng-v$(VERSION).tar.gz
+SHA(libspng) := bc0046f7798d30f8aa061b157808b4acdb734f1f81154879f3b98c49136c1516
+DIR(libspng) := src/lib/libspng
+
+DIRS := include/libspng
+DIR_CONTENT(include/libspng) := src/lib/libspng/src/spng.h
