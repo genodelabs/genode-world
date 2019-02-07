@@ -1,0 +1,59 @@
+set build_components {
+	core init
+	server/log_terminal
+	test/ada
+}
+
+set config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+
+		<start name="terminal">
+			<binary name="log_terminal"/>
+			<resource name="RAM" quantum="2M"/>
+			<provides><service name="Terminal"/></provides>
+		</start>
+
+		<start name="test-ada">
+			<resource name="RAM" quantum="10M"/>
+			<config ld_verbose="yes">
+				<vfs>
+					<ram/>
+					<dir name="dev"> <log/> </dir>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+			</config>
+			<route>
+				<service name="Terminal"> <child name="terminal"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+set boot_modules {
+	core init log_terminal
+	ld.lib.so libc.lib.so vfs.lib.so ada.lib.so
+	test-ada
+}
+
+#source ${genode_dir}/repos/world/run/gdb.inc
+
+build $build_components
+create_boot_directory
+install_config $config
+
+#append_platform_drv_boot_modules
+build_boot_image $boot_modules
+append qemu_args " -nographic  "
+
+run_genode_until "child \"test-ada\" exited with exit value 42" 20
