@@ -42,6 +42,9 @@ extern "C" {
 #include <libavutil/frame.h>
 #include <libavutil/opt.h>
 #include <libavresample/avresample.h>
+
+#include <fcntl.h>
+#include <unistd.h>
 }; /* extern "C" */
 
 
@@ -153,7 +156,7 @@ struct Audio_player::Output
 			float *left_content  = p[LEFT]->content();
 			float *right_content = p[RIGHT]->content();
 
-			for (int i = 0; i < Audio_out::PERIOD; i++) {
+			for (unsigned i = 0; i < Audio_out::PERIOD; i++) {
 					left_content[i]  = tmp[i * NUM_CHANNELS + LEFT];
 					right_content[i] = tmp[i * NUM_CHANNELS + RIGHT];
 			}
@@ -229,30 +232,66 @@ class Audio_player::Playlist
 		/**
 		 * Update playlist
 		 */
-		void update(Genode::Xml_node &node)
+		void update(Genode::Xml_node const &node)
 		{
+			using namespace Genode;
+
 			/* handle tracks */
 			_remove_all();
 			_curr_track = nullptr;
 
 			unsigned count = 0;
-			auto add_track = [&] (Genode::Xml_node &track) {
+			auto add_track = [&] (Xml_node const &track) {
 				try {
-					Path path;
-					track.attribute("path").value(&path);
-					_insert(path.string(), ++count);
-				} catch (...) { Genode::warning("invalid file node in playlist"); }
+					bool done = false;
+
+					auto try_location = [&] (Xml_node const &node) {
+						if (done) return;
+
+						typedef String<256> Location;
+						auto location = node.decoded_content<Location>();
+						char const *path = location.string();
+
+						auto _exists_file = [] (char const *path)
+						{
+							bool exists = false;
+							Libc::with_libc([&] () {
+								FILE *f = fopen(path, "r");
+								if (f != NULL) {
+									fclose(f);
+									exists = true;
+								}
+							});
+							return exists;
+						};
+
+						if (strcmp(path, "file://", 7) == 0) {
+							path += 7;
+							if (_exists_file(path)) {
+								_insert(path, ++count);
+								done = true;
+							}
+						} else
+						if (_exists_file(path)) {
+							_insert(path, ++count);
+							done = true;
+						}
+					};
+
+					track.for_each_sub_node("location", try_location);
+
+				} catch (...) { Genode::warning("invalid track node in playlist"); }
 			};
 
 			try {
-				node.for_each_sub_node("track", add_track);
+				Xml_node const track_list = node.sub_node("trackList");
+				track_list.for_each_sub_node("track", add_track);
 			} catch (...) { }
 
 			/* handle playlist mode */
 			_mode = MODE_ONCE;
 			try {
-				Genode::String<16> mode;
-				node.attribute("mode").value(&mode);
+				auto mode = node.attribute_value("mode", String<16>());
 				if (mode == "repeat") _mode = MODE_REPEAT;
 			} catch (...) { }
 
@@ -661,18 +700,26 @@ void Audio_player::Main::scan_playlist()
 {
 	try {
 		Genode::Reporter::Xml_generator xml(playlist_reporter, [&] () {
-			playlist.for_each_track([&] (Playlist::Track const &t) {
-				Decoder d(t);
-				Decoder::File_info const &info = d.file_info();
+			xml.attribute("version", 1);
+			xml.attribute("xmlns", "http://xspf.org/ns/0/");
 
-				xml.node("track", [&] () {
-					xml.attribute("id",       info.id);
-					xml.attribute("path",     info.path);
-					xml.attribute("artist",   info.artist);
-					xml.attribute("album",    info.album);
-					xml.attribute("title",    info.title);
-					xml.attribute("track",    info.track);
-					xml.attribute("duration", info.duration);
+			xml.node("trackList", [&] () {
+				playlist.for_each_track([&] (Playlist::Track const &t) {
+					Decoder d(t);
+					Decoder::File_info const &info = d.file_info();
+					xml.node("track", [&] () {
+						xml.node("location", [&] () {
+							xml.append_content(info.path); });
+						xml.node("title", [&] () {
+							xml.append_content(info.title); });
+						xml.node("creator", [&] () {
+							xml.append_content(info.artist); });
+						xml.node("album", [&] () {
+							xml.append_content(info.album); });
+						xml.node("duration", [&] () {
+							xml.append_content(
+								Genode::String<16>(info.duration)); });
+					});
 				});
 			});
 		});
@@ -686,10 +733,7 @@ void Audio_player::Main::handle_playlist()
 
 	if (!playlist_rom.valid()) { return; }
 
-	Genode::Xml_node node(playlist_rom.local_addr<char>(),
-	                      playlist_rom.size());
-
-	playlist.update(node);
+	playlist.update(playlist_rom.xml());
 
 	track = playlist.next_track();
 
@@ -868,11 +912,11 @@ void Audio_player::Main::handle_config()
 	try {
 		Genode::Xml_node node = config.sub_node("report");
 
-		report_progress = node.attribute("progress").has_value("yes");
+		report_progress = node.attribute_value("progress", false);
 		unsigned v = node.attribute_value<unsigned>("interval", DEFAULT_SEC);
 		report_progress_interval = output.packets_per_sec() * v;
 
-		report_playlist = node.attribute("playlist").has_value("yes");
+		report_playlist = node.attribute_value("playlist", false);
 	} catch (...) {
 		report_progress = false;
 		report_progress_interval = output.packets_per_sec() * DEFAULT_SEC;
