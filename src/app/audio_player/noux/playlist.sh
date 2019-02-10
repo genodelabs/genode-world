@@ -49,12 +49,12 @@ write() {
 }
 
 generate_playlist() {
-	write "<playlist>\n"
+	write "<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">\n\t<trackList>\n"
 	while read file; do
 		local path=$(readlink -f "$file")
-		write "\t<track path=\"${path}\"/>\n"
+		write "\t\t<track><location>file://${path}</location></track>\n"
 	done
-	write "</playlist>\n"
+	write "\t</trackList>\n</playlist>\n"
 }
 
 main() {
