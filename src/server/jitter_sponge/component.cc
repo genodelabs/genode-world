@@ -19,6 +19,8 @@
 #include <base/heap.h>
 #include <base/component.h>
 
+#include <world/rdrand.h>
+
 /* Jitterentropy includes */
 #include <jitterentropy.h>
 
@@ -72,12 +74,23 @@ struct Jitter_sponge::Generator
 	void mix()
 	{
 		/* mix at entry and exit of 'read', so 32 bytes are mixed between reads */
-		enum { MIX_BYTES = 16};
-		char buf[MIX_BYTES];
-		if (jent_read_entropy(jitter, buf, MIX_BYTES) != MIX_BYTES)
-			die("jitter collection failed");
-		if (KeccakWidth1600_SpongePRG_Feed(&sponge, (unsigned char *)buf, MIX_BYTES))
-			die("failed to feed sponge");
+
+		if (Genode::Rdrand::supported()) {
+			enum { RDRAND_COUNT = 4 };
+			Genode::uint64_t buf[4];
+			for (unsigned i = 0; i < RDRAND_COUNT; i++)
+				buf[i] = Genode::Rdrand::random64();
+			if (KeccakWidth1600_SpongePRG_Feed(&sponge, (unsigned char *)buf, sizeof(buf)))
+				die("failed to feed sponge");
+		} else {
+			enum { MIX_BYTES = 16};
+			char buf[MIX_BYTES];
+			if (jent_read_entropy(jitter, buf, MIX_BYTES) != MIX_BYTES)
+				die("jitter collection failed");
+
+			if (KeccakWidth1600_SpongePRG_Feed(&sponge, (unsigned char *)buf, MIX_BYTES))
+				die("failed to feed sponge");
+		}
 	}
 
 	void fetch(unsigned char *buf, size_t n)
