@@ -1,0 +1,16 @@
+<runtime ram="1M" caps="64" binary="test-rdrand">
+
+	<events>
+		<timeout meaning="failed" sec="20" />
+		<log     meaning="succeeded">--- RDRAND test finished ---</log>
+		<log     meaning="failed"   >Error: </log>
+	</events>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="test-rdrand"/>
+	</content>
+
+	<config/>
+
+</runtime>
