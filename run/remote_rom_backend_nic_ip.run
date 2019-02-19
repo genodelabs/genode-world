@@ -98,9 +98,7 @@ install_config {
 			<service name="Nic"> <child name="nic_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-		<config>
-			<nic tap="tap1"/>
-		</config>
+		<config> <default-policy/> </config>
 	</start>
 	<start name="nic_drv">
 		<binary name="} [nic_drv_binary] {" />
