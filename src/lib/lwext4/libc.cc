@@ -14,7 +14,8 @@
 /* Genode includes */
 #include <base/allocator.h>
 #include <base/log.h>
-#include <base/printf.h>
+#include <base/snprintf.h>
+#include <log_session/log_session.h>
 #include <util/string.h>
 
 /* library includes */
@@ -57,10 +58,19 @@ int fflush(FILE *)
 
 int printf(char const *fmt, ...)
 {
+	static char buffer[Genode::Log_session::MAX_STRING_LEN];
+
 	va_list list;
 	va_start(list, fmt);
-	Genode::vprintf(fmt, list);
+	Genode::String_console sc(buffer, sizeof (buffer));
+	sc.vprintf(fmt, list);
 	va_end(list);
+
+	/* remove newline as Genode::log() will implicitly add one */
+	size_t n = sc.len();
+	if (n > 0 && buffer[n-1] == '\n') { n--; }
+
+	Genode::log(Genode::Cstring(buffer, n));
 
 	return 0;
 }
@@ -68,7 +78,7 @@ int printf(char const *fmt, ...)
 
 int puts(const char *s)
 {
-	Genode::printf(s);
+	printf("%s\n", s);
 	return 0;
 }
 

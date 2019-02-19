@@ -15,7 +15,6 @@
 #include <base/allocator.h>
 #include <base/allocator_avl.h>
 #include <base/log.h>
-#include <base/printf.h>
 #include <block_session/connection.h>
 #include <util/string.h>
 
