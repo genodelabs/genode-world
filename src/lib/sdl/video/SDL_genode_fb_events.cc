@@ -30,6 +30,7 @@
  */
 
 /* Genode includes */
+#include <nitpicker_session/connection.h>
 #include <base/log.h>
 #include <input_session/connection.h>
 #include <input/event.h>
@@ -45,15 +46,26 @@ Video video_events;
 
 static Genode::Env *_global_env = nullptr;
 
+static Genode::Constructible<Nitpicker::Connection> _global_nitpicker { };
 
-Genode::Env *global_env()
+
+Genode::Env &global_env()
 {
 	if (!_global_env) {
 		Genode::error("sdl_init_genode() not called, aborting");
 		throw Genode::Exception();
 	}
 
-	return _global_env;
+	return *_global_env;
+}
+
+
+Nitpicker::Connection &global_nitpicker()
+{
+	if (!_global_nitpicker.constructed())
+		_global_nitpicker.construct(global_env(), "SDL");
+
+	return *_global_nitpicker;
 }
 
 
@@ -71,7 +83,7 @@ extern "C" {
 #include "SDL_genode_fb_events.h"
 
 
-	static Genode::Constructible<Input::Connection> input;
+	static Genode::Constructible<Input::Session_client> input;
 	static const int KEYNUM_MAX = 512;
 	static SDLKey keymap[KEYNUM_MAX];
 	static int buttonmap[KEYNUM_MAX];
@@ -154,7 +166,8 @@ extern "C" {
 	void Genode_Fb_InitOSKeymap(SDL_VideoDevice *t)
 	{
 		try {
-			input.construct(*_global_env);
+			input.construct(_global_env->rm(),
+			                _global_nitpicker->input_session());
 		} catch (...) {
 			Genode::error("no input driver available!");
 			return;

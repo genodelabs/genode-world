@@ -2,7 +2,7 @@ LICENSE   := MIT
 VERSION   := git
 DOWNLOADS := libxml2.git
 
-URL(libxml2) := git://git.gnome.org/libxml2
+URL(libxml2) := https://gitlab.gnome.org/GNOME/libxml2.git
 DIR(libxml2) := src/lib/libxml2
 REV(libxml2) := v2.9.4
 

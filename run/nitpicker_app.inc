@@ -11,9 +11,11 @@
 
 create_boot_directory
 
-import_from_depot genodelabs/src/[base_src] \
-                  genodelabs/pkg/[drivers_interactive_pkg] \
-                  genodelabs/src/init
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_interactive_pkg] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/nitpicker \
+                  [depot_user]/pkg/motif_wm \
 
 
 if {![info exists fb_config]} {
@@ -39,6 +41,8 @@ install_config {
 	</parent-provides>
 
 	<default-route>
+		<service name="Nitpicker">
+			<child name="wm"/> </service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 
@@ -63,11 +67,51 @@ install_config {
 		<provides><service name="Timer"/></provides>
 	</start>
 
+	<start name="nitpicker">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config focus="rom">
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="default" layer="2" content="client" label="no" hover="always"/>
+
+			<policy label_prefix="pointer" domain="pointer"/>
+			<default-policy domain="default"/>
+		</config>
+	</start>
+
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="wm" caps="1000">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<provides> <service name="Nitpicker"/> </provides>
+		<route>
+			<service name="ROM" label="config"> <parent label="wm.config"/> </service>
+			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
 } $app_config {
 
 </config>}
 
 build $build_components
+
+#
+# Pin the nitpicker focus to the window manager by providing a static focus ROM
+#
+set fd [open [run_dir]/genode/focus w]
+puts $fd "<focus label=\"wm -> wm -> \"/>"
+close $fd
+
+file copy -force [genode_dir]/repos/gems/recipes/raw/motif_wm/wm.config [run_dir]/genode/
 
 build_boot_image $boot_modules
 

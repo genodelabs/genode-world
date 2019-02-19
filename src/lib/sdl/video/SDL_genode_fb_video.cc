@@ -32,13 +32,14 @@
 /* Genode includes */
 #include <base/log.h>
 #include <base/env.h>
-#include <framebuffer_session/connection.h>
+#include <nitpicker_session/connection.h>
 
 /* local includes */
 #include <SDL_genode_internal.h>
 
 
-extern Genode::Env        *global_env();
+extern Genode::Env           &global_env();
+extern Nitpicker::Connection &global_nitpicker();
 
 extern Genode::Lock event_lock;
 extern Video        video_events;
@@ -61,16 +62,16 @@ extern "C" {
 
 	struct Sdl_framebuffer
 	{
-		Genode::Env        &_env;
-
-		Framebuffer::Mode _mode;
-		Framebuffer::Connection _fb { _env, _mode };
+		Genode::Env           &_env;
+		Nitpicker::Connection &_nitpicker;
+		Nitpicker::Session::View_handle _view {
+			_nitpicker.create_view() };
 
 		void _handle_mode_change()
 		{
 			Genode::Lock_guard<Genode::Lock> guard(event_lock);
 
-			Framebuffer::Mode mode = _fb.mode();
+			Framebuffer::Mode mode = _nitpicker.mode();
 			df_mode.w = mode.width();
 			df_mode.h = mode.height();
 
@@ -82,22 +83,41 @@ extern "C" {
 		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
 			_env.ep(), *this, &Sdl_framebuffer::_handle_mode_change };
 
-		Sdl_framebuffer(Genode::Env &env) : _env(env) {
-			_fb.mode_sigh(_mode_handler); }
-
-		bool valid() const { return _fb.cap().valid(); }
+		Sdl_framebuffer(Genode::Env &env, Nitpicker::Connection &nitpicker)
+		: _env(env), _nitpicker(nitpicker) {
+			_nitpicker.mode_sigh(_mode_handler); }
 
 
 		/************************************
 		 ** Framebuffer::Session Interface **
 		 ************************************/
 
-		Genode::Dataspace_capability dataspace() { return _fb.dataspace(); }
+		Genode::Dataspace_capability dataspace(int width, int height)
+		{
+			_nitpicker.buffer(
+				::Framebuffer::Mode(width, height, Framebuffer::Mode::RGB565),
+				false);
 
-		Framebuffer::Mode mode() const { return _fb.mode(); }
+			::Framebuffer::Mode mode = _nitpicker.framebuffer()->mode();
+
+			using namespace Nitpicker;
+			Area area(
+				Genode::min(mode.width(), width),
+				Genode::min(mode.height(), height));
+
+			typedef Nitpicker::Session::Command Command;
+			_nitpicker.enqueue<Command::Geometry>(
+				_view, Rect(Point(0, 0), area));
+			_nitpicker.execute();
+
+			return _nitpicker.framebuffer()->dataspace();
+		}
+
+		Framebuffer::Mode mode() const {
+			return _nitpicker.mode(); }
 
 		void refresh(int x, int y, int w, int h) {
-			_fb.refresh(x, y, w, h); }
+			_nitpicker.framebuffer()->refresh(x, y, w, h); }
 	};
 
 	static Genode::Constructible<Sdl_framebuffer> framebuffer;
@@ -265,12 +285,7 @@ extern "C" {
 	static int Genode_Fb_Available(void)
 	{
 		if (!framebuffer.constructed()) {
-			framebuffer.construct(*global_env());
-		}
-
-		if (!framebuffer->valid()) {
-			Genode::error("could not obtain framebuffer session");
-			return 0;
+			framebuffer.construct(global_env(), global_nitpicker());
 		}
 
 		return 1;
@@ -362,6 +377,7 @@ extern "C" {
 
 		/* Get the framebuffer size and mode infos */
 		scr_mode = framebuffer->mode();
+
 		t->info.current_w = scr_mode.width();
 		t->info.current_h = scr_mode.height();
 		Genode::log("Framebuffer has "
@@ -407,22 +423,20 @@ extern "C" {
 		}
 
 		if (t->hidden->buffer) {
-			global_env()->rm().detach(t->hidden->buffer);
+			global_env().rm().detach(t->hidden->buffer);
 			t->hidden->buffer = nullptr;
 		}
 	}
 
 
 	/**
-	 * List the available video modes for the given pixel format,
-	 * sorted from largest to smallest.
+	 * Any mode is okay if the pixel format is 16bit
 	 */
 	SDL_Rect **Genode_Fb_ListModes(SDL_VideoDevice *t,
 	                               SDL_PixelFormat *format,
 	                               Uint32 flags)
 	{
-		if(format->BitsPerPixel != 16) { return (SDL_Rect **) 0; }
-		return modes;
+		return (SDL_Rect **)((format->BitsPerPixel == 16) ? -1 : 0);
 	}
 
 
@@ -457,17 +471,18 @@ extern "C" {
 		}
 
 		/* Map the buffer */
-		Genode::Dataspace_capability fb_ds_cap = framebuffer->dataspace();
+		Genode::Dataspace_capability fb_ds_cap =
+			framebuffer->dataspace(width, height);
 		if (!fb_ds_cap.valid()) {
 			Genode::error("could not request dataspace for frame buffer");
 			return nullptr;
 		}
 
 		if (t->hidden->buffer) {
-			global_env()->rm().detach(t->hidden->buffer);
+			global_env().rm().detach(t->hidden->buffer);
 		}
 
-		t->hidden->buffer = global_env()->rm().attach(fb_ds_cap);
+		t->hidden->buffer = global_env().rm().attach(fb_ds_cap);
 
 		if (!t->hidden->buffer) {
 			Genode::error("no buffer for requested mode");
