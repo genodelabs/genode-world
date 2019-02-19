@@ -15,7 +15,6 @@
 #include <base/attached_rom_dataspace.h>
 #include <libc/component.h>
 #include <base/heap.h>
-#include <base/printf.h>
 #include <base/sleep.h>
 #include <os/reporter.h>
 #include <util/retry.h>
@@ -685,7 +684,7 @@ void Audio_player::Main::handle_playlist()
 {
 	playlist_rom.update();
 
-	if (!playlist_rom.is_valid()) { return; }
+	if (!playlist_rom.valid()) { return; }
 
 	Genode::Xml_node node(playlist_rom.local_addr<char>(),
 	                      playlist_rom.size());
