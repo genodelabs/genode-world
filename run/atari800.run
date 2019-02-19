@@ -34,4 +34,4 @@ set boot_modules {
 	vfs.lib.so
 }
 
-source ${genode_dir}/repos/world/run/framebuffer_app.inc
+source ${genode_dir}/repos/world/run/nitpicker_app.inc

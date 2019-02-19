@@ -1,115 +1,27 @@
-
-# Build
-#
-
-
 set build_components {
-	core init
-	timer
-	drivers/audio
-	drivers/usb
-	drivers/framebuffer drivers/input
 	app/uhexen2
+	lib/vfs/lwip
+	server/nic_loopback
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-build $build_components
-
-create_boot_directory
-
-#
-# Generate config
-#
-
-append config {
-<config>
-	<parent-provides>
-		<service name="ROM"/>
-		<service name="RAM"/>
-		<service name="IRQ"/>
-		<service name="IO_MEM"/>
-		<service name="IO_PORT"/>
-		<service name="CAP"/>
-		<service name="PD"/>
-		<service name="RM"/>
-		<service name="CPU"/>
-		<service name="LOG"/>
-		<service name="SIGNAL"/>
-	</parent-provides>
-	<default-route>
-		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>
-	<default caps="100"/>
-
-	<start name="timer">
+set app_config {
+	<start name="nic_loopback" priority="-1">
 		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Timer"/></provides>
-	</start>}
-
-append_if [have_spec sdl] config {
-	<start name="fb_sdl" ld="no">
-		<resource name="RAM" quantum="4M"/>
-		<provides>
-			<service name="Input"/>
-			<service name="Framebuffer"/>
-		</provides>
-	</start>}
-
-append_platform_drv_config
-
-append_if [have_spec vesa] config {
-	<start name="fb_drv">
-		<resource name="RAM" quantum="16M"/>
-		<provides><service name="Framebuffer"/></provides>
-		<!--
-			Limit the resolution because the software renderer of UHexen2
-			only supports up to 1280x1024 currently.
-		-->
-		<config width="1024" height="768" buffered="yes"/>
-		<route>
-			<service name="PCI"><child name="acpi" /></service>
-			<any-service> <parent /> <any-child /></any-service>
-		</route>
-	</start>}
-
-append_if [have_spec pl11x] config {
-	<start name="fb_drv">
-		<resource name="RAM" quantum="2M"/>
-		<provides><service name="Framebuffer"/></provides>
-	</start>}
-
-append_if [have_spec ps2] config {
-	<start name="ps2_drv">
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Input"/></provides>
-	</start>}
-
-append config {
-	<start name="audio_drv">
-		<binary name="} [audio_drv_binary] {"/>
-		<resource name="RAM" quantum="8M"/>
-		<provides><service name="Audio_out"/></provides>
+		<provides> <service name="Nic"/> </provides>
 	</start>
-	<start name="uhexen2">
+	<start name="uhexen2" caps="256">
 		<resource name="RAM" quantum="128M"/>
 		<config>
 			<sdl_audio_volume value="100"/>
-			<libc stdout="/dev/log" stderr="/dev/log">
+			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
 			<vfs>
 				<dir name="dev"> <log/> </dir>
+				<dir name="socket">
+					<lwip ip_addr="127.0.0.1" netmask="255.0.0.0" gateway="0.0.0.0"/> </dir>
 				<tar name="hexen2demo_data.tar" />
 			</vfs>
-			</libc>
 		</config>
-		<route>
-			<any-service> <parent /> <any-child /></any-service>
-		</route>
-	</start>
-</config>}
-
-install_config $config
+	</start>}
 
 if {![file exists bin/hexen2demo_data.tar]} {
 	set hexen2demo_dir "hexen2demo_nov1997"
@@ -137,22 +49,11 @@ if {![file exists bin/hexen2demo_data.tar]} {
 
 # generic modules
 append boot_modules {
-	core init timer } [audio_drv_binary] {
-	ld.lib.so libc.lib.so vfs.lib.so libm.lib.solwip_legacy.lib.so
-	pthread.lib.so sdl.lib.so sdl_mixer.lib.so
+	libc.lib.so vfs.lib.so libm.lib.so
+	sdl.lib.so sdl_mixer.lib.so
 	uhexen2 hexen2demo_data.tar
+	vfs_lwip.lib.so
+	nic_loopback
 }
 
-# platform-specific modules
-append_platform_drv_boot_modules
-
-lappend_if [have_spec linux] boot_modules fb_sdl
-lappend_if [have_spec vesa]  boot_modules fb_drv
-lappend_if [have_spec ps2]   boot_modules ps2_drv
-lappend_if [have_spec pl11x] boot_modules fb_drv
-
-build_boot_image $boot_modules
-
-append qemu_args "  -soundhw es1370 "
-
-run_genode_until forever
+source ${genode_dir}/repos/world/run/nitpicker_app.inc

@@ -1,8 +1,8 @@
 set build_components { app/tuxmath }
 
 set app_config {
-	<start name="tuxmath" priority="-2" caps="200">
-		<resource name="RAM" quantum="64M"/>
+	<start name="tuxmath" priority="-2" caps="384">
+		<resource name="RAM" quantum="96M"/>
 		<config>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 			<vfs>
@@ -18,7 +18,6 @@ set boot_modules {
 	tuxmath
 	libc.lib.so vfs.lib.so
 	libm.lib.so
-	pthread.lib.so
 	libiconv.lib.so
 	jpeg.lib.so
 	freetype.lib.so
@@ -32,4 +31,4 @@ set boot_modules {
 	tuxmath_data.tar
 }
 
-source ${genode_dir}/repos/world/run/framebuffer_app.inc
+source ${genode_dir}/repos/world/run/nitpicker_app.inc

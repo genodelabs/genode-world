@@ -1,15 +1,11 @@
-<runtime ram="80M" caps="512" binary="init">
+<runtime ram="80M" caps="512" binary="chocolate-doom">
 
-	<requires> <audio_out/> <nitpicker/> <nic/> <timer/> </requires>
+	<requires> <audio_out/> <nitpicker/> <nic/> <timer/> <rtc/> </requires>
 
 	<content>
 		<rom label="ld.lib.so"/>
-		<rom label="init"/>
-		<rom label="init.config"/>
-		<rom label="nit_fb"/>
 		<rom label="chocolate-doom"/>
 		<rom label="libc.lib.so"/>
-		<rom label="pthread.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="sdl.lib.so"/>
 		<rom label="sdl_mixer.lib.so"/>
@@ -19,47 +15,13 @@
 	</content>
 
 	<config>
-		<parent-provides>
-			<service name="ROM"/>
-			<service name="PD"/>
-			<service name="RM"/>
-			<service name="CPU"/>
-			<service name="LOG"/>
-			<service name="Timer"/>
-			<service name="Audio_out"/>
-			<service name="Nitpicker"/>
-			<service name="Nic"/>
-		</parent-provides>
-
-		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>
-
-		<default caps="100"/>
-
-		<start name="nit_fb">
-			<resource name="RAM" quantum="16M"/>
-			<provides> <service name="Framebuffer"/> <service name="Input"/> </provides>
-			<config initial_width="1024" initial_height="768"/>
-		</start>
-
-		<start name="doom" caps="300">
-			<binary name="chocolate-doom"/>
-			<resource name="RAM" quantum="64M"/>
-			<config>
-				<libc stdout="/dev/log" stderr="/dev/log" stdin="/dev/null" rtc="/dev/rtc"/>
-				<vfs>
-					<dir name="dev">
-						<log/>
-						<inline name="rtc">2018-08-31 18:00</inline>
-					</dir>
-					<rom name="doom1.wad"/>
-				</vfs>
-			</config>
-			<route>
-				<service name="Framebuffer"> <child name="nit_fb"/> </service>
-				<service name="Input">       <child name="nit_fb"/> </service>
-				<any-service> <parent/> </any-service>
-			</route>
-		</start>
+		<libc stdout="/dev/log" stderr="/dev/log" stdin="/dev/null" rtc="/dev/rtc"/>
+		<vfs>
+			<dir name="dev">
+				<log/> <rtc/>
+			</dir>
+			<rom name="doom1.wad"/>
+		</vfs>
 	</config>
 
 </runtime>

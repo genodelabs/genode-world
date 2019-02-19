@@ -1,18 +1,6 @@
-set build_components { app/ltris server/ram_fs }
+set build_components { app/ltris }
 
 set app_config {
-
-	<start name="ram_fs" priority="-1">
-		<resource name="RAM" quantum="4M"/>
-		<provides> <service name="File_system"/> </provides>
-		<config>
-			<default-policy root="/" writeable="yes" />
-			<content>
-				<dir name="var"/>
-			</content>
-		</config>
-	</start>
-
 	<start name="ltris" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
@@ -22,17 +10,16 @@ set app_config {
 				<dir name="dev">
 					<log/> <inline name="rtc">2000-01-01 00:00</inline>
 				</dir>
-				<fs/>
+				<dir name="var"> <ram/> </dir>
+				<ram/>
 			</vfs>
 		</config>
 	</start> }
 
 set boot_modules {
-	ram_fs
 	ltris
 	libc.lib.so vfs.lib.so
 	libm.lib.so
-	pthread.lib.so
 	sdl_mixer.lib.so
 	sdl.lib.so
 	stdcxx.lib.so
@@ -40,6 +27,4 @@ set boot_modules {
 	ltris_data.tar
 }
 
-set fb_config {<config buffered="yes" width="640" height="480"/>}
-
-source ${genode_dir}/repos/world/run/framebuffer_app.inc
+source ${genode_dir}/repos/world/run/nitpicker_app.inc

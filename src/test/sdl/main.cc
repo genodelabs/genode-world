@@ -34,7 +34,6 @@
 
 /* Genode includes */
 #include <base/env.h>
-#include <base/printf.h>
 #include <timer_session/connection.h>
 
 

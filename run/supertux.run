@@ -1,13 +1,6 @@
-set build_components { app/supertux server/ram_fs }
+set build_components { app/supertux }
 
 set app_config {
-
-<start name="ram_fs" priority="-1">
-	<resource name="RAM" quantum="4M"/>
-	<provides> <service name="File_system"/> </provides>
-	<config> <default-policy writeable="yes" root="/"/> </config>
-</start>
-
 <start name="supertux" priority="-2" caps="200">
 	<resource name="RAM" quantum="64M"/>
 	<config>
@@ -17,19 +10,17 @@ set app_config {
 			<dir name="dev">
 				<log/> <inline name="rtc">2000-01-01 00:00</inline>
 			</dir>
-			<fs/>
+			<ram/>
 		</vfs>
 	</config>
 </start>}
 
 set boot_modules {
-	ram_fs
 	supertux
 	jpeg.lib.so
 	libc.lib.so vfs.lib.so
 	libm.lib.so
 	libpng.lib.so
-	pthread.lib.so
 	sdl_image.lib.so
 	sdl_mixer.lib.so
 	sdl.lib.so
@@ -38,4 +29,4 @@ set boot_modules {
 	supertux_data.tar
 }
 
-source ${genode_dir}/repos/world/run/framebuffer_app.inc
+source ${genode_dir}/repos/world/run/nitpicker_app.inc
