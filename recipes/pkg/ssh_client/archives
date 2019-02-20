@@ -8,3 +8,4 @@ _/src/vfs_jitterentropy
 _/src/libssh
 _/src/ssh_client
 _/src/vfs_lwip
+_/src/init
