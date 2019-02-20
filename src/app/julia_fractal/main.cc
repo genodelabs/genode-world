@@ -126,7 +126,7 @@ public:
   /**
    * Draw a calculated set in the buffer. 
    */
-  virtual void paint(Genode::Pixel_rgb565* buf, unsigned w, unsigned h)
+  void paint(Genode::Pixel_rgb565* buf, unsigned w, unsigned h) override
   {
     --w, --h;
     const auto _w = w;
