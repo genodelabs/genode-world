@@ -1,0 +1,9 @@
+base
+freetype
+jpeg
+libc
+libpng
+os
+sdl
+so
+zlib
