@@ -13,8 +13,6 @@ set build_components {
 	app/tox_dht_bootstrap
 	drivers/nic
 	lib/vfs/import
-	lib/vfs/lwip
-	server/report_rom
 }
 
 proc gpio_drv { } { if {[have_spec rpi] && [have_spec hw]}  { return hw_gpio_drv }
@@ -34,8 +32,10 @@ build $build_components
 create_boot_directory
 
 import_from_depot \
-	genodelabs/src/[base_src] \
-	genodelabs/src/init \
+	[depot_user]/src/[base_src] \
+	[depot_user]/src/init \
+	[depot_user]/src/vfs_lwip \
+	[depot_user]/src/report_rom \
 
 append config {
 <config>
@@ -119,12 +119,9 @@ set boot_modules {
 	libc.lib.so
 	libm.lib.so
 	libsodium.lib.so
-	posix.lib.so
 	c-toxcore.lib.so
 	tox_dht_bootstrap
 	vfs.lib.so
-	vfs_lwip.lib.so
-	report_rom
 }
 
 # platform-specific modules
