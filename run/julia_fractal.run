@@ -1,99 +1,20 @@
-create_boot_directory
-
-import_from_depot genodelabs/src/[base_src] \
-                  genodelabs/pkg/[drivers_interactive_pkg] \
-                  genodelabs/pkg/motif_wm \
-                  genodelabs/src/init \
-                  genodelabs/src/libc \
-                  genodelabs/src/vfs \
-                  genodelabs/src/stdcxx \
-                  genodelabs/src/nitpicker
-
-install_config {
-<config>
-  <parent-provides>
-    <service name="IO_MEM"/>
-    <service name="IO_PORT"/>
-    <service name="IRQ"/>
-
-    <service name="ROM"/>
-    <service name="PD"/>
-    <service name="RM"/>
-    <service name="RAM"/>
-    <service name="CPU"/>
-    <service name="LOG"/>
-  </parent-provides>
-
-  <default-route>
-    <any-service> <parent/> <any-child/> </any-service>
-  </default-route>
-  <default caps="125"/>
-
+set app_config {
   <start name="julia_fractal">
     <resource name="RAM" quantum="4M"/>
     <route>
       <service name="Nitpicker"> <child name="wm"/> </service>
       <any-service> <parent/> <any-child/> </any-service>
     </route>
-  </start>
+  </start>}
 
-  <!-- Nitpicker -->
-  <start name="timer">
-    <resource name="RAM" quantum="1M"/>
-    <provides> <service name="Timer"/> </provides>
-  </start>
+set build_components { app/julia_fractal }
 
-  <start name="drivers" caps="1000">
-    <resource name="RAM" quantum="32M" constrain_phys="yes"/>
-    <binary name="init"/>
-    <route>
-      <service name="ROM" label="config"> <parent label="drivers.config"/> </service>
-      <service name="Timer"> <child name="timer"/> </service>
-      <any-service> <parent/> </any-service>
-    </route>
-    <provides>
-      <service name="Input"/> <service name="Framebuffer"/>
-    </provides>
-  </start>
-
-  <start name="nitpicker">
-    <resource name="RAM" quantum="2M"/>
-    <provides> <service name="Nitpicker"/> </provides>
-    <config focus="rom">
-      <domain name="pointer" layer="1" content="client" label="no" origin="pointer"/>
-      <domain name="general" layer="2" content="client" label="no" hover="always"/>
-      <policy label_prefix="pointer" domain="pointer"/>
-      <default-policy domain="general"/>
-    </config>
-  </start>
-
-  <start name="pointer">
-    <resource name="RAM" quantum="2M"/>
-    <route>
-      <service name="Nitpicker"> <child name="nitpicker"/> </service>
-      <any-service> <parent/> <any-child/> </any-service>
-    </route>
-  </start>
-
-  <start name="wm" caps="1000">
-    <resource name="RAM" quantum="32M"/>
-    <binary name="init"/>
-    <provides> <service name="Nitpicker"/> </provides>
-    <route>
-      <service name="ROM" label="config"> <parent label="wm.config"/> </service>
-      <service name="Nitpicker"> <child name="nitpicker"/> </service>
-      <any-service> <parent/> <any-child/> </any-service>
-    </route>
-  </start>
-</config>
+set boot_modules {
+	julia_fractal
+	libc.lib.so
+	vfs.lib.so
+	libm.lib.so
+	stdcxx.lib.so
 }
 
-set fd [open [run_dir]/genode/focus w]
-puts $fd "<focus label=\"wm -> wm -> \"/>"
-close $fd
-
-build { app/julia_fractal }
-
-build_boot_image { julia_fractal }
-
-run_genode_until forever
+source ${genode_dir}/repos/world/run/nitpicker_app.inc
