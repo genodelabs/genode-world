@@ -1,0 +1,122 @@
+diff --git a/hotspot/src/cpu/arm/vm/c1_LIRAssembler_arm.cpp b/hotspot/src/cpu/arm/vm/c1_LIRAssembler_arm.cpp
+index caf0071..e5b8d87 100644
+--- a/hotspot/src/cpu/arm/vm/c1_LIRAssembler_arm.cpp
++++ b/hotspot/src/cpu/arm/vm/c1_LIRAssembler_arm.cpp
+@@ -352,6 +352,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
+   __ ret();
+ }
+ 
++#if 0
+ 
+ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
+   __ mov_address(Rtemp, os::get_polling_page(), symbolic_Relocation::polling_page_reference);
+@@ -364,6 +365,27 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
+   return offset;
+ }
+ 
++#else
++
++int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
++  __ mov_address(Rtemp, os::get_polling_page(), symbolic_Relocation::polling_page_reference);
++  if (info != NULL) {
++    add_debug_info_for_branch(info);
++  }
++  int offset = __ offset();
++  Label out;
++  __ relocate(relocInfo::poll_type);
++  __ ldr(Rtemp, Address(Rtemp));
++  __ cmp(Rtemp, 1);
++  __ b(out, eq);
++  __ save_all_registers();
++  __ call((address)os::garbage_collector, relocInfo::runtime_call_type);
++  __ restore_all_registers();
++  __ bind(out);
++
++  return offset;
++}
++#endif
+ 
+ void LIR_Assembler::move_regs(Register from_reg, Register to_reg) {
+   if (from_reg != to_reg) {
+diff --git a/hotspot/src/cpu/x86/vm/c1_LIRAssembler_x86.cpp b/hotspot/src/cpu/x86/vm/c1_LIRAssembler_x86.cpp
+index 8aa4aec..6c04b06 100644
+--- a/hotspot/src/cpu/x86/vm/c1_LIRAssembler_x86.cpp
++++ b/hotspot/src/cpu/x86/vm/c1_LIRAssembler_x86.cpp
+@@ -526,6 +526,7 @@ void LIR_Assembler::return_op(LIR_Opr result) {
+ 
+   // Note: we do not need to round double result; float result has the right precision
+   // the poll sets the condition code, but no data registers
++#if 1
+   AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
+ 
+   if (Assembler::is_polling_page_far()) {
+@@ -535,10 +536,13 @@ void LIR_Assembler::return_op(LIR_Opr result) {
+   } else {
+     __ testl(rax, polling_page);
+   }
++#endif
++  //__ call(RuntimeAddress(os::get_polling_page(), relocInfo::poll_return_type);
++  //__ call_VM(noreg, os::get_polling_page());
+   __ ret(0);
+ }
+ 
+-
++#if 0
+ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
+   AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
+   guarantee(info != NULL, "Shouldn't be NULL");
+@@ -555,7 +559,42 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
+   }
+   return offset;
+ }
++#endif
++#if 1
++int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
++  guarantee(info != NULL, "Shouldn't be NULL");
++  AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
++  const Register thread = LP64_ONLY(r15_thread);
++  int offset = __ offset();
++  Label out;
++  __ enter();
++
++  /* check polling page variable */
++  __ push(rax);
++  __ lea(rax, polling_page);
++  __ movptr(rax, Address(rax, 0));
++  __ testl(rax, rax);
++  __ jcc(Assembler::notZero, out);
++
++  /* polling page unmapped (zero), start GC */
++  __ pushf();
++  __ pusha();
++  __ push(rax);
++  __ set_last_Java_frame(rsp, rbp, __ pc());
++  __ call(RuntimeAddress((address)os::garbage_collector));
++  __ reset_last_Java_frame(true);
++  __ pop(rax);
++  __ popa();
++  __ popf();
++
++  /* leave */
++  __ bind(out);
++  __ pop(rax);
++  __ leave();
+ 
++  return offset;
++}
++#endif
+ 
+ void LIR_Assembler::move_regs(Register from_reg, Register to_reg) {
+   if (from_reg != to_reg) __ mov(to_reg, from_reg);
+diff --git a/hotspot/src/share/vm/runtime/os.hpp b/hotspot/src/share/vm/runtime/os.hpp
+index ac5919a..fe3bb83 100644
+--- a/hotspot/src/share/vm/runtime/os.hpp
++++ b/hotspot/src/share/vm/runtime/os.hpp
+@@ -381,6 +381,7 @@ class os: AllStatic {
+   static bool    is_poll_address(address addr)  { return addr >= _polling_page && addr < (_polling_page + os::vm_page_size()); }
+   static void    make_polling_page_unreadable();
+   static void    make_polling_page_readable();
++  static void    garbage_collector();
+ 
+   // Routines used to serialize the thread state without using membars
+   static void    serialize_thread_states();

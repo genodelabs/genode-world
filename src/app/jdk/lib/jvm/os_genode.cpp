@@ -2323,7 +2323,7 @@ bool os::dont_yield() {
 }
 
 void os::naked_yield() {
-  sched_yield();
+  //sched_yield();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3204,14 +3204,13 @@ extern "C" {
   }
 }
 
+static void polling_page_handler();
+unsigned long polling_page_readable = 1;
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
-  // Allocate a single page and mark it as readable for safepoint polling
-  address polling_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-  guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
 
-  os::set_polling_page(polling_page);
-  log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
+  os::set_polling_page((address)&polling_page_readable);
 
   if (!UseMembar) {
     address mem_serialize_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
@@ -3292,20 +3291,24 @@ jint os::init_2(void) {
   return JNI_OK;
 }
 
+void os::garbage_collector()
+{
+	return;
+
+	/* TODO: enable gargabe collector
+	if (polling_page_readable) return;
+	SafepointSynchronize::handle_polling_page_exception(c);
+	SafepointSynchronize::block(c); */
+}
+
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
-  //if (!guard_memory((char*)_polling_page, Bsd::page_size())) {
-  //  fatal("Could not disable polling page");
-  //}
-  NOT_IMPL;
+  polling_page_readable = 0;
 }
 
 // Mark the polling page as readable
 void os::make_polling_page_readable(void) {
-  //if (!bsd_mprotect((char *)_polling_page, Bsd::page_size(), PROT_READ)) {
-  //  fatal("Could not enable polling page");
-  //}
-  NOT_IMPL;
+  polling_page_readable = 1;
 }
 
 int os::active_processor_count() {

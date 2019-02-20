@@ -9,7 +9,8 @@ TAR_OPT(jdk) := --strip-components=1 --files-from=$(REP_DIR)/src/app/jdk/files.l
 DIR(jdk)  := src/app/jdk
 
 PATCHES   := $(addprefix src/app/jdk/patches/,jdk.patch arm.patch \
-               icache.patch size.patch)
+               icache.patch size.patch id.patch lir.patch mutex.patch \
+               verified_entry.patch vfp.patch)
 
 # This patch has to be applied to JDK when building the standard Java library
 # pollselectorprovider.patch

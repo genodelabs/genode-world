@@ -1,0 +1,50 @@
+diff --git a/hotspot/src/cpu/arm/vm/nativeInst_arm_32.cpp b/hotspot/src/cpu/arm/vm/nativeInst_arm_32.cpp
+index 77694f6..bce8843 100644
+--- a/hotspot/src/cpu/arm/vm/nativeInst_arm_32.cpp
++++ b/hotspot/src/cpu/arm/vm/nativeInst_arm_32.cpp
+@@ -287,12 +287,45 @@ void NativeMovConstReg::set_pc_relative_offset(address addr, address pc) {
+ void RawNativeJump::check_verified_entry_alignment(address entry, address verified_entry) {
+ }
+ 
++#if 0
+ void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
+   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
+   int *a = (int *)verified_entry;
+   a[0] = zombie_illegal_instruction; // always illegal
++  printf("%s:%d called dest %x verf %x\n", __func__, __LINE__, dest, verified_entry);
++
+   ICache::invalidate_range((address)&a[0], sizeof a[0]);
+ }
++#endif
++
++void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
++  assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
++
++  printf("%s:%d called dest %x verf %x\n", __func__, __LINE__, dest, verified_entry);
++
++  /* jump to 'dest' */
++  unsigned          *instruction = (unsigned *)verified_entry;
++  unsigned constexpr opcode      =   0xea << 24; // 'b' (branch)
++  unsigned constexpr opcode_mask = ~(0xff << 24);
++
++  /*
++   * Lower 24 bits are the sign extented PC relative target shifted by 2.
++   * Since the PC is always 8 bytes ahead, we have to subtract them.
++   */
++  int displacement = (int)(dest - verified_entry - 8) >> 2;
++
++  int constexpr limit = (32 * 1024 * 1024) - 4;
++  if (displacement > limit || displacement < -limit) {
++    printf("%s -> ERROR: displacement larger than 32 MB\n", __PRETTY_FUNCTION__);
++    while (1);
++  }
++
++  /* patch machine code */
++  *instruction = (displacement & opcode_mask) | opcode;
++
++  /* flush instruction cache so the CPU sees correct things */
++  ICache::invalidate_range(verified_entry, sizeof(unsigned));
++}
+ 
+ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
+   int offset = (int)(entry - code_pos - 8);

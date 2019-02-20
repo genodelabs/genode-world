@@ -18,7 +18,9 @@ CC_OPT += -D__GENODE__
 CC_OPT += -DINCLUDE_SUFFIX_OS=_bsd -DTARGET_COMPILER_gcc -D_ALLBSD_SOURCE -DUSE_LIBRARY_BASED_TLS_ONLY \
           -DVM_LITTLE_ENDIAN
 
-CC_OLEVEL = -O0
+CC_OPT += -DCOMPILER1 -DCOMPILER2
+
+CC_OLEVEL = -O2
 
 ## DEBUGGING ##
 #CC_OPT += -DASSERT
@@ -138,13 +140,8 @@ SRC_CTWO += share/vm/ci/bcEscapeAnalyzer.cpp \
             share/vm/opto/vectornode.cpp \
             share/vm/prims/jvm.cpp \
             share/vm/runtime/globals.cpp \
+          share/vm/runtime/vframe.cpp \
             share/vm/runtime/sharedRuntime.cpp
-
-#
-# create CC_OPT_file for c1/c2 compiler
-#
-$(foreach FILE, $(SRC_CONE:.cpp=), $(eval CC_OPT_$(FILE) = -DCOMPILER1))
-$(foreach FILE, $(SRC_CTWO:.cpp=), $(eval CC_OPT_$(FILE) = -DCOMPILER2))
 
 CC_OPT_share/vm/runtime/vm_version += $(JDK_VERSION) \
               -DHOTSPOT_VERSION_STRING='"9-internal+0-adhoc.genode.openjdk-jdk9-jdk9"'\
@@ -609,7 +606,6 @@ SRC_CC += $(SRC_CONE) $(SRC_CTWO) \
           share/vm/runtime/timerTrace.cpp \
           share/vm/runtime/unhandledOops.cpp \
           share/vm/runtime/vframeArray.cpp \
-          share/vm/runtime/vframe.cpp \
           share/vm/runtime/vframe_hp.cpp \
           share/vm/runtime/vm_operations.cpp \
           share/vm/runtime/vmStructs.cpp \

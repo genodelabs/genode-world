@@ -1,0 +1,13 @@
+diff --git a/hotspot/src/share/vm/runtime/mutex.cpp b/hotspot/src/share/vm/runtime/mutex.cpp
+index 675dbfb..3b1ba0a 100644
+--- a/hotspot/src/share/vm/runtime/mutex.cpp
++++ b/hotspot/src/share/vm/runtime/mutex.cpp
+@@ -1398,8 +1398,6 @@ void Monitor::check_prelock_state(Thread *thread) {
+ void Monitor::check_block_state(Thread *thread) {
+   if (!_allow_vm_block && thread->is_VM_thread()) {
+     warning("VM thread blocked on lock");
+-    print();
+-    BREAKPOINT;
+   }
+   assert(_owner != thread, "deadlock: blocking on monitor owned by current thread");
+ }

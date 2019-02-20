@@ -1,0 +1,63 @@
+vfp.patch
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+
+---
+ hotspot/src/cpu/arm/vm/vm_version_arm_32.cpp |   26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/hotspot/src/cpu/arm/vm/vm_version_arm_32.cpp b/hotspot/src/cpu/arm/vm/vm_version_arm_32.cpp
+index b35d68f..7ffd771 100644
+--- a/hotspot/src/cpu/arm/vm/vm_version_arm_32.cpp
++++ b/hotspot/src/cpu/arm/vm/vm_version_arm_32.cpp
+@@ -126,28 +126,28 @@ void VM_Version::initialize() {
+   address check_vfp_pc = g.generate_check_vfp();
+   check_vfp_t check_vfp = CAST_TO_FN_PTR(check_vfp_t, check_vfp_pc);
+ 
+-  check_vfp_fault_instr = (address)check_vfp;
+-  double dummy;
+-  if (check_vfp(&dummy)) {
++  //check_vfp_fault_instr = (address)check_vfp;
++  //double dummy;
++  //if (check_vfp(&dummy)) {
+     _features |= vfp_m;
+-  }
++  //}
+ 
+ #ifdef COMPILER2
+   if (has_vfp()) {
+     address check_vfp3_32_pc = g.generate_check_vfp3_32();
+     check_vfp_t check_vfp3_32 = CAST_TO_FN_PTR(check_vfp_t, check_vfp3_32_pc);
+-    check_vfp3_32_fault_instr = (address)check_vfp3_32;
++    //check_vfp3_32_fault_instr = (address)check_vfp3_32;
+     double dummy;
+-    if (check_vfp3_32(&dummy)) {
+-      _features |= vfp3_32_m;
+-    }
++    //if (check_vfp3_32(&dummy)) {
++      //_features |= vfp3_32_m;
++    //}
+ 
+     address check_simd_pc =g.generate_check_simd();
+     check_simd_t check_simd = CAST_TO_FN_PTR(check_simd_t, check_simd_pc);
+-    check_simd_fault_instr = (address)check_simd;
+-    if (check_simd()) {
+-      _features |= simd_m;
+-    }
++    //check_simd_fault_instr = (address)check_simd;
++    //if (check_simd()) {
++      //_features |= simd_m;
++    //}
+   }
+ #endif
+ #endif
+@@ -226,7 +226,7 @@ void VM_Version::initialize() {
+ #ifdef COMPILER2
+   // C2 is only supported on v7+ VFP at this time
+   if (_arm_arch < 7 || !has_vfp()) {
+-    vm_exit_during_initialization("Server VM is only supported on ARMv7+ VFP");
++    //vm_exit_during_initialization("Server VM is only supported on ARMv7+ VFP");
+   }
+ #endif
+ 

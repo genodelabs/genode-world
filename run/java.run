@@ -41,6 +41,12 @@ set config {
 		</route>
 		<config ld_verbose="no">
 			<arg value="/bin/java" />
+			<arg value="-XX:+NeverActAsServerClassMachine"/>
+			<arg value="-XX:+UnlockDiagnosticVMOptions"/>
+			<arg value="-XX:-ImplicitNullChecks"/>
+			<arg value="-XX:+CITime" />
+			<!-- <arg value="-Xcomp"/> -->
+			<!-- <arg value="-XX:+PrintCompilation" /> -->
 			<arg value="-jar" />
 			<arg value="hello.jar" />
 			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
@@ -85,8 +91,24 @@ set boot_modules {
 	classes.tar tzdb.dat management.lib.so
 }
 
+
+# return jdk_generated port path
+proc jdk_generated { } {
+	set ::env(MAKEFLAGS) s
+	set jdk_generated_path [exec [genode_dir]/tool/ports/current jdk_generated]
+	return $jdk_generated_path
+}
+
+file copy -force [jdk_generated]/src/app/jdk/bin/classes.tar bin
+file copy -force [jdk_generated]/src/app/jdk/bin/tzdb.dat bin
+file copy -force [jdk_generated]/src/app/jdk/bin/hello.tar bin
+
 build_boot_image $boot_modules
 
 append qemu_args " -nographic -serial mon:stdio "
 
-run_genode_until forever
+run_genode_until "child \"java\" exited with exit value 0" 60
+
+file delete -force bin/classes.tar
+file delete -force bin/tzdb.dat
+file delete -force bin/hello.tar

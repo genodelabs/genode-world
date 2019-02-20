@@ -172,8 +172,9 @@ void os::verify_stack_alignment()
 
 address os::current_stack_pointer()
 {
-	address dummy = (address)&dummy;
-	return dummy;
+	address sp = 0;
+	asm volatile ("mov %0, sp\n" : "=r" (sp) : :);
+	return sp;
 }
 
 
@@ -204,7 +205,6 @@ address os::current_stack_base()
 	pthread_attr_getstack(&attr, &addr, &size);
 
 	pthread_attr_destroy(&attr);
-
 	return (address)addr + size;
 }
 
