@@ -11,6 +11,7 @@
 #include "private/mutex.h"
 
 #include <base/lock.h>
+#include <base/log.h>
 
 static int initialized;
 
