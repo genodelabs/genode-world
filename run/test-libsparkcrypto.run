@@ -1,0 +1,72 @@
+set build_components {
+	core init server/log_terminal
+	test/libsparkcrypto
+	lib/vfs/jitterentropy
+	drivers/rtc
+	timer
+}
+
+build $build_components
+create_boot_directory
+
+install_config {
+	<config>
+		<parent-provides>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="CPU"/>
+			<service name="ROM"/>
+		   <service name="IO_PORT"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+
+		<start name="timer">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Timer"/> </provides>
+		</start>
+
+	   <start name="rtc_drv">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Rtc"/> </provides>
+	   </start>
+
+		<start name="terminal">
+			<binary name="log_terminal"/>
+			<resource name="RAM" quantum="2M"/>
+			<provides><service name="Terminal"/></provides>
+		</start>
+
+		<start name="test-libsparkcrypto">
+			<resource name="RAM" quantum="100M"/>
+			<config>
+				<vfs>
+					<ram/>
+					<dir name="dev">
+						<jitterentropy name="random"/>
+							<log/>
+								<rtc/>
+							</dir>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+			</config>
+			<route>
+				<service name="Terminal"> <child name="terminal"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+build_boot_image {
+	core init test-libsparkcrypto log_terminal rtc_drv timer
+	libc.lib.so vfs.lib.so ld.lib.so ada.lib.so
+	libcrypto.lib.so libaunit.lib.so libsparkcryptofat.lib.so
+	vfs_jitterentropy.lib.so
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until "child \"test-libsparkcrypto\" exited with exit value 0" 200

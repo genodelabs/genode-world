@@ -10,7 +10,8 @@ SRC_C += \
 		posix_common.c \
 		posix_fat.c
 
-SRC_ADS += system.ads \
+SRC_ADS += \
+		system.ads \
 		s-soflin.ads \
 		s-imgint.ads \
 		s-stoele.ads \
@@ -25,9 +26,10 @@ SRC_ADS += system.ads \
 		ada.ads \
 		g-souinf.ads \
 		g-trasym.ads \
-		s-unstyp.ads
+		s-unstyp.ads \
 
-SRC_ADB += g-io.adb \
+SRC_ADB += \
+		g-io.adb \
 	   a-except.adb \
 		a-tags.adb \
 		a-finali.adb \
@@ -94,6 +96,7 @@ vpath platform.% $(ADA_RUNTIME_LIB_DIR)
 vpath string_utils.% $(ADA_RUNTIME_LIB_DIR)
 vpath ss_utils.% $(ADA_RUNTIME_LIB_DIR)
 vpath a-except.adb $(ADA_RUNTIME_DIR)
+vpath s-osprim.adb $(ADA_RUNTIME_DIR)
 
 vpath %.c   $(ADA_RUNTIME_PLATFORM_DIR)
 vpath %.ads $(ADA_RTS_SOURCE)
