@@ -1,0 +1,323 @@
+proc check_config {bin xml_file xsd_file label avail_xsd_files xsd_inc nesting_level} { }
+
+if {![have_spec nit6_solox]} {
+	puts "Run script is only supported on nit6_solox"; exit 0 }
+
+
+set build_components {
+	core init timer
+
+	app/jdk/lib/generated
+	app/log_core
+
+	drivers/nic
+	drivers/gpio
+	drivers/sd_card
+
+	server/fs_log
+	server/fs_rom
+	server/nic_router
+	server/part_block
+	server/report_rom
+}
+
+lappend_if [have_spec gpio] build_components drivers/gpio
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+create_boot_directory
+
+import_from_depot [depot_user]/pkg/boot2java
+
+append config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="LOG"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="PD"/>
+		<service name="IRQ"/>
+		<service name="IO_PORT"/>
+		<service name="IO_MEM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100" />
+
+	<start name="timer">
+		<resource name="RAM" quantum="2M" />
+		<provides> <service name="Timer" /> </provides>
+	</start>
+	
+	<start name="gpio_drv" caps="200">
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="Gpio"/></provides>
+		<config/>
+	</start>
+
+	<!-- networking -->
+
+	<start name="nic_drv" caps="200">
+		<resource name="RAM" quantum="16M"/>
+		<provides><service name="Nic"/></provides>
+		<config>
+			<card name="fec0" type="fsl,imx6sx-fec" mii="rgmii" phy="phy0" irq="150" mmio="0x2188000">
+				<mdio>
+					<phy name="phy0" type="Atheros 8035 ethernet" gpio_irq="36" reg_num="4"/>
+					<phy name="phy1" type="Atheros 8035 ethernet" gpio_irq="40" reg_num="5"/>
+				</mdio>
+			</card>
+			<card name="fec1" type="fsl,imx6sx-fec" mii="rgmii" phy="phy1" irq="134" mmio="0x21b4000"/>
+		</config>
+	</start>
+
+	<start name="report_rom" caps="200">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+		<config verbose="yes"/>
+	</start>
+
+	<start name="nic_router" caps="200">
+		<resource name="RAM" quantum="12M" />
+		<provides> <service name="Nic" /> </provides>
+		<route>
+			<service name="Nic" label="nic0">
+				<child name="nic_drv" label="fec0"/>
+			</service>
+			<service name="Nic" label="nic1">
+				<child name="nic_drv" label="fec1"/>
+			</service>
+			<service name="ROM" label="config">
+				<child name="fs_rom" label="nic_router.config"/>
+			</service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="vfs_nic" caps="300">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="64M"/>
+		<provides> <service name="File_system"/> </provides>
+		<route>
+			<service name="Nic"><child name="nic_router"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config>
+			<vfs>
+				<dir name="socket">
+					<lxip dhcp="yes" />
+				</dir>
+			</vfs>
+			<default-policy root="/" writeable="yes" />
+		</config>
+	</start>
+
+	<!-- block and file system access -->
+
+	<start name="sd_card_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Block"/></provides>
+	</start>
+
+	<start name="part_block">
+		<resource name="RAM" quantum="5M"/>
+		<provides><service name="Block"/></provides>
+		<route>
+			<service name="Block"><child name="sd_card_drv" /></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config> <default-policy partition="1" writeable="yes"/> </config>
+	</start>
+
+	<start name="vfs_block" caps="300">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="File_system"/> </provides>
+		<route>
+			<service name="Block"><child name="part_block"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config>
+			<vfs>
+				<rump fs="ext2fs" ram="32M" writeable="yes"/>
+			</vfs>
+			<default-policy root="/" writeable="yes" />
+		</config>
+	</start>
+
+	<start name="fs_rom">
+		<resource name="RAM" quantum="64M" />
+		<provides><service name="ROM"/></provides>
+		<route>
+			<service name="File_system"> <child name="vfs_block"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<!-- logging onto file system -->
+
+	<start name="fs_log">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="LOG"/></provides>
+		<config>
+			<default-policy merge="yes"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="vfs_block"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="log_core">
+		<resource name="RAM" quantum="10M"/>
+		<config period_ms="2000"/>
+		<route>
+			<service name="ROM" unscoped_label="log_core"> <parent/> </service>
+			<service name="ROM" unscoped_label="ld.lib.so"> <parent/> </service>
+			<service name="ROM" label="log"> <parent label="core_log"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="LOG" label="log"> <child name="fs_log"/> </service>
+			<service name="PD"> <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="LOG"> <parent/> </service>
+		</route>
+	</start>
+
+	<!-- Java virtual machine -->
+
+	<start name="java" caps="750">
+		<resource name="RAM" quantum="256M" />
+		<route>
+			<service name="ROM" label="zip.lib.so">
+				<parent label="jzip.lib.so" />
+			</service>
+			<service name="ROM" label="net.lib.so">
+				<parent label="jnet.lib.so" />
+			</service>
+			<service name="ROM" label="classes.tar">
+				<child name="fs_rom" />
+			</service>
+			<service name="File_system" label="nic">
+				<child name="vfs_nic"/>
+			</service>
+			<service name="File_system" label="block">
+				<child name="vfs_block"/>
+			</service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+		<config ld_verbose="no">
+			<arg value="/bin/java" />
+			<arg value="-XX:+NeverActAsServerClassMachine"/>
+			<arg value="-XX:+UnlockDiagnosticVMOptions"/>
+			<arg value="-XX:-ImplicitNullChecks"/>
+			<arg value="-XX:+CITime" />
+			<arg value="-jar" />
+			<arg value="servlet.jar" />
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" />
+			<vfs>
+				<dir name="etc">
+					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
+				</dir>
+				<dir name="dev">
+					<log/><null/><inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
+				<dir name="bin">
+					<rom name="java" />
+				</dir>
+				<dir name="lib">
+					<rom name="java.lib.so" />
+					<inline name="jvm.cfg">-server KNOWN
+-client IGNORE
+</inline>
+					<dir name="server">
+						<rom name="jvm.lib.so" />
+					</dir>
+				</dir>
+				<dir name="modules">
+					<tar name="classes.tar"/>
+				</dir>
+				<dir name="var">
+					<dir name="tmp"> <ram/> </dir>
+				</dir>
+				<rom name="zip.lib.so" />
+				<rom name="nio.lib.so" />
+				<rom name="net.lib.so" />
+				<rom name="management.lib.so"/>
+				<fs label="block" buffer_size="524288"/>
+				<fs label="nic"/>
+				<ram/>
+			</vfs>
+		</config>
+	</start>
+}
+
+append_platform_drv_config
+
+append config {
+</config>
+}
+
+install_config $config
+
+set boot_modules {
+	core init ld.lib.so timer
+
+	gpio_drv sd_card_drv part_block
+
+	fs_rom report_rom fs_log log_core
+
+	nic_router
+}
+
+append boot_modules [nic_drv_binary]
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+#
+# Prepare disk image
+#
+set image     jdk_demo.img
+set dd        [installed_command dd]
+set sfdisk    [installed_command sfdisk]
+set mkfsext2  [installed_command mkfs.ext2]
+set losetup   [installed_command losetup]
+
+# return jdk_generated port path
+proc jdk_generated { } {
+	set ::env(MAKEFLAGS) s
+	set jdk_generated_path [exec [genode_dir]/tool/ports/current jdk_generated]
+	return $jdk_generated_path
+}
+
+# create file and partition table
+exec $dd if=/dev/zero of=[run_dir].img bs=1M count=64 2> /dev/null
+exec  echo ";" | $sfdisk [run_dir].img
+
+# scan file
+set dev [exec sudo $losetup  --partscan --show --find [run_dir].img]
+
+# mount and copy data to image
+exec mkdir -p [run_dir].tmp
+exec sudo $mkfsext2 -q "${dev}p1"
+exec sudo  mount "${dev}p1" [run_dir].tmp
+
+foreach f [glob -directory [jdk_generated]/src/app/jdk/bin *] {
+	exec sudo cp -rf $f [run_dir].tmp }
+
+exec sudo cp -f [run_dir]/uImage [run_dir].tmp
+
+# unmount
+exec sudo  umount "${dev}p1"
+exec sudo $losetup -d $dev
+exec rm -rf [run_dir].tmp
+
+puts "The image can be found under '[run_dir].img'"
