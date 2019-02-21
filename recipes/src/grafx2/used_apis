@@ -1,0 +1,7 @@
+base
+libc
+sdl
+sdl_image
+libpng
+vfs
+zlib

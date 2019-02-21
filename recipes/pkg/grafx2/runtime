@@ -1,0 +1,35 @@
+<runtime ram="64M" caps="192" binary="grafx2">
+
+	<requires>
+		<file_system/>
+		<nitpicker/>
+		<timer/>
+		<rtc/>
+	</requires>
+
+	<content>
+		<rom label="grafx2"/>
+		<rom label="grafx2_data.tar"/>
+		<rom label="jpeg.lib.so"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libpng.lib.so"/>
+		<rom label="sdl_image.lib.so"/>
+		<rom label="sdl.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		<vfs>
+			<tar name="grafx2_data.tar" />
+			<dir name="dev">
+				<log/> <rtc/>
+			</dir>
+			<fs/>
+		</vfs>
+	</config>
+
+</runtime>

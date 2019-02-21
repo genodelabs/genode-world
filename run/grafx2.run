@@ -4,18 +4,18 @@ set app_config {
 	<start name="grafx2" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
-			<libc stdout="/dev/log" stderr="/dev/log" >
-				<vfs>
-					<tar name="grafx2_data.tar" />
-					<dir name="dev"> <log/> </dir>
-					<ram/>
-				</vfs>
-			</libc>
+			<libc stdout="/dev/log" stderr="/dev/log"/>
+			<vfs>
+				<tar name="grafx2_data.tar" />
+				<dir name="dev"> <log/> </dir>
+				<ram/>
+			</vfs>
 		</config>
 	</start>}
 
 set boot_modules {
 	grafx2
+	grafx2_data.tar
 	jpeg.lib.so
 	libc.lib.so vfs.lib.so
 	libm.lib.so
@@ -23,8 +23,6 @@ set boot_modules {
 	sdl_image.lib.so
 	sdl.lib.so
 	zlib.lib.so
-
-	grafx2_data.tar
 }
 
 source ${genode_dir}/repos/world/run/nitpicker_app.inc
