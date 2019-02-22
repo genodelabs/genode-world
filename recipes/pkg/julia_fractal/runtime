@@ -1,0 +1,19 @@
+<runtime ram="4M" caps="128" binary="julia_fractal">
+
+	<requires>
+		<nitpicker/>
+		<timer/>
+	</requires>
+
+	<content>
+		<rom label="julia_fractal"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+	</content>
+
+	<config/>
+
+</runtime>
