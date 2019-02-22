@@ -1,0 +1,4 @@
+Creates a pretty animation by drawing successive julia set representations,
+periodically varying a constant factor.
+
+The program responds to mode changes. Hence, one can resize the Julia window.
