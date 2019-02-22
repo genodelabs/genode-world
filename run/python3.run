@@ -30,7 +30,10 @@ build {
 # Generate config
 #
 
-set config {
+proc rtc_start_attr { } {
+	if {[have_spec linux]} { return {ld="no"} } else { return "" } }
+
+install_config {
 <config verbose="yes">
 	<parent-provides>
 		<service name="ROM"/>
@@ -48,7 +51,7 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer" /></provides>
 	</start>
-	<start name="rtc_drv">
+	<start name="rtc_drv" } [rtc_start_attr] {>
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
@@ -103,10 +106,8 @@ print("Hello again")
 			<libc stdin="/dev/zero" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 		</config>
 	</start>
-</config>
-}
+</config>}
 
-install_config $config
 
 #
 # Boot modules

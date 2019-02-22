@@ -76,12 +76,8 @@ struct Python::Main
 			Py_SetPath(wbuf);
 		}
 
-		if (_config.xml().has_attribute("verbose")) {
-			bool verbose;
-			_config.xml().attribute("verbose").value(&verbose);
-			if (verbose)
-				Py_VerboseFlag = 1;
-		}
+		if (_config.xml().attribute_value("verbose", false))
+			Py_VerboseFlag = 1;
 
 		//don't need the 'site' module
 		Py_NoSiteFlag = 1;
