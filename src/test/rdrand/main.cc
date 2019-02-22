@@ -11,7 +11,7 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#include <os/rdrand.h>
+#include <world/rdrand.h>
 #include <base/component.h>
 #include <base/log.h>
 
