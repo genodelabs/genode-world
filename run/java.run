@@ -1,12 +1,12 @@
-
 set build_components {
 	core init
 	timer
-	app/jdk/java
 }
 
 build $build_components
 create_boot_directory
+
+import_from_depot [depot_user]/pkg/jdk
 
 set config {
 <config>
@@ -83,32 +83,10 @@ install_config $config
 
 set boot_modules {
 	core init ld.lib.so timer
-	java jli.lib.so hello.tar
-	java.lib.so jvm.lib.so jzip.lib.so jimage.lib.so
-	libc.lib.so libm.lib.so libc_pipe.lib.so
-	zlib.lib.so nio.lib.so jnet.lib.so
-	vfs.lib.so stdcxx.lib.so
-	classes.tar tzdb.dat management.lib.so
 }
-
-
-# return jdk_generated port path
-proc jdk_generated { } {
-	set ::env(MAKEFLAGS) s
-	set jdk_generated_path [exec [genode_dir]/tool/ports/current jdk_generated]
-	return $jdk_generated_path
-}
-
-file copy -force [jdk_generated]/src/app/jdk/bin/classes.tar bin
-file copy -force [jdk_generated]/src/app/jdk/bin/tzdb.dat bin
-file copy -force [jdk_generated]/src/app/jdk/bin/hello.tar bin
 
 build_boot_image $boot_modules
 
 append qemu_args " -nographic -serial mon:stdio "
 
 run_genode_until "child \"java\" exited with exit value 0" 60
-
-file delete -force bin/classes.tar
-file delete -force bin/tzdb.dat
-file delete -force bin/hello.tar
