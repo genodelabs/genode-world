@@ -1,8 +1,0 @@
-
-	ChucK programming language for real-time sound synthesis and music creation.
-
-This package runs ChucK in a non-interactive mode. A program will be loaded from the
-file 'main.ck' found in the root directory of the acquired File_system session.
-
-For more information see http://chuck.cs.princeton.edu/doc/. Example programs can be
-found in the ChucK source distribution at https://github.com/ccrma/chuck/tree/master/examples.
