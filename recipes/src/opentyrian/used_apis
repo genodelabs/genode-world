@@ -1,0 +1,6 @@
+base
+libc
+sdl
+sdl_net
+os
+vfs

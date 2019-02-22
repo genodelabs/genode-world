@@ -1,0 +1,33 @@
+<runtime ram="64M" caps="512" binary="opentyrian">
+
+	<requires>
+		<audio_out/>
+		<file_system/>
+		<nitpicker/>
+		<timer/>
+		<rtc/>
+	</requires>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="opentyrian"/>
+		<rom label="sdl.lib.so"/>
+		<rom label="sdl_net.lib.so"/>
+		<rom label="tyrian.tar"/>
+		<rom label="vfs.lib.so"/>
+	</content>
+
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		<vfs>
+			<tar name="tyrian.tar"/>
+			<fs/>
+			<dir name="dev">
+				<log/> <rtc/>
+			</dir>
+		</vfs>
+	</config>
+
+</runtime>
