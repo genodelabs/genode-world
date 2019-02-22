@@ -220,9 +220,6 @@ struct Flif_view::Main
 
 	void handle_config_signal()
 	{
-		try { env.vfs().apply_config(config_rom.xml().sub_node("vfs")); }
-		catch (...) { }
-
 		config_rom.update();
 		Libc::with_libc([&] () { handle_config(); });
 	}
