@@ -168,14 +168,14 @@ class Raw_audio::Terminal_component :
 			return _io_buffer.cap();
 		}
 
-		Size size() { return Size(0, 0); }
+		Size size() override { return Size(0, 0); }
 
-		bool avail() { return false; }
+		bool avail() override { return false; }
 
-		Genode::size_t read(void *, Genode::size_t) { return 0; }
+		Genode::size_t read(void *, Genode::size_t) override { return 0; }
 		Genode::size_t _read(Genode::size_t) { return 0; }
 
-		Genode::size_t write(void const *, Genode::size_t) { return 0; }
+		Genode::size_t write(void const *, Genode::size_t) override { return 0; }
 		Genode::size_t _write(Genode::size_t num_bytes)
 		{
 			/* sanitize argument */
@@ -187,12 +187,12 @@ class Raw_audio::Terminal_component :
 			return num_bytes;
 		}
 
-		void connected_sigh(Genode::Signal_context_capability cap) {
+		void connected_sigh(Genode::Signal_context_capability cap) override {
 			Genode::Signal_transmitter(cap).submit(); }
 
-		void read_avail_sigh(Genode::Signal_context_capability) { }
+		void read_avail_sigh(Genode::Signal_context_capability) override { }
 
-		void size_changed_sigh(Genode::Signal_context_capability) { }
+		void size_changed_sigh(Genode::Signal_context_capability) override { }
 };
 
 
