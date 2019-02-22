@@ -2,6 +2,7 @@ SRC_DIR = src/server/jitter_sponge
 include $(GENODE_DIR)/repos/base/recipes/src/content.inc
 
 MIRROR_FROM_REP_DIR = \
+	include/spec/x86_64/world/rdrand.h \
 	lib/import/import-libkeccak.mk \
 	lib/mk/libkeccak.inc \
 	lib/mk/spec/32bit/libkeccak.mk \
