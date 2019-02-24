@@ -164,7 +164,7 @@ struct Mp3_audio_sink::Decoder
 			if (mpg123_feed(_mh, src, num_bytes))
 				die_mpg123(_mh, "failed to feed");
 
-			off_t num = 0;
+			::off_t num = 0;
 			unsigned char *audio = nullptr;
 			size_t bytes = 0;
 
