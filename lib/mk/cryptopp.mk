@@ -10,6 +10,10 @@ SRC_CC += $(filter-out $(CRYPTOPP_FILTER),$(CRYPTOPP_SRC))
 
 CXX_DEF += -DCRYPTOPP_DISABLE_SSSE3
 
+ifeq ($(filter-out $(SPECS),arm),)
+	CXX_DEF += -DCRYPTOPP_DISABLE_ASM
+endif
+
 CC_WARN += -Wno-delete-non-virtual-dtor
 
 vpath %.cpp $(CRYPTOPP_SRC_DIR)
