@@ -1,6 +1,6 @@
 CRYPTOPP_SRC_DIR = $(call select_from_ports,cryptopp)/src/lib/cryptopp
 
-LIBS += stdcxx
+LIBS += stdcxx libm
 
 CRYPTOPP_FILTER := adhoc.cpp test.cpp bench1.cpp bench2.cpp validat0.cpp validat1.cpp validat2.cpp validat3.cpp validat4.cpp datatest.cpp regtest1.cpp regtest2.cpp regtest3.cpp dlltest.cpp fipsalgt.cpp tweetnacl.cpp simon-simd.cpp simon.cpp speck-simd.cpp speck.cpp
 
