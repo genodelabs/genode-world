@@ -1,1 +1,5 @@
-$(error libmpg123 not available for ARM, see $(REP_DIR)/lib/mk/spec/x86_64/libmpg123.mk)
+include $(REP_DIR)/lib/mk/libmpg123.inc
+
+CC_DEF += -DOPT_ARM
+
+SRC_S += $(notdir $(wildcard $(MPG123_SRC_DIR)/*arm*.S))
