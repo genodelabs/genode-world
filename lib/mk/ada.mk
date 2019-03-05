@@ -63,7 +63,19 @@ SRC_ADB += g-io.adb \
 		s-trasym.adb \
 		s-except.adb \
 		a-comlin.adb \
-		s-init.adb
+		s-init.adb \
+		s-arit64.adb \
+		a-calend.adb \
+		s-imglli.adb \
+		s-osprim.adb \
+		s-conca2.adb \
+		s-conca3.adb \
+		s-conca4.adb \
+		s-conca5.adb \
+		s-conca6.adb \
+		s-conca7.adb \
+		s-conca8.adb \
+		s-conca9.adb \
 
 # Ada packages that implement runtime functionality
 SRC_ADB += \

@@ -527,6 +527,30 @@ system__case_util__to_mixed T
 system__case_util__to_upper T
 system__case_util__to_upper__2 T
 system__command_line_args R 1
+system__concat_2_E D 2
+system__concat_2__str_concat_2 T
+system__concat_2__str_concat_bounds_2 T
+system__concat_3_E D 2
+system__concat_3__str_concat_3 T
+system__concat_3__str_concat_bounds_3 T
+system__concat_4_E D 2
+system__concat_4__str_concat_4 T
+system__concat_4__str_concat_bounds_4 T
+system__concat_5_E D 2
+system__concat_5__str_concat_5 T
+system__concat_5__str_concat_bounds_5 T
+system__concat_6_E D 2
+system__concat_6__str_concat_6 T
+system__concat_6__str_concat_bounds_6 T
+system__concat_7_E D 2
+system__concat_7__str_concat_7 T
+system__concat_7__str_concat_bounds_7 T
+system__concat_8_E D 2
+system__concat_8__str_concat_8 T
+system__concat_8__str_concat_bounds_8 T
+system__concat_9_E D 2
+system__concat_9__str_concat_9 T
+system__concat_9__str_concat_bounds_9 T
 system__configurable_run_time R 1
 system__crtl_E D 2
 system__crtl__filename_encodingN R 4
