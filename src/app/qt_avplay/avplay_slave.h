@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2012-2017 Genode Labs GmbH
+ * Copyright (C) 2012-2019 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -29,9 +29,9 @@
 #include <os/slave.h>
 
 /* local includes */
-#include "framebuffer_service_factory.h"
+#include "nitpicker_session_component.h"
 
-typedef Genode::Local_service<Input::Session_component> Input_service;
+typedef Genode::Local_service<Nitpicker::Session_component> Nitpicker_service;
 
 class Avplay_slave : public QObject
 {
@@ -39,20 +39,24 @@ class Avplay_slave : public QObject
 
 	private:
 
-		class Policy
-		:
-			private Genode::Static_parent_services<Genode::Cpu_session,
-			                                       Genode::Log_session,
-			                                       Genode::Pd_session,
-			                                       Genode::Rom_session,
-			                                       Timer::Session,
-			                                       Audio_out::Session>,
-			public Genode::Slave::Policy
+		struct Policy_base
+		{
+			Genode::Static_parent_services<Genode::Cpu_session,
+			                               Genode::Log_session,
+			                               Genode::Pd_session,
+			                               Genode::Rom_session,
+			                               Timer::Session,
+			                               Audio_out::Session>
+				_parent_services;
+
+			Policy_base(Genode::Env &env) : _parent_services(env) { }
+		};
+
+		class Policy : Policy_base, public Genode::Slave::Policy
 		{
 			private:
 
-				Input_service               &_input_service;
-				Framebuffer_service_factory &_framebuffer_service_factory;
+				Nitpicker_service &_nitpicker_service;
 
 				const char *_mediafile;
 				int _sdl_audio_volume;
@@ -111,40 +115,47 @@ class Avplay_slave : public QObject
 				}
 
 				static Genode::Cap_quota _caps()      { return { 150 }; }
-				static Genode::Ram_quota _ram_quota() { return { 32*1024*1024 }; }
+				static Genode::Ram_quota _ram_quota() { return { 64*1024*1024 }; }
 				static Name              _name()      { return "avplay"; }
+
+				Genode::Service &_matching_service(Genode::Service::Name const &name)
+				{
+					if (name == "Nitpicker")
+						return _nitpicker_service;
+
+					throw Genode::Service_denied();
+				}
 
 			public:
 
-				Policy(Genode::Rpc_entrypoint         &entrypoint,
-				       Genode::Region_map             &rm,
-				       Genode::Pd_session             &ref_pd,
-				       Genode::Pd_session_capability   ref_pd_cap,
-				       Input_service                  &input_service,
-				       Framebuffer_service_factory    &framebuffer_service_factory,
+				Policy(Genode::Env                    &env,
+				       Genode::Entrypoint             &entrypoint,
+				       Nitpicker_service              &nitpicker_service,
 				       char const                     *mediafile)
 				:
-					Genode::Slave::Policy(_name(), _name(), *this, entrypoint,
-					                      rm, ref_pd, ref_pd_cap, _caps(),
+					Policy_base(env),
+					Genode::Slave::Policy(env, _name(), _name(),
+					                      Policy_base::_parent_services,
+					                      entrypoint.rpc_ep(), _caps(),
 					                      _ram_quota()),
-					_input_service(input_service),
-					_framebuffer_service_factory(framebuffer_service_factory),
+					_nitpicker_service(nitpicker_service),
 					_mediafile(mediafile),
 					_sdl_audio_volume(100)
 				{
 					configure(_config());
 				}
 
-				Genode::Service &resolve_session_request(Genode::Service::Name       const &service_name,
-		                                         	 	 Genode::Session_state::Args const &args) override
+				Route resolve_session_request(Genode::Service::Name const &name,
+				                              Genode::Session_label const &label) override
 				{
-					if (service_name == "Input")
-						return _input_service;
+					try {
+						return Route { .service = _matching_service(name),
+						               .label   = label,
+						               .diag    = Genode::Session::Diag() };
+					}
+					catch (Genode::Service_denied) { }
 
-					if (service_name == "Framebuffer")
-						return _framebuffer_service_factory.create(args);
-
-					return Genode::Slave::Policy::resolve_session_request(service_name, args);
+					return Genode::Slave::Policy::resolve_session_request(name, label);
 				}
 
 				void volume_changed(int value)
@@ -155,27 +166,21 @@ class Avplay_slave : public QObject
 
 		};
 
-		Genode::size_t   const _ep_stack_size = 4*1024*sizeof(Genode::addr_t);
-		Genode::Rpc_entrypoint _ep;
-		Policy                 _policy;
-		Genode::Child          _child;
+		Policy              _policy;
+		Genode::Child       _child;
 
 	public:
 
 		/**
 		 * Constructor
 		 */
-		Avplay_slave(Genode::Region_map             &rm,
-		             Genode::Pd_session             &ref_pd,
-		             Genode::Pd_session_capability   ref_pd_cap,
-		             Input_service                  &input_service,
-		             Framebuffer_service_factory    &framebuffer_service_factory,
+		Avplay_slave(Genode::Env                    &env,
+		             Genode::Entrypoint             &ep,
+		             Nitpicker_service              &nitpicker_service,
 		             char const                     *mediafile)
 		:
-			_ep(&ref_pd, _ep_stack_size, "avplay_ep"),
-			_policy(_ep, rm, ref_pd, ref_pd_cap, input_service,
-			        framebuffer_service_factory, mediafile),
-			_child(rm, _ep, _policy)
+			_policy(env, ep, nitpicker_service, mediafile),
+			_child(env.rm(), ep.rpc_ep(), _policy)
 		{ }
 
 	public Q_SLOTS:
