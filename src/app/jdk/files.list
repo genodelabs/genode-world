@@ -1801,6 +1801,8 @@ dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnet/net_util_md.c
 dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnet/net_util_md.h
 dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnet/NetworkInterface.c
 dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnet/PlainSocketImpl.c
+dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnet/SocketInputStream.c
+dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnet/SocketOutputStream.c
 dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnio/ch/DatagramChannelImpl.c
 dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnio/ch/DatagramDispatcher.c
 dmlloyd-openjdk-64892f1/jdk/src/java.base/unix/native/libnio/ch/FileChannelImpl.c

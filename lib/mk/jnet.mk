@@ -12,7 +12,9 @@ SRC_C = bsd_close.c \
         Inet6Address.c \
         InetAddressImplFactory.c \
         NetworkInterface.c \
-        PlainSocketImpl.c
+        PlainSocketImpl.c \
+        SocketInputStream.c \
+        SocketOutputStream.c
 
 INC_DIR += $(JDK_GENERATED)/include/java.base \
            $(JDK_BASE)/share/native/include \
