@@ -1,6 +1,6 @@
 content: TempleOS.ISO TempleOS.vbox
 
-ISO_URL = http://www.templeos.org/TempleOS.ISO
+ISO_URL = http://archive.org/download/TempleOS20171215/TempleOS.ISO
 
 TempleOS.ISO: 
 	wget $(ISO_URL) -O $@
