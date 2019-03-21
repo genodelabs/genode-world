@@ -1,0 +1,5 @@
+
+                 Simple media player based on libav
+
+The avplay component requests a file system with the label "input" and expects
+to find a file called "mediafile" in the root of this file system.
