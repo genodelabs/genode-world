@@ -1,0 +1,31 @@
+<runtime ram="128M" caps="256" binary="flif_view">
+
+	<requires>
+		<file_system/>
+		<nitpicker/>
+		<timer/>
+		<rtc/>
+	</requires>
+
+	<content>
+		<rom label="flif_view"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libflif.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libpng.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		<vfs>
+			<fs writeable="no"/>
+			<dir name="dev">
+				<log/> <rtc/>
+			</dir>
+		</vfs>
+	</config>
+
+</runtime>
