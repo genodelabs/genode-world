@@ -2,7 +2,11 @@
 
 	<requires> <block/> </requires>
 
-	<config/>
+	<provides> <file_system/> </provides>
+
+	<config>
+		<default-policy writeable="no"/>
+	</config>
 
 	<content>
 		<rom label="ld.lib.so"/>
