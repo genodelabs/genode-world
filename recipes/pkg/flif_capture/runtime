@@ -1,22 +1,35 @@
-<runtime ram="72M" caps="768" binary="init">
+<runtime ram="96M" caps="1768" binary="init">
 
 	<requires>
-		<nitpicker/> <file_system/> <rtc/>
+		<file_system/> <nitpicker/> <rtc/>
 	</requires>
 
 	<provides> <nitpicker/> </provides>
 
 	<content>
+		<rom label="backdrop"/>
+		<rom label="decorator_init.config"/>
 		<rom label="flif_capture"/>
+		<rom label="focus"/>
+		<rom label="genode_logo.png"/>
+		<rom label="grid.png"/>
 		<rom label="init"/>
+		<rom label="layouter.config"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libflif.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="libpng.lib.so"/>
 		<rom label="nit_fb"/>
 		<rom label="nitpicker"/>
+		<rom label="plain_decorator_theme.tar"/>
+		<rom label="report_rom"/>
 		<rom label="stdcxx.lib.so"/>
+		<rom label="sticks_blue.png"/>
+		<rom label="themed_decorator"/>
 		<rom label="vfs.lib.so"/>
+		<rom label="window_layouter"/>
+		<rom label="wm"/>
+		<rom label="wm.config"/>
 		<rom label="zlib.lib.so"/>
 	</content>
 
@@ -31,8 +44,9 @@
 			<service name="File_system"/>
 			<service name="Timer"/>
 		</parent-provides>
+
 		<service name="Nitpicker">
-			<default-policy> <child name="nitpicker"/> </default-policy>
+			<default-policy> <child name="wm"/> </default-policy>
 		</service>
 
 		<start name="nit_fb" caps="128">
@@ -41,7 +55,7 @@
 				<service name="Framebuffer"/>
 				<service name="Input"/>
 			</provides>
-			<config initial_width="800" initial_height="600"/>
+			<config initial_width="1024" initial_height="768"/>
 			<route> <any-service> <parent/> </any-service> </route>
 		</start>
 
@@ -50,15 +64,59 @@
 			<provides>
 				<service name="Nitpicker"/>
 			</provides>
-			<config>
-				<domain name="default" layer="1" label="no" hover="always" focus="click" />
-				<default-policy domain="default"/>
+
+			<config focus="rom">
+				<domain name="default"     layer="4" hover="always" focus="click" />
+				<domain name="decorator"   layer="4" content="client" label="no" hover="always" focus="transient" />
+				<domain name="desktop"     layer="4" content="client" label="no" hover="always" focus="click" />
+				<domain name="background"  layer="5" content="client" label="no"/>
+
+				<policy label_suffix="-> decorator" domain="decorator"/>
+				<policy label_prefix="wm"           domain="desktop"/>
+				<policy label="backdrop"            domain="background"/>
+				<default-policy                     domain="default"/>
 			</config>
+
 			<route>
 				<any-service>
 					<parent/>
 					<child name="flif_capture"/>
 				</any-service>
+			</route>
+		</start>
+
+		<!--
+		<start name="backdrop" caps="128">
+			<resource name="RAM" quantum="8M"/>
+			<config>
+				<libc/>
+				<vfs>
+					<rom name="genode_logo.png"/>
+					<rom name="grid.png"/>
+				</vfs>
+				<fill color="#000334" />
+				<image png="grid.png"        tiled="yes" alpha="200" />
+				<image png="genode_logo.png" anchor="bottom_right" alpha="150"
+				                             xpos="-20" ypos="-20" />
+			</config>
+			<route>
+				<service name="Nitpicker">
+					<child name="nitpicker"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+		-->
+
+		<start name="wm" caps="1000">
+			<binary name="init"/>
+			<resource name="RAM" quantum="28M"/>
+			<provides> <service name="Nitpicker"/> </provides>
+			<route>
+				<service name="ROM" label="config">
+					<parent label="wm.config"/> </service>
+				<service name="Nitpicker">
+					<child name="nitpicker"/> </service>
+				<any-service> <parent/> </any-service>
 			</route>
 		</start>
 
