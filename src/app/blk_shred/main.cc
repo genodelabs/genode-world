@@ -26,6 +26,9 @@
 /* Jitterentropy includes */
 #include <jitterentropy.h>
 
+/* RDRAND utility */
+#include <world/rdrand.h>
+
 /* PCG includes */
 #include <pcg_variants.h>
 
@@ -80,7 +83,22 @@ struct Blk_shred::Main
 	void seed_noise()
 	{
 		/* read entropy into initialization variables */
-		jent_read_entropy(jent, (char*)&pcg_init, sizeof(pcg_init));
+
+		{
+			/* XOR in jitter entropy */
+			uint64_t buf[2] { 0 };
+			jent_read_entropy(jent, (char*)&buf, sizeof(buf));
+			pcg_init[0] ^= buf[0];
+			pcg_init[1] ^= buf[1];
+		}
+
+		if (Genode::Rdrand::supported()) {
+			/* XOR in RDRAND */
+			pcg_init[0] ^= Genode::Rdrand::random64();
+			pcg_init[1] ^= Genode::Rdrand::random64();
+		}
+
+		/* low bit must be set */
 		pcg_init[1] |= 1;
 
 		pcg32_srandom_r(&pcg, pcg_init[0], pcg_init[1]);
