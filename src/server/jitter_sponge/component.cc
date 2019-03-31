@@ -145,12 +145,13 @@ class Jitter_sponge::Session_component final : public Genode::Rpc_object<Termina
 
 		Size size() override { return Size(0, 0); }
 
-		bool avail() override { return false; }
+		bool avail() override { return true; }
 
 		void connected_sigh(Genode::Signal_context_capability cap) override {
 			Genode::Signal_transmitter(cap).submit(); }
 
-		void read_avail_sigh(Genode::Signal_context_capability) override { }
+		void read_avail_sigh(Genode::Signal_context_capability cap) override {
+			Genode::Signal_transmitter(cap).submit(); }
 
 		void size_changed_sigh(Genode::Signal_context_capability) override { }
 };
