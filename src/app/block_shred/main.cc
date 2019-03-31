@@ -44,12 +44,15 @@ namespace Blk_shred {
 		PKT_BUF_SIZE = PKT_SIZE*2 + (32<<10)
 	};
 
-	uint64_t pcg_init[2] = PCG32_INITIALIZER;
+	uint64_t pcg_init[2] PCG32_INITIALIZER;
 }
 
 
 struct Blk_shred::Main
 {
+	Main(Main const &);
+	Main &operator = (Main const &);
+
 	Genode::Env &env;
 
 	Timer::Connection timer { env };
@@ -66,8 +69,8 @@ struct Blk_shred::Main
 	size_t blk_size = 0;
 	Block::sector_t blk_total= 0;
 
-	rand_data *jent;
-	pcg32_random_t pcg;
+	rand_data *jent { nullptr };
+	pcg32_random_t pcg PCG32_INITIALIZER;
 
 	template <typename... ARGS>
 	void die(ARGS &&... args)
