@@ -102,7 +102,14 @@ struct Ssh_client::Main
 	{
 		Libc::with_libc([&] () {
 			auto size = _terminal.size();
-			ssh_channel_change_pty_size(_channel, size.columns(), size.lines());
+			if (size.columns()*size.lines() == 0) {
+				/* shutdown if terminal is resized to zero */
+				ssh_channel_close(_channel);
+				ssh_disconnect(_session);
+				_exit(0);
+			} else {
+				ssh_channel_change_pty_size(_channel, size.columns(), size.lines());
+			}
 		});
 	}
 
@@ -226,6 +233,7 @@ struct Ssh_client::Main
 		Genode::error("password authentication denied");
 		if (ssh_userauth_none(_session, NULL) == SSH_OK) {
 			Genode::log("anonymous authentication successful");
+			return;
 		}
 
 		_die();
