@@ -1,0 +1,4 @@
+The nic_bus server switches packets between sessions using Ethernet headers.
+Sessions may only send and receive packets with MAC addresses assigned by
+the bus. For this reason it does not support attachment to ethernet hubs or
+switches and is therefore not intended for use with harware interfaces. 
