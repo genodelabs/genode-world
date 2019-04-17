@@ -61,13 +61,12 @@ struct Blk_shred::Main
 
 	Allocator_avl packet_alloc { &heap };
 
-	Block::Connection blk {
+	Block::Connection<> blk {
 		env, &packet_alloc, PKT_BUF_SIZE };
 
 	Block::Session::Tx::Source &pkt_source = *blk.tx();
 
-	size_t blk_size = 0;
-	Block::sector_t blk_total= 0;
+	Block::Session::Info const info { blk.info() };
 
 	rand_data *jent { nullptr };
 	pcg32_random_t pcg PCG32_INITIALIZER;
@@ -123,18 +122,8 @@ struct Blk_shred::Main
 
 		seed_noise();
 
-
-		/****************************************
-		 ** Initialize block device parameters **
-		 ****************************************/
-
-		{
-			Block::Session::Operations  ops;
-			blk.info(&blk_total, &blk_size, &ops);
-
-			if (!ops.supported(Block::Packet_descriptor::WRITE))
-				die("block device not writeable!");
-		}
+		if (!info.writeable)
+			die("block device not writeable!");
 	}
 
 	~Main()
@@ -148,25 +137,25 @@ struct Blk_shred::Main
 	void submit_noise(Block::Packet_descriptor const &pkt)
 	{
 		uint32_t *buffer = (uint32_t*)pkt_source.packet_content(pkt);
-		for (size_t i = 0; i < ((pkt.block_count()*blk_size) / sizeof(uint32_t)); ++i)
+		for (size_t i = 0; i < ((pkt.block_count()*info.block_size) / sizeof(uint32_t)); ++i)
 			buffer[i] = pcg32_random_r(&pcg);
 		pkt_source.submit_packet(pkt);
 	}
 
 	void shred()
 	{
-		float const mbytes = (float(blk_total) * float(blk_size)) / (1<<20);
+		float const mbytes = (float(info.block_count) * float(info.block_size)) / (1<<20);
 		log("shredding ", mbytes/(1<<10), " GiB...");
 		auto start_ms = timer.elapsed_ms();
 
-		size_t const blk_per_pkt = PKT_SIZE / blk_size;
-		size_t const bytes_per_pkt =  blk_per_pkt * blk_size;
+		size_t const blk_per_pkt = PKT_SIZE / info.block_size;
+		size_t const bytes_per_pkt =  blk_per_pkt * info.block_size;
 
 		/*
 		 * send two packets in succession, the first write
 		 * aligns those that follow with end of the device
 		 */
-		Block::sector_t blk_offset = blk_total % blk_per_pkt;
+		Block::sector_t blk_offset = info.block_count % blk_per_pkt;
 		if (blk_offset == 0)
 			blk_offset = blk_per_pkt;
 
@@ -190,11 +179,11 @@ struct Blk_shred::Main
 		while (true) {
 			Block::Packet_descriptor const ack = pkt_source.get_acked_packet();
 			if (!ack.succeeded())
-				error("ack indicates failure ", ack.block_number(),"/",blk_total);
+				error("ack indicates failure ", ack.block_number(),"/",info.block_count);
 
 			pkt_source.release_packet(ack);
 
-			if (blk_offset >= blk_total) break;
+			if (blk_offset >= info.block_count) break;
 
 			/* reuse packet buffer region */
 			Block::Packet_descriptor const pkt(
@@ -206,7 +195,7 @@ struct Blk_shred::Main
 
 		Block::Packet_descriptor const ack = pkt_source.get_acked_packet();
 		if (!ack.succeeded())
-			error("ack indicates failure ", ack.block_number(),"/",blk_total);
+			error("ack indicates failure ", ack.block_number(),"/",info.block_count);
 
 		float seconds = (timer.elapsed_ms() - start_ms) / 1000;
 		log("shred complete, ", mbytes / seconds, " MiB/s");
@@ -218,7 +207,7 @@ struct Blk_shred::Main
 	bool verify_block(Block::sector_t sector)
 	{
 		Block::Packet_descriptor pkt(
-			pkt_source.alloc_packet(blk_size),
+			pkt_source.alloc_packet(info.block_size),
 			Block::Packet_descriptor::READ, sector, 1);
 
 		pkt_source.submit_packet(pkt);
@@ -229,7 +218,7 @@ struct Blk_shred::Main
 			die("error while reading back sector ", sector);
 
 		uint32_t *buffer = (uint32_t*)pkt_source.packet_content(pkt);
-		for (size_t i = 0; i < (blk_size / sizeof(uint32_t)); ++i) {
+		for (size_t i = 0; i < (info.block_size / sizeof(uint32_t)); ++i) {
 			if (buffer[i] != pcg32_random_r(&pcg))
 				die("sector ", sector, " is invalid");
 		}
@@ -249,8 +238,8 @@ struct Blk_shred::Main
 		pcg32_srandom_r(&pcg, pcg_init[0], pcg_init[1]);
 
 		/* make jumps of approximately 1 Mib */
-		int const max_jump = (2<<20) / blk_size;
-		int const step = blk_size / sizeof(uint32_t);
+		int const max_jump = (2<<20) / info.block_size;
+		int const step = info.block_size / sizeof(uint32_t);
 		Block::sector_t sector_offset = 0;
 		unsigned long count = 0;
 
@@ -264,7 +253,7 @@ struct Blk_shred::Main
 			Block::sector_t skip =
 				pcg32_boundedrand_r(&skip_gen, max_jump)+1;
 
-			if (sector_offset+skip >= blk_total)
+			if (sector_offset+skip >= info.block_count)
 				break;
 
 			/* move the sector offset ahead */
@@ -278,8 +267,8 @@ struct Blk_shred::Main
 		}
 
 		/* verify the last block */
-		pcg32_advance_r(&pcg, (blk_total-(sector_offset+2))*step);
-		if (!verify_block(blk_total-1)) return;
+		pcg32_advance_r(&pcg, (info.block_count-(sector_offset+2))*step);
+		if (!verify_block(info.block_count-1)) return;
 		++count;
 
 		log(count, " blocks passed random spot check");
