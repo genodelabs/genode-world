@@ -49,29 +49,16 @@ struct Blockdev
 	Genode::Allocator     &_alloc;
 	Genode::Allocator_avl  _tx_alloc { &_alloc };
 
-	Block::Connection          _block { _env, &_tx_alloc, 512*1024 };
-	Block::sector_t            _block_count { 0 };
-	Genode::size_t             _block_size  { 512 };
-	Block::Session::Operations _block_ops   { };
+	Block::Connection<>        _block { _env, &_tx_alloc, 512*1024 };
+	Block::Session::Info const _info  { _block.info() };
 
 	Blockdev(Genode::Env &env, Genode::Allocator &alloc)
-	: _env(env), _alloc(alloc)
-	{
-		_block.info(&_block_count, &_block_size, &_block_ops);
+	: _env(env), _alloc(alloc) { }
 
-		if (!_block_ops.supported(Block::Packet_descriptor::READ)) {
-			throw -1;
-		}
-	}
-
-	bool writeable()
-	{
-		return _block_ops.supported(Block::Packet_descriptor::WRITE);
-	}
-
-	Block::Connection& block()             { return _block; }
-	Block::sector_t    block_count() const { return _block_count; }
-	Genode::size_t     block_size()  const { return _block_size; }
+	Block::Connection<> & block()             { return _block;            }
+	Block::sector_t       block_count() const { return _info.block_count; }
+	Genode::size_t        block_size()  const { return _info.block_size;  }
+	bool                  writeable()   const { return _info.writeable;   }
 };
 
 
@@ -84,8 +71,8 @@ static int blockdev_bread(struct ext4_blockdev *bdev,
                           uint64_t              lba,
                           uint32_t              count)
 {
-	Blockdev          &bd = *reinterpret_cast<Blockdev*>(bdev);
-	Block::Connection &b  = bd.block();
+	Blockdev            &bd = *reinterpret_cast<Blockdev*>(bdev);
+	Block::Connection<> &b  = bd.block();
 
 	Genode::size_t const size = bd.block_size() * count;
 
@@ -117,7 +104,7 @@ static int blockdev_bwrite(struct ext4_blockdev *bdev,
 	Blockdev &bd = *reinterpret_cast<Blockdev*>(bdev);
 	if (!bd.writeable()) { return EIO; }
 
-	Block::Connection      &b = bd.block();
+	Block::Connection<>    &b = bd.block();
 	Genode::size_t const size = bd.block_size() * count;
 
 	Block::Packet_descriptor p(b.tx()->alloc_packet(size),
