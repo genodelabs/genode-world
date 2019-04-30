@@ -60,8 +60,8 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			update();
 		}
 
-		void start_transmission()  { _transmitting = true; }
-		void finish_transmission()
+		void start_transmission() override { _transmitting = true; }
+		void finish_transmission() override
 		{
 			_transmitting = false;
 
@@ -71,7 +71,7 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 				update();
 		}
 
-		const char *module_name() const { return modulename; }
+		const char *module_name() const override { return modulename; }
 
 		void update()
 		{
@@ -85,7 +85,7 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			/* refresh dataspace if valid */
 			_rom.update();
 
-			if (_rom.is_valid()) {
+			if (_rom.valid()) {
 				_current_hash = cksum(_rom.local_addr<char>(), content_size());
 
 				/* trigger backend_server */
@@ -93,14 +93,14 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			}
 		}
 
-		unsigned content_hash() const
+		unsigned content_hash() const override
 		{
 			return _current_hash;
 		}
 
-		size_t content_size() const
+		size_t content_size() const override
 		{
-			if (_rom.is_valid()) {
+			if (_rom.valid()) {
 				if (binary)
 					return _rom.size();
 				else
@@ -110,9 +110,9 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 			return 0;
 		}
 
-		size_t transfer_content(char *dst, size_t dst_len, size_t offset=0) const
+		size_t transfer_content(char *dst, size_t dst_len, size_t offset=0) const override
 		{
-			if (_rom.is_valid()) {
+			if (_rom.valid()) {
 				size_t const len = Genode::min(dst_len, content_size()-offset);
 				Genode::memcpy(dst, _rom.local_addr<char>() + offset, len);
 				/* clear remaining buffer to prevent data leakage */

@@ -177,7 +177,7 @@ class Remote_rom::Root : public Genode::Root_component<Session_component>
 
 	protected:
 
-		Session_component *_create_session(const char *)
+		Session_component *_create_session(const char *) override
 		{
 			using namespace Genode;
 
@@ -236,10 +236,10 @@ struct Remote_rom::Main : public Rom_receiver_base
 		_backend.register_receiver(this);
 	}
 
-	const char* module_name()  const { return remotename; }
-	unsigned    content_hash() const { return rom_module.hash(); }
+	const char* module_name()  const override { return remotename; }
+	unsigned    content_hash() const override { return rom_module.hash(); }
 
-	char* start_new_content(unsigned hash, size_t len)
+	char* start_new_content(unsigned hash, size_t len) override
 	{
 		/* save expected hash */
 		/* TODO (optional) skip if we already have the same data */
@@ -248,7 +248,7 @@ struct Remote_rom::Main : public Rom_receiver_base
 		return rom_module.base(len);
 	}
 
-	void commit_new_content(bool abort=false)
+	void commit_new_content(bool abort=false) override
 	{
 		if (abort)
 			return;

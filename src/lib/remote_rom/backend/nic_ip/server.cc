@@ -194,7 +194,7 @@ class Remote_rom::Backend_server :
 
 		void send_packet(Content_sender const &sender);
 
-		void receive(Packet &packet, Size_guard &);
+		void receive(Packet &packet, Size_guard &) override;
 
 	public:
 
@@ -206,11 +206,11 @@ class Remote_rom::Backend_server :
 		{ }
 
 
-		void register_forwarder(Rom_forwarder_base *forwarder)
+		void register_forwarder(Rom_forwarder_base *forwarder) override
 		{ _content_sender.register_forwarder(forwarder); }
 
 
-		void send_update()
+		void send_update() override
 		{
 			if (!_content_sender.content_size()) return;
 

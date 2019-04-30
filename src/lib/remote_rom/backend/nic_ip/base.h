@@ -27,7 +27,6 @@
 
 namespace Remote_rom {
 	using  Genode::Packet_descriptor;
-	using  Genode::env;
 	using  Net::Ethernet_frame;
 	using  Net::Ipv4_packet;
 	using  Net::Mac_address;
