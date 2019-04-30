@@ -165,7 +165,7 @@ class Remote_rom::Backend_client :
 
 		void send_ack(Content_receiver const &recv);
 
-		void receive(Packet &packet, Size_guard &size_guard);
+		void receive(Packet &packet, Size_guard &size_guard) override;
 
 	public:
 
@@ -177,7 +177,7 @@ class Remote_rom::Backend_client :
 		{ }
 
 
-		void register_receiver(Rom_receiver_base *receiver)
+		void register_receiver(Rom_receiver_base *receiver) override
 		{
 			/* TODO support multiple receivers (ROM names) */
 			_content_receiver.register_receiver(receiver);
