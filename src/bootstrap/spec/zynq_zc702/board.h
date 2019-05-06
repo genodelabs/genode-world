@@ -25,8 +25,9 @@
 #include <spec/arm/pic.h>
 
 namespace Board {
+	struct L2_cache;
+
 	using namespace Zynq_zc702;
-	using L2_cache = Hw::Pl310;
 	using Cpu_mmio = Hw::Cortex_a9_mmio<CORTEX_A9_PRIVATE_MEM_BASE>;
 	using Serial   = Genode::Xilinx_uart;
 
@@ -34,5 +35,35 @@ namespace Board {
 		UART_BASE  = UART_1_MMIO_BASE,
 	};
 }
+
+struct Board::L2_cache : Hw::Pl310
+{
+	L2_cache(Genode::addr_t mmio) : Hw::Pl310(mmio)
+	{
+		Aux::access_t aux = 0;
+		Aux::Full_line_of_zero::set(aux, true);
+		Aux::Associativity::set(aux, Aux::Associativity::WAY_8);
+		Aux::Way_size::set(aux, Aux::Way_size::KB_64);
+		Aux::Share_override::set(aux, true);
+		Aux::Replacement_policy::set(aux, Aux::Replacement_policy::PRAND);
+		Aux::Ns_lockdown::set(aux, true);
+		Aux::Data_prefetch::set(aux, true);
+		Aux::Inst_prefetch::set(aux, true);
+		Aux::Early_bresp::set(aux, true);
+		write<Aux>(aux);
+	}
+
+	using Hw::Pl310::invalidate;
+
+	void enable()
+	{
+		Pl310::mask_interrupts();
+		write<Control::Enable>(1);
+	}
+
+	void disable() {
+		write<Control::Enable>(0);
+	}
+};
 
 #endif /* _SRC__BOOTSTRAP__SPEC__ZYNQ_ZC702__BOARD_H_ */
