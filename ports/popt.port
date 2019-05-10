@@ -1,0 +1,11 @@
+LICENSE   := GPLv2
+VERSION   := 5.4.13
+DOWNLOADS := popt.git
+
+POPT_DIR := src/lib/popt
+
+URL(popt) := https://github.com/devzero2000/POPT.git
+REV(popt) := rpm-$(VERSION)-release
+DIR(popt) := $(POPT_DIR)
+
+PATCHES := src/lib/popt/patches/*.patch
