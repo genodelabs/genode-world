@@ -1,0 +1,9 @@
+LICENSE   := GPLv2
+VERSION   := 0.8.1
+DOWNLOADS := gptfdisk.git
+
+URL(gptfdisk) := https://github.com/kini/gptfdisk.git
+REV(gptfdisk) := 0541b56fee4e92822340a2b2387508dd58d0ca7c
+DIR(gptfdisk) := src/app/gptfdisk
+
+PATCHES := src/app/sgdisk/patches/*.patch
