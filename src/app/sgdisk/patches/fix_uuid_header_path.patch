@@ -1,0 +1,11 @@
+--- src/app/gptfdisk/guid.h
++++ src/app/gptfdisk/guid.h
+@@ -26,7 +26,7 @@
+    #endif
+ typedef unsigned char my_uuid_t[16];
+ #else // Not Windows
+-#include <uuid/uuid.h>
++#include <uuid.h>
+ typedef uuid_t my_uuid_t;
+ #endif
+ 

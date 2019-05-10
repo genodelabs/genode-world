@@ -1,0 +1,11 @@
+index 3735b9f..ec083cf 100644
+--- src/app/gptfdisk/diskio-unix.cc
++++ src/app/gptfdisk/diskio-unix.cc
+@@ -21,6 +21,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include <fcntl.h>
++#include <unistd.h>
+ #include <sys/stat.h>
+ 
+ #ifdef __linux__
