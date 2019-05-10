@@ -1,0 +1,46 @@
+poptAddAlias T
+poptAddItem T
+poptAliasOptions B 48
+poptBadOption T
+poptBitsAdd T
+poptBitsArgs T
+poptBitsChk T
+poptBitsClr T
+poptBitsDel T
+poptBitsIntersect T
+poptBitsUnion T
+poptConfigFileToString T
+poptDupArgv T
+poptFini T
+poptFreeContext T
+poptGetArg T
+poptGetArgs T
+poptGetContext T
+poptGetInvocationName T
+poptGetNextOpt T
+poptGetOptArg T
+poptHelpOptions D 192
+poptHelpOptionsI18N D 8
+poptInit T
+poptJlu32lpair T
+poptParseArgvString T
+poptPeekArg T
+poptPrintHelp T
+poptPrintUsage T
+poptReadConfigFile T
+poptReadConfigFiles T
+poptReadDefaultConfig T
+poptReadFile T
+poptResetContext T
+poptSaneFile T
+poptSaveBits T
+poptSaveInt T
+poptSaveLong T
+poptSaveLongLong T
+poptSaveShort T
+poptSaveString T
+poptSetExecPath T
+poptSetOtherOptionHelp T
+poptStrerror T
+poptStrippedArgv T
+poptStuffArgs T

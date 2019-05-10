@@ -1,0 +1,50 @@
+--- src/lib/popt/popt.c	2019-05-10 14:05:51.713604568 +0200
++++ src/lib/popt/popt.c	2019-05-10 09:29:26.091811422 +0200
+@@ -42,6 +42,7 @@
+ /*@unchecked@*/
+ unsigned int _poptGroupMask = POPT_GROUP_MASK;
+ 
++/*
+ #if !defined(HAVE_STRERROR) && !defined(__LCLINT__)
+ static char * strerror(int errno)
+ {
+@@ -54,6 +55,7 @@
+ 	return POPT_("unknown errno");
+ }
+ #endif
++*/
+ 
+ #ifdef MYDEBUG
+ /*@unused@*/
+--- src/lib/popt/system.h	2019-05-10 14:05:51.165600535 +0200
++++ src/lib/popt/system.h	2019-05-10 11:36:49.041594010 +0200
+@@ -143,6 +143,9 @@
+ 
+ #else
+ 
++#define X_OK 1
++#define FLT_MIN 1.175494351e-38F
++#define FLT_MAX 3.402823466e+38F
+ 
+ #endif /* defined(_MSC_VER) || defined(__MINGW32__) */
+ 
+@@ -175,19 +178,6 @@
+ 	/*@*/;
+ /*@=incondefs@*/
+ 
+-#if !defined(HAVE_STPCPY)
+-/* Copy SRC to DEST, returning the address of the terminating '\0' in DEST.  */
+-static inline char * stpcpy (char *dest, const char * src) {
+-    register char *d = dest;
+-    register const char *s = src;
+-
+-    do
+-	*d++ = *s;
+-    while (*s++ != '\0');
+-    return d - 1;
+-}
+-#endif
+-
+ /* Memory allocation via macro defs to get meaningful locations from mtrace() */
+ #if defined(HAVE_MCHECK_H) && defined(__GNUC__)
+ #define	vmefail()	(fprintf(stderr, "virtual memory exhausted.\n"), exit(EXIT_FAILURE), NULL)
