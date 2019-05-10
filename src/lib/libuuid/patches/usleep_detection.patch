@@ -1,0 +1,24 @@
+--- src/lib/util-linux/include/c.h	2019-05-10 11:50:31.659841756 +0200
++++ src/lib/util-linux/include/c.h	2019-05-10 11:22:31.466975561 +0200
+@@ -308,6 +308,7 @@
+ 
+ static inline int xusleep(useconds_t usec)
+ {
++/*
+ #ifdef HAVE_NANOSLEEP
+ 	struct timespec waittime = {
+ 		.tv_sec   =  usec / 1000000L,
+@@ -315,10 +316,13 @@
+ 	};
+ 	return nanosleep(&waittime, NULL);
+ #elif defined(HAVE_USLEEP)
++*/
+ 	return usleep(usec);
++/*
+ #else
+ # error	"System with usleep() or nanosleep() required!"
+ #endif
++*/
+ }
+ 
+ /*

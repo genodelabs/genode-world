@@ -1,0 +1,9 @@
+LICENSE   := GPLv2
+VERSION   := 2.33.2
+DOWNLOADS := util-linux.git
+
+URL(util-linux) := https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git/
+REV(util-linux) := v$(VERSION)
+DIR(util-linux) := src/lib/util-linux
+
+PATCHES := src/lib/libuuid/patches/*.patch
