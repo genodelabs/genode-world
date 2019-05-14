@@ -31,7 +31,7 @@
 #ifndef _SDL_config_h
 #define _SDL_config_h
 
-#include <SDL/SDL_platform.h>
+#include <SDL_platform.h>
 #include "SDL_config_genode.h"
 
 #endif /* _SDL_config_h */

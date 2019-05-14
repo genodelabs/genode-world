@@ -1,9 +1,8 @@
 MIRROR_FROM_REP_DIR := lib/symbols/sdl lib/import/import-sdl.mk \
-                       lib/mk/sdlmain.mk
 
 MIRROR_FROM_LIBPORTS := lib/mk/mesa_api.mk
 
-content: $(MIRROR_FROM_REP_DIR) $(MIRROR_FROM_LIBPORTS) src/lib/sdl include LICENSE
+content: $(MIRROR_FROM_REP_DIR) $(MIRROR_FROM_LIBPORTS) include LICENSE
 
 $(MIRROR_FROM_REP_DIR):
 	$(mirror_from_rep_dir)
@@ -24,10 +23,6 @@ include:
 	cp -r $(REP_DIR)/include/SDL $@/
 	cp -r $(MESA_PORT_DIR)/include/* $@/
 	cp -r $(GENODE_DIR)/repos/libports/include/EGL $@/
-
-src/lib/sdl:
-	mkdir -p $@
-	cp -r $(REP_DIR)/src/lib/sdl/sdl_main.cc $@/
 
 LICENSE:
 	cp $(SDL_PORT_DIR)/src/lib/sdl/COPYING $@

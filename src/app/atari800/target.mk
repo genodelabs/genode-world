@@ -18,7 +18,7 @@ INC_DIR += $(ATARI800_DIR)/src $(PRG_DIR)
 
 CC_WARN := -Wall -Wno-unused-but-set-variable -Wno-logical-not-parentheses
 
-LIBS += sdl sdlmain zlib libc libpng
+LIBS += sdl zlib libc libpng
 
 $(TARGET): atari800_rom.tar
 atari800_rom.tar:

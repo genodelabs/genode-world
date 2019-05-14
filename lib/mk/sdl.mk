@@ -81,6 +81,8 @@ SRC_C   += cdrom/SDL_cdrom.c \
            cdrom/dummy/SDL_syscdrom.c
 INC_DIR += $(SDL_DIR)/src/cdrom
 
+SRC_CC  += sdl_main.cc
+
 # we need libc
 LIBS = libc mesa_api
 
@@ -90,3 +92,9 @@ vpath % $(REP_DIR)/src/lib/sdl
 vpath % $(SDL_DIR)/src
 
 CC_CXX_WARN_STRICT =
+
+$(INSTALL_DIR)/sdl.lib.so: $(INSTALL_DIR)/SDL.lib.so
+
+$(INSTALL_DIR)/SDL.lib.so:
+	$(VERBOSE)ln -sf sdl.lib.so $@
+

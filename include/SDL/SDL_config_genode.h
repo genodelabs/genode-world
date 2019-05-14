@@ -61,6 +61,8 @@
 
 #define SDL_VIDEO_OPENGL 1
 
+#define SDL_HAS_64BIT_TYPE 1
+
 /* #define HAVE_MREMAP 0 */
 #define HAVE_MALLOC
 #define HAVE_CALLOC
@@ -77,7 +79,9 @@
 #define HAVE_SNPRINTF
 #define HAVE_VSNPRINTF
 
-#define HAVE_STDIO_H 1
+#define HAVE_STDIO_H    1
+#define HAVE_INTTYPES_H 1
+#define HAVE_MATH_H     1
 
 /* #define SDL_malloc	malloc */
 /* #define SDL_calloc	calloc */

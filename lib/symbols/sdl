@@ -1,3 +1,4 @@
+_ZN4Libc9Component9constructERNS_3EnvE T
 SDL_AddTimer T
 SDL_AllocBlitMap T
 SDL_AllocFormat T

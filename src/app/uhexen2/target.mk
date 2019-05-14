@@ -118,7 +118,7 @@ CC_OPT  += -DNO_ALSA_AUDIO -DNO_OSS_AUDIO -DNO_SUN_AUDIO
 
 CC_OPT  += -DDEMOBUILD
 
-LIBS = libc libm sdl sdlmain sdl_mixer
+LIBS = libc libm sdl sdl_mixer
 
 vpath % $(UHEXEN2_DIR)/common
 vpath % $(UHEXEN2_DIR)/engine/hexen2

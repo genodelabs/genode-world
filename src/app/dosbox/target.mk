@@ -55,6 +55,6 @@ CC_WARN += -Wno-unused-variable -Wno-unused-function -Wno-switch -Wno-unused-val
            -Wno-sign-compare -Wno-narrowing -Wno-missing-braces -Wno-array-bounds \
            -Wno-parentheses
 
-LIBS += libpng libc sdl sdlmain sdl_net stdcxx zlib
+LIBS += libpng libc sdl sdl_net stdcxx zlib
 
 CC_CXX_WARN_STRICT =
