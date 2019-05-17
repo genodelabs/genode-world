@@ -1,0 +1,64 @@
+commit f961bd5de9ce37e4f7389d08e585389e719e4cdb
+Author: Sebastian Sumpf <sebastian.sumpf@genode-labs.com>
+Date:   Fri May 17 16:18:27 2019 +0200
+
+    jdk: remove NULL where it is not meant to be a pointer
+
+diff --git a/hotspot/src/cpu/arm/vm/interpreterRT_arm.cpp b/hotspot/src/cpu/arm/vm/interpreterRT_arm.cpp
+index 4925f63..88a6066 100644
+--- a/hotspot/src/cpu/arm/vm/interpreterRT_arm.cpp
++++ b/hotspot/src/cpu/arm/vm/interpreterRT_arm.cpp
+@@ -365,9 +365,9 @@ class SlowSignatureHandler: public NativeSignatureIterator {
+   virtual void pass_object() {
+     intptr_t from_addr = (intptr_t)(_from + Interpreter::local_offset_in_bytes(0));
+     if(_last_gp < GPR_PARAMS) {
+-      _toGP[_last_gp++] = (*(intptr_t*)from_addr == 0) ? NULL : from_addr;
++      _toGP[_last_gp++] = (*(intptr_t*)from_addr == 0) ? 0 : from_addr;
+     } else {
+-      *_to++ = (*(intptr_t*)from_addr == 0) ? NULL : from_addr;
++      *_to++ = (*(intptr_t*)from_addr == 0) ? 0 : from_addr;
+     }
+     _from -= Interpreter::stackElementSize;
+   }
+diff --git a/hotspot/src/cpu/arm/vm/sharedRuntime_arm.cpp b/hotspot/src/cpu/arm/vm/sharedRuntime_arm.cpp
+index 48f0964..b9fcfbb 100644
+--- a/hotspot/src/cpu/arm/vm/sharedRuntime_arm.cpp
++++ b/hotspot/src/cpu/arm/vm/sharedRuntime_arm.cpp
+@@ -1467,6 +1467,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
+ #endif // __SOFTFP__
+ 
+ #ifdef __ABI_HARD__
++
+     case T_FLOAT: {
+       VMReg src = in_regs[i].first();
+       VMReg dst = out_regs[i + extra_args].first();
+diff --git a/hotspot/src/cpu/x86/vm/interpreterRT_x86_64.cpp b/hotspot/src/cpu/x86/vm/interpreterRT_x86_64.cpp
+index 40cc9d7..4ea7dce 100644
+--- a/hotspot/src/cpu/x86/vm/interpreterRT_x86_64.cpp
++++ b/hotspot/src/cpu/x86/vm/interpreterRT_x86_64.cpp
+@@ -426,10 +426,10 @@ class SlowSignatureHandler
+     _from -= Interpreter::stackElementSize;
+ 
+     if (_num_int_args < Argument::n_int_register_parameters_c-1) {
+-      *_int_args++ = (*from_addr == 0) ? NULL : (intptr_t)from_addr;
++      *_int_args++ = (*from_addr == 0) ? 0 : (intptr_t)from_addr;
+       _num_int_args++;
+     } else {
+-      *_to++ = (*from_addr == 0) ? NULL : (intptr_t) from_addr;
++      *_to++ = (*from_addr == 0) ? 0 : (intptr_t) from_addr;
+     }
+   }
+ 
+diff --git a/hotspot/src/os/bsd/vm/osThread_bsd.cpp b/hotspot/src/os/bsd/vm/osThread_bsd.cpp
+index de1383b..1dc113f 100644
+--- a/hotspot/src/os/bsd/vm/osThread_bsd.cpp
++++ b/hotspot/src/os/bsd/vm/osThread_bsd.cpp
+@@ -30,7 +30,7 @@
+ 
+ void OSThread::pd_initialize() {
+   assert(this != NULL, "check");
+-#ifdef __APPLE__
++#if defined (__APPLE__) || defined (__GENODE__)
+   _thread_id        = 0;
+ #else
+   _thread_id        = NULL;

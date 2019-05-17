@@ -2,6 +2,7 @@
 
 extern "C" {
 #include <pwd.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
@@ -23,6 +24,13 @@ extern "C" void collector_func_load(char* name,
                                    int zero_argument,
                                    void* null_argument_3)
 { }
+
+
+int dirfd(DIR *dirp)
+{
+	WARN_NOT_IMPL;
+	return -1;
+}
 
 
 int getpwuid_r(uid_t uid, struct passwd *pwd,

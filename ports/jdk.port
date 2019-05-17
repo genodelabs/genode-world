@@ -11,7 +11,7 @@ HASH_INPUT   += $(REP_DIR)/src/app/jdk/files.list
 
 PATCHES   := $(addprefix src/app/jdk/patches/,jdk.patch arm.patch \
                icache.patch size.patch id.patch lir.patch mutex.patch \
-               verified_entry.patch vfp.patch)
+               verified_entry.patch vfp.patch nullptr.patch)
 
 # This patch has to be applied to JDK when building the standard Java library
 # pollselectorprovider.patch

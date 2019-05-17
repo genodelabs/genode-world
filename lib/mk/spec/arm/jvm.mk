@@ -1,5 +1,5 @@
 CC_OPT  = -DINCLUDE_SUFFIX_CPU=_arm -DHOTSPOT_LIB_ARCH='"arm"' -DARM -DARM32 \
-          -Dlseek64=lseek -D__SOFTFP__
+          -Dlseek64=lseek
 
 INC_DIR       = $(call select_from_ports,jdk)/src/app/jdk/hotspot/src/cpu/arm/vm
 JDK_GENERATED = $(call select_from_ports,jdk_generated)/src/app/jdk
