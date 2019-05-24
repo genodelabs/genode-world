@@ -41,7 +41,7 @@ vpath % $(LIBPQ_SRC_DIR)/src/backend/utils/mb
 vpath % $(LIBPQ_SRC_DIR)/src/backend/libpq
 
 
-LIBS += libc pthread
+LIBS += libc
 
 SHARED_LIB = yes
 
