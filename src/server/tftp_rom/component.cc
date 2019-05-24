@@ -15,7 +15,6 @@
 #include <nic/packet_allocator.h>
 #include <timer_session/connection.h>
 #include <rom_session/rom_session.h>
-#include <os/signal_rpc_dispatcher.h>
 #include <os/session_policy.h>
 #include <os/path.h>
 #include <base/attached_rom_dataspace.h>
