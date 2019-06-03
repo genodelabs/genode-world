@@ -1,6 +1,5 @@
 TARGET  = tor
 LIBS    = libevent posix libssl libcrypto zlib
-LIBS   += libc_lwip_nic_dhcp
 TOR_DIR = $(call select_from_ports,tor)/src/app/tor
 INC_DIR = $(PRG_DIR) \
           $(TOR_DIR) \

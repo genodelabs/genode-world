@@ -53,8 +53,9 @@ CC_WARN  = -Wall
 CC_WARN += -Wno-unused-variable -Wno-unused-function -Wno-switch -Wno-unused-value \
            -Wno-unused-but-set-variable -Wno-format -Wno-maybe-uninitialized \
            -Wno-sign-compare -Wno-narrowing -Wno-missing-braces -Wno-array-bounds \
-           -Wno-parentheses
+           -Wno-parentheses -Wno-deprecated
 
 LIBS += libpng libc sdl sdl_net stdcxx zlib
 
 CC_CXX_WARN_STRICT =
+CC_CXX_OPT_STD     = -std=gnu++11
