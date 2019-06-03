@@ -4,6 +4,7 @@
 # \date   2016-02-24
 #
 
+assert_spec x86
 if {![have_include "load/tftp"]} {
 	puts "please enable TFTP booting first"
 	exit 1
@@ -51,7 +52,7 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="nic_drv">
+	<start name="ipxe_nic_drv">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
@@ -115,7 +116,7 @@ set boot_modules {
 	libc.lib.so vfs.lib.so
 	libm.lib.so
 	lwip_legacy.lib.so
-	nic_drv
+	ipxe_nic_drv
 	test-libc
 	tftp_rom
 	timer

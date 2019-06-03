@@ -3,30 +3,19 @@ if {![have_include power_on/qemu]} {
 	exit 0
 }
 
-#
-# Build
-#
-
-set build_components {
-	core init
-	timer
-	drivers/nic
-	lib/vfs/lwip
-	app/umurmur
-}
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-build $build_components
-
 create_boot_directory
+build { app/umurmur }
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/libcrypto \
+                  [depot_user]/src/libssl \
+                  [depot_user]/src/posix \
+                  [depot_user]/src/vfs_lwip \
+                  [depot_user]/src/vfs
 
-#
-# Generate config
-#
-
-set config {
+install_config {
 <config verbose="yes">
 	<parent-provides>
 		<service name="ROM"/>
@@ -45,14 +34,17 @@ set config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
-	</start>}
+	</start>
 
-append_platform_drv_config
-
-append config {
-	<start name="nic_drv" caps="130">
-		<resource name="RAM" quantum="20M"/>
-		<provides><service name="Nic"/></provides>
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides> <service name="Nic"/> </provides>
 	</start>
 
 	<start name="umurmur" caps="120">
@@ -94,35 +86,10 @@ default_channel = "Lobby";
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
 		</config>
-	</start>}
-
-append config {
+	</start>
 </config>}
 
-install_config $config
-
-#
-# Boot modules
-#
-
-# generic modules
-set boot_modules {
-	core init timer nic_drv
-	ld.lib.so libc.lib.so vfs.lib.so vfs_lwip.lib.so
-	libcrypto.lib.so libssl.lib.so
-	libm.lib.so posix.lib.so
-	libconfig.lib.so protobuf-c.lib.so
-	umurmur
-}
-
-# platform-specific modules
-append_platform_drv_boot_modules
-
-build_boot_image $boot_modules
-
-#
-# Execute test case
-#
+build_boot_image { libconfig.lib.so protobuf-c.lib.so umurmur }
 
 # qemu config
 append qemu_args " -nographic -net nic,model=e1000 "

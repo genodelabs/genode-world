@@ -3,11 +3,7 @@
 # \author Emery Hemingway
 #
 
-if {[have_spec odroid_xu] || [have_spec linux] ||
-    [expr [have_spec imx53] && [have_spec trustzone]]} {
-	puts "Run script does not support this platform."
-	exit 0
-}
+assert_spec x86
 
 set build_components {
 	app/ssh_client
@@ -16,17 +12,8 @@ set build_components {
 	lib/vfs/lwip
 }
 
-proc gpio_drv { } { if {[have_spec rpi] && [have_spec hw]}  { return hw_gpio_drv }
-                    if {[have_spec rpi] && [have_spec foc]} { return foc_gpio_drv }
-                    return gpio_drv }
-
-lappend_if [have_spec gpio] build_components drivers/gpio
-
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
-
-lappend_if [expr {[nic_drv_binary] == "nic_drv"}] build_components drivers/nic
-lappend_if [expr {[nic_drv_binary] == "usb_drv"}] build_components drivers/usb
 
 build $build_components
 
@@ -59,26 +46,20 @@ append config {
 
 append_platform_drv_config
 
-append_if [have_spec gpio] config "
-	<start name=\"[gpio_drv]\" caps=\"140\">
-		<resource name=\"RAM\" quantum=\"4M\"/>
-		<provides><service name=\"Gpio\"/></provides>
-		<config/>
-	</start>"
-
 append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
+
 	<start name="nic_drv" caps="120">
-		<binary name="} [nic_drv_binary] {"/>
+		<binary name="ipxe_nic_drv"/>
 		<resource name="RAM" quantum="16M"/>
 		<provides> <service name="Nic"/> </provides>
-		} [nic_drv_config] {
 	</start>
 
 	<start name="fb_drv" caps="200">
+		<binary name="vesa_fb_drv"/>
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="Framebuffer"/></provides>
 		<config buffered="yes"/>
@@ -92,17 +73,17 @@ append config {
 	<start name="input_filter" caps="80">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Input"/> </provides>
-<config>
-	<input label="ps2"/>
-	<output>
-		<chargen>
-			<input name="ps2"/>
-			<repeat delay_ms="230" rate_ms="90"/>
-			<include rom="en_us.chargen"/>
-			<include rom="special.chargen"/>
-		</chargen>
-	</output>
-</config>
+		<config>
+			<input label="ps2"/>
+			<output>
+				<chargen>
+					<input name="ps2"/>
+					<repeat delay_ms="230" rate_ms="90"/>
+					<include rom="en_us.chargen"/>
+					<include rom="special.chargen"/>
+				</chargen>
+			</output>
+		</config>
 		<route>
 			<service name="Input" label="ps2"> <child name="ps2_drv"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -147,6 +128,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
+	ipxe_nic_drv
 	libc.lib.so
 	libcrypto.lib.so
 	libm.lib.so
@@ -160,18 +142,9 @@ set boot_modules {
 
 # platform-specific modules
 append_platform_drv_boot_modules
-
-lappend boot_modules [nic_drv_binary]
-
-lappend_if [have_spec ps2]              boot_modules ps2_drv
-lappend_if [have_spec framebuffer]      boot_modules fb_drv
-
-lappend_if [have_spec gpio] boot_modules [gpio_drv]
-
 build_boot_image $boot_modules
 
-append_if [have_spec x86]     qemu_args " -net nic,model=e1000 "
-append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "
-append                        qemu_args " -net user -net dump,file=[run_dir].pcap"
+append qemu_args " -net nic,model=e1000 "
+append qemu_args " -net user -net dump,file=[run_dir].pcap"
 
 run_genode_until forever

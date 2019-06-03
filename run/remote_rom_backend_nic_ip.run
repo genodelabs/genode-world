@@ -5,28 +5,14 @@ proc nic_drv_opt {} {
 	return ""
 }
 
-#
-# Build
-#
-
-set build_components { core init timer
-	server/dynamic_rom
-	proxy/remote_rom/backend/nic_ip
-	app/rom_logger
-	drivers/nic
-	server/nic_bridge
-}
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-build $build_components
-
 create_boot_directory
-
-#
-# Generate config
-#
+build { proxy/remote_rom/backend/nic_ip }
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/nic_bridge \
+                  [depot_user]/src/dynamic_rom \
+                  [depot_user]/src/rom_logger
 
 install_config {
 <config>
@@ -40,6 +26,7 @@ install_config {
 		<service name="CPU" />
 		<service name="PD" />
 		<service name="IO_MEM" />
+		<service name="IO_PORT" />
 		<service name="IRQ" />
 	</parent-provides>
 	<default-route>
@@ -47,10 +34,23 @@ install_config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="100" />
+
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
+
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides> <service name="Nic"/> </provides>
+	</start>
+
 	<start name="dynamic_rom">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="ROM"/></provides>
@@ -69,6 +69,7 @@ install_config {
 			</rom>
 		</config>
 	</start>
+
 	<start name="remote_rom_server">
 		<resource name="RAM" quantum="8M"/>
 		<route>
@@ -83,6 +84,7 @@ install_config {
 			            src="192.168.42.10" dst="192.168.42.11" />
 		</config>
 	</start>
+
 	<start name="remote_rom_client">
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="ROM"/></provides>
@@ -90,23 +92,17 @@ install_config {
 			<remote_rom name="remote" src="192.168.42.11" dst="192.168.42.10" />
 		</config>
 	</start>
+
 	<start name="nic_bridge">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nic"/></provides>
 		<route>
-			<service name="Nic"> <child name="nic_drv"/> </service>
+			<service name="Nic"> <child name="drivers"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<config> <default-policy/> </config>
 	</start>
-	<start name="nic_drv" } [nic_drv_opt] {>
-		<binary name="} [nic_drv_binary] {" />
-		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Nic"/></provides>
-		<config>
-			<nic tap="tap1"/>
-		</config>
-	</start>
+
 	<start name="rom_logger">
 		<resource name="RAM" quantum="4M"/>
 		<config rom="remote" />
@@ -119,21 +115,7 @@ install_config {
 	</start>
 </config>}
 
-#
-# Boot image
-#
-
-append boot_modules { core ld.lib.so init timer
-	remote_rom_server
-	remote_rom_client
-	dynamic_rom
-	rom_logger
-	} [nic_drv_binary] {
-	nic_bridge
-}
-
-append_platform_drv_boot_modules
-build_boot_image $boot_modules
+build_boot_image { remote_rom_server remote_rom_client }
 
 append qemu_args " -nographic "
 

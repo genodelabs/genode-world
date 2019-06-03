@@ -53,7 +53,7 @@ append config {
 		<provides> <service name="Timer" /> </provides>
 	</start>
 	
-	<start name="gpio_drv" caps="200">
+	<start name="imx6_gpio_drv" caps="200">
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Gpio"/></provides>
 		<config/>
@@ -62,6 +62,7 @@ append config {
 	<!-- networking -->
 
 	<start name="nic_drv" caps="200">
+		<binary name="fec_nic_drv"/>
 		<resource name="RAM" quantum="16M"/>
 		<provides><service name="Nic"/></provides>
 		<config>
@@ -122,6 +123,7 @@ append config {
 	<!-- block and file system access -->
 
 	<start name="sd_card_drv">
+		<binary name="nit6_solox_sd_card_drv"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Block"/></provides>
 	</start>
@@ -269,14 +271,12 @@ install_config $config
 set boot_modules {
 	core init ld.lib.so timer
 
-	gpio_drv sd_card_drv part_block
+	fec_nic_drv imx6_gpio_drv nit6_solox_sd_card_drv part_block
 
 	fs_rom report_rom fs_log log_core
 
 	nic_router
 }
-
-append boot_modules [nic_drv_binary]
 
 append_platform_drv_boot_modules
 

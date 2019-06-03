@@ -1,3 +1,4 @@
+assert_spec x86
 set usb_raw_device "x.x"
 
 if {[have_include power_on/qemu]} {
@@ -22,8 +23,6 @@ set build_components {
 	server/report_rom
 	test/input
 }
-
-lappend_if [have_spec gpio] build_components drivers/gpio
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
@@ -55,13 +54,6 @@ set config {
 	</default-route>}
 
 append_platform_drv_config
-
-append_if [have_spec gpio] config {
-	<start name="gpio_drv">
-		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Gpio"/></provides>
-		<config/>
-	</start>}
 
 append config {
 	<start name="timer">

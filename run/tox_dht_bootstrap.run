@@ -9,35 +9,18 @@ if {[have_spec odroid_xu] || [have_spec linux] ||
 	exit 0
 }
 
-set build_components {
-	app/tox_dht_bootstrap
-	drivers/nic
-	lib/vfs/import
-}
-
-proc gpio_drv { } { if {[have_spec rpi] && [have_spec hw]}  { return hw_gpio_drv }
-                    if {[have_spec rpi] && [have_spec foc]} { return foc_gpio_drv }
-                    return gpio_drv }
-
-lappend_if [have_spec gpio] build_components drivers/gpio
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-lappend_if [expr {[nic_drv_binary] == "nic_drv"}] build_components drivers/nic
-lappend_if [expr {[nic_drv_binary] == "usb_drv"}] build_components drivers/usb
-
-build $build_components
-
 create_boot_directory
-
+build { app/tox_dht_bootstrap lib/vfs/import }
 import_from_depot \
 	[depot_user]/src/[base_src] \
+	[depot_user]/pkg/[drivers_nic_pkg] \
 	[depot_user]/src/init \
+	[depot_user]/src/libc \
+	[depot_user]/src/vfs \
 	[depot_user]/src/vfs_lwip \
 	[depot_user]/src/report_rom \
 
-append config {
+install_config {
 <config>
 	<parent-provides>
 		<service name="CPU"/>
@@ -54,32 +37,27 @@ append config {
 	<default-route>
 		<service name="Report"> <child name="report_rom"/> </service>
 		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>}
+	</default-route>
 
-append_platform_drv_config
-
-append_if [have_spec gpio] config "
-	<start name=\"[gpio_drv]\" caps=\"140\">
-		<resource name=\"RAM\" quantum=\"4M\"/>
-		<provides><service name=\"Gpio\"/></provides>
-		<config/>
-	</start>"
-
-append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="nic_drv" caps="120">
-		<binary name="} [nic_drv_binary] {"/>
-		<resource name="RAM" quantum="16M"/>
+
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
 		<provides> <service name="Nic"/> </provides>
-		} [nic_drv_config] {
 	</start>
 
 	<start name="report_rom">
 		<resource name="RAM" quantum="2M"/>
-		<provides> <service name="Report"/> </provides>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config verbose="yes"/>
 	</start>
 
@@ -112,26 +90,11 @@ append config {
 </config>
 }
 
-install_config $config
-
-# generic modules
-set boot_modules {
-	libc.lib.so
-	libm.lib.so
+build_boot_image {
 	libsodium.lib.so
 	c-toxcore.lib.so
 	tox_dht_bootstrap
-	vfs.lib.so
 }
-
-# platform-specific modules
-append_platform_drv_boot_modules
-
-lappend boot_modules [nic_drv_binary]
-
-lappend_if [have_spec gpio] boot_modules [gpio_drv]
-
-build_boot_image $boot_modules
 
 append_if [have_spec x86]     qemu_args " -net nic,model=e1000 "
 append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "

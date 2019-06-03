@@ -1,26 +1,26 @@
+assert_spec x86
+
 if {[have_spec linux]} {
 	puts "The [run_name] scenario requires QEMU networking."
 	exit 1
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
-
-set build_components {
-	core init
-	app/drill
-	timer
-	drivers/nic
-	drivers/rtc
-	lib/vfs/jitterentropy
-}
-
-append_platform_drv_build_components
-
-build $build_components
-
 create_boot_directory
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/libcrypto \
+                  [depot_user]/src/libssl \
+                  [depot_user]/src/posix \
+                  [depot_user]/src/rtc_drv \
+                  [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs_lxip \
+                  [depot_user]/src/vfs
+build { app/drill }
 
-append config {
+
+install_config {
 <config>
 	<parent-provides>
 		<service name="CPU"/>
@@ -35,24 +35,29 @@ append config {
 	<default-route>
 		<any-service>  <parent/> <any-child/></any-service>
 	</default-route>
-	<default caps="100"/>}
+	<default caps="100"/>
 
-append_platform_drv_config
-
-append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
-	<start name="nic_drv">
-		<binary name="} [nic_drv_binary] {"/>
-		<resource name="RAM" quantum="4M"/>
+
+	<start name="drivers" caps="1000">
+		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
 		<provides> <service name="Nic"/> </provides>
 	</start>
+
 	<start name="rtc_drv">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
+
 	<start name="drill" caps="256">
 		<resource name="RAM" quantum="32M"/>
 		<config>
@@ -74,27 +79,7 @@ append config {
 </config>
 }
 
-install_config $config
-
-set boot_modules {
-	core init ld.lib.so
-	drill
-	libc.lib.so vfs.lib.so
-	libcrypto.lib.so
-	libm.lib.so
-	libssl.lib.so
-	posix.lib.so
-	rtc_drv
-	timer
-	vfs_jitterentropy.lib.so
-	vfs_lxip.lib.so lxip.lib.so
-}
-
-# platform-specific modules
-append_platform_drv_boot_modules
-lappend boot_modules [nic_drv_binary]
-
-build_boot_image $boot_modules
+build_boot_image { drill }
 
 append qemu_args " -nographic -net nic,model=e1000 -net user -net dump,file=[run_dir]/dump.pcap"
 
