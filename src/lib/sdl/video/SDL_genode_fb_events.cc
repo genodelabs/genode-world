@@ -63,7 +63,7 @@ Genode::Env &global_env()
 Nitpicker::Connection &global_nitpicker()
 {
 	if (!_global_nitpicker.constructed())
-		_global_nitpicker.construct(global_env(), "SDL");
+		_global_nitpicker.construct(global_env());
 
 	return *_global_nitpicker;
 }
