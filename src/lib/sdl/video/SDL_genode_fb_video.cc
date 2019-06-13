@@ -118,6 +118,12 @@ extern "C" {
 
 		void refresh(int x, int y, int w, int h) {
 			_nitpicker.framebuffer()->refresh(x, y, w, h); }
+
+		void title(char const *string)
+		{
+			_nitpicker.enqueue<Nitpicker::Session::Command::Title>(_view, string);
+			_nitpicker.execute();
+		}
 	};
 
 	static Genode::Constructible<Sdl_framebuffer> framebuffer;
@@ -299,6 +305,11 @@ extern "C" {
 		}
 	}
 
+	static void Genode_Fb_SetCaption(SDL_VideoDevice *device, const char *title, const char *icon)
+	{
+		if (title && framebuffer.constructed())
+			framebuffer->title(title);
+	}
 
 	static SDL_VideoDevice *Genode_Fb_CreateDevice(int devindex)
 	{
@@ -340,7 +351,7 @@ extern "C" {
 		device->SetHWColorKey    = 0;
 		device->SetHWAlpha       = 0;
 		device->FlipHWSurface    = 0;
-		device->SetCaption       = 0;
+		device->SetCaption       = Genode_Fb_SetCaption;
 		device->SetIcon          = 0;
 		device->IconifyWindow    = 0;
 		device->GrabInput        = 0;
