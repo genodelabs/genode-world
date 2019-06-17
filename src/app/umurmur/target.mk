@@ -1,3 +1,4 @@
+REQUIRES := x86
 TARGET := umurmur
 
 UMURMUR_DIR := $(call select_from_ports,umurmur)/src/app/umurmur/src
