@@ -72,15 +72,19 @@ append config {
 			<rom name="playlist">
 				<inline description="initial playlist">
 <playlist>
-	<track path="foo.mp3"/>
-	<track path="foo.ogg"/>
-	<track path="foo.flac"/>
+	<trackList>
+		<track><location>foo.mp3</location></track>
+		<track><location>foo.ogg</location></track>
+		<track><location>foo.flac</location></track>
+	</trackList>
 </playlist>
 				</inline>
 				<sleep milliseconds="30000"/>
 				<inline description="initial playlist">
 <playlist>
-	<track path="foo.ogg"/>
+	<trackList>
+		<track><location>foo.ogg</location></track>
+	</trackList>
 </playlist>
 				</inline>
 				<sleep milliseconds="30000"/>
@@ -159,7 +163,7 @@ append boot_modules {
 	core init timer dynamic_rom report_rom } [audio_drv_binary] {
 	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so zlib.lib.so
 	avcodec.lib.so avformat.lib.so avutil.lib.so
-	avresample.lib.so pthread.lib.so
+	avresample.lib.so
 	audio_player
 	foo.mp3 foo.flac foo.ogg
 }
