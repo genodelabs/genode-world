@@ -348,3 +348,4 @@ SDL_timer_running B 4
 SDL_timer_started B 4
 SDL_ultoa T
 _Z15sdl_init_genodeRN6Genode3EnvE T
+main U
