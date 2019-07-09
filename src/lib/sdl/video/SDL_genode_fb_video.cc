@@ -84,8 +84,15 @@ extern "C" {
 			_env.ep(), *this, &Sdl_framebuffer::_handle_mode_change };
 
 		Sdl_framebuffer(Genode::Env &env, Nitpicker::Connection &nitpicker)
-		: _env(env), _nitpicker(nitpicker) {
-			_nitpicker.mode_sigh(_mode_handler); }
+		:
+			_env(env), _nitpicker(nitpicker)
+		{
+			_nitpicker.mode_sigh(_mode_handler);
+
+			using namespace Nitpicker;
+			_nitpicker.enqueue<Session::Command::To_front>(_view, Session::View_handle());
+			_nitpicker.execute();
+		}
 
 
 		/************************************
