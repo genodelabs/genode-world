@@ -5,7 +5,6 @@
 set build_components {
 	core init
 	timer
-	drivers/rtc
 	server/ram_fs
 	test/gtest
 }
@@ -40,11 +39,6 @@ install_config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 
-	<start name="rtc_drv">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Rtc"/> </provides>
-	</start>
-
 	<start name="ram_fs">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="File_system"/> </provides>
@@ -55,7 +49,7 @@ install_config {
 		<resource name="RAM" quantum="4M"/>
 		<config>
 			<vfs>
-				<dir name="dev"> <log/> <rtc/> </dir>
+				<dir name="dev"> <log/> <inline name="rtc">2018-01-01 00:01</inline> </dir>
 				<fs/>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
