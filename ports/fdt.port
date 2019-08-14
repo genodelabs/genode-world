@@ -1,0 +1,7 @@
+LICENSE   := GPLv2 or BSD-2-Clause
+DOWNLOADS := fdt.archive
+VERSION   := 1.5.0
+
+URL(fdt) := https://git.kernel.org/pub/scm/utils/dtc/dtc.git/snapshot/dtc-$(VERSION).tar.gz
+SHA(fdt) := 3416f10ca69b0b911f027a9cb96471485dd8705705fc4813283f963299eaae0a
+DIR(fdt) := src/lib/fdt
