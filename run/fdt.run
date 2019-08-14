@@ -1,0 +1,35 @@
+build "core init test/fdt"
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="200"/>
+	<start name="test-fdt">
+		<resource name="RAM" quantum="10M"/>
+	</start>
+</config>
+}
+
+build_boot_image {
+	core init timer test-fdt
+	ld.lib.so fdt.lib.so
+	tree.dtb
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until "child .* exited with exit value 0.*\n" 30
