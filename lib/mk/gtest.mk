@@ -11,5 +11,6 @@ INC_DIR += $(GTEST_DIR)/include
 INC_DIR += $(GTEST_DIR)/include/internal
 
 LIBS += libc libm stdcxx
+SHARED_LIB = yes
 
 CC_CXX_WARN_STRICT =
