@@ -1,0 +1,12 @@
+diff --git a/third_party/genode/if_indextoname.c b/third_party/genode/if_indextoname.c
+new file mode 100644
+index 0000000000..9ea67cee0c
+--- /dev/null
++++ b/third_party/genode/if_indextoname.c
+@@ -0,0 +1,6 @@
++char * if_indextoname(unsigned int ifindex, char *ifname)
++{
++	const char* name = "eth0";
++	ifname = name;
++	return ifname;
++}

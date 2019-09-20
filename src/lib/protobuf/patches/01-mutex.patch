@@ -1,0 +1,28 @@
+commit 3a55e1d3c8ab37fb14a9a2875db0e031044d4863
+Author: Pirmin Duss <pirmin.duss@gapfruit.com>
+Date:   Mon Sep 23 16:16:57 2019 +0200
+
+    Mutex fixes
+
+diff --git a/src/google/protobuf/stubs/mutex.h b/src/google/protobuf/stubs/mutex.h
+index a311889..967be6a 100644
+--- a/src/google/protobuf/stubs/mutex.h
++++ b/src/google/protobuf/stubs/mutex.h
+@@ -30,7 +30,7 @@
+ #ifndef GOOGLE_PROTOBUF_STUBS_MUTEX_H_
+ #define GOOGLE_PROTOBUF_STUBS_MUTEX_H_
+ 
+-#include <mutex>
++#include <base/lock.h>
+ 
+ #ifdef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+ 
+@@ -104,7 +104,7 @@ class PROTOBUF_EXPORT GOOGLE_PROTOBUF_CAPABILITY("mutex") WrappedMutex {
+ 
+  private:
+ #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+-  std::mutex mu_;
++  Genode::Lock mu_;
+ #else  // ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+   CriticalSectionLock mu_;
+ #endif  // #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP

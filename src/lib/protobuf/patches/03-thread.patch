@@ -1,0 +1,45 @@
+diff --git a/src/google/protobuf/generated_message_util.cc b/src/google/protobuf/generated_message_util.cc
+index 36d7307..04a565b 100644
+--- a/src/google/protobuf/generated_message_util.cc
++++ b/src/google/protobuf/generated_message_util.cc
+@@ -799,8 +799,8 @@ void InitSCCImpl(SCCInfoBase* scc) {
+   // Either the default in case no initialization is running or the id of the
+   // thread that is currently initializing.
+ #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+-  static std::atomic<std::thread::id> runner;
+-  auto me = std::this_thread::get_id();
++  static std::atomic<long long> runner = -1LL;
++  auto me = 1LL;
+ #else
+   // This is a lightweight replacement for std::thread::id. std::thread does not
+   // work on Windows XP SP2 with the latest VC++ libraries, because it utilizes
+@@ -811,20 +811,20 @@ void InitSCCImpl(SCCInfoBase* scc) {
+ 
+   // This will only happen because the constructor will call InitSCC while
+   // constructing the default instance.
+-  if (runner.load(std::memory_order_relaxed) == me) {
+-    // Because we're in the process of constructing the default instance.
+-    // We can be assured that we're already exploring this SCC.
+-    GOOGLE_CHECK_EQ(scc->visit_status.load(std::memory_order_relaxed),
+-             SCCInfoBase::kRunning);
+-    return;
+-  }
++  if (runner.load(std::memory_order_relaxed) == me) {
++    // Because we're in the process of constructing the default instance.
++    // We can be assured that we're already exploring this SCC.
++    GOOGLE_CHECK_EQ(scc->visit_status.load(std::memory_order_relaxed),
++             SCCInfoBase::kRunning);
++    return;
++  }
+   InitProtobufDefaults();
+   mu.Lock();
+-  runner.store(me, std::memory_order_relaxed);
++  runner.store(me, std::memory_order_relaxed);
+   InitSCC_DFS(scc);
+ 
+ #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+-  runner.store(std::thread::id{}, std::memory_order_relaxed);
++  runner.store(0, std::memory_order_relaxed);
+ #else
+   runner.store(-1, std::memory_order_relaxed);
+ #endif  // #ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP

@@ -1,0 +1,213 @@
+create_boot_directory
+
+
+import_from_depot [depot_user]/src/[base_src]
+import_from_depot [depot_user]/src/dynamic_rom
+import_from_depot [depot_user]/src/init
+import_from_depot [depot_user]/src/libc
+import_from_depot [depot_user]/src/libcrypto
+import_from_depot [depot_user]/src/nic_router
+import_from_depot [depot_user]/src/posix
+import_from_depot [depot_user]/src/protobuf
+import_from_depot [depot_user]/src/libssl
+import_from_depot [depot_user]/src/report_rom
+import_from_depot [depot_user]/src/stdcxx
+import_from_depot [depot_user]/src/vfs
+import_from_depot [depot_user]/src/vfs_lwip
+import_from_depot [depot_user]/src/zlib
+
+
+set build_components {
+	test/grpc/server
+	test/grpc/client
+}
+
+
+build $build_components
+
+
+set nic_router_reporting 0
+
+
+set config {
+<config verbose="no">
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+}
+append_if $nic_router_reporting config {
+	<start name="report_rom">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="ROM"/>
+			<service name="Report"/>
+		</provides>
+		<config verbose="yes">
+		</config>
+	</start>
+}
+append config {
+	<start name="nic_router">
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Nic"/> </provides>
+		<config verbose="no"
+		        verbose_packets="no"
+		        verbose_domain_state="yes"
+		        verbose_packet_drop="yes"
+		        dhcp_discover_timeout_sec="3"
+		        dhcp_request_timeout_sec="3"
+		        dhcp_offer_timeout_sec="3"
+		        udp_idle_timeout_sec="30"
+		        tcp_idle_timeout_sec="30"
+		        tcp_max_segm_lifetime_sec="15">}
+append_if $nic_router_reporting config {
+				<report bytes="yes"
+					    config="yes"
+					    quota="no"
+					    stats="no"
+					    interval_sec="2"/>}
+append config {
+			<domain name="server" interface="10.10.10.1/24">
+				<ip dst="10.10.20.0/0" domain="client"/>
+			</domain>
+			<domain name="client" interface="10.10.20.1/24">
+				<ip dst="10.10.10.0/0" domain="server"/>
+			</domain>
+			<policy label="init -> grpc_server -> lwip" domain="server"/>
+			<policy label="init -> grpc_client -> lwip" domain="client"/>
+		</config>
+	</start>
+
+	<start name="dynamic_rom" caps="100">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config>
+			<rom name="init.config">
+				<inline description="server_only">
+					<config verbose="no">
+						<parent-provides>
+							<service name="CPU"/>
+							<service name="LOG"/>
+							<service name="Nic"/>
+							<service name="PD"/>
+							<service name="ROM"/>
+							<service name="Timer"/>
+						</parent-provides>
+						<default-route>
+							<any-service> <parent/> <any-child/> </any-service>
+						</default-route>
+						<default caps="100"/>
+						<start name="grpc_server" caps="200">
+							<resource name="RAM" quantum="8M"/>
+							<config port="50051">
+								<arg value="grpc_server"/>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+								<vfs>
+									<dir name="dev">
+										<log/> <null/>
+										<inline name="rtc">2000-01-01 00:00</inline>
+										<dir name="socket">
+											<lwip ip_addr="10.10.10.55" netmask="255.255.255.0" gateway="10.10.10.1"/>
+										</dir>
+									</dir>
+								</vfs>
+							</config>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="1000"/>
+				<inline description="server_and_client">
+					<config verbose="no">
+						<parent-provides>
+							<service name="CPU"/>
+							<service name="LOG"/>
+							<service name="Nic"/>
+							<service name="PD"/>
+							<service name="ROM"/>
+							<service name="Timer"/>
+						</parent-provides>
+						<default-route>
+							<any-service> <parent/> <any-child/> </any-service>
+						</default-route>
+						<default caps="100"/>
+						<start name="grpc_server" caps="200">
+							<resource name="RAM" quantum="8M"/>
+							<config>
+								<arg value="grpc_server"/>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+								<vfs>
+									<dir name="dev">
+										<log/> <null/>
+										<inline name="rtc">2000-01-01 00:00</inline>
+										<dir name="socket">
+											<lwip ip_addr="10.10.10.55" netmask="255.255.255.0" gateway="10.10.10.1"/>
+										</dir>
+									</dir>
+								</vfs>
+							</config>
+						</start>
+						<start name="grpc_client" caps="200">
+							<resource name="RAM" quantum="8M"/>
+							<config>
+								<arg value="grpc_client"/>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+								<vfs>
+									<dir name="dev">
+										<log/> <null/>
+										<inline name="rtc">2000-01-02 00:00</inline>
+										<dir name="socket">
+											<lwip ip_addr="10.10.20.66" netmask="255.255.255.0" gateway="10.10.20.1"/>
+										</dir>
+									</dir>
+								</vfs>
+							</config>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="2000000000"/>
+			</rom>
+		</config>
+	</start>
+
+	<start name="init" caps="1500">
+		<resource name="RAM" quantum="20M" />
+		<route>
+			<service name="ROM" label="config"> <child name="dynamic_rom" label="init.config"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+</config>
+}
+
+
+install_config $config
+
+
+set boot_modules {
+	grpc_server
+	grpc_client
+	grpc.lib.so
+	libc_pipe.lib.so
+}
+
+
+append qemu_args " -nographic "
+
+
+build_boot_image $boot_modules
+
+
+run_genode_until {.*say hello} 20

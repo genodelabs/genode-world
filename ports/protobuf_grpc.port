@@ -1,0 +1,107 @@
+LICENSE             := GPLv2
+VERSION             := 19.09
+
+DOWNLOADS           := protobuf.git
+DOWNLOADS           += grpc.git
+DOWNLOADS           += grpc-host.git
+
+#
+# !!! IMPORTANT !!!
+# PROTOBUF_VERSION must match the version that gRPC uses in the
+# third_party/protobuf sub directory!
+#
+GRPC_VERSION        := v1.24.0
+PROTOBUF_VERSION    := v3.8.0
+
+URL(protobuf)       := https://github.com/protocolbuffers/protobuf.git
+DIR(protobuf)       := src/lib/protobuf
+REV(protobuf)       := $(PROTOBUF_VERSION)
+
+URL(grpc)           := https://github.com/grpc/grpc.git
+DIR(grpc)           := src/lib/grpc
+REV(grpc)           := $(GRPC_VERSION)
+
+#
+# This is required, as the patched sources will not build
+# for the host tools.
+#
+URL(grpc-host)      := https://github.com/grpc/grpc.git
+DIR(grpc-host)      := src/lib/grpc-host
+REV(grpc-host)      := $(GRPC_VERSION)
+
+PATCHES             := $(addprefix src/lib/protobuf/patches/, \
+                         01-mutex.patch \
+                         02-run_once.patch \
+                         03-thread.patch)
+PATCHES             += $(addprefix src/lib/grpc/patches/, \
+                         01_mutex.patch \
+                         02_generated_includes.patch \
+                         03_if_nametoindex.patch \
+                         04_socket_stuff.patch \
+                         05_example.patch \
+                         06_if_indextoname.patch \
+                         07_send_recv.patch \
+                         08_grpc_accept4.patch)
+
+PATCH_OPT_PROTOBUF  := -p1 -d src/lib/protobuf
+PATCH_OPT(src/lib/protobuf/patches/01-mutex.patch)    := $(PATCH_OPT_PROTOBUF)
+PATCH_OPT(src/lib/protobuf/patches/02-run_once.patch) := $(PATCH_OPT_PROTOBUF)
+PATCH_OPT(src/lib/protobuf/patches/03-thread.patch)   := $(PATCH_OPT_PROTOBUF)
+
+PATCH_OPT_GRPC      := -p1 -d src/lib/grpc
+PATCH_OPT(src/lib/grpc/patches/01_mutex.patch)              := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/02_generated_includes.patch) := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/03_if_nametoindex.patch)     := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/04_socket_stuff.patch)       := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/05_example.patch)            := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/06_if_indextoname.patch)     := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/07_send_recv.patch)          := $(PATCH_OPT_GRPC)
+PATCH_OPT(src/lib/grpc/patches/08_grpc_accept4.patch)       := $(PATCH_OPT_GRPC)
+
+DIRS  := include/grpc/cpp/common
+DIRS  += include/grpc/cpp/util
+DIRS  += include/grpc/cpp/server
+DIRS  += include/grpc
+DIRS  += include/grpc/impl/codegen
+DIRS  += include/grpc/support
+DIRS  += include/grpcpp
+DIRS  += include/grpcpp/security
+DIRS  += include/grpcpp/support
+DIRS  += include/grpcpp/generic
+DIRS  += include/grpcpp/impl
+DIRS  += include/grpcpp/impl/codegen
+DIRS  += include/grpcpp/impl/codegen/security
+DIRS  += include/grpcpp/ext
+DIRS  += include/google/protobuf
+DIRS  += include/google/protobuf/compiler
+DIRS  += include/google/protobuf/io
+DIRS  += include/google/protobuf/stubs
+DIRS  += include/google/protobuf/util
+DIRS  += proto/protobuf/src/google/protobuf
+
+DIR_CONTENT(include/grpc/cpp/common)                   := src/lib/grpc/src/cpp/common/*.h
+DIR_CONTENT(include/grpc/cpp/util)                     := src/lib/grpc/src/cpp/util/*.h
+DIR_CONTENT(include/grpc/cpp/server)                   := src/lib/grpc/src/cpp/server/*.h
+DIR_CONTENT(include/grpc)                              := src/lib/grpc/include/grpc/*.h
+DIR_CONTENT(include/grpc/impl/codegen)                 := src/lib/grpc/include/grpc/impl/codegen/*.h
+DIR_CONTENT(include/grpc/support)                      := src/lib/grpc/include/grpc/support/*.h
+DIR_CONTENT(include/grpcpp)                            := src/lib/grpc/include/grpcpp/*.h
+DIR_CONTENT(include/grpcpp/security)                   := src/lib/grpc/include/grpcpp/security/*.h
+DIR_CONTENT(include/grpcpp/support)                    := src/lib/grpc/include/grpcpp/support/*.h
+DIR_CONTENT(include/grpcpp/generic)                    := src/lib/grpc/include/grpcpp/generic/*.h
+DIR_CONTENT(include/grpcpp/impl)                       := src/lib/grpc/include/grpcpp/impl/*.h
+DIR_CONTENT(include/grpcpp/impl/codegen)               := src/lib/grpc/include/grpcpp/impl/codegen/*.h
+DIR_CONTENT(include/grpcpp/impl/codegen/security)      := src/lib/grpc/include/grpcpp/impl/codegen/security/*.h
+DIR_CONTENT(include/grpcpp/ext)                        := src/lib/grpc/include/grpcpp/ext/*.h
+
+
+DIR_CONTENT(include/google/protobuf)                   := src/lib/protobuf/src/google/protobuf/*.h \
+                                                          src/lib/protobuf/src/google/protobuf/*.inc
+DIR_CONTENT(include/google/protobuf/compiler)          := src/lib/protobuf/src/google/protobuf/compiler/*.h
+DIR_CONTENT(include/google/protobuf/io)                := src/lib/protobuf/src/google/protobuf/io/*.h
+DIR_CONTENT(include/google/protobuf/stubs)             := src/lib/protobuf/src/google/protobuf/stubs/*.h
+DIR_CONTENT(include/google/protobuf/util)              := src/lib/protobuf/src/google/protobuf/util/*.h
+
+DIR_CONTENT(proto/protobuf/src/google/protobuf)        := src/lib/protobuf/src/google/protobuf/*.proto
+
+# vim: syntax=make

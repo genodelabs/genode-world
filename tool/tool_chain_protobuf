@@ -1,0 +1,92 @@
+#!/usr/bin/make -f
+#
+# \brief  Tool for preparing the protobuf tool-chain for the Genode OS Framework
+# \author Pirmin Duss
+# \date   2019-09-24
+#
+
+SHELL   = bash
+ECHO    = @echo -e
+VERBOSE = @
+
+help:
+	$(ECHO)
+	$(ECHO) "Build protobuf and gRPC tools for the Genode OS Framework tool chain"
+	$(ECHO)
+	$(ECHO) "--- available commands ---"
+	$(ECHO) "build         - build protobuf tools"
+	$(ECHO) "install       - install protobuf tools to '$(INSTALL_LOCATION)'"
+	$(ECHO) "clean         - clean everything except contrib sources"
+	$(ECHO)
+	$(ECHO) "--- available command line options ---"
+	$(ECHO) "MAKE_JOBS=4 - number of parallel make jobs (default: 4)"
+	$(ECHO)
+
+.PHONY: build help install
+
+#
+# Enable parallel build for 2nd-level $(MAKE) by default
+#
+
+MAKE_JOBS ?= 4
+
+#
+# Source, build and install location
+#
+
+SUDO                     ?= sudo
+
+TOOL_VERSION             := 19.08
+
+GENODE_DIR               ?= $(realpath $(dir $(firstword $(MAKEFILE_LIST)))/..)/../..
+CONTRIB_DIR              := $(shell $(GENODE_DIR)/tool/ports/current protobuf_grpc)/src/lib
+HOST_TOOL_DIR            := $(CONTRIB_DIR)/grpc-host
+GRPC_DIR                 := $(CONTRIB_DIR)/grpc
+
+DEFAULT_INSTALL_LOCATION := /usr/local/genode/protobuf_grpc/$(TOOL_VERSION)
+INSTALL_LOCATION         ?= $(DEFAULT_INSTALL_LOCATION)
+
+configure: extract \
+	$(CONTRIB_DIR)/grpc-host/configure
+
+extract:
+	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port protobuf_grpc
+
+$(CONTRIB_DIR)/grpc-host/configure:
+	$(VERBOSE)cd $(CONTRIB_DIR)/grpc-host && \
+		git submodule update --init
+
+autogen_protoc:
+	$(VERBOSE)cd $(HOST_TOOL_DIR)/third_party/protobuf && \
+		prefix=$(INSTALL_LOCATION) ./autogen.sh
+
+build: bin/grpc_cpp_plugin
+
+# this also build `protoc` from protobuf
+bin/grpc_cpp_plugin: configure autogen_protoc
+	$(VERBOSE)cd $(HOST_TOOL_DIR) && \
+		prefix=$(INSTALL_LOCATION) make -j$(MAKE_JOBS)
+
+install: copy_generated
+	$(VERBOSE)cd $(HOST_TOOL_DIR) && \
+		prefix=$(INSTALL_LOCATION) make install
+	$(VERBOSE)cp $(HOST_TOOL_DIR)/bins/opt/protobuf/protoc $(INSTALL_LOCATION)/bin
+ifeq ($(INSTALL_LOCATION),$(DEFAULT_INSTALL_LOCATION))
+	$(VERBOSE)$(SUDO) ln -snf $(TOOL_VERSION) $(dir $(INSTALL_LOCATION))/current
+endif
+
+copy_generated:
+	$(VERBOSE)cp -f $(HOST_TOOL_DIR)/src/core/ext/upb-generated/src/proto/grpc/gcp/*.h $(GRPC_DIR)/src/core/ext/upb-generated/src/proto/grpc/gcp/
+	$(VERBOSE)mkdir -p $(GRPC_DIR)/third_party/upb/upb
+	$(VERBOSE)cp -f $(HOST_TOOL_DIR)/third_party/upb/upb/*.{h,inc,c} $(GRPC_DIR)/third_party/upb/upb
+	$(VERBOSE)mkdir -p $(GRPC_DIR)/third_party/abseil-cpp/absl
+	$(VERBOSE)cp -Rf $(HOST_TOOL_DIR)/third_party/abseil-cpp/absl/* $(GRPC_DIR)/third_party/abseil-cpp/absl
+	$(VERBOSE)mkdir -p $(GRPC_DIR)/third_party/address_sorting/include
+	$(VERBOSE)cp -Rf $(HOST_TOOL_DIR)/third_party/address_sorting/include $(GRPC_DIR)/third_party/address_sorting/include
+	$(VERBOSE)mkdir -p $(GRPC_DIR)/third_party/cares/cares
+	$(VERBOSE)cp -Rf $(HOST_TOOL_DIR)/third_party/cares/ares_build.h $(GRPC_DIR)/third_party/cares/cares
+	$(VERBOSE)cp -Rf $(HOST_TOOL_DIR)/third_party/cares/cares/*.{h,c} $(GRPC_DIR)/third_party/cares/cares
+
+clean:
+	$(VERBOSE)cd $(CONTRIB_DIR)/grpc-host && \
+		prefix=$(INSTALL_LOCATION) make clean
