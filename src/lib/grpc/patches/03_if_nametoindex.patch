@@ -1,0 +1,20 @@
+diff --git a/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc b/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+index f1ba20dcec..0d94d79246 100644
+--- a/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
++++ b/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+@@ -29,13 +29,8 @@
+ 
+ #include <grpc/support/log.h>
+ 
+-uint32_t grpc_if_nametoindex(char* name) {
+-  uint32_t out = if_nametoindex(name);
+-  if (out == 0) {
+-    gpr_log(GPR_DEBUG, "if_nametoindex failed for name %s. errno %d", name,
+-            errno);
+-  }
+-  return out;
++uint32_t grpc_if_nametoindex(char*) {
++  return 1;
+ }
+ 
+ #endif /* GRPC_IF_NAMETOINDEX == 1 && \

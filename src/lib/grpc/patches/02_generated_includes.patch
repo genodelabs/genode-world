@@ -1,0 +1,39 @@
+diff --git a/src/cpp/util/core_stats.h b/src/cpp/util/core_stats.h
+index 6366d7d..0f0e2ee 100644
+--- a/src/cpp/util/core_stats.h
++++ b/src/cpp/util/core_stats.h
+@@ -19,7 +19,7 @@
+ #ifndef GRPC_INTERNAL_CPP_UTIL_CORE_STATS_H
+ #define GRPC_INTERNAL_CPP_UTIL_CORE_STATS_H
+ 
+-#include "src/proto/grpc/core/stats.pb.h"
++#include "stats.pb.h"
+ 
+ #include "src/core/lib/debug/stats.h"
+ 
+diff --git a/src/cpp/util/error_details.cc b/src/cpp/util/error_details.cc
+index a1aafcb..6be9390 100644
+--- a/src/cpp/util/error_details.cc
++++ b/src/cpp/util/error_details.cc
+@@ -18,7 +18,7 @@
+ 
+ #include <grpcpp/support/error_details.h>
+ 
+-#include "src/proto/grpc/status/status.pb.h"
++#include "status.pb.h"
+ 
+ namespace grpc_impl {
+ 
+diff --git a/src/cpp/ext/proto_server_reflection.h b/src/cpp/ext/proto_server_reflection.h
+index bf40c3c180..69f36c3e96 100644
+--- a/src/cpp/ext/proto_server_reflection.h
++++ b/src/cpp/ext/proto_server_reflection.h
+@@ -23,7 +23,7 @@
+ #include <vector>
+ 
+ #include <grpcpp/grpcpp.h>
+-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
++#include "reflection.grpc.pb.h"
+ 
+ namespace grpc {
+ 

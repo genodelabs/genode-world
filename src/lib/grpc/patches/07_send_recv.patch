@@ -1,0 +1,38 @@
+commit e291dab98f94a0d510ec726af85680d018d2aadf
+Author: Pirmin Duss <pirmin.duss@gapfruit.com>
+Date:   Mon Oct 28 10:58:58 2019 +0100
+
+    Fix for missing sendmsg and recvmsg in genode.
+
+diff --git a/src/core/lib/iomgr/tcp_posix.cc b/src/core/lib/iomgr/tcp_posix.cc
+index b6d1381298..f2d3ac5037 100644
+--- a/src/core/lib/iomgr/tcp_posix.cc
++++ b/src/core/lib/iomgr/tcp_posix.cc
+@@ -464,7 +464,12 @@ static void tcp_do_read(grpc_tcp* tcp) {
+     do {
+       GPR_TIMER_SCOPE("recvmsg", 0);
+       GRPC_STATS_INC_SYSCALL_READ();
+-      read_bytes = recvmsg(tcp->fd, &msg, 0);
++                       read_bytes = 0;
++                       for (int i = 0; i < msg.msg_iovlen; i++)
++                       {
++                               auto iov = msg.msg_iov[i];
++                               read_bytes += read(tcp->fd, iov.iov_base, iov.iov_len);
++                       }
+     } while (read_bytes < 0 && errno == EINTR);
+ 
+     /* We have read something in previous reads. We need to deliver those
+@@ -652,7 +657,12 @@ ssize_t tcp_send(int fd, const struct msghdr* msg) {
+   do {
+     /* TODO(klempner): Cork if this is a partial write */
+     GRPC_STATS_INC_SYSCALL_WRITE();
+-    sent_length = sendmsg(fd, msg, SENDMSG_FLAGS);
++               sent_length = 0;
++               for (int i = 0; i < msg->msg_iovlen; i++)
++               {
++                       auto iov = msg->msg_iov[i];
++                       sent_length += write(fd, iov.iov_base, iov.iov_len);
++               }
+   } while (sent_length < 0 && errno == EINTR);
+   return sent_length;
+ }

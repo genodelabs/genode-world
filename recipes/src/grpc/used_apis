@@ -1,0 +1,6 @@
+base
+libc
+libssl
+protobuf
+stdcxx
+zlib
