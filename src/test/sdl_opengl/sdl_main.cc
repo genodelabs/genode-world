@@ -13,7 +13,7 @@
 
 /* Genode includes */
 #include <base/heap.h>
-#include <base/printf.h>
+#include <base/log.h>
 #include <libc/component.h>
 
 
@@ -41,6 +41,7 @@ void Libc::Component::construct(Libc::Env &env)
 	sdl_init_genode(env);
 
 	genode_env = &env;
-	signal_ep.construct(env, 1024*sizeof(long), "sdl_signal_ep");
+	signal_ep.construct(*genode_env, 1024*sizeof(long), "sdl_signal_ep",
+	                    Genode::Affinity::Location());
 	Libc::with_libc([] () { main(0, nullptr, nullptr); });
 }
