@@ -10,6 +10,8 @@ extern "C" {
 #include <signal.h>
 }
 
+#include <libc-plugin/fd_alloc.h>
+
 #if 0
 #define WARN_NOT_IMPL Genode::warning(__func__, " not implemented (jvm) from ", __builtin_return_address(0));
 #else
@@ -99,7 +101,14 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
 
 int socketpair(int domain, int type, int protocol, int sv[2])
 {
-	WARN_NOT_IMPL;
+	/*
+	 * socketpair() is used in libnio/libnet to create "marker FDs", which are
+	 * only used as destination FD in dup2(). So it is safe to just reserve
+	 * those descriptors here.
+	 */
+	sv[0] = Libc::file_descriptor_allocator()->alloc(nullptr, nullptr)->libc_fd;
+	sv[1] = Libc::file_descriptor_allocator()->alloc(nullptr, nullptr)->libc_fd;
+
 	return 0;
 }
 
