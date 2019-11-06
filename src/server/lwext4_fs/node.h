@@ -79,10 +79,10 @@ class Lwext4_fs::Node : public Node_base
 			unsigned int const v = ext4_inode_get_mode(sb, &_inode) & 0xf000;
 
 			switch (v) {
-			case EXT4_INODE_MODE_DIRECTORY: status.mode = Status::MODE_DIRECTORY; break;
-			case EXT4_INODE_MODE_SOFTLINK:  status.mode = Status::MODE_SYMLINK;   break;
+			case EXT4_INODE_MODE_DIRECTORY: status.type = Node_type::DIRECTORY; break;
+			case EXT4_INODE_MODE_SOFTLINK:  status.type = Node_type::SYMLINK;   break;
 			case EXT4_INODE_MODE_FILE:
-			default:                        status.mode = Status::MODE_FILE;      break;
+			default:                        status.type = Node_type::CONTINUOUS_FILE; break;
 			}
 
 			return status;

@@ -103,7 +103,7 @@ class Lwext4_fs::Directory : public Node
 
 				size_t const len = (size_t)(dentry->name_length + 1) > sizeof(e->name)
 				                 ? sizeof(e->name) : dentry->name_length + 1;
-				strncpy(e->name, reinterpret_cast<char const*>(dentry->name), len);
+				strncpy(e->name.buf, reinterpret_cast<char const*>(dentry->name), len);
 
 				e->inode = dentry->inode;
 				break;
@@ -114,9 +114,9 @@ class Lwext4_fs::Directory : public Node
 			_prev_index = index;
 
 			switch (dentry->inode_type) {
-			case EXT4_DE_DIR:     e->type = Directory_entry::TYPE_DIRECTORY; break;
-			case EXT4_DE_SYMLINK: e->type = Directory_entry::TYPE_SYMLINK;   break;
-			default:              e->type = Directory_entry::TYPE_FILE;      break;
+			case EXT4_DE_DIR:     e->type = Node_type::DIRECTORY;       break;
+			case EXT4_DE_SYMLINK: e->type = Node_type::SYMLINK;         break;
+			default:              e->type = Node_type::CONTINUOUS_FILE; break;
 			}
 
 			return sizeof(Directory_entry);
