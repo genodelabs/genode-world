@@ -24,7 +24,6 @@
 #include <nitpicker_gfx/box_painter.h>
 
 /* gems includes */
-#include <gems/vfs.h>
 #include <gems/vfs_font.h>
 
 
