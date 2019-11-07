@@ -1,3 +1,9 @@
+
+if {![have_spec x86_64] && ![have_spec arm_v7]} {
+	puts "Unsupported platform. Valid are x86_64 and arm_v7 platforms."
+	exit 0
+}
+
 set build_components {
 	core init
 	timer
