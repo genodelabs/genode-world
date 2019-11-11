@@ -1,4 +1,4 @@
-LIBS         = stdcxx jzip jimage nio jnet libc libc_pipe
+LIBS         = stdcxx jzip jimage nio jnet libc libc_pipe verify
 SHARED_LIB   = yes
 HOTSPOT_BASE = $(call select_from_ports,jdk)/src/app/jdk/hotspot/src
 

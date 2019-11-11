@@ -3,7 +3,6 @@ SHARED_LIB    = yes
 JDK_BASE      = $(call select_from_ports,jdk)/src/app/jdk/jdk/src/java.base
 JDK_GENERATED = $(call select_from_ports,jdk_generated)/src/app/jdk
 JAVA_BASE     = $(JDK_BASE)/share/native/libjava
-VERIFY_BASE   = $(JDK_BASE)/share/native/libverify
 
 SRC_C  = $(notdir $(wildcard $(JAVA_BASE)/*.c))
 SRC_C += unix/native/libjava/canonicalize_md.c \
@@ -19,7 +18,6 @@ SRC_C += unix/native/libjava/canonicalize_md.c \
          unix/native/libjava/TimeZone_md.c \
          unix/native/libjava/UnixFileSystem_md.c
 
-SRC_C += check_format.c check_code.c
 SRC_C += math_genode.c
 
 
@@ -38,7 +36,6 @@ INC_DIR += $(REP_DIR)/src/app/jdk/lib/include \
            $(JDK_BASE)/unix/native/libjava
 
 vpath %.c $(JAVA_BASE)
-vpath %.c $(VERIFY_BASE)
 vpath %.c $(JDK_BASE)
 vpath %.c $(REP_DIR)/src/app/jdk/lib/java
 
