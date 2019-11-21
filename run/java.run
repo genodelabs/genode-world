@@ -1,6 +1,6 @@
 
 if {![have_spec x86_64] && ![have_spec arm_v7]} {
-	puts "Unsupported platform. Valid are x86_64 and arm_v7 platforms."
+	puts "Java is not supported on this platform. Valid platforms are x86_64 and arm_v7a."
 	exit 0
 }
 
