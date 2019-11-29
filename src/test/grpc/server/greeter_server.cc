@@ -49,8 +49,7 @@ class GreeterServiceImpl final : public Greeter::Service {
   }
 };
 
-void RunServer() {
-  std::string server_address("10.10.10.55:50051");
+void RunServer(const char* server_address) {
   GreeterServiceImpl service;
 
   ServerBuilder builder;

@@ -1,4 +1,4 @@
 #pragma once
 
-void RunServer();
+void RunServer(const char* server_address);
 

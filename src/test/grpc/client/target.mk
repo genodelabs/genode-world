@@ -17,7 +17,6 @@ SRC_CC             := greeter_client.cc
 SRC_CC             += helloworld.pb.cc
 SRC_CC             += helloworld.grpc.pb.cc
 
-vpath greeter_client.cc  $(GRPC_DIR)/examples/cpp/helloworld
 vpath helloworld.proto   $(PROTO_DIR)
 
 $(SRC_CC): helloworld.grpc.pb.h

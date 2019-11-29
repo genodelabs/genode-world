@@ -1,0 +1,157 @@
+# To execute this run script on a development PC, you need to setup a TAP device
+# first:
+
+# netdev=wlp2s0
+# tapdev=tap0
+# user=developer
+#
+# sudo ip tuntap add dev $tapdev mode tap user $user
+# sudo ip address flush dev $tapdev
+# sudo ip address add 10.0.2.1/24 brd 10.0.2.255 dev $tapdev
+# sudo ip link set dev $tapdev addr 02:00:00:ca:fe:01
+# sudo ip link set dev $tapdev up
+#
+# connect using your favorite grpc client
+# E.g. https://github.com/sidhussmann/grpc-connection-stress
+# ./stress_grpc.sh 10.0.2.55:8899
+
+
+
+
+create_boot_directory
+
+
+import_from_depot [depot_user]/src/[base_src]
+import_from_depot [depot_user]/src/init
+import_from_depot [depot_user]/src/libc
+import_from_depot [depot_user]/src/libcrypto
+import_from_depot [depot_user]/src/nic_router
+import_from_depot [depot_user]/src/posix
+import_from_depot [depot_user]/src/protobuf
+import_from_depot [depot_user]/src/libssl
+import_from_depot [depot_user]/src/report_rom
+import_from_depot [depot_user]/src/stdcxx
+import_from_depot [depot_user]/src/vfs
+import_from_depot [depot_user]/src/vfs_lxip
+import_from_depot [depot_user]/src/zlib
+
+
+set build_components {
+	drivers/nic
+	test/grpc/server
+}
+
+
+build $build_components
+
+
+set nic_router_reporting 0
+
+
+set config {
+<config verbose="no">
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+}
+
+append config {
+
+	<start name="grpc_server" caps="200">
+		<resource name="RAM" quantum="96M"/>
+		<config server_address="0.0.0.0:8899">
+			<arg value="grpc_server"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+			<vfs>
+				<dir name="dev">
+					<log/> <null/>
+					<inline name="rtc">2000-01-01 00:00</inline>
+					<dir name="socket">
+						<lxip ip_addr="10.0.3.2" netmask="255.255.255.0" gateway="10.0.3.1"/>
+					</dir>
+				</dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_router" label="grpc2tee -> "/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="nic_router">
+		<resource name="RAM" quantum="5M"/>
+		<provides><service name="Nic"/></provides>
+		<config verbose_domain_state="no"
+		        verbose_packets="no"
+		        verbose_packet_drop="no">
+
+			<policy label="grpc2tee -> " domain="server"/>
+			<uplink                                 domain="uplink"/>
+
+			<domain name="uplink" interface="10.0.2.55/24" gateway="10.0.2.1">
+				<nat domain="server" tcp-ports="100" />
+				<tcp-forward port="8899" domain="server" to="10.0.3.2" />
+			</domain>
+
+			<domain name="server" interface="10.0.3.1/24">
+				<dhcp-server ip_first="10.0.3.2"
+				             ip_last="10.0.3.2"
+				             ip_lease_time_sec="600"/>
+			</domain>
+
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="nic_drv" ld="no">
+		<binary name="linux_nic_drv"/>
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Nic"/>
+		</provides>
+		<config>
+			<nic mac="02:00:00:00:00:01" tap="tap0"/>
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+</config>
+}
+
+
+install_config $config
+
+
+set boot_modules {
+	grpc_server
+	grpc.lib.so
+	libc_pipe.lib.so
+	vfs_lwip.lib.so
+	linux_nic_drv
+}
+
+
+append qemu_args " -nographic "
+
+
+build_boot_image $boot_modules
+
+
+run_genode_until forever
