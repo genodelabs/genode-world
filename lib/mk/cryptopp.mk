@@ -10,7 +10,8 @@ SRC_CC += $(filter-out $(CRYPTOPP_FILTER),$(CRYPTOPP_SRC))
 
 CXX_DEF += -DCRYPTOPP_DISABLE_SSSE3
 
-ifeq ($(filter-out $(SPECS),arm),)
+
+ifneq ($(filter $(SPECS),arm arm_64),)
 	CXX_DEF += -DCRYPTOPP_DISABLE_ASM
 endif
 
