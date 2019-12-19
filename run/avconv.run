@@ -1,0 +1,255 @@
+#
+# Build
+#
+
+# depends on genodelabs/genode#1806
+
+if {[have_spec pbxa9] || (![have_spec nova] && ![have_spec foc])} {
+	puts "Platform is unsupported."
+	exit 0
+}
+
+set mke2fs [installed_command mke2fs]
+set dd     [installed_command dd]
+
+set build_components {
+	core init timer
+	app/avconv
+	drivers/ahci server/vfs
+	lib/vfs/rump
+	drivers/framebuffer drivers/input
+	server/nitpicker server/nit_fb
+	app/launchpad app/pointer
+	lib/mesa/swrast
+	test/mesa_demo/gears
+	server/fb_splitter
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+build $build_components
+
+#
+# Build EXT2-file-system image
+#
+catch { exec $dd if=/dev/zero of=bin/ext2.raw bs=1M count=16 }
+catch { exec $mke2fs -F bin/ext2.raw }
+
+#
+# Generate config
+#
+
+create_boot_directory
+
+set config {
+<config prio_levels="4">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="TRACE"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<default caps="300"/>
+	<affinity-space width="2" />
+}
+
+append_platform_drv_config
+
+append config {
+	<start name="ahci_drv" priority="-1">
+		<resource name="RAM" quantum="10M" />
+		<affinity xpos="1" width="1" />
+		<provides><service name="Block" /></provides>
+		<config ata="yes">
+			<policy label="vfs -> " device="0" writeable="yes" />
+		</config>
+	</start>}
+
+append_if [have_spec sdl] config {
+	<start name="fb_sdl">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+		<config width="800" height="600"/>
+	</start>
+	<alias name="fb_drv" child="fb_sdl"/>
+	<alias name="input_drv" child="fb_sdl"/>}
+
+append_if [have_spec framebuffer] config {
+	<start name="fb_drv" priority="-1">
+		<binary name="vesa_fb_drv"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="Framebuffer"/></provides>
+		<config width="1024" height="768" buffered="yes"/>
+	</start>}
+
+append_if [have_spec ps2] config {
+	<start name="ps2_drv" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Input"/></provides>
+	</start>
+	<alias name="input_drv" child="ps2_drv"/>}
+
+append config {
+
+	<start name="fb_splitter" priority="-1">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Framebuffer"/></provides>
+		<route>
+			<service name="Framebuffer"><child name="fb_drv"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="nitpicker" priority="-1">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Nitpicker"/></provides>
+		<config>
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="default" layer="2" content="client" focus="click" hover="always" />
+			<policy label="pointer -> " domain="pointer"/>
+			<policy label="nit_fb -> " domain="default"/>
+		</config>
+		<route>
+			<service name="Input"><child name="input_drv"/></service>
+			<service name="Framebuffer"><child name="fb_splitter"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="pointer" priority="-1">
+		<resource name="RAM" quantum="1M"/>
+	</start>
+
+	<start name="nit_fb" priority="-1">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Input"/>
+			<service name="Framebuffer"/>
+		</provides>
+		<route>
+			<service name="Framebuffer"><child name="nitpicker"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+		<config xpos="50" ypos="50" width="900" height="700" />
+	</start>
+
+	<start name="vfs" priority="-1">
+		<resource name="RAM" quantum="16M" />
+		<affinity xpos="1" width="1" />
+		<provides><service name="File_system"/></provides>
+		<config>
+			<vfs> <rump fs="ext2fs" ram="14M" writeable="yes"/> </vfs>
+			<policy label="avconv -> vfs" root="/" writeable="yes"/>
+		</config>
+		<route>
+			<service name="Block"><child name="ahci_drv"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="gears" priority="-2">
+		<resource name="RAM" quantum="28M"/>
+		<route>
+			<service name="ROM" label="egl_drv.lib.so">
+				<parent label="egl_swrast.lib.so"/>
+			</service>
+			<service name="Framebuffer"><child name="nit_fb"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+		<config>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+			</vfs>
+		</config>
+	</start>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="avconv" priority="-1">
+		<resource name="RAM" quantum="128M"/>
+		<affinity xpos="1" width="1" />
+		<config>
+			<arg value="avconv"/>
+<!--			<arg value="-codec"/> <arg value="h263"/> -->
+<!--			<arg value="-encoders"/> -->
+<!--			<arg value="-v"/> <arg value="100"/> -->
+			<arg value="-f"/> <arg value="fbdev"/>
+			<arg value="-r"/> <arg value="10"/>
+			<arg value="-i"/> <arg value="/dev/lxfb"/>
+			<arg value="-t"/> <arg value="30"/>
+			<arg value="-qscale"/> <arg value="1"/>
+			<arg value="vfs/out.avi"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2018-01-01 00:01</inline>
+					<lxfb/>
+				</dir>
+				<dir name="vfs"><fs label="vfs"/></dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="File_system"><child name="vfs"/></service>
+			<service name="Framebuffer"><child name="fb_splitter"/></service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+</config>
+}
+
+install_config $config
+
+#
+# Boot modules
+#
+
+set boot_modules {
+	core init timer
+	avconv vfs.lib.so avresample.lib.so
+	ld.lib.so libc.lib.so libm.lib.so posix.lib.so zlib.lib.so
+	avdevice.lib.so avfilter.lib.so avutil.lib.so avcodec.lib.so
+	avformat.lib.so swscale.lib.so
+	ahci_drv rump.lib.so rump_fs.lib.so vfs vfs_rump.lib.so
+	nitpicker nit_fb
+	launchpad pointer
+	gears egl.lib.so expat.lib.so glapi.lib.so mesa.lib.so stdcxx.lib.so egl_swrast.lib.so
+	fb_splitter
+}
+
+lappend_if [have_spec       linux] boot_modules fb_sdl
+lappend_if [have_spec       linux] boot_modules sdl.lib.so
+lappend_if [have_spec         x86] boot_modules vesa_fb_drv
+lappend_if [have_spec         ps2] boot_modules ps2_drv
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -smp 4,cores=4 "
+append qemu_args " -drive id=disk,file=bin/ext2.raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0 -boot d"
+
+run_genode_until {.*child "avconv" exited with exit value 0.*} 60
+
+puts "Test succeeded"

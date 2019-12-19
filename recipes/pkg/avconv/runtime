@@ -1,0 +1,44 @@
+<runtime ram="128M" caps="200" binary="avconv">
+
+	<requires>
+		<framebuffer/>
+		<file_system label="output"/>
+	</requires>
+
+	<content>
+		<rom label="avconv"/>
+		<rom label="libc.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="zlib.lib.so"/>
+		<rom label="posix.lib.so"/>
+		<rom label="avfilter.lib.so"/>
+		<rom label="avutil.lib.so"/>
+		<rom label="avcodec.lib.so"/>
+		<rom label="avformat.lib.so"/>
+		<rom label="swscale.lib.so"/>
+		<rom label="avresample.lib.so"/>
+		<rom label="avdevice.lib.so"/>
+	</content>
+
+	<config>
+		<arg value="avconv"/>
+<!--		<arg value="-v"/> <arg value="100"/> -->
+		<arg value="-f"/> <arg value="fbdev"/>
+		<arg value="-r"/> <arg value="20"/>
+		<arg value="-i"/> <arg value="/dev/lxfb"/>
+<!--		<arg value="-t"/> <arg value="30"/> -->
+		<arg value="-qscale"/> <arg value="1"/>
+		<arg value="vfs/out.avi"/>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+		<vfs>
+			<dir name="dev">
+				<log/>
+				<inline name="rtc">2018-01-01 00:01</inline>
+				<lxfb/>
+			</dir>
+			<dir name="vfs"><fs label="output"/></dir>
+		</vfs>
+	</config>
+
+</runtime>
