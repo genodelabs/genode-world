@@ -8,7 +8,7 @@ src/lib/libav:
 	cp -r $(REP_DIR)/src/lib/libav/* $@
 
 src/lib/libav/target.mk: src/lib/libav
-	echo "LIBS += avfilter avformat avcodec avutil avresample swscale" > $@
+	echo "LIBS += avfilter avformat avcodec avutil avresample swscale avdevice" > $@
 
 lib/import:
 	mkdir -p $@
