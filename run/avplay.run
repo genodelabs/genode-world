@@ -31,7 +31,7 @@ set boot_modules {
 	avplay
 	libc.lib.so vfs.lib.so vfs.lib.so vfs.lib.so libm.lib.so zlib.lib.so sdl.lib.so
 	avfilter.lib.so avutil.lib.so avcodec.lib.so avformat.lib.so swscale.lib.so
-	avresample.lib.so
+	avresample.lib.so avdevice.lib.so
 	mediafile
 }
 

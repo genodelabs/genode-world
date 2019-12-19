@@ -20,6 +20,7 @@
 		<rom label="avformat.lib.so"/>
 		<rom label="swscale.lib.so"/>
 		<rom label="avresample.lib.so"/>
+		<rom label="avdevice.lib.so"/>
 	</content>
 
 	<config>

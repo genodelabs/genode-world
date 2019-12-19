@@ -1,10 +1,12 @@
 MIRROR_FROM_REP_DIR := lib/symbols/avcodec \
+                       lib/symbols/avdevice \
                        lib/symbols/avfilter \
                        lib/symbols/avformat \
                        lib/symbols/avresample \
                        lib/symbols/avutil \
                        lib/import/import-av.inc \
                        lib/import/import-avcodec.mk \
+                       lib/import/import-avdevice.mk \
                        lib/import/import-avfilter.mk \
                        lib/import/import-avformat.mk \
                        lib/import/import-avresample.mk \

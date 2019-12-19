@@ -2,7 +2,7 @@ include $(REP_DIR)/lib/import/import-av.inc
 
 TARGET = avplay
 SRC_C  = avplay.c cmdutils.c libc_dummies.c
-LIBS  += avfilter avformat avcodec avutil avresample swscale
+LIBS  += avfilter avformat avcodec avutil avresample swscale avdevice
 LIBS  += base sdl libc libm
 
 CC_WARN += -Wno-parentheses -Wno-switch -Wno-uninitialized \

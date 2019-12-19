@@ -8,7 +8,8 @@ DIR(libav) := src/lib/libav
 SIG(libav) := ${URL(libav)}.asc
 
 PATCHES := src/app/avplay/avplay.patch \
-           src/lib/libav/avcodec.patch
+           src/lib/libav/avcodec.patch \
+           src/lib/libav/avdevice.patch
 
 include_subdirs := . libavcodec libavdevice libavfilter libavutil libavformat libswscale \
                    libavutil/x86 libavutil/arm libavutil/ppc libavcodec/x86 \
