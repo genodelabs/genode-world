@@ -1,0 +1,21 @@
+- avoid compile error "‘for’ loop initial declarations are only
+  allowed in C99 or C11 mode"
+
++++ src/lib/libav/avconv.c
+@@ -426,6 +426,7 @@ static int alloc_buffer(InputStream *ist, FrameBuffer **pbuf)
+     int h_chroma_shift, v_chroma_shift;
+     int edge = 32; // XXX should be avcodec_get_edge_width(), but that fails on svq1
+     int w = s->width, h = s->height;
++    int i;
+ 
+     if (!buf)
+         return AVERROR(ENOMEM);
+@@ -449,7 +450,7 @@ static int alloc_buffer(InputStream *ist, FrameBuffer **pbuf)
+     memset(buf->base[0], 128, ret);
+ 
+     avcodec_get_chroma_sub_sample(s->pix_fmt, &h_chroma_shift, &v_chroma_shift);
+-    for (int i = 0; i < FF_ARRAY_ELEMS(buf->data); i++) {
++    for (i = 0; i < FF_ARRAY_ELEMS(buf->data); i++) {
+         const int h_shift = i==0 ? 0 : h_chroma_shift;
+         const int v_shift = i==0 ? 0 : v_chroma_shift;
+         if (s->flags & CODEC_FLAG_EMU_EDGE)
