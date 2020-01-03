@@ -34,7 +34,7 @@ set config {
 		<resource name="RAM" quantum="2M" />
 		<provides> <service name="Timer" /> </provides>
 	</start>
-	<start name="java" caps="300">
+	<start name="java" caps="500">
 		<resource name="RAM" quantum="96M" />
 		<route>
 			<service name="ROM" label="zip.lib.so">
