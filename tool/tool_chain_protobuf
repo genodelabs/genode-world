@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 #
-# \brief  Tool for preparing the protobuf tool-chain for the Genode OS Framework
+# \brief  Tool for preparing the protobuf and gRPC tool-chain for
+#         use in the build system of the Genode OS Framework.
 # \author Pirmin Duss
 # \date   2019-09-24
 #
@@ -14,8 +15,8 @@ help:
 	$(ECHO) "Build protobuf and gRPC tools for the Genode OS Framework tool chain"
 	$(ECHO)
 	$(ECHO) "--- available commands ---"
-	$(ECHO) "build         - build protobuf tools"
-	$(ECHO) "install       - install protobuf tools to '$(INSTALL_LOCATION)'"
+	$(ECHO) "build         - build protobuf and gRPC tools"
+	$(ECHO) "install       - install protobuf and gRPC tools to '$(INSTALL_LOCATION)'"
 	$(ECHO) "clean         - clean everything except contrib sources"
 	$(ECHO)
 	$(ECHO) "--- available command line options ---"
@@ -26,7 +27,7 @@ help:
 
 .PHONY: build help install
 
-TOOL_VERSION             := 19.11
+TOOL_VERSION             := 20.01
 
 #
 # Enable parallel build for 2nd-level $(MAKE) by default
@@ -39,7 +40,7 @@ CMAKE                    ?= cmake
 # cmake is required to enable out of tree builds
 $(call check_tool,$(CMAKE))
 
-GENODE_DIR               ?= $(realpath $(dir $(firstword $(MAKEFILE_LIST)))/..)/../..
+GENODE_DIR               ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST)))/../../..)
 CONTRIB_DIR              := $(shell $(GENODE_DIR)/tool/ports/current protobuf_grpc-host)/src/lib
 HOST_TOOL_DIR            := $(CONTRIB_DIR)/grpc-host
 BUILD_DIR                := $(GENODE_DIR)/build/tool/protobuf_grpc/$(TOOL_VERSION)
@@ -53,14 +54,7 @@ extract:
 	$(VERBOSE)$(GENODE_DIR)/tool/ports/prepare_port protobuf_grpc-host
 
 
-configure: extract cares/cmake protobuf/cmake grpc/cmake
-
-cares/cmake:
-	$(VERBOSE)mkdir -p $(CARES_BUILD_DIR)
-	$(VERBOSE)cd $(CARES_BUILD_DIR) && \
-		$(CMAKE) -DCMAKE_BUILD_TYPE=Release \
-	             -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
-	              $(HOST_TOOL_DIR)/third_party/cares/cares
+configure: extract protobuf/cmake grpc/cmake
 
 protobuf/cmake:
 	$(VERBOSE)mkdir -p $(PROTOC_BUILD_DIR)
@@ -69,50 +63,36 @@ protobuf/cmake:
 		         -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
 		          $(HOST_TOOL_DIR)/third_party/protobuf/cmake
 
-grpc/cmake: cares/install protobuf/install
+grpc/cmake:
 	$(VERBOSE)mkdir -p $(BUILD_DIR)
 	$(VERBOSE)cd $(BUILD_DIR) && \
 		$(CMAKE) -DCMAKE_BUILD_TYPE=Release \
 		         -DCMAKE_INSTALL_PREFIX=$(INSTALL_LOCATION) \
 		         -DgRPC_BUILD_CODEGEN=y \
-		         -DgRPC_CARES_PROVIDER=package \
+		         -DgRPC_CARES_PROVIDER=module \
 		         -DgRPC_SSL_PROVIDER=package \
 		         -DgRPC_ZLIB_PROVIDER=package \
-		         -DgRPC_PROTOBUF_PROVIDER=package \
+		         -DgRPC_PROTOBUF_PROVIDER=module \
 		          $(HOST_TOOL_DIR)
 
 
-build: configure protobuf/make grpc/make
-
-cares/make: protobuf/cmake
-	$(VERBOSE)cd $(CARES_BUILD_DIR) && \
-		make -j$(MAKE_JOBS) all
-
-protobuf/make: protobuf/cmake
-	$(VERBOSE)cd $(PROTOC_BUILD_DIR) && \
-		make -j$(MAKE_JOBS) all
+build: configure grpc/make
 
 grpc/make: grpc/cmake
 	$(VERBOSE)cd $(BUILD_DIR) && \
 		make -j$(MAKE_JOBS) all
 
 
-install: build cares/install protobuf/install grpc/install
+install: build grpc/install
 ifeq ($(INSTALL_LOCATION),$(DEFAULT_INSTALL_LOCATION))
 	$(VERBOSE)$(SUDO) ln -snf $(TOOL_VERSION) $(dir $(INSTALL_LOCATION))/current
 endif
 
-cares/install:
-	$(VERBOSE)cd $(CARES_BUILD_DIR) && \
-		$(SUDO) make -j$(MAKE_JOBS) install
-
-protobuf/install:
-	$(VERBOSE)cd $(PROTOC_BUILD_DIR) && \
-		$(SUDO) make -j$(MAKE_JOBS) install
-
 grpc/install:
 	$(VERBOSE)cd $(BUILD_DIR) && \
 		$(SUDO) make -j$(MAKE_JOBS) install
+	$(VERBOSE)cd $(BUILD_DIR) && \
+		$(SUDO) cp grpc_*_plugin $(INSTALL_LOCATION)/bin
 
 
 clean:
