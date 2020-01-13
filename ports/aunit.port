@@ -2,7 +2,7 @@ LICENSE   := GPLv3
 VERSION   := gpl-2018-20180524
 DOWNLOADS := aunit.archive
 
-URL(aunit)  := http://mirrors.cdn.adacore.com/art/5b0819e0c7a447df26c27ab3
+URL(aunit)  := https://community.download.adacore.com/v1/2b10d2c30e12d2d06af216c15776a2282c784d71?filename=aunit-gpl-2018-20180524-src.tar.gz
 NAME(aunit) := aunit-gpl-2018-20180524-src.tar.gz
 SHA(aunit)  := 4a1a1ee4b5b8535b675c4bc6767a22ecc26cf83a3c3c25749053d63b7604a07f
 DIR(aunit)  := aunit-gpl-2018-src
