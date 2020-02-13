@@ -1,10 +1,13 @@
 <runtime ram="32M" caps="512" binary="init">
 
 	<requires>
-		<file_system/>
 		<nic/>
 		<nitpicker/>
 		<timer/>
+		<file_system label="ssh"    writeable="no"/>
+		<file_system label="fonts"  writeable="no"/>
+		<rom    label="clipboard"/>
+		<report label="clipboard"/>
 	</requires>
 
 	<content>
@@ -31,6 +34,7 @@
 			<service name="CPU"/>
 			<service name="LOG"/>
 			<service name="Timer"/>
+			<service name="Report"/>
 			<service name="File_system"/>
 			<service name="Nic"/>
 			<service name="Nitpicker"/>
@@ -49,11 +53,13 @@
 		<start name="terminal">
 			<resource name="RAM" quantum="4M"/>
 			<provides> <service name="Terminal"/> </provides>
-			<config>
+			<config copy="yes" paste="yes">
 				<vfs> <dir name="fonts"> <fs/> </dir> </vfs>
 			</config>
 			<route>
 				<service name="File_system"> <parent label="fonts"/> </service>
+				<service name="Report" label="clipboard"> <parent label="clipboard"/> </service>
+				<service name="ROM"    label="clipboard"> <parent label="clipboard"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
