@@ -57,6 +57,15 @@ class Lwext4_fs::Node : public Node_base
 			}
 		}
 
+		void update_modification_time(Timestamp const time)
+		{
+			/* lwext4 only supports 32bit time values */
+			uint32_t const mtime = time.value > 0 ? (uint32_t)time.value : 0;
+
+			/* silently ignore errors */
+			(void)ext4_mtime_set(name(), mtime);
+		}
+
 		virtual Status status()
 		{
 			int err = ext4_raw_inode_fill(_name.base(), &_ino, &_inode);
@@ -76,14 +85,23 @@ class Lwext4_fs::Node : public Node_base
 			status.size  = ext4_inode_get_size(sb, &_inode);
 			status.inode = _ino;
 
-			unsigned int const v = ext4_inode_get_mode(sb, &_inode) & 0xf000;
+			unsigned int mtime = 0;
+			(void) ext4_mtime_get(_name.base(), &mtime);
+			status.modification_time = { mtime };
 
-			switch (v) {
+			unsigned int const mode = ext4_inode_get_mode(sb, &_inode);
+		 	unsigned int const type = mode & 0xf000;
+			switch (type) {
 			case EXT4_INODE_MODE_DIRECTORY: status.type = Node_type::DIRECTORY; break;
 			case EXT4_INODE_MODE_SOFTLINK:  status.type = Node_type::SYMLINK;   break;
 			case EXT4_INODE_MODE_FILE:
 			default:                        status.type = Node_type::CONTINUOUS_FILE; break;
 			}
+
+			status.rwx = { .readable   = mode & 0x100,
+			               .writeable  = mode & 0x080,
+			               .executable = mode & 0x040,
+			};
 
 			return status;
 		}
