@@ -79,7 +79,7 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 			= { _env.ep(), *this, &Console::_handle_input };
 
 		void _handle_input();
-		unsigned _handle_fb();
+		unsigned _handle_fb(bool);
 
 		void _reactivate();
 

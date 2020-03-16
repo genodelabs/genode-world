@@ -43,8 +43,7 @@ static struct {
 	unsigned         unchanged   = 0;
 	bool             cmp_even    = 1;
 	bool             active      = false;
-	bool             vga_revoked = false;
-	bool             vga_update  = false; /* update indirectly by vbios */
+	bool             vga_off     = false;
 } fb_state;
 
 
@@ -216,20 +215,20 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		}
 		return false;
 	case MessageConsole::TYPE_KILL: /* all CPUs go idle */
-		_handle_fb(); /* refresh before going to sleep */
+		_handle_fb(fb_state.vga_off); /* refresh before going to sleep */
 		fb_state.active = false;
 		return true;
 	case MessageConsole::TYPE_RESET: /* first of all sleeping CPUs woke up */
 		_reactivate();
 		return true;
+	case MessageConsole::TYPE_CONTENT_UPDATE:
+		/* if the fb updating was off, reactivate timer XXX */
+		if (!fb_state.active)
+			_reactivate();
+		return true;
 	default:
 		return true;
 	}
-}
-
-void Screen::vga_updated()
-{
-	fb_state.vga_update = true;
 }
 
 void Seoul::Console::_reactivate()
@@ -246,15 +245,8 @@ bool Seoul::Console::receive(MessageMemRegion &msg)
 	bool reactivate = (msg.page >= PHYS_FRAME_VGA &&
 	                   msg.page < PHYS_FRAME_VGA_COLOR + FRAME_COUNT_COLOR);
 
-	/* vga memory got changed indirectly by vbios */
-	if (fb_state.vga_update) {
-		fb_state.vga_update = false;
-		if (!fb_state.active)
-			reactivate = true;
-	}
-
 	if (reactivate) {
-		fb_state.vga_revoked = false;
+		fb_state.vga_off = false;
 
 		//Logging::printf("Reactivating text buffer loop.\n");
 
@@ -264,7 +256,7 @@ bool Seoul::Console::receive(MessageMemRegion &msg)
 }
 
 
-unsigned Seoul::Console::_handle_fb()
+unsigned Seoul::Console::_handle_fb(bool const skip_update)
 {
 	if (!_guest_fb || !_regs)
 		return 0;
@@ -274,7 +266,7 @@ unsigned Seoul::Console::_handle_fb()
 	/* transfer text buffer content into chunky canvas */
 	if (_regs->mode == TEXT_MODE) {
 
-		if (fb_state.vga_revoked || !fb_state.active) return 0;
+		if (skip_update || !fb_state.active) return 0;
 
 		memset(_pixels, 0, _fb_size);
 
@@ -318,20 +310,19 @@ unsigned Seoul::Console::_handle_fb()
 		_memory.detach(PHYS_FRAME_VGA_COLOR << 12,
 		               FRAME_COUNT_COLOR << 12);
 
-		fb_state.vga_revoked = true;
+		fb_state.vga_off = true;
 		fb_state.unchanged = 0;
 
 		_framebuffer.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
-		//Logging::printf("Deactivated text buffer loop.\n");
 
 		return 0;
 	}
 
-	if (!fb_state.vga_revoked) {
+	if (!fb_state.vga_off) {
 		_memory.detach(PHYS_FRAME_VGA_COLOR << 12,
 		               FRAME_COUNT_COLOR << 12);
 
-		fb_state.vga_revoked = true;
+		fb_state.vga_off = true;
 	}
 
 	if (!fb_state.active) {
@@ -393,7 +384,7 @@ bool Seoul::Console::receive(MessageTimeout &msg) {
 	if (msg.nr != _timer)
 		return false;
 
-	unsigned next_timeout_ms = _handle_fb();
+	unsigned next_timeout_ms = _handle_fb(fb_state.vga_off);
 
 	if (next_timeout_ms) {
 		MessageTimer msg_t(_timer, _unsynchronized_motherboard.clock()->abstime(next_timeout_ms, 1000));
