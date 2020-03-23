@@ -1,0 +1,24 @@
+source  [genode_dir]/tool/run/boot_dir/hw
+
+
+proc bootstrap_link_address { } {
+	if {[have_spec "panda"]}           { return "0x88000000" }
+
+	puts "unknown platform no linker address known"
+	exit -1
+}
+
+
+##
+# Base source archive within depot
+#
+proc base_src { } {
+
+	if {[have_spec panda]} { return base-hw-panda }
+
+	global specs
+
+	puts stderr "Test requires base-hw kernel archive, which is missing for this build configuration"
+	puts stderr "  SPECS=\"$specs\""
+	exit 0
+}
