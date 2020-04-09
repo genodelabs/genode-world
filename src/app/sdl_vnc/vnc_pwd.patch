@@ -1,0 +1,33 @@
++++ src/lib/vnc/client_examples/SDLvncviewer.c
+@@ -474,6 +474,10 @@
+ 	put_scrap(T('T', 'E', 'X', 'T'), len, text);
+ }
+ 
++static char * pwd_hack = 0;
++static char* ReadPassword(rfbClient* client) {
++	return pwd_hack;
++}
+ 
+ #ifdef mac
+ #define main SDLmain
+@@ -500,6 +504,12 @@
+ 			argv[i] = "-listennofork";
+                         ++j;
+ 		}
++		else if (i+1<argc && !strcmp(argv[i], "-password")) {
++			pwd_hack = strdup(argv[i+1]);
++			for (int k = i; k + 2 < argc; k++)
++				argv[k] = argv[k+2];
++			argc -= 2;
++		}
+ 		else {
+ 			if (i != j)
+ 				argv[j] = argv[i];
+@@ -525,6 +535,7 @@
+ 	  cl->GotXCutText = got_selection;
+ 	  cl->listenPort = LISTEN_PORT_OFFSET;
+ 	  cl->listen6Port = LISTEN_PORT_OFFSET;
++	  cl->GetPassword = ReadPassword;
+ 	  if(!rfbInitClient(cl,&argc,argv))
+ 	    {
+ 	      cl = NULL; /* rfbInitClient has already freed the client struct */
