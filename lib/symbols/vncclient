@@ -1,0 +1,15 @@
+HandleRFBServerMessage T
+rfbClientCleanup T
+rfbClientErr T
+rfbClientGetClientData T
+rfbClientLog T
+rfbClientSetClientData T
+rfbInitClient T
+rfbGetClient T
+SendClientCutText T
+SendFramebufferUpdateRequest T
+SendKeyEvent T
+SendPointerEvent T
+SetFormatAndEncodings T
+TextChatOpen T
+WaitForMessage T

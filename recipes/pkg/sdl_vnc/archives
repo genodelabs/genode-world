@@ -1,0 +1,11 @@
+_/src/sdl_vnc
+_/src/libvnc
+_/src/init
+_/src/fs_rom
+_/src/vfs
+_/src/vfs_lwip
+_/src/vfs_lxip
+_/src/libc
+_/src/sdl
+_/src/jpeg
+_/src/zlib
