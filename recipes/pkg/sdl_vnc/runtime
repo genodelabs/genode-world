@@ -1,0 +1,80 @@
+<runtime ram="48M" caps="400" binary="init">
+
+	<requires>
+		<nic/>
+		<nitpicker/>
+		<file_system label="recall"/>
+		<timer/>
+		<rtc/>
+		<rm/> <!-- used by lxip version -->
+	</requires>
+
+	<config>
+		<parent-provides>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="PD"/>
+			<service name="ROM"/>
+			<service name="Timer"/>
+			<service name="Nitpicker"/>
+			<service name="Nic"/>
+			<service name="File_system"/>
+			<service name="Rtc"/>
+			<service name="RM"/> <!-- used by lxip version -->
+		</parent-provides>
+
+		<default-route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</default-route>
+
+		<start name="fs_rom" caps="100">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="ROM"/> </provides>
+			<config/>
+			<route>
+				<service name="File_system"> <parent label="recall"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="sdl_vnc" caps="150">
+			<resource name="RAM" quantum="36M"/>
+			<configfile name="sdl_vnc.config"/>
+<!--
+			<config>
+				<arg value="sdlvncviewer"/>
+				<arg value="127.0.0.1:5901"/>
+				<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+				<vfs>
+					<dir name="dev">
+						<log/> <null/ <rtc/>
+						<inline name="random">01234567890123456789</inline>
+					</dir>
+					<dir name="socket"> <lwip dhcp="yes"/> </dir>
+				</vfs>
+			</config>
+-->
+			<route>
+				<service name="ROM" label="sdl_vnc.config">
+					<child name="fs_rom" label="config"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+	</config>
+
+	<content>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_lwip.lib.so"/>
+		<rom label="vfs_lxip.lib.so"/>
+		<rom label="lxip.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="sdl.lib.so"/>
+		<rom label="jpeg.lib.so"/>
+		<rom label="zlib.lib.so"/>
+		<rom label="init"/>
+		<rom label="fs_rom"/>
+		<rom label="sdl_vnc"/>
+		<rom label="vncclient.lib.so"/>
+	</content>
+
+</runtime>
