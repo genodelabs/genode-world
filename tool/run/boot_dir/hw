@@ -2,7 +2,9 @@ source  [genode_dir]/tool/run/boot_dir/hw
 
 
 proc bootstrap_link_address { } {
-	if {[have_spec "panda"]}           { return "0x88000000" }
+	if {[have_spec "arndale"]}   { return "0x88000000" }
+	if {[have_spec "odroid_xu"]} { return "0x88000000" }
+	if {[have_spec "panda"]}     { return "0x88000000" }
 
 	puts "unknown platform no linker address known"
 	exit -1
@@ -14,7 +16,9 @@ proc bootstrap_link_address { } {
 #
 proc base_src { } {
 
-	if {[have_spec panda]} { return base-hw-panda }
+	if {[have_spec arndale]}   { return base-hw-arndale   }
+	if {[have_spec odroid_xu]} { return base-hw-odroid_xu }
+	if {[have_spec panda]}     { return base-hw-panda     }
 
 	global specs
 
