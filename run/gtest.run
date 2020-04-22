@@ -5,7 +5,7 @@
 set build_components {
 	core init
 	timer
-	server/ram_fs
+	server/vfs
 	test/gtest
 }
 
@@ -40,9 +40,13 @@ install_config {
 	</start>
 
 	<start name="ram_fs">
+		<binary name="vfs"/>
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="File_system"/> </provides>
-		<config> <policy label="gtest -> " root="/" writeable="yes" /> </config>
+		<config>
+			<vfs> <ram/> </vfs>
+			<policy label="gtest -> " root="/" writeable="yes" />
+		</config>
 	</start>
 
 	<start name="gtest">
@@ -63,7 +67,7 @@ install_config {
 
 build_boot_image {
 	core init ld.lib.so
-	timer ram_fs
+	timer vfs
 	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
 	gtest.lib.so gtest
 }

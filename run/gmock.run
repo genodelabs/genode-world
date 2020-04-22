@@ -1,3 +1,8 @@
+if {[have_spec linux]} {
+	puts "Platform is unsupported. (rtc driver support)"
+	exit 0
+}
+
 #
 # Build
 #
@@ -6,7 +11,7 @@ set build_components {
 	core init
 	timer
 	drivers/rtc
-	server/ram_fs
+	server/vfs
 	test/gmock
 }
 
@@ -47,11 +52,15 @@ install_config {
 
 	<start name="ram_fs">
 		<resource name="RAM" quantum="4M"/>
+		<binary name="vfs"/>
 		<provides> <service name="File_system"/> </provides>
-		<config> <policy label="gmock -> " root="/" writeable="yes" /> </config>
+		<config>
+			<vfs> <ram/> </vfs>
+			<policy label="gmock -> " root="/" writeable="yes" />
+		</config>
 	</start>
 
-	<start name="gmock">
+	<start name="gmock" caps="200">
 		<resource name="RAM" quantum="4M"/>
 		<config>
 			<vfs>
@@ -71,10 +80,10 @@ install_config {
 
 build_boot_image {
 	core init ld.lib.so
-	timer ram_fs
+	timer vfs
 	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
 	rtc_drv
-	gmock.lib.so
+	gmock.lib.so gtest.lib.so
 	gmock
 }
 

@@ -1,11 +1,11 @@
 create_boot_directory
 
-import_from_depot [depot_user]/src/[base_src]
-import_from_depot [depot_user]/src/init
-import_from_depot [depot_user]/src/ram_fs
-import_from_depot [depot_user]/src/sequence
-import_from_depot [depot_user]/src/vfs
-import_from_depot [depot_user]/src/zlib
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/sequence \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_import \
+                  [depot_user]/src/zlib
 
 
 set build_components {
@@ -35,25 +35,29 @@ set config {
 
 	<start name="ram_fs">
 		<resource name="RAM" quantum="4M" />
+		<binary name="vfs"/>
 		<provides> <service name="File_system"/> </provides>
 		<config>
-			<content>
-				<inline name="input.txt">1
+			<vfs>
+				<ram/>
+				<import>
+					<inline name="input.txt">1
 Muster Hans
 hans@muster.com
 123456789012345
 home
 
-				</inline>
-				<inline name="input2.txt">2
+					</inline>
+					<inline name="input2.txt">2
 Hans Muster
 muster@hans.com
 999999999999999
 mobile
 
-				</inline>
-				<inline name="addresses.bin"></inline>
-			</content>
+					</inline>
+					<inline name="addresses.bin"></inline>
+				</import>
+			</vfs>
 			<default-policy root="/" writeable="yes"/>
 		</config>
 	</start>
