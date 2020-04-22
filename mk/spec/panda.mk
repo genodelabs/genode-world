@@ -8,4 +8,4 @@ SPECS += omap4 usb panda gpio framebuffer
 #
 SPECS += arm_v7a
 
-include $(BASE_DIR)/mk/spec/arm_v7a.mk
+include $(call select_from_repositories,mk/spec/arm_v7a.mk)
