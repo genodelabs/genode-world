@@ -5,7 +5,6 @@ TARGET             := grpc_tls_server
 LIBS               += protobuf
 LIBS               += stdcxx
 LIBS               += grpc
-LIBS               += libc_pipe
 LIBS               += vfs
 LIBS               += vfs_lwip
 

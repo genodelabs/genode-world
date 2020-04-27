@@ -45,7 +45,6 @@ protobuf-x.x.x/src/google/protobuf/stubs/common.cc
 protobuf-x.x.x/src/google/protobuf/stubs/statusor.h
 protobuf-x.x.x/src/google/protobuf/stubs/time.h
 protobuf-x.x.x/src/google/protobuf/stubs/substitute.h
-protobuf-x.x.x/src/google/protobuf/stubs/mathlimits.cc
 protobuf-x.x.x/src/google/protobuf/stubs/structurally_valid.cc
 protobuf-x.x.x/src/google/protobuf/stubs/strutil.h
 protobuf-x.x.x/src/google/protobuf/stubs/template_util.h
@@ -54,7 +53,6 @@ protobuf-x.x.x/src/google/protobuf/stubs/int128.cc
 protobuf-x.x.x/src/google/protobuf/stubs/substitute.cc
 protobuf-x.x.x/src/google/protobuf/stubs/int128.h
 protobuf-x.x.x/src/google/protobuf/stubs/strutil.cc
-protobuf-x.x.x/src/google/protobuf/stubs/mathlimits.h
 protobuf-x.x.x/src/google/protobuf/stubs/hash.h
 protobuf-x.x.x/src/google/protobuf/stubs/stl_util.h
 protobuf-x.x.x/src/google/protobuf/stubs/mutex.h
@@ -195,7 +193,6 @@ protobuf-x.x.x/src/google/protobuf/io/coded_stream.h
 protobuf-x.x.x/src/google/protobuf/io/tokenizer.cc
 protobuf-x.x.x/src/google/protobuf/io/zero_copy_stream_impl_lite.cc
 protobuf-x.x.x/src/google/protobuf/io/gzip_stream.cc
-protobuf-x.x.x/src/google/protobuf/io/coded_stream_inl.h
 protobuf-x.x.x/src/google/protobuf/io/tokenizer.h
 protobuf-x.x.x/src/google/protobuf/map_field_lite.h
 protobuf-x.x.x/src/google/protobuf/field_mask.proto

@@ -1,0 +1,26 @@
+diff --git a/src/core/plugin_registry/grpc_plugin_registry.cc b/src/core/plugin_registry/grpc_plugin_registry.cc
+--- a/src/core/plugin_registry/grpc_plugin_registry.cc
++++ b/src/core/plugin_registry/grpc_plugin_registry.cc
+@@ -34,8 +34,10 @@ void grpc_resolver_fake_init(void);
+ void grpc_resolver_fake_shutdown(void);
+ void grpc_lb_policy_grpclb_init(void);
+ void grpc_lb_policy_grpclb_shutdown(void);
++#if !defined(__GENODE__)
+ void grpc_lb_policy_cds_init(void);
+ void grpc_lb_policy_cds_shutdown(void);
++#endif
+ void grpc_lb_policy_xds_init(void);
+ void grpc_lb_policy_xds_shutdown(void);
+ void grpc_lb_policy_pick_first_init(void);
+@@ -76,8 +78,10 @@ void grpc_register_built_in_plugins(void) {
+                        grpc_resolver_fake_shutdown);
+   grpc_register_plugin(grpc_lb_policy_grpclb_init,
+                        grpc_lb_policy_grpclb_shutdown);
++#if !defined(__GENODE__)
+   grpc_register_plugin(grpc_lb_policy_cds_init,
+                        grpc_lb_policy_cds_shutdown);
++#endif
+   grpc_register_plugin(grpc_lb_policy_xds_init,
+                        grpc_lb_policy_xds_shutdown);
+   grpc_register_plugin(grpc_lb_policy_pick_first_init,
+

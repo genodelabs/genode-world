@@ -27,7 +27,7 @@ help:
 
 .PHONY: build help install
 
-TOOL_VERSION             := 20.01
+TOOL_VERSION             := 20.04
 
 #
 # Enable parallel build for 2nd-level $(MAKE) by default
@@ -73,6 +73,7 @@ grpc/cmake:
 		         -DgRPC_SSL_PROVIDER=package \
 		         -DgRPC_ZLIB_PROVIDER=package \
 		         -DgRPC_PROTOBUF_PROVIDER=module \
+		         -DgRPC_ABSEIL_PROVIDER=module \
 		          $(HOST_TOOL_DIR)
 
 

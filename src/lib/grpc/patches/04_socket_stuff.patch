@@ -1,152 +1,95 @@
+diff --git a/src/core/lib/iomgr/port.h b/src/core/lib/iomgr/port.h
+index 1d2e950..ce8dd44 100644
+--- a/src/core/lib/iomgr/port.h
++++ b/src/core/lib/iomgr/port.h
+@@ -120,7 +120,7 @@
+ #elif defined(GPR_APPLE)
+ #define GRPC_HAVE_ARPA_NAMESER 1
+ #define GRPC_HAVE_IFADDRS 1
+-#define GRPC_HAVE_SO_NOSIGPIPE 1
++#undef GRPC_HAVE_SO_NOSIGPIPE
+ #define GRPC_HAVE_UNIX_SOCKET 1
+ #define GRPC_MSG_IOVLEN_TYPE int
+ #define GRPC_POSIX_FORK 1
+@@ -154,7 +154,6 @@
+ #define GRPC_HAVE_ARPA_NAMESER 1
+ #define GRPC_HAVE_IFADDRS 1
+ #define GRPC_HAVE_IPV6_RECVPKTINFO 1
+-#define GRPC_HAVE_SO_NOSIGPIPE 1
+ #define GRPC_HAVE_UNIX_SOCKET 1
+ #define GRPC_POSIX_FORK 1
+ #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 diff --git a/src/core/lib/iomgr/socket_utils_common_posix.cc b/src/core/lib/iomgr/socket_utils_common_posix.cc
-index 47d9f51b09..66abe6982a 100644
+index 3974ae7..b59175c 100644
 --- a/src/core/lib/iomgr/socket_utils_common_posix.cc
 +++ b/src/core/lib/iomgr/socket_utils_common_posix.cc
-@@ -70,21 +70,21 @@ grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking) {
-   return GRPC_ERROR_NONE;
- }
- 
--grpc_error* grpc_set_socket_no_sigpipe_if_possible(int fd) {
--#ifdef GRPC_HAVE_SO_NOSIGPIPE
--  int val = 1;
--  int newval;
--  socklen_t intlen = sizeof(newval);
--  if (0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
--    return GRPC_OS_ERROR(errno, "setsockopt(SO_NOSIGPIPE)");
--  }
--  if (0 != getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
--    return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
--  }
--  if ((newval != 0) != (val != 0)) {
--    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_NOSIGPIPE");
--  }
--#endif
-+grpc_error* grpc_set_socket_no_sigpipe_if_possible(int /*fd*/) {
-+//#ifdef GRPC_HAVE_SO_NOSIGPIPE
-+//  int val = 1;
-+//  int newval;
-+//  socklen_t intlen = sizeof(newval);
-+//  if (0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
-+//    return GRPC_OS_ERROR(errno, "setsockopt(SO_NOSIGPIPE)");
-+//  }
-+//  if (0 != getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
-+//    return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
-+//  }
-+//  if ((newval != 0) != (val != 0)) {
-+//    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_NOSIGPIPE");
-+//  }
-+//#endif
-   return GRPC_ERROR_NONE;
- }
- 
-@@ -125,22 +125,22 @@ grpc_error* grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
- }
+@@ -147,6 +147,7 @@ grpc_error* grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
  
  /* set a socket to close on exec */
--grpc_error* grpc_set_socket_cloexec(int fd, int close_on_exec) {
--  int oldflags = fcntl(fd, F_GETFD, 0);
--  if (oldflags < 0) {
--    return GRPC_OS_ERROR(errno, "fcntl");
--  }
--
--  if (close_on_exec) {
--    oldflags |= FD_CLOEXEC;
--  } else {
--    oldflags &= ~FD_CLOEXEC;
--  }
--
--  if (fcntl(fd, F_SETFD, oldflags) != 0) {
--    return GRPC_OS_ERROR(errno, "fcntl");
--  }
--
-+grpc_error* grpc_set_socket_cloexec(int /*fd*/, int /*close_on_exec*/) {
-+//  int oldflags = fcntl(fd, F_GETFD, 0);
-+//  if (oldflags < 0) {
-+//    return GRPC_OS_ERROR(errno, "fcntl");
-+//  }
-+//
-+//  if (close_on_exec) {
-+//    oldflags |= FD_CLOEXEC;
-+//  } else {
-+//    oldflags &= ~FD_CLOEXEC;
-+//  }
-+//
-+//  if (fcntl(fd, F_SETFD, oldflags) != 0) {
-+//    return GRPC_OS_ERROR(errno, "fcntl");
-+//  }
-+//
+ grpc_error* grpc_set_socket_cloexec(int fd, int close_on_exec) {
++#ifdef GRPC_HAVE_CLOEXEC
+   int oldflags = fcntl(fd, F_GETFD, 0);
+   if (oldflags < 0) {
+     return GRPC_OS_ERROR(errno, "fcntl");
+@@ -161,6 +162,10 @@ grpc_error* grpc_set_socket_cloexec(int fd, int close_on_exec) {
+   if (fcntl(fd, F_SETFD, oldflags) != 0) {
+     return GRPC_OS_ERROR(errno, "fcntl");
+   }
++#else
++  (void)fd;
++  (void)close_on_exec;
++#endif
+ 
    return GRPC_ERROR_NONE;
  }
- 
-@@ -163,24 +163,24 @@ grpc_error* grpc_set_socket_reuse_addr(int fd, int reuse) {
- }
+@@ -185,6 +190,7 @@ grpc_error* grpc_set_socket_reuse_addr(int fd, int reuse) {
  
  /* set a socket to reuse old addresses */
--grpc_error* grpc_set_socket_reuse_port(int fd, int reuse) {
-+grpc_error* grpc_set_socket_reuse_port(int /*fd*/, int /*reuse*/) {
+ grpc_error* grpc_set_socket_reuse_port(int fd, int reuse) {
++#if defined(__GENODE__)
  #ifndef SO_REUSEPORT
    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
        "SO_REUSEPORT unavailable on compiling system");
- #else
--  int val = (reuse != 0);
--  int newval;
--  socklen_t intlen = sizeof(newval);
--  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
--    return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEPORT)");
--  }
--  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
--    return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEPORT)");
--  }
--  if ((newval != 0) != val) {
--    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEPORT");
--  }
--
-+//  int val = (reuse != 0);
-+//  int newval;
-+//  socklen_t intlen = sizeof(newval);
-+//  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
-+//    return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEPORT)");
-+//  }
-+//  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
-+//    return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEPORT)");
-+//  }
-+//  if ((newval != 0) != val) {
-+//    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEPORT");
-+//  }
-+//
+@@ -201,16 +207,20 @@ grpc_error* grpc_set_socket_reuse_port(int fd, int reuse) {
+   if ((newval != 0) != val) {
+     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set SO_REUSEPORT");
+   }
++#endif
++#else
++  (void)fd;
++  (void)reuse;
++#endif
+ 
    return GRPC_ERROR_NONE;
- #endif
- }
-@@ -210,19 +210,19 @@ bool grpc_is_socket_reuse_port_supported() {
+-#endif
  }
  
+ static gpr_once g_probe_so_reuesport_once = GPR_ONCE_INIT;
+ static int g_support_so_reuseport = false;
+ 
+ void probe_so_reuseport_once(void) {
+-#ifndef GPR_MANYLINUX1
++#if !defined(GPR_MANYLINUX1) && !defined(__GENODE__)
+   int s = socket(AF_INET, SOCK_STREAM, 0);
+   if (s < 0) {
+     /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
+@@ -232,6 +242,7 @@ bool grpc_is_socket_reuse_port_supported() {
+ 
  /* disable nagle */
--grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
--  int val = (low_latency != 0);
--  int newval;
--  socklen_t intlen = sizeof(newval);
--  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
--    return GRPC_OS_ERROR(errno, "setsockopt(TCP_NODELAY)");
--  }
--  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
--    return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
--  }
--  if ((newval != 0) != val) {
--    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
--  }
-+grpc_error* grpc_set_socket_low_latency(int /*fd*/, int /*low_latency*/) {
-+//  int val = (low_latency != 0);
-+//  int newval;
-+//  socklen_t intlen = sizeof(newval);
-+//  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
-+//    return GRPC_OS_ERROR(errno, "setsockopt(TCP_NODELAY)");
-+//  }
-+//  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
-+//    return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
-+//  }
-+//  if ((newval != 0) != val) {
-+//    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
-+//  }
+ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
++#if !defined(__GENODE__)
+   int val = (low_latency != 0);
+   int newval;
+   socklen_t intlen = sizeof(newval);
+@@ -244,6 +255,11 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
+   if ((newval != 0) != val) {
+     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
+   }
++#else
++  (void)fd;
++  (void)low_latency;
++#endif
++
    return GRPC_ERROR_NONE;
  }
  

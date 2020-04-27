@@ -105,8 +105,6 @@ grpc-x.x.x/include/grpc++/impl/server_builder_option.h
 grpc-x.x.x/include/grpc++/impl/server_builder_plugin.h
 grpc-x.x.x/include/grpc++/impl/server_initializer.h
 grpc-x.x.x/include/grpc++/impl/service_type.h
-grpc-x.x.x/include/grpc++/impl/sync_cxx11.h
-grpc-x.x.x/include/grpc++/impl/sync_no_cxx11.h
 grpc-x.x.x/include/grpc++/resource_quota.h
 grpc-x.x.x/include/grpc++/security/auth_context.h
 grpc-x.x.x/include/grpc++/security/auth_metadata_processor.h
@@ -247,6 +245,7 @@ grpc-x.x.x/include/grpcpp/impl/codegen/interceptor.h
 grpc-x.x.x/include/grpcpp/impl/codegen/interceptor_common.h
 grpc-x.x.x/include/grpcpp/impl/codegen/message_allocator.h
 grpc-x.x.x/include/grpcpp/impl/codegen/metadata_map.h
+grpc-x.x.x/include/grpcpp/impl/codegen/method_handler.h
 grpc-x.x.x/include/grpcpp/impl/codegen/method_handler_impl.h
 grpc-x.x.x/include/grpcpp/impl/codegen/proto_buffer_reader.h
 grpc-x.x.x/include/grpcpp/impl/codegen/proto_buffer_writer.h
@@ -256,6 +255,7 @@ grpc-x.x.x/include/grpcpp/impl/codegen/rpc_service_method.h
 grpc-x.x.x/include/grpcpp/impl/codegen/security/auth_context.h
 grpc-x.x.x/include/grpcpp/impl/codegen/serialization_traits.h
 grpc-x.x.x/include/grpcpp/impl/codegen/server_callback.h
+grpc-x.x.x/include/grpcpp/impl/codegen/server_callback_handlers.h
 grpc-x.x.x/include/grpcpp/impl/codegen/server_callback_impl.h
 grpc-x.x.x/include/grpcpp/impl/codegen/server_context.h
 grpc-x.x.x/include/grpcpp/impl/codegen/server_context_impl.h
@@ -282,8 +282,6 @@ grpc-x.x.x/include/grpcpp/impl/server_builder_plugin.h
 grpc-x.x.x/include/grpcpp/impl/server_initializer.h
 grpc-x.x.x/include/grpcpp/impl/server_initializer_impl.h
 grpc-x.x.x/include/grpcpp/impl/service_type.h
-grpc-x.x.x/include/grpcpp/impl/sync_cxx11.h
-grpc-x.x.x/include/grpcpp/impl/sync_no_cxx11.h
 grpc-x.x.x/include/grpcpp/opencensus.h
 grpc-x.x.x/include/grpcpp/opencensus_impl.h
 grpc-x.x.x/include/grpcpp/resource_quota.h
@@ -297,6 +295,7 @@ grpc-x.x.x/include/grpcpp/security/cronet_credentials.h
 grpc-x.x.x/include/grpcpp/security/cronet_credentials_impl.h
 grpc-x.x.x/include/grpcpp/security/server_credentials.h
 grpc-x.x.x/include/grpcpp/security/server_credentials_impl.h
+grpc-x.x.x/include/grpcpp/security/tls_credentials_options.h
 grpc-x.x.x/include/grpcpp/server.h
 grpc-x.x.x/include/grpcpp/server_builder.h
 grpc-x.x.x/include/grpcpp/server_builder_impl.h
@@ -335,8 +334,6 @@ grpc-x.x.x/include/grpcpp/support/time.h
 grpc-x.x.x/include/grpcpp/support/validate_service_config.h
 grpc-x.x.x/include/grpcpp/test/mock_stream.h
 grpc-x.x.x/include/grpcpp/test/server_context_test_spouse.h
-grpc-x.x.x/src/boringssl/crypto_test_data.cc
-grpc-x.x.x/src/boringssl/err_data.c
 grpc-x.x.x/src/boringssl/gen_build_yaml.py
 grpc-x.x.x/src/c-ares/gen_build_yaml.py
 grpc-x.x.x/src/core/ext/filters/census/grpc_context.cc
@@ -354,7 +351,6 @@ grpc-x.x.x/src/core/ext/filters/client_channel/client_channel_channelz.h
 grpc-x.x.x/src/core/ext/filters/client_channel/client_channel_factory.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/client_channel_factory.h
 grpc-x.x.x/src/core/ext/filters/client_channel/client_channel_plugin.cc
-grpc-x.x.x/src/core/ext/filters/client_channel/connector.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/connector.h
 grpc-x.x.x/src/core/ext/filters/client_channel/global_subchannel_pool.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/global_subchannel_pool.h
@@ -366,6 +362,8 @@ grpc-x.x.x/src/core/ext/filters/client_channel/http_proxy.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/http_proxy.h
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy.h
+grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
@@ -382,13 +380,6 @@ grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
-grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy_factory.h
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy_registry.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/lb_policy_registry.h
@@ -396,7 +387,6 @@ grpc-x.x.x/src/core/ext/filters/client_channel/local_subchannel_pool.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/local_subchannel_pool.h
 grpc-x.x.x/src/core/ext/filters/client_channel/parse_address.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/parse_address.h
-grpc-x.x.x/src/core/ext/filters/client_channel/proxy_mapper.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/proxy_mapper.h
 grpc-x.x.x/src/core/ext/filters/client_channel/proxy_mapper_registry.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/proxy_mapper_registry.h
@@ -442,6 +432,11 @@ grpc-x.x.x/src/core/ext/filters/client_channel/subchannel.h
 grpc-x.x.x/src/core/ext/filters/client_channel/subchannel_interface.h
 grpc-x.x.x/src/core/ext/filters/client_channel/subchannel_pool_interface.cc
 grpc-x.x.x/src/core/ext/filters/client_channel/subchannel_pool_interface.h
+grpc-x.x.x/src/core/ext/filters/client_channel/xds/xds_api.h
+grpc-x.x.x/src/core/ext/filters/client_channel/xds/xds_bootstrap.h
+grpc-x.x.x/src/core/ext/filters/client_channel/xds/xds_channel_args.h
+grpc-x.x.x/src/core/ext/filters/client_channel/xds/xds_client.h
+grpc-x.x.x/src/core/ext/filters/client_channel/xds/xds_client_stats.h
 grpc-x.x.x/src/core/ext/filters/client_idle/client_idle_filter.cc
 grpc-x.x.x/src/core/ext/filters/deadline/deadline_filter.cc
 grpc-x.x.x/src/core/ext/filters/deadline/deadline_filter.h
@@ -541,6 +536,7 @@ grpc-x.x.x/src/core/ext/transport/cronet/transport/cronet_transport.h
 grpc-x.x.x/src/core/ext/transport/inproc/inproc_plugin.cc
 grpc-x.x.x/src/core/ext/transport/inproc/inproc_transport.cc
 grpc-x.x.x/src/core/ext/transport/inproc/inproc_transport.h
+grpc-x.x.x/src/core/ext/upb-generated/envoy/annotations/resource.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
@@ -569,8 +565,11 @@ grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
+grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h
+grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.c
+grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint_components.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
@@ -581,6 +580,8 @@ grpc-x.x.x/src/core/ext/upb-generated/envoy/type/percent.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/type/percent.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/envoy/type/range.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/envoy/type/range.upb.h
+grpc-x.x.x/src/core/ext/upb-generated/envoy/type/semantic_version.upb.c
+grpc-x.x.x/src/core/ext/upb-generated/envoy/type/semantic_version.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/gogoproto/gogo.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/gogoproto/gogo.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/google/api/annotations.upb.c
@@ -613,6 +614,7 @@ grpc-x.x.x/src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+grpc-x.x.x/src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
 grpc-x.x.x/src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
 grpc-x.x.x/src/core/ext/upb-generated/validate/validate.upb.c
@@ -685,8 +687,6 @@ grpc-x.x.x/src/core/lib/gpr/log_android.cc
 grpc-x.x.x/src/core/lib/gpr/log_linux.cc
 grpc-x.x.x/src/core/lib/gpr/log_posix.cc
 grpc-x.x.x/src/core/lib/gpr/log_windows.cc
-grpc-x.x.x/src/core/lib/gpr/mpscq.cc
-grpc-x.x.x/src/core/lib/gpr/mpscq.h
 grpc-x.x.x/src/core/lib/gpr/murmur_hash.cc
 grpc-x.x.x/src/core/lib/gpr/murmur_hash.h
 grpc-x.x.x/src/core/lib/gpr/spinlock.h
@@ -698,7 +698,6 @@ grpc-x.x.x/src/core/lib/gpr/string_windows.cc
 grpc-x.x.x/src/core/lib/gpr/string_windows.h
 grpc-x.x.x/src/core/lib/gpr/sync.cc
 grpc-x.x.x/src/core/lib/gpr/sync_posix.cc
-grpc-x.x.x/src/core/lib/gpr/sync_windows.cc
 grpc-x.x.x/src/core/lib/gpr/time.cc
 grpc-x.x.x/src/core/lib/gpr/time_posix.cc
 grpc-x.x.x/src/core/lib/gpr/time_precise.cc
@@ -716,7 +715,6 @@ grpc-x.x.x/src/core/lib/gpr/tmpfile_windows.cc
 grpc-x.x.x/src/core/lib/gpr/useful.h
 grpc-x.x.x/src/core/lib/gpr/wrap_memcpy.cc
 grpc-x.x.x/src/core/lib/gprpp/README.md
-grpc-x.x.x/src/core/lib/gprpp/abstract.h
 grpc-x.x.x/src/core/lib/gprpp/arena.cc
 grpc-x.x.x/src/core/lib/gprpp/arena.h
 grpc-x.x.x/src/core/lib/gprpp/atomic.h
@@ -734,9 +732,10 @@ grpc-x.x.x/src/core/lib/gprpp/inlined_vector.h
 grpc-x.x.x/src/core/lib/gprpp/manual_constructor.h
 grpc-x.x.x/src/core/lib/gprpp/map.h
 grpc-x.x.x/src/core/lib/gprpp/memory.h
+grpc-x.x.x/src/core/lib/gprpp/mpscq.h
+grpc-x.x.x/src/core/lib/gprpp/mpscq.cc
 grpc-x.x.x/src/core/lib/gprpp/optional.h
 grpc-x.x.x/src/core/lib/gprpp/orphanable.h
-grpc-x.x.x/src/core/lib/gprpp/pair.h
 grpc-x.x.x/src/core/lib/gprpp/ref_counted.h
 grpc-x.x.x/src/core/lib/gprpp/ref_counted_ptr.h
 grpc-x.x.x/src/core/lib/gprpp/string_view.h
@@ -799,7 +798,6 @@ grpc-x.x.x/src/core/lib/iomgr/gethostname.h
 grpc-x.x.x/src/core/lib/iomgr/gethostname_fallback.cc
 grpc-x.x.x/src/core/lib/iomgr/gethostname_host_name_max.cc
 grpc-x.x.x/src/core/lib/iomgr/gethostname_sysconf.cc
-grpc-x.x.x/src/core/lib/iomgr/gevent_util.h
 grpc-x.x.x/src/core/lib/iomgr/grpc_if_nametoindex.h
 grpc-x.x.x/src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
 grpc-x.x.x/src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
@@ -917,14 +915,9 @@ grpc-x.x.x/src/core/lib/iomgr/wakeup_fd_pipe.cc
 grpc-x.x.x/src/core/lib/iomgr/wakeup_fd_pipe.h
 grpc-x.x.x/src/core/lib/iomgr/wakeup_fd_posix.cc
 grpc-x.x.x/src/core/lib/iomgr/wakeup_fd_posix.h
-grpc-x.x.x/src/core/lib/json/json.cc
 grpc-x.x.x/src/core/lib/json/json.h
-grpc-x.x.x/src/core/lib/json/json_common.h
 grpc-x.x.x/src/core/lib/json/json_reader.cc
-grpc-x.x.x/src/core/lib/json/json_reader.h
-grpc-x.x.x/src/core/lib/json/json_string.cc
 grpc-x.x.x/src/core/lib/json/json_writer.cc
-grpc-x.x.x/src/core/lib/json/json_writer.h
 grpc-x.x.x/src/core/lib/profiling/basic_timers.cc
 grpc-x.x.x/src/core/lib/profiling/stap_probes.d
 grpc-x.x.x/src/core/lib/profiling/stap_timers.cc
@@ -970,8 +963,6 @@ grpc-x.x.x/src/core/lib/security/credentials/ssl/ssl_credentials.cc
 grpc-x.x.x/src/core/lib/security/credentials/ssl/ssl_credentials.h
 grpc-x.x.x/src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
 grpc-x.x.x/src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
-grpc-x.x.x/src/core/lib/security/credentials/tls/spiffe_credentials.cc
-grpc-x.x.x/src/core/lib/security/credentials/tls/spiffe_credentials.h
 grpc-x.x.x/src/core/lib/security/security_connector/alts/alts_security_connector.cc
 grpc-x.x.x/src/core/lib/security/security_connector/alts/alts_security_connector.h
 grpc-x.x.x/src/core/lib/security/security_connector/fake/fake_security_connector.cc
@@ -990,8 +981,6 @@ grpc-x.x.x/src/core/lib/security/security_connector/ssl_utils.cc
 grpc-x.x.x/src/core/lib/security/security_connector/ssl_utils.h
 grpc-x.x.x/src/core/lib/security/security_connector/ssl_utils_config.cc
 grpc-x.x.x/src/core/lib/security/security_connector/ssl_utils_config.h
-grpc-x.x.x/src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
-grpc-x.x.x/src/core/lib/security/security_connector/tls/spiffe_security_connector.h
 grpc-x.x.x/src/core/lib/security/transport/auth_filters.h
 grpc-x.x.x/src/core/lib/security/transport/client_auth_filter.cc
 grpc-x.x.x/src/core/lib/security/transport/secure_endpoint.cc
@@ -1175,7 +1164,6 @@ grpc-x.x.x/src/cpp/client/create_channel_internal.h
 grpc-x.x.x/src/cpp/client/create_channel_posix.cc
 grpc-x.x.x/src/cpp/client/credentials_cc.cc
 grpc-x.x.x/src/cpp/client/cronet_credentials.cc
-grpc-x.x.x/src/cpp/client/generic_stub.cc
 grpc-x.x.x/src/cpp/client/insecure_credentials.cc
 grpc-x.x.x/src/cpp/client/secure_credentials.cc
 grpc-x.x.x/src/cpp/client/secure_credentials.h
@@ -1262,8 +1250,6 @@ grpc-x.x.x/src/cpp/util/error_details.cc
 grpc-x.x.x/src/cpp/util/status.cc
 grpc-x.x.x/src/cpp/util/string_ref.cc
 grpc-x.x.x/src/cpp/util/time_cc.cc
-grpc-x.x.x/src/upb/gen_build_yaml.py
-grpc-x.x.x/src/zlib/gen_build_yaml.py
 grpc-x.x.x/src/proto/grpc/binary_log/v1alpha/log.proto
 grpc-x.x.x/src/proto/grpc/channelz/channelz.proto
 grpc-x.x.x/src/proto/grpc/core/stats.proto
@@ -1275,13 +1261,12 @@ grpc-x.x.x/src/proto/grpc/health/v1/health.proto
 grpc-x.x.x/src/proto/grpc/lb/v1/load_balancer.options
 grpc-x.x.x/src/proto/grpc/lb/v1/load_balancer.proto
 grpc-x.x.x/src/proto/grpc/lb/v1/load_reporter.proto
-grpc-x.x.x/src/proto/grpc/lb/v2/eds_for_test.proto
-grpc-x.x.x/src/proto/grpc/lb/v2/lrs_for_test.proto
-grpc-x.x.x/src/proto/grpc/lb/v2/orca_load_report_for_test.proto
 grpc-x.x.x/src/proto/grpc/reflection/v1alpha/reflection.proto
 grpc-x.x.x/src/proto/grpc/status/README
 grpc-x.x.x/src/proto/grpc/status/status.proto
 grpc-x.x.x/src/proto/math/math.proto
+grpc-x.x.x/src/upb/gen_build_yaml.py
+grpc-x.x.x/src/zlib/gen_build_yaml.py
 grpc-x.x.x/third_party/address_sorting/BUILD
 grpc-x.x.x/third_party/address_sorting/LICENSE
 grpc-x.x.x/third_party/address_sorting/address_sorting.bzl
@@ -1364,4 +1349,3 @@ grpc-x.x.x/third_party/upb/upbc/generator.h
 grpc-x.x.x/third_party/upb/upbc/main.cc
 grpc-x.x.x/third_party/upb/upbc/message_layout.cc
 grpc-x.x.x/third_party/upb/upbc/message_layout.h
-grpc-1.24.3/third_party/objective_c/Cronet/bidirectional_stream_c.h

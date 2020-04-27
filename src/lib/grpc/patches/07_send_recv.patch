@@ -1,38 +1,76 @@
-commit e291dab98f94a0d510ec726af85680d018d2aadf
-Author: Pirmin Duss <pirmin.duss@gapfruit.com>
-Date:   Mon Oct 28 10:58:58 2019 +0100
-
-    Fix for missing sendmsg and recvmsg in genode.
-
 diff --git a/src/core/lib/iomgr/tcp_posix.cc b/src/core/lib/iomgr/tcp_posix.cc
-index b6d1381298..f2d3ac5037 100644
 --- a/src/core/lib/iomgr/tcp_posix.cc
 +++ b/src/core/lib/iomgr/tcp_posix.cc
-@@ -464,7 +464,12 @@ static void tcp_do_read(grpc_tcp* tcp) {
+@@ -697,6 +697,22 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
+   grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
+ }
+ 
++
++static ssize_t _recvmsg(int fd, msghdr *msg, int flags)
++{
++  ssize_t read_bytes = 0;
++  for (int i = 0; i < msg->msg_iovlen; i++) {
++    auto iov = msg->msg_iov[i];
++    auto res = read(fd, iov.iov_base, iov.iov_len);
++    if (res >= 0) {
++      read_bytes += res;
++    } else {
++      return res;
++    }
++  }
++  return read_bytes;
++}
++
+ #define MAX_READ_IOVEC 4
+ static void tcp_do_read(grpc_tcp* tcp) {
+   GPR_TIMER_SCOPE("tcp_do_read", 0);
+@@ -743,7 +759,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
      do {
        GPR_TIMER_SCOPE("recvmsg", 0);
        GRPC_STATS_INC_SYSCALL_READ();
 -      read_bytes = recvmsg(tcp->fd, &msg, 0);
-+                       read_bytes = 0;
-+                       for (int i = 0; i < msg.msg_iovlen; i++)
-+                       {
-+                               auto iov = msg.msg_iov[i];
-+                               read_bytes += read(tcp->fd, iov.iov_base, iov.iov_len);
-+                       }
++      read_bytes = _recvmsg(tcp->fd, &msg, 0);
      } while (read_bytes < 0 && errno == EINTR);
  
      /* We have read something in previous reads. We need to deliver those
-@@ -652,7 +657,12 @@ ssize_t tcp_send(int fd, const struct msghdr* msg) {
-   do {
-     /* TODO(klempner): Cork if this is a partial write */
+diff --git a/src/core/lib/iomgr/tcp_posix.cc b/src/core/lib/iomgr/tcp_posix.cc
+index 8aace32..bd460d9 100644
+--- a/src/core/lib/iomgr/tcp_posix.cc
++++ b/src/core/lib/iomgr/tcp_posix.cc
+@@ -947,12 +947,31 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
+  * of bytes sent. */
+ ssize_t tcp_send(int fd, const struct msghdr* msg, int additional_flags = 0) {
+   GPR_TIMER_SCOPE("sendmsg", 1);
+-  ssize_t sent_length;
+-  do {
+-    /* TODO(klempner): Cork if this is a partial write */
++  size_t sent_length = 0;
++  bool error_occured = false;
++  auto last_errno = errno;
++  for (int i = 0; i < msg->msg_iovlen; i++) {
      GRPC_STATS_INC_SYSCALL_WRITE();
--    sent_length = sendmsg(fd, msg, SENDMSG_FLAGS);
-+               sent_length = 0;
-+               for (int i = 0; i < msg->msg_iovlen; i++)
-+               {
-+                       auto iov = msg->msg_iov[i];
-+                       sent_length += write(fd, iov.iov_base, iov.iov_len);
-+               }
-   } while (sent_length < 0 && errno == EINTR);
+-    sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
+-  } while (sent_length < 0 && errno == EINTR);
++    auto iov = msg->msg_iov[i];
++    size_t iov_sent = 0;
++    while (iov_sent < iov.iov_len) {
++      auto res = write(fd, iov.iov_base + iov_sent, iov.iov_len - iov_sent);
++      if (res >= 0) {
++        iov_sent += res;
++      } else if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
++        continue;
++      } else {
++        error_occured = true;
++        last_errno = errno;
++        break;
++      }
++    }
++    sent_length += iov_sent;
++  }
++  if (error_occured) {
++    errno = last_errno;
++    return -1;
++  }
    return sent_length;
  }
+ 
