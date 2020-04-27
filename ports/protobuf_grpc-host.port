@@ -1,29 +1,31 @@
 LICENSE             := GPLv2
-VERSION             := 19.09
+VERSION             := 20.04
 
 DOWNLOADS           := grpc.archive
 DOWNLOADS           += protobuf.archive
 DOWNLOADS           += cares.archive
 DOWNLOADS           += gflags.archive
+DOWNLOADS           += abseil.archive
 
 #
 # !!! IMPORTANT !!!
 # PROTOBUF_VERSION must match the version that gRPC uses in the
 # third_party/protobuf sub directory!
 #
-GRPC_VERSION        := 1.24.3
-PROTOBUF_VERSION    := 3.9.1
+GRPC_VERSION        := 1.28.1
+PROTOBUF_VERSION    := 3.11.2
 CARES_VERSION       := 1_15_0
 GFLAGS_VERSION      := 2.2.2
+ABSEIL_VERSION      := 20200225.2
 
 URL(grpc)           := https://github.com/grpc/grpc/archive/v$(GRPC_VERSION).tar.gz
 DIR(grpc)           := src/lib/grpc-host
-SHA(grpc)           := c84b3fa140fcd6cce79b3f9de6357c5733a0071e04ca4e65ba5f8d306f10f033
+SHA(grpc)           := 4cbce7f708917b6e58b631c24c59fe720acc8fef5f959df9a58cdf9558d0a79b
 REV(grpc)           := $(GRPC_VERSION)
 
 URL(protobuf)       := https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOBUF_VERSION)/protobuf-cpp-$(PROTOBUF_VERSION).tar.gz
 DIR(protobuf)       := src/lib/grpc-host/third_party/protobuf
-SHA(protobuf)       := 29a1db3b9bebcf054c540f13400563120ff29fbdd849b2c7a097ffe9d3d508eb
+SHA(protobuf)       := b967f5b667c7041415283705c0ab07f0bcc1ff077854cd29a7e148458a910053
 REV(protobuf)       := $(PROTOBUF_VERSION)
 
 URL(cares)          := https://github.com/c-ares/c-ares/archive/cares-$(CARES_VERSION).tar.gz
@@ -35,5 +37,10 @@ URL(gflags)         := https://github.com/gflags/gflags/archive/v$(GFLAGS_VERSIO
 DIR(gflags)         := src/lib/grpc-host/third_party/gflags
 SHA(gflags)         := 34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf
 REV(gflags)         := $(GFLAGS_VERSION)
+
+URL(abseil)         := https://github.com/abseil/abseil-cpp/archive/$(ABSEIL_VERSION).tar.gz
+DIR(abseil)         := src/lib/grpc-host/third_party/abseil-cpp
+SHA(abseil)         := f41868f7a938605c92936230081175d1eae87f6ea2c248f41077c8f88316f111
+REV(abseil)         := $(ABSEIL_VERSION)
 
 # vim: syntax=make

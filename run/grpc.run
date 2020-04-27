@@ -15,6 +15,7 @@ import_from_depot [depot_user]/src/stdcxx
 import_from_depot [depot_user]/src/vfs
 import_from_depot [depot_user]/src/vfs_lwip
 import_from_depot [depot_user]/src/vfs_lxip
+import_from_depot [depot_user]/src/vfs_pipe
 import_from_depot [depot_user]/src/zlib
 
 
@@ -118,10 +119,13 @@ append config {
 							<resource name="RAM" quantum="50M"/>
 							<config server_address="10.10.10.55:50051">
 								<arg value="grpc_server"/>
-								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket" pipe="/dev/pipe"/>
 								<vfs>
 									<dir name="dev">
 										<log/> <null/>
+										<dir name="pipe">
+											<pipe/>
+										</dir>
 										<inline name="rtc">2000-01-01 00:00</inline>
 										<dir name="socket">
 											<lwip ip_addr="10.10.10.55" netmask="255.255.255.0" gateway="10.10.10.1"/>
@@ -152,10 +156,13 @@ append config {
 							<resource name="RAM" quantum="50M"/>
 							<config server_address="10.10.10.55:50051">
 								<arg value="grpc_server"/>
-								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket" pipe="/dev/pipe"/>
 								<vfs>
 									<dir name="dev">
 										<log/> <null/>
+										<dir name="pipe">
+											<pipe/>
+										</dir>
 										<inline name="rtc">2000-01-01 00:00</inline>
 										<dir name="socket">
 											<lwip ip_addr="10.10.10.55" netmask="255.255.255.0" gateway="10.10.10.1"/>
@@ -168,10 +175,13 @@ append config {
 							<resource name="RAM" quantum="100M"/>
 							<config>
 								<arg value="grpc_client"/>
-								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket"/>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/dev/socket" pipe="/dev/pipe"/>
 								<vfs>
 									<dir name="dev">
 										<log/> <null/>
+										<dir name="pipe">
+											<pipe/>
+										</dir>
 										<inline name="rtc">2000-01-02 00:00</inline>
 										<dir name="socket">
 											<lwip ip_addr="10.10.20.66" netmask="255.255.255.0" gateway="10.10.20.1"/>
@@ -209,7 +219,6 @@ set boot_modules {
 	grpc_client
 	ld.lib.so
 	grpc.lib.so
-	libc_pipe.lib.so
 }
 
 

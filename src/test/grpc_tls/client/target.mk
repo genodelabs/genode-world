@@ -6,7 +6,6 @@ LIBS               := posix
 LIBS               += protobuf
 LIBS               += stdcxx
 LIBS               += grpc
-LIBS               += libc_pipe
 
 CC_CXX_WARN_STRICT :=
 
