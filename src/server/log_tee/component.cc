@@ -50,15 +50,13 @@ class Log_tee::Session_component : public Rpc_object<Log_session>
 		Session_component(Env &env, Session_label const &label, char const *args)
 		: _log(env, args), _prefix("[", label.string(), "] ") { }
 
-		size_t write(Log_session::String const &msg) override
+		void write(Log_session::String const &msg) override
 		{
 			/* write to the dedicated client log session */
-			size_t n = _log.write(msg);
+			_log.write(msg);
 
 			/* write to our own log session */
 			log(_prefix, msg.string());
-
-			return n;
 		}
 };
 
