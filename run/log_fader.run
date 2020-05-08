@@ -25,7 +25,6 @@ set build_components {
 	server/nit_fb
 	server/nitpicker
 	server/rom_filter
-	server/terminal
 	server/terminal_log
 	test/nitpicker
 }
@@ -33,6 +32,9 @@ set build_components {
 build $build_components
 
 create_boot_directory
+
+import_from_depot [depot_user]/raw/ttf-bitstream-vera-minimal \
+                  [depot_user]/pkg/terminal
 
 #
 # Generate config
@@ -137,10 +139,8 @@ append config {
 	<start name="nitpicker">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="Nitpicker"/></provides>
-		<configfile name="nitpicker.config"/>
 		<route>
-			<service name="ROM" label="nitpicker.config">
-				<child name="nitpicker_config"/> </service>
+			<service name="ROM" label="config"> <child name="nitpicker_config"/> </service>
 			<service name="Framebuffer"> <child name="fb_drv" /> </service>
 			<service name="Input"> <child name="input_drv" /> </service>
 			<service name="Report"> <child name="report_rom" /> </service>
@@ -205,11 +205,9 @@ append config {
 		<binary name="nit_fader"/>
 		<resource name="RAM" quantum="5M"/>
 		<provides> <service name="Nitpicker"/> </provides>
-		<configfile name="log_fader.config" />
 		<route>
-			<service name="ROM" label="log_fader.config">
-				<child name="log_fader_config" />
-			</service>
+			<service name="ROM" label="config">
+				<child name="log_fader_config" /> </service>
 			<service name="Nitpicker"> <child name="nitpicker" /> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
@@ -231,7 +229,14 @@ append config {
 		<resource name="RAM" quantum="3M"/>
 		<provides><service name="Terminal"/></provides>
 		<config>
-			<font size="8"/>
+			<vfs>
+				<rom name="VeraMono.ttf"/>
+				<dir name="fonts">
+					<dir name="monospace">
+						<ttf name="regular" path="/VeraMono.ttf" size_px="16"/>
+					</dir>
+				</dir>
+			</vfs>
 		</config>
 		<route>
 			<service name="Input">       <child name="log_fb"/> </service>
@@ -292,7 +297,6 @@ set boot_modules {
 	report_rom
 	rom_filter
 	rom_logger
-	terminal
 	terminal_log
 	testnit
 	timer

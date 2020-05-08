@@ -129,9 +129,9 @@ append config {
 
 	<start name="audio_player" caps="150">
 		<resource name="RAM" quantum="24M"/>
-		<configfile name="audio_player.config"/>
 		<route>
-			<service name="ROM" label="audio_player.config"> <child name="dynamic_rom"/> </service>
+			<service name="ROM" label="config">
+				<child name="dynamic_rom" label="audio_player.config"/> </service>
 			<service name="ROM" label="playlist"> <child name="dynamic_rom"/> </service>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
