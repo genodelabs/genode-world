@@ -21,7 +21,6 @@ import_from_depot [depot_user]/pkg/python3
 build {
 	core init
 	timer
-	drivers/rtc
 	server/dynamic_rom
 }
 
@@ -50,10 +49,6 @@ install_config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer" /></provides>
-	</start>
-	<start name="rtc_drv" } [rtc_start_attr] {>
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Rtc"/> </provides>
 	</start>
 	<start name="dynamic_rom">
 		<resource name="RAM" quantum="1M"/>
@@ -95,7 +90,7 @@ print("Hello again")
 					<log/>
 					<jitterentropy name="urandom" />
 					<jitterentropy name="random" />
-					<rtc/>
+					<inline name="rtc">2018-01-01 00:01</inline>
 					<zero/>
 				</dir>
 				<dir name="python">
@@ -116,9 +111,8 @@ print("Hello again")
 # generic modules
 append boot_modules {
 	core init
-	ld.lib.so 
+	ld.lib.so
 	timer
-	rtc_drv
 	dynamic_rom
 }
 

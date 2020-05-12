@@ -39,44 +39,58 @@ struct Python::Main
 
 	int _execute()
 	{
-		enum {
-			MAX_NAME_LEN = 128
-		};
+		using namespace Genode;
 
-		char filename[MAX_NAME_LEN];
+		typedef String<128> File_name;
 
-		Genode::Xml_node script = _config.xml().sub_node("file");
-		script.attribute("name").value(filename, sizeof(filename));
+		int res = 0;
 
-		FILE * fp = fopen(filename, "r");
+		Xml_node const config = _config.xml();
 
-		Genode::log("Starting python ...");
-		int res = PyRun_SimpleFile(fp, filename);
-		Genode::log("Executed '", Genode::Cstring(filename), "'");
+		if (!config.has_sub_node("file"))
+			warning("config lacks <file> sub node");
 
-		fclose(fp);
+		config.with_sub_node("file", [&] (Xml_node const &script) {
+
+			if (!script.has_attribute("name")) {
+				warning("<file> node lacks 'name' attribute");
+				return;
+			}
+
+			File_name const file_name = script.attribute_value("name", File_name());
+
+			FILE * fp = fopen(file_name.string(), "r");
+
+			log("Starting python ...");
+			res = PyRun_SimpleFile(fp, file_name.string());
+			log("Executed '", file_name, "'");
+
+			fclose(fp);
+		});
+
 		return res;
 	}
 
 	void _initialize()
 	{
-		enum {
-			MAX_NAME_LEN = 128
-		};
+		using namespace Genode;
 
+		Xml_node const config = _config.xml();
+
+		enum { MAX_NAME_LEN = 128 };
 		wchar_t wbuf[MAX_NAME_LEN];
 
-		if (_config.xml().has_sub_node("pythonpath")) {
-			char pythonpath[MAX_NAME_LEN];
-			Genode::Xml_node path = _config.xml().sub_node("pythonpath");
+		config.with_sub_node("pythonpath", [&] (Xml_node const &pythonpath) {
 
-			path.attribute("name").value(pythonpath, sizeof(pythonpath));
-			mbstowcs(wbuf, pythonpath, strlen(pythonpath));
+			typedef String<MAX_NAME_LEN> Path;
+			Path const path = pythonpath.attribute_value("name", Path());
+
+			mbstowcs(wbuf, path.string(), ::strlen(path.string()));
 
 			Py_SetPath(wbuf);
-		}
+		});
 
-		if (_config.xml().attribute_value("verbose", false))
+		if (config.attribute_value("verbose", false))
 			Py_VerboseFlag = 1;
 
 		//don't need the 'site' module
@@ -95,30 +109,32 @@ struct Python::Main
 	{
 		_initialize();
 
-		if (_config.xml().has_sub_node("file")) {
-			Genode::Xml_node filenode = _config.xml().sub_node("file");
-			if (filenode.has_attribute("on-rom-update")) {
-				char rom_name[128];
-				filenode.attribute("on-rom-update").value(rom_name, sizeof(rom_name));
+		_config.update();
+		Genode::Xml_node const config = _config.xml();
 
-				_update.construct(_env, rom_name);
+		if (!config.has_sub_node("file"))
+			Genode::error("Need <file name=\"filename\"> as argument!");
+
+		config.with_sub_node("file", [&] (Genode::Xml_node const &file) {
+
+			if (file.has_attribute("on-rom-update")) {
+
+				typedef Genode::String<128> Rom_name;
+
+				Rom_name const rom_name =
+					file.attribute_value("on-rom-update", Rom_name());
+
+				_update.construct(_env, rom_name.string());
 				_update->sigh(_trigger_handler);
 
 				if (_update->dataspace().valid())
 					_execute();
 
-				return;
-			}
-			else {
+			} else {
 				_execute();
+				_finalize();
 			}
-		}
-		else {
-			Genode::error("Need <file name=\"filename\"> as argument!");
-		}
-
-		/* if there was a on-rom-update attribute, we finalize and wait for next config update */
-		_finalize();
+		});
 	}
 
 	void _handle_trigger()
