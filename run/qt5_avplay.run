@@ -23,7 +23,7 @@ build $build_components
 # Download media file
 #
 
-set media_url "ftp://ftp.untergrund.net/users/ae/dhstv/escape-chotro.mp4"
+set media_url "http://os.inf.tu-dresden.de/~nf2/povray/blob.mpg"
 if {![file exists bin/mediafile]} {
 	puts "downloading media file from $media_url"
 	catch { exec wget -O bin/mediafile $media_url }

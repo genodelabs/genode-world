@@ -43,21 +43,29 @@ class Main_window : public Compound_widget<QWidget, QVBoxLayout>
 
 		struct Mediafile_name
 		{
-			/* get the name of the media file from the config file */
-			enum { MAX_LEN_MEDIAFILE_NAME = 256 };
-			char buf[MAX_LEN_MEDIAFILE_NAME];
+			typedef Genode::String<256> Name;
+			Name const name;
 
-			Mediafile_name(Genode::Env &env)
+			Name _name_from_config(Genode::Env &env)
 			{
-				Genode::strncpy(buf, "mediafile", sizeof(buf));
-				try {
-					Genode::Attached_rom_dataspace config(env, "config");
-					config.xml().sub_node("mediafile")
-						.attribute("name").value(buf, sizeof(buf));
-				} catch(...) {
-					Genode::warning("no <mediafile> config node found, using \"mediafile\"");
-				}
+				using namespace Genode;
+
+				Attached_rom_dataspace config_ds(env, "config");
+				Xml_node const config = config_ds.xml();
+				char const * const node_type = "mediafile";
+
+				if (!config.has_sub_node(node_type))
+					warning("no <", node_type, " name=\"...\"> config node found, "
+					        "using \"mediafile\"");
+
+				Name result { "mediafile" };
+				config.with_sub_node(node_type, [&] (Xml_node const &mediafile) {
+					result = mediafile.attribute_value("name", result); });
+
+				return result;
 			}
+
+			Mediafile_name(Genode::Env &env) : name(_name_from_config(env)) { }
 		};
 
 		Genode::Env                   &_env;

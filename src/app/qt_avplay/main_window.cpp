@@ -42,7 +42,7 @@ Main_window::Main_window(Genode::Env &env)
 
 	Avplay_slave *avplay_slave = new Avplay_slave(_env, _ep,
 	                                              _nitpicker_service,
-	                                              _mediafile_name.buf);
+	                                              _mediafile_name.name.string());
 
 	connect(_control_bar, SIGNAL(volume_changed(int)), avplay_slave, SLOT(volume_changed(int)));
 }
