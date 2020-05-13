@@ -15,15 +15,15 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/event_filter \
                   [depot_user]/src/init \
                   [depot_user]/src/nitpicker \
-                  [depot_user]/src/legacy_usb_host_drv \
+                  [depot_user]/src/pc_usb_host_drv \
                   [depot_user]/src/usb_hid_drv \
+                  [depot_user]/src/vfs \
                   [depot_user]/src/vfs_import \
                   [depot_user]/src/ps2_drv \
                   [depot_user]/raw/drivers_interactive-pc
 
 if {$use_fs_rump} {
-	import_from_depot [depot_user]/src/vfs \
-	                  [depot_user]/src/rump
+	import_from_depot [depot_user]/src/rump
 }
 
 if {$use_part_block} {
@@ -111,7 +111,7 @@ puts $vm_cfg_fd {	 <machine verbose="no">
 
 if {!$use_multiboot} {
 	puts $vm_cfg_fd {
-		<vbios_disk/>
+		<vbios_disk boot_disknr="0"/>
 	}
 }
 
@@ -232,10 +232,10 @@ append config {
 	</start>
 
 	<start name="usb_drv" priority="-1" caps="120">
-		<binary name="legacy_pc_usb_host_drv"/>
+		<binary name="pc_usb_host_drv"/>
 		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Usb"/> </provides>
-		<config uhci="yes" ohci="yes" ehci="yes" xhci="yes">
+		<config>
 			<report devices="yes"/>
 			<policy label_prefix="usb_hid_drv" class="0x3"/>
 		</config>
@@ -265,7 +265,7 @@ append_if $use_drv_ahci config {
 		<config>}
 
 append_if [expr $use_block_sata && !$use_part_block] config {
-			<policy label="seoul -> VirtualDisk 0" device="0" writeable="yes"/>}
+			<policy label="seoul -> disk0" device="0" writeable="yes"/>}
 
 append_if [expr $use_block_vdi && !$use_part_block] config {
 			<policy label="rump_fs -> " device="0" writeable="yes"/>}
@@ -288,13 +288,13 @@ append_if $use_part_block config {
 			<any-service><child name="ahci_drv"/> <parent/></any-service>
 		</route>
 		<config>
-			<policy label="seoul -> VirtualDisk 0" partition="5" writeable="yes"/>
+			<policy label="seoul -> disk0" partition="5" writeable="yes"/>
 			<policy label="rump_fs -> " partition="4" writeable="yes"/>
 		</config>
 	</start>}
 
 append_if $use_block_ram config {
-	<start name="vfs_block" priority="-1">
+	<start name="vfs_block" priority="-1" caps="300">
 		<resource name="RAM" quantum="266M" />
 		<provides><service name="Block"/></provides>
 		<config>
@@ -339,7 +339,7 @@ append_if $use_block_vdi config {
 		<provides> <service name="Block"/> </provides>
 		<config file="/seoul_stress32.vdi" writeable="yes">
 			<vfs> <fs buffer_size="1M"/> </vfs>
-			<policy label="seoul -> VirtualDisk 0" writeable="yes"/>
+			<policy label="seoul -> disk0" device="0" writeable="yes"/>
 		</config>
 		<route>
 			<service name="File_system"><child name="rump_fs"/></service>
@@ -348,7 +348,7 @@ append_if $use_block_vdi config {
 	</start>}
 
 append_if $use_genode_iso config {
-	<start name="vfs_block" priority="-1">
+	<start name="vfs_block" priority="-1" caps="100">
 		<resource name="RAM" quantum="16M" />
 		<provides><service name="Block"/></provides>
 		<config>
@@ -545,7 +545,7 @@ if {$use_fancy_stuff} {
 	set launchpad_cfg_fd [open "bin/launchpad-config" w]
 
 	puts $launchpad_cfg_fd "<config>
-	<launcher ram_quota=\"$memory_init\" name=\"init\" caps=\"500\" >"
+	<launcher ram_quota=\"$memory_init\" name=\"init\" caps=\"1000\" >"
 
 	puts $launchpad_cfg_fd {
 		<config>
@@ -566,7 +566,7 @@ if {$use_fancy_stuff} {
 				<service name="VM"/>
 			</parent-provides>
 
-			<start name="seoul" caps="400">
+			<start name="seoul" caps="800">
 				<binary name="seoul"/>
 				<resource name="RAM" quantum="256M"/>
 				<route>
@@ -598,7 +598,6 @@ set boot_modules {
 
 lappend_if $use_block_vdi     boot_modules vdi_block
 lappend_if $use_vfs_block     boot_modules vfs_block
-lappend_if $use_vfs_block     boot_modules vfs.lib.so
 lappend_if $use_drv_ahci      boot_modules ahci_drv
 lappend_if $use_nic_session   boot_modules ipxe_nic_drv
 lappend_if $use_nic_session   boot_modules nic_router

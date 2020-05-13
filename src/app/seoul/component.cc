@@ -1448,6 +1448,7 @@ void Component::construct(Genode::Env &env)
 
 	/* create disk thread */
 	static Seoul::Disk vdisk(env, machine.motherboard(),
+	                         machine.unsynchronized_motherboard(),
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
 
