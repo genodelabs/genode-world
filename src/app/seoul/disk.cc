@@ -46,10 +46,12 @@ static Genode::Heap * disk_heap_avl(Genode::Env &env)
 
 
 Seoul::Disk::Disk(Genode::Env &env, Synced_motherboard &mb,
-                  char * backing_store_base, Genode::size_t backing_store_size)
+                  Motherboard &unsync_mb, char * backing_store_base,
+                  Genode::size_t backing_store_size)
 :
 	_env(env),
 	_motherboard(mb),
+	_unsynchronized_motherboard(unsync_mb),
 	_backing_store_base(backing_store_base),
 	_backing_store_size(backing_store_size),
 	_tslab_msg(disk_heap_msg(env)),
@@ -159,7 +161,7 @@ bool Seoul::Disk::receive(MessageDisk &msg)
 	struct disk_session &disk = _diskcon[msg.disknr];
 
 	if (!disk.info.block_size) {
-		Genode::String<16> label("VirtualDisk ", msg.disknr);
+		Genode::String<16> label("disk", msg.disknr);
 		/*
 		 * If we receive a message for this disk the first time, create the
 		 * structure for it.
@@ -188,7 +190,7 @@ bool Seoul::Disk::receive(MessageDisk &msg)
 	switch (msg.type) {
 	case MessageDisk::DISK_GET_PARAMS:
 	{
-		Genode::String<16> label("VirtualDisk ", msg.disknr);
+		Genode::String<16> label("disk", msg.disknr);
 
 		msg.params->flags           = DiskParameter::FLAG_HARDDISK;
 		msg.params->sectors         = disk.info.block_count;
@@ -201,9 +203,10 @@ bool Seoul::Disk::receive(MessageDisk &msg)
 	case MessageDisk::DISK_WRITE:
 		/* don't write on read only medium */
 		if (!disk.info.writeable) {
-			MessageDiskCommit ro(msg.disknr, msg.usertag,
-		                     MessageDisk::DISK_STATUS_DEVICE);
-			_motherboard()->bus_diskcommit.send(ro);
+			/* nevertheless confirm that commit got processed */
+			Genode::warning("write denied to r/o disk", msg.disknr);
+			MessageDiskCommit ro(msg.disknr, msg.usertag, MessageDisk::DISK_OK);
+			_unsynchronized_motherboard.bus_diskcommit.send(ro);
 			return true;
 		}
 
@@ -252,6 +255,9 @@ bool Seoul::Disk::restart(struct disk_session const &disk,
 	bool          const write    = msg->type == MessageDisk::DISK_WRITE;
 
 	Block::Packet_descriptor packet;
+
+	if (!source->ready_to_submit())
+		return false; /* retry later */
 
 	try {
 		Genode::Mutex::Guard guard(_alloc_mutex);
@@ -310,27 +316,29 @@ bool Seoul::Disk::execute(bool const write, struct disk_session const &disk,
 	MessageDisk * const msg_cpy = new (&_tslab_msg) MessageDisk(msg);
 	char * source_addr          = nullptr;
 
-	try {
-		Genode::Mutex::Guard guard(_alloc_mutex);
+	if (source->ready_to_submit()) {
+		try {
+			Genode::Mutex::Guard guard(_alloc_mutex);
 
-		packet = Block::Packet_descriptor(
-			disk.blk_con->alloc_packet(blocks * blk_size),
-			(write) ? Block::Packet_descriptor::WRITE
-			        : Block::Packet_descriptor::READ,
-			sector, blocks);
+			packet = Block::Packet_descriptor(
+				disk.blk_con->alloc_packet(blocks * blk_size),
+				(write) ? Block::Packet_descriptor::WRITE
+				        : Block::Packet_descriptor::READ,
+				sector, blocks);
 
-		source_addr = source->packet_content(packet);
+			source_addr = source->packet_content(packet);
 
-		_lookup_msg.insert(new (&_tslab_avl) Avl_entry(source_addr, msg_cpy));
-	} catch (Block::Session::Tx::Source::Packet_alloc_failed) {
-		/* msg_cpy object will be used/freed below by copy_dma_descriptors */
-	} catch (...) {
-		if (msg_cpy)
-			destroy(&_tslab_msg, msg_cpy);
+			_lookup_msg.insert(new (&_tslab_avl) Avl_entry(source_addr, msg_cpy));
+		} catch (Block::Session::Tx::Source::Packet_alloc_failed) {
+			/* msg_cpy object will be used/freed below by copy_dma_descriptors */
+		} catch (...) {
+			if (msg_cpy)
+				destroy(&_tslab_msg, msg_cpy);
 
-		Logging::printf("could not allocate disk block elements - "
-		                "write=%u blocks=%lu\n", write, blocks);
-		return false;
+			Logging::printf("could not allocate disk block elements - "
+			                "write=%u blocks=%lu\n", write, blocks);
+			return false;
+		}
 	}
 
 	/*

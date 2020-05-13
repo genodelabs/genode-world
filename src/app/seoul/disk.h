@@ -111,6 +111,8 @@ class Seoul::Disk : public StaticReceiver<Seoul::Disk>
 		} _diskcon[MAX_DISKS] { };
 
 		Synced_motherboard &_motherboard;
+		Motherboard        &_unsynchronized_motherboard;
+
 		char        * const _backing_store_base;
 		size_t        const _backing_store_size;
 
@@ -184,8 +186,8 @@ class Seoul::Disk : public StaticReceiver<Seoul::Disk>
 		/**
 		 * Constructor
 		 */
-		Disk(Genode::Env &, Synced_motherboard &, char * backing_store_base,
-		     Genode::size_t backing_store_size);
+		Disk(Genode::Env &, Synced_motherboard &, Motherboard &,
+		     char * backing_store_base, Genode::size_t backing_store_size);
 
 		void handle_disk(unsigned);
 

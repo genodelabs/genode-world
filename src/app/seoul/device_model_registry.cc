@@ -86,11 +86,11 @@ MODEL_INFO(rtl8029, "bdf", "irq", "port")
 
 MODEL_INFO(ide, "port0", "port1", "irq", "bdf", "disk")
 MODEL_INFO(ahci, "mem", "irq", "bdf")
-MODEL_INFO(drive, "sigma0drive", "controller", "port")
+MODEL_INFO(drive, "sigma0drive", "controller", "port", "verbose")
 
 MODEL_INFO(vbios_multiboot, "modaddr", "lowmem")
 
-MODEL_INFO_NO_ARG(vbios_disk)
+MODEL_INFO(vbios_disk, "boot_disknr")
 MODEL_INFO(vbios_keyboard, "host_keyboard")
 MODEL_INFO_NO_ARG(vbios_mem)
 MODEL_INFO_NO_ARG(vbios_time)
