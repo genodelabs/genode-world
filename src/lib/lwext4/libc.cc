@@ -161,13 +161,15 @@ int strncmp(char const *s1, char const *s2, size_t n)
 
 char *strcpy(char *d, char const *s)
 {
-	return Genode::strncpy(d,s, ~0UL);
+	Genode::copy_cstring(d,s, ~0UL);
+	return d;
 }
 
 
 char *strncpy(char *d, char const *s, size_t n)
 {
-	return Genode::strncpy(d, s, n);
+	Genode::copy_cstring(d, s, n);
+	return d;
 }
 
 
