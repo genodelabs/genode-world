@@ -103,7 +103,7 @@ class Lwext4_fs::Directory : public Node
 
 				size_t const len = (size_t)(dentry->name_length + 1) > sizeof(e->name)
 				                 ? sizeof(e->name) : dentry->name_length + 1;
-				strncpy(e->name.buf, reinterpret_cast<char const*>(dentry->name), len);
+				copy_cstring(e->name.buf, reinterpret_cast<char const*>(dentry->name), len);
 
 				e->inode = dentry->inode;
 				break;
