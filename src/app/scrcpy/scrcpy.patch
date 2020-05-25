@@ -1,0 +1,109 @@
+--- a/app/src/server.c
++++ b/app/src/server.c
+@@ -278,7 +278,7 @@
+     char max_size_string[6];
+     char bit_rate_string[11];
+     char max_fps_string[6];
+-    char lock_video_orientation_string[3];
++    char lock_video_orientation_string[5];
+     char display_id_string[6];
+     sprintf(max_size_string, "%"PRIu16, params->max_size);
+     sprintf(bit_rate_string, "%"PRIu32, params->bit_rate);
+--- a/app/src/cli.c
++++ b/app/src/cli.c
+@@ -12,6 +12,10 @@
+ 
+ #include <arpa/inet.h>
+ 
++#ifndef inet_network
++extern in_addr_t inet_network(char const *);
++#endif
++
+ void
+ scrcpy_print_usage(const char *arg0) {
+ #ifdef __APPLE__
+--- a/app/src/screen.c
++++ b/app/src/screen.c
+@@ -13,7 +13,7 @@
+ #include "util/lock.h"
+ #include "util/log.h"
+ 
+-#define DISPLAY_MARGINS 96
++#define DISPLAY_MARGINS 0
+ 
+ static inline struct size
+ get_rotated_size(struct size size, int rotation) {
+@@ -109,8 +109,10 @@
+         w = current_size.width;
+         h = current_size.height;
+     } else {
+-        w = MIN(current_size.width, display_size.width);
+-        h = MIN(current_size.height, display_size.height);
++//        w = MIN(current_size.width, display_size.width);
++//        h = MIN(current_size.height, display_size.height);
++        w = display_size.width;
++        h = display_size.height;
+     }
+ 
+     if (h == w * content_size.height / content_size.width
+@@ -246,7 +246,7 @@ screen_init_rendering(struct screen *screen, const char *window_title,
+     }
+ 
+     screen->renderer = SDL_CreateRenderer(screen->window, -1,
+-                                          SDL_RENDERER_ACCELERATED);
++                                          SDL_RENDERER_SOFTWARE);
+     if (!screen->renderer) {
+         LOGC("Could not create renderer: %s", SDL_GetError());
+         screen_destroy(screen);
+--- a/app/src/decoder.c
++++ b/app/src/decoder.c
+@@ -60,7 +60,7 @@ decoder_close(struct decoder *decoder) {
+ }
+ 
+ bool
+-decoder_push(struct decoder *decoder, const AVPacket *packet) {
++decoder_push(struct decoder *decoder, AVPacket *packet) {
+ // the new decoding/encoding API has been introduced by:
+ // <http://git.videolan.org/?p=ffmpeg.git;a=commitdiff;h=7fc329e2dd6226dfecaa4a1d7adf353bf2773726>
+ #ifdef SCRCPY_LAVF_HAS_NEW_ENCODING_DECODING_API
+--- a/app/src/decoder.h
++++ b/app/src/decoder.h
+@@ -23,7 +23,7 @@ void
+ decoder_close(struct decoder *decoder);
+ 
+ bool
+-decoder_push(struct decoder *decoder, const AVPacket *packet);
++decoder_push(struct decoder *decoder, AVPacket *packet);
+ 
+ void
+ decoder_interrupt(struct decoder *decoder);
+--- a/app/src/recorder.c
++++ b/app/src/recorder.c
+@@ -28,7 +28,7 @@ find_muxer(const char *name) {
+ }
+ 
+ static struct record_packet *
+-record_packet_new(const AVPacket *packet) {
++record_packet_new(AVPacket *packet) {
+     struct record_packet *rec = SDL_malloc(sizeof(*rec));
+     if (!rec) {
+         return NULL;
+@@ -355,7 +355,7 @@ recorder_join(struct recorder *recorder) {
+ }
+ 
+ bool
+-recorder_push(struct recorder *recorder, const AVPacket *packet) {
++recorder_push(struct recorder *recorder, AVPacket *packet) {
+     mutex_lock(recorder->mutex);
+     assert(!recorder->stopped);
+ 
+--- a/app/src/recorder.h
++++ b/app/src/recorder.h
+@@ -67,6 +67,6 @@ void
+ recorder_join(struct recorder *recorder);
+ 
+ bool
+-recorder_push(struct recorder *recorder, const AVPacket *packet);
++recorder_push(struct recorder *recorder, AVPacket *packet);
+ 
+ #endif

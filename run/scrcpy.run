@@ -1,0 +1,566 @@
+# To run this script, you need Scrcpy from:
+#
+# https://github.com/alex-ab/scrcpy.git - branch: direct
+#
+# build hints:
+#  snap install androidsdk
+#  androidsdk --list
+#  export ANDROID_HOME=/home/<user>/snap/androidsdk/24/AndroidSDK
+#
+#  meson build --buildtype release --strip -Db_lto=true
+#  ninja -C build
+#
+# adb devices -l
+# adb tcpip 5555
+# adb connect <IP4_ADDR>:5555
+# adb devices -l
+#  List of devices attached
+#  <IP4_ADDR>:5555     device product:gta3xlwifieea model:SM_T510 device:gta3xlwifi transport_id:6
+#
+# adb push x/server/scrcpy-server /data/local/tmp/scrcpy-server.jar
+#
+# - 8Mbit, encode H264 with android resolution
+# adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 1.13 0 8000000 0 -1 true - true true 0 <IP4_ADDR> 27184
+#
+# - 8Mbit, encode H264 on Android with 1280
+# adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 1.13 1280 8000000 0 -1 true - true true 0 <IP4_ADDR> 27184
+#
+# - 4Mbit, crop screen to reduce stretch load on Genode side
+# adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 1.13 0 4000000 0 -1 true 1080:1920:0:0 true true 0 <IP4_ADDR> 27184
+#
+# Now, you can try to boot Genode with this script to connect to Android Scrcpy server
+# or on Linux local testing, use:
+# ./run build --server-local <IP4_ADDR> --server-port 27184
+#
+
+set use_lxip 0
+set use_nic_router 1
+set ld_nic "yes"
+if {[have_spec linux]} { set ld_nic "no" }
+
+set use_interactive_pkg 1
+if { [have_spec x86] && ![have_include "power_on/qemu"] && ![have_spec linux] } {
+	# use intel_fb_drv on x86 to get max resolution
+	set use_interactive_pkg 0
+}
+
+# repos/libports/run/fetchurl.inc:
+#
+# This run script works on Linux with NAT setup from tap0 to uplink
+# device uplink0 like follows.
+#
+# iptables -t nat -A POSTROUTING -o uplink0 -j MASQUERADE
+# iptables -A FORWARD -i tap0    -o uplink0 -j ACCEPT
+# iptables -A FORWARD -i uplink0 -o tap0    -m state --state RELATED,ESTABLISHED -j ACCEPT
+# echo 1 > /proc/sys/net/ipv4/ip_forward
+#
+
+set use_ping 0
+set use_top  0
+set use_top_view 0
+set use_trace [expr $use_top || $use_top_view]
+
+set use_nic  1
+set use_wifi [expr ![have_spec linux] && !$use_nic]
+
+set lx_ip_addr "10.0.2.55"
+set lx_gw_addr "10.0.2.1"
+
+set dst_ip "10.0.0.8"
+set dst_port "27184"
+
+proc socket_fs_plugin {} {
+	global use_lxip
+	if { $use_lxip } { return lxip }
+	return lwip
+}
+
+proc binary_nic_drv { } {
+	if {[have_spec linux]}     { return "linux_nic_drv" }
+	if {[have_spec x86]}       { return "ipxe_nic_drv" }
+	if {[have_spec imx8q_evk]} { return "fec_nic_drv" }
+	return "unknown_nic_drv"
+}
+
+proc binary_nic_config { } {
+	if {[have_spec imx8q_evk]} {
+		return {<card type="fsl,imx6sx-fec" mii="rgmii" irq="152" mmio="0x30be0000"/>}
+	}
+	return ""
+}
+
+#
+# Configure wireless lan
+#
+
+proc wifi_ssid { } {
+	if {[info exists ::env(GENODE_WIFI_SSID)]} {
+		return $::env(GENODE_WIFI_SSID)
+	} else {
+		return "unknown"
+	}
+}
+
+proc wifi_psk { } {
+	if {[info exists ::env(GENODE_WIFI_PSK)]} {
+		return $::env(GENODE_WIFI_PSK)
+	} else {
+		return "unknown"
+	}
+}
+
+#
+# widi_drv config generator (supporting a network list)
+#
+# You may script your tests with this function in the dynamic_rom config below.
+# The syntax for the networks parameter is
+#
+#   { ssid protection passphrase explicit_scan }
+#
+# Example dynamic_rom config:
+#
+#   {<inline description="auto-connect both networks">
+#   } [wifi_config 30 5 no [list "net1 WPA2 net1_psk no" "net2 WPA2 net2_psk no"]] {
+#   </inline>
+#   <inline description="aquto-connect both, but net2 explicitly">
+#   } [wifi_config 30 5 no [list "net1 WPA2 net1_psk no" "net2 WPA2 net2_psk yes"]] {
+#   </inline>}
+
+set wifi_verbose       false
+set wifi_verbose_state false
+
+proc wifi_config { connected_scan_interval scan_interval rfkill networks } {
+	global wifi_verbose
+	global wifi_verbose_state
+
+	set    config "<wifi_config"
+	append config " verbose=\"$wifi_verbose\""
+	append config " verbose_state=\"$wifi_verbose_state\""
+	append config " connected_scan_interval=\"$connected_scan_interval\""
+	append config " scan_interval=\"$scan_interval\""
+	append config " rfkill=\"$rfkill\""
+	append config ">\n"
+	foreach n $networks {
+		append config "  <network"
+		append config " ssid=\"[lindex $n 0]\""
+		append config " protection=\"[lindex $n 1]\""
+		append config " passphrase=\"[lindex $n 2]\""
+		append config " explicit_scan=\"[lindex $n 3]\""
+		append config "/>\n"
+	}
+	append config "</wifi_config>\n"
+
+	return $config
+}
+
+create_boot_directory
+
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_interactive_pkg] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/nitpicker \
+                  [depot_user]/src/nit_focus \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs_[socket_fs_plugin] \
+                  [depot_user]/src/zlib \
+                  [depot_user]/src/report_rom \
+                  [depot_user]/src/nic_router \
+                  [depot_user]/src/libpng \
+                  [depot_user]/pkg/fonts_fs
+
+set debug_libc 1
+#                  [depot_user]/src/libc
+
+set build_components { app/scrcpy }
+
+if { !$use_interactive_pkg } {
+	append build_components drivers/framebuffer
+	source ${genode_dir}/repos/base/run/platform_drv.inc
+	append_platform_drv_build_components
+}
+
+lappend_if $use_nic      build_components drivers/nic
+lappend_if $use_wifi     build_components drivers/wifi
+lappend_if $use_wifi     build_components drivers/rtc
+lappend_if $use_ping     build_components app/ping
+lappend_if $use_top      build_components app/top
+append_if  $use_top_view build_components { app/menu_view app/top_view
+                                            app/graph }
+
+
+build $build_components
+
+set config {
+<config verbose="no" prio_levels="2">
+	<affinity-space width="4"/>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>}
+
+append_if $use_trace config {
+		<service name="TRACE"/>}
+
+append config {
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<resource name="CPU" quantum="5"/>
+		<provides>
+			<service name="Timer"/>
+		</provides>
+	</start>}
+
+append_if $use_interactive_pkg config {
+	<start name="drivers" caps="1500">
+		<resource name="RAM" quantum="128M" constrain_phys="yes"/>
+		<resource name="CPU" quantum="40"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides>
+			<service name="Input"/> <service name="Framebuffer"/>
+			<service name="Platform"/>
+		</provides>
+	</start>}
+
+if { !$use_interactive_pkg } {
+	append_platform_drv_config
+
+	append_if [have_spec x86] config {
+		<start name="intel_fb_drv" caps="1000">
+			<resource name="RAM" quantum="60M"/>
+			<provides><service name="Framebuffer"/></provides>
+			<route>
+				<any-service> <parent/> <any-child /> </any-service>
+			</route>
+		</start>}
+
+	append_if [have_spec x86] config {
+		<start name="ps2_drv">
+			<resource name="RAM" quantum="2M"/>
+			<provides><service name="Input"/></provides>
+			<config/>
+			<route>
+				<any-service> <parent/> <any-child /> </any-service>
+			</route>
+		</start>}
+}
+
+append_if $use_nic config {
+	<start name="nic_drv" ld="} $ld_nic {" caps="130">
+		<binary name="} [binary_nic_drv] {"/>
+		<resource name="RAM" quantum="20M"/>
+		<resource name="CPU" quantum="20"/>
+		<provides> <service name="Nic"/> </provides>
+		<config>} [binary_nic_config] {</config>
+	</start>}
+
+append_if $use_nic_router config {
+	<start name="nic_router" caps="120">
+		<resource name="RAM" quantum="5M"/>
+		<resource name="CPU" quantum="10"/>
+		<provides><service name="Nic"/></provides>
+
+		<config verbose_domain_state="yes" verbose="no">
+<!--
+			<report bytes="yes" stats="yes" quota="yes" config="yes"
+				    config_triggers="no" interval_sec="10"/>
+-->
+			<policy label_prefix="scrcpy -> " domain="client"/>
+			<policy label="ping -> "           domain="client"/>
+			<uplink                            domain="uplink"/>
+
+			<domain name="uplink"}
+append_if [expr $use_nic_router && [have_spec linux]] config {
+				interface="} $lx_ip_addr {/24" gateway="} $lx_gw_addr {"}
+
+append_if $use_nic_router config {>
+				<nat domain="client" tcp-ports="1000" udp-ports="1000" icmp-ids="1000"/>
+			</domain>
+
+			<domain name="client" interface="10.0.3.1/24" gateway="10.0.3.1">
+				<dhcp-server ip_first="10.0.3.2"
+				             ip_last="10.0.3.2"
+				             ip_lease_time_sec="600"/>
+				<tcp dst="0.0.0.0/0">
+					<permit-any domain="uplink"/>
+				</tcp>
+				<udp dst="0.0.0.0/0">
+					<permit-any domain="uplink"/>
+				</udp>
+				<icmp dst="0.0.0.0/0" domain="uplink"/>
+			</domain>
+
+		</config>
+
+		<route>}
+
+append_if [expr $use_nic_router && $use_nic] config {
+			<service name="Nic"> <child name="nic_drv"/> </service>}
+
+append_if [expr $use_nic_router && $use_wifi] config {
+			<service name="Nic"> <child name="wifi_drv"/> </service>}
+
+append_if $use_nic_router config {
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>}
+
+append config {
+	<start name="report_rom">
+		<resource name="RAM" quantum="1M"/>
+		<resource name="CPU" quantum="1"/>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
+		<config verbose="no">
+			<policy label="top_view -> hover" report="menu_view -> hover"/>
+			<policy label="graph -> graph" report="top_view -> graph"/>
+			<policy label="menu_view -> dialog" report="top_view -> dialog"/>
+		</config>
+	</start>
+
+	<start name="nitpicker" caps="110">
+		<resource name="RAM" quantum="1216K"/>
+		<resource name="CPU" quantum="20"/>
+		<provides><service name="Gui"/></provides>
+		<config>
+			<report focus="yes" />
+			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
+			<domain name="panel"   layer="2" content="client" label="no" focus="none" />
+			<domain name="client"  layer="3" content="client" label="no" focus="click"/>
+			<policy label_prefix="pointer"    domain="pointer"/>
+			<default-policy domain="client"/>
+		</config>
+		<route>
+			<service name="ROM" label="focus"> <child name="report_rom"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="pointer">
+		<resource name="RAM" quantum="1M"/>
+		<resource name="CPU" quantum="1"/>
+	</start>}
+
+append_if $use_ping config {
+	<start name="ping">
+		<binary name="ping"/>
+		<resource name="RAM" quantum="8M"/>
+		<config dst_ip="} $dst_ip {"
+		        period_sec="3"
+		        verbose="no"
+		        count="10"/>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>}
+
+append_if $use_top config {
+	<start name="top">
+		<resource name="RAM" quantum="8M"/>
+		<resource name="CPU" quantum="1"/>
+		<config period_ms="20000"/>
+	</start>}
+
+append_if $use_top_view config {
+	<start name="fonts_fs" caps="300">
+		<resource name="RAM" quantum="8M"/>
+		<binary name="vfs"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="fonts_fs.config"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<provides> <service name="File_system"/> </provides>
+	</start>
+
+	<start name="menu_view" caps="200" priority="-1">
+		<resource name="RAM" quantum="72M"/>
+		<config xpos="1450" ypos="0">
+			<report hover="yes"/>
+			<libc stderr="/dev/log"/>
+			<vfs>
+				<tar name="menu_view_styles.tar" />
+				<dir name="dev"> <log/> </dir>
+				<dir name="fonts"> <fs label="fonts"/> </dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="ROM" label="dialog"> <child name="report_rom" /> </service>
+			<service name="Report" label="hover"> <child name="report_rom"/> </service>
+			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="top_view" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<config view_ms="1000" trace_ms="1000" report="yes" log="no"
+		        store="no"
+		        view="list" list="threads">
+			<cpu xpos="0" ypos="0" show="true" threads="10"/>
+			<cpu xpos="1" ypos="0" show="true" threads="10"/>
+			<cpu xpos="2" ypos="0" show="true" threads="10"/>
+			<cpu xpos="3" ypos="0" show="true" threads="10"/>
+		</config>
+		<route>
+			<service name="ROM" label="hover"> <child name="report_rom" /> </service>
+			<service name="Report" label="dialog"> <child name="report_rom" /> </service>
+			<service name="Report" label="graph"> <child name="report_rom" /> </service>
+			<service name="File_system" label="store"> <child name="ram_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="graph" priority="-1">
+		<resource name="RAM" quantum="3M"/>
+		<config store="no" verbose="no" freq_khz="2000000">
+			<vfs> <dir name="fonts"> <fs label="fonts"/> </dir> </vfs>
+		</config>
+		<route>
+			<service name="ROM" label="graph"> <child name="report_rom" /> </service>
+			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+			<service name="File_system" label="load">  <child name="ram_fs"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>}
+
+append_if $use_wifi config {
+	<start name="rtc_drv">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="wifi_drv" caps="200">
+		<resource name="RAM" quantum="24M"/>
+		<provides> <service name="Nic"/> </provides>
+		<config ld_verbose="no">
+			<libc stdout="/dev/null" stderr="/dev/null" rtc="/dev/rtc"/>
+			<vfs>
+				<dir name="dev"> <log/> <null/> <rtc/>
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+				</dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="Rtc"> <any-child/> </service>
+			<service name="Report" label="accesspoints"> <child name="report_rom"/> </service>
+			<service name="Report" label="state"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>}
+
+append config {
+<!-- adb push build/server/scrcpy-server /data/local/tmp/scrcpy-server.jar -->
+<!-- adb shell CLASSPATH=/data/local/tmp/scrcpy-server.jar app_process / com.genymobile.scrcpy.Server 1.13 1440 4000000 0 -1 true - true true 0 192.168.2.105 27184 -->
+	<start name="scrcpy" caps="340" priority="-1">
+		<resource name="RAM" quantum="128M"/>
+		<affinity xpos="0" width="4" />
+		<config ld_verbose="yes">
+			<arg value="scrcpy"/>
+<!--			<arg value="MMrender-expired-frames"/> -->
+			<arg value="--server-remote"/>
+			<arg value="} $dst_ip {"/>
+			<arg value="--server-port"/>
+			<arg value="} $dst_port {"/>
+
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket">
+				<pthread placement="manual" verbose="yes">
+					<thread id="0" cpu="1"/> <!-- pthread.0 - sdl main -->
+					<thread id="1" cpu="0"/> <!-- pthread.1 - stream -->
+					<thread id="2" cpu="0"/> <!-- pthread.2 - controller -->
+					<thread id="3" cpu="0"/> <!-- pthread.3 - receiver -->
+					<thread id="4" cpu="2"/> <!-- pthread.4 - libav -->
+					<thread id="5" cpu="3"/> <!-- pthread.5 - libav -->
+					<thread id="6" cpu="2"/> <!-- pthread.6 - libav auto -->
+					<thread id="7" cpu="3"/> <!-- pthread.7 - libav auto -->
+					<thread id="8" cpu="2"/> <!-- pthread.8 - libav auto -->
+					<thread id="9" cpu="3"/> <!-- pthread.9 - fps on ctrl+i -->
+				</pthread>
+			</libc>
+			<vfs>
+				<dir name="dev">
+					<log/> <null/>
+					<inline name="rtc">2020-06-18 15:25</inline>
+					<inline name="random">01234567890123456789</inline>
+				</dir>
+				<dir name="socket"> <} [socket_fs_plugin] { dhcp="yes"/> </dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+# write wifi config file
+set cfg_fd [open "bin/wifi_config" w]
+puts $cfg_fd [wifi_config 30 5 no [list "[wifi_ssid] WPA2 [wifi_psk] yes"]]
+close $cfg_fd
+
+set firmware_modules {
+	iwlwifi-6000-4.ucode
+	iwlwifi-6000g2a-6.ucode
+	iwlwifi-6000g2b-6.ucode
+	iwlwifi-7260-17.ucode
+	iwlwifi-7265-17.ucode
+	iwlwifi-7265D-29.ucode
+	iwlwifi-8000C-36.ucode
+	iwlwifi-8265-36.ucode
+	regulatory.db}
+
+set boot_modules {
+	scrcpy sdl2.lib.so
+	avutil.lib.so avcodec.lib.so avformat.lib.so
+}
+
+if { !$use_interactive_pkg } {
+	append_platform_drv_boot_modules
+	append_if [have_spec x86] boot_modules { intel_fb_drv }
+}
+
+lappend_if $use_nic  boot_modules [binary_nic_drv]
+append_if  $use_wifi boot_modules { wifi_drv
+                                    libcrypto.lib.so
+                                    libssl.lib.so
+                                    wifi.lib.so
+                                    wpa_driver_nl80211.lib.so
+                                    wpa_supplicant.lib.so }
+append_if $use_wifi boot_modules $firmware_modules
+lappend_if $use_wifi     boot_modules rtc_drv
+lappend_if $use_wifi     boot_modules wifi_config
+lappend_if $use_ping     boot_modules ping
+lappend_if $use_top      boot_modules top
+append_if  $use_top_view boot_modules { menu_view menu_view_styles.tar top_view graph }
+
+lappend_if $debug_libc boot_modules libc.lib.so
+lappend_if $debug_libc boot_modules libm.lib.so
+
+build_boot_image $boot_modules
+
+append qemu_args " -net nic,model=e1000 -net user "
+
+run_genode_until forever

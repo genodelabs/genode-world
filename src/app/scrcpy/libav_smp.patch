@@ -1,0 +1,23 @@
+--- a/app/src/decoder.c
++++ b/app/src/decoder.c
+@@ -44,12 +44,19 @@ decoder_open(struct decoder *decoder, const AVCodec *codec) {
+         return false;
+     }
+ 
+-    if (avcodec_open2(decoder->codec_ctx, codec, NULL) < 0) {
++    AVDictionary *opts = NULL;
++//    av_dict_set(&opts, "threads", "2", 0);
++    av_dict_set(&opts, "threads", "auto", 0);
++
++    if (avcodec_open2(decoder->codec_ctx, codec, &opts) < 0) {
+         LOGE("Could not open codec");
+         avcodec_free_context(&decoder->codec_ctx);
+         return false;
+     }
+ 
++    if (opts)
++        av_dict_free(&opts);
++
+     return true;
+ }
+ 

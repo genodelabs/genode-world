@@ -1,0 +1,10 @@
+LICENSE   := GPL2
+VERSION   := git
+DOWNLOADS := scrcpy.git
+
+URL(scrcpy) := https://github.com/alex-ab/scrcpy.git
+REV(scrcpy) := d7258fc4fbdcbf1cacb1bb04bbaa95a7bd8d8f45
+DIR(scrcpy) := src/app/scrcpy
+
+PATCHES   := src/app/scrcpy/scrcpy.patch src/app/scrcpy/libav_smp.patch
+PATCH_OPT := -p1 -d src/app/scrcpy
