@@ -18,7 +18,7 @@ lib/import:
 lib/mk:
 	mkdir -p $@
 	cp $(addprefix $(REP_DIR)/$@/,av* swscale.mk) $@
-	for spec in x86 x86_32 x86_64 arm; do \
+	for spec in x86 x86_32 x86_64 arm arm_64; do \
 	  mkdir -p $@/spec/$$spec; \
 	  cp $(addprefix $(REP_DIR)/$@/spec/$$spec/,av*) $@/spec/$$spec/; done
 
