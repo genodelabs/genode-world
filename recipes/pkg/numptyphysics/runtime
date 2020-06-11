@@ -3,7 +3,7 @@
 	<requires>
 		<audio_out/>
 		<file_system/>
-		<nitpicker/>
+		<gui/>
 		<timer/>
 		<rtc/>
 	</requires>

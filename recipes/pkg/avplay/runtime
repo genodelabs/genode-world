@@ -2,7 +2,7 @@
 
 	<requires>
 		<file_system label="input"/>
-		<nitpicker/>
+		<gui/>
 		<audio_out/>
 		<timer/>
 	</requires>

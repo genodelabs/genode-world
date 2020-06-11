@@ -2,7 +2,7 @@
 
 	<requires>
 		<nic/>
-		<nitpicker/>
+		<gui/>
 		<file_system label="recall"/>
 		<timer/>
 		<rtc/>

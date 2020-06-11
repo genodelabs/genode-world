@@ -2,7 +2,7 @@
 
 	<requires>
 		<file_system/>
-		<nitpicker/>
+		<gui/>
 		<rtc/>
 		<timer/>
 	</requires>

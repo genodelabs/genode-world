@@ -2,7 +2,7 @@
 
 	<requires>
 		<nic/>
-		<nitpicker/>
+		<gui/>
 		<timer/>
 		<file_system label="ssh"    writeable="no"/>
 		<file_system label="fonts"  writeable="no"/>

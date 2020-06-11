@@ -1,6 +1,6 @@
 <runtime ram="80M" caps="512" binary="chocolate-doom">
 
-	<requires> <audio_out/> <nitpicker/> <nic/> <timer/> <rtc/> </requires>
+	<requires> <audio_out/> <gui/> <nic/> <timer/> <rtc/> </requires>
 
 	<content>
 		<rom label="ld.lib.so"/>
