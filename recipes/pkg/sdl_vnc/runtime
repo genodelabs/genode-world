@@ -16,7 +16,7 @@
 			<service name="PD"/>
 			<service name="ROM"/>
 			<service name="Timer"/>
-			<service name="Nitpicker"/>
+			<service name="Gui"/>
 			<service name="Nic"/>
 			<service name="File_system"/>
 			<service name="Rtc"/>

@@ -67,7 +67,7 @@ append config {
 			<mediafile name="mediafile"/>
 		</config>
 		<route>
-			<service name="Nitpicker"> <child name="wm"/> </service>
+			<service name="Gui"> <child name="wm"/> </service>
 			<service name="Report" label="shape">
 				<child name="pointer" label="wm -> qt_avplay -> shape"/>
 			</service>

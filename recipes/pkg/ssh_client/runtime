@@ -37,7 +37,7 @@
 			<service name="Report"/>
 			<service name="File_system"/>
 			<service name="Nic"/>
-			<service name="Nitpicker"/>
+			<service name="Gui"/>
 		</parent-provides>
 
 		<default-route> <any-service> <parent/> <any-child/> </any-service> </default-route>

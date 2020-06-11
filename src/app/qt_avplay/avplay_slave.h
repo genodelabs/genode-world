@@ -120,7 +120,7 @@ class Avplay_slave : public QObject
 
 				Genode::Service &_matching_service(Genode::Service::Name const &name)
 				{
-					if (name == "Nitpicker")
+					if (name == "Gui")
 						return _nitpicker_service;
 
 					throw Genode::Service_denied();

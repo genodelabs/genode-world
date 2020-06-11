@@ -85,7 +85,7 @@ append config {
 	</start>
 	<start name="nitpicker">
 		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Nitpicker"/></provides>
+		<provides> <service name="Gui"/> </provides>
 		<config>
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="default" layer="2" content="client" label="no" focus="click" hover="always" />

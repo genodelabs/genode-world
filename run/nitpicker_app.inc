@@ -41,7 +41,7 @@ install_config {
 	</parent-provides>
 
 	<default-route>
-		<service name="Nitpicker">
+		<service name="Gui">
 			<child name="wm"/> </service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
@@ -69,7 +69,7 @@ install_config {
 
 	<start name="nitpicker">
 		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Nitpicker"/></provides>
+		<provides><service name="Gui"/></provides>
 		<config focus="rom">
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="default" layer="2" content="client" label="no" hover="always"/>
@@ -82,7 +82,7 @@ install_config {
 	<start name="pointer">
 		<resource name="RAM" quantum="1M"/>
 		<route>
-			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<service name="Gui"> <child name="nitpicker"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -90,10 +90,10 @@ install_config {
 	<start name="wm" caps="1000">
 		<resource name="RAM" quantum="32M"/>
 		<binary name="init"/>
-		<provides> <service name="Nitpicker"/> </provides>
+		<provides> <service name="Gui"/> </provides>
 		<route>
 			<service name="ROM" label="config"> <parent label="wm.config"/> </service>
-			<service name="Nitpicker"> <child name="nitpicker"/> </service>
+			<service name="Gui"> <child name="nitpicker"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>

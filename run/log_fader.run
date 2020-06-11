@@ -57,7 +57,7 @@ append config {
 			<child name="log_fader_config"/> </service>
 		<service name="ROM" label_suffix="nitpicker.config">
 			<child name="nitpicker_config"/> </service>
-		<service name="Nitpicker"> <child name="nitpicker" /> </service>
+		<service name="Gui"> <child name="nitpicker" /> </service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="128"/>
@@ -138,7 +138,7 @@ append config {
 
 	<start name="nitpicker">
 		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Nitpicker"/></provides>
+		<provides><service name="Gui"/></provides>
 		<route>
 			<service name="ROM" label="config"> <child name="nitpicker_config"/> </service>
 			<service name="Framebuffer"> <child name="fb_drv" /> </service>
@@ -165,7 +165,7 @@ append config {
 		</config>
 		<route>
 			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
-			<service name="Nitpicker"> <child name="nitpicker"/>  </service>
+			<service name="Gui"> <child name="nitpicker"/>  </service>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
@@ -204,11 +204,11 @@ append config {
 	<start name="log_fader">
 		<binary name="nit_fader"/>
 		<resource name="RAM" quantum="5M"/>
-		<provides> <service name="Nitpicker"/> </provides>
+		<provides> <service name="Gui"/> </provides>
 		<route>
 			<service name="ROM" label="config">
 				<child name="log_fader_config" /> </service>
-			<service name="Nitpicker"> <child name="nitpicker" /> </service>
+			<service name="Gui"> <child name="nitpicker" /> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -221,7 +221,7 @@ append config {
 		</provides>
 		<config/>
 		<route>
-			<service name="Nitpicker"> <child name="log_fader" /> </service>
+			<service name="Gui"> <child name="log_fader" /> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
