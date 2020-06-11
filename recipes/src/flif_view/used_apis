@@ -8,7 +8,7 @@ libc
 libflif
 libpng
 nitpicker_gfx
-nitpicker_session
+gui_session
 stdcxx
 timer_session
 vfs

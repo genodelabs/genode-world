@@ -19,7 +19,7 @@
 #include <base/heap.h>
 #include <base/attached_ram_dataspace.h>
 #include <base/attached_rom_dataspace.h>
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 #include <util/misc_math.h>
 #include <nitpicker_gfx/texture_painter.h>
 #include <timer_session/connection.h>

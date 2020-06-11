@@ -2,5 +2,5 @@ base
 os
 framebuffer_session
 input_session
-nitpicker_session
+gui_session
 terminal_session

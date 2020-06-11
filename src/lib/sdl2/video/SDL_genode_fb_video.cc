@@ -33,7 +33,7 @@
 #include <base/attached_ram_dataspace.h>
 #include <base/env.h>
 #include <base/log.h>
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 
 /* local includes */
 #include <SDL_genode_internal.h>

@@ -4,6 +4,6 @@ gems
 input_session
 libc
 nitpicker_gfx
-nitpicker_session
+gui_session
 os
 vfs

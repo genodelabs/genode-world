@@ -39,7 +39,7 @@
 #include <os/pixel_rgb565.h>
 #include <base/attached_dataspace.h>
 #include <timer_session/connection.h>
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 #include <libc/component.h>
 #include <complex> // STL
 

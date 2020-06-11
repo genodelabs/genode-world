@@ -32,7 +32,7 @@
 /* Genode includes */
 #include <base/log.h>
 #include <base/env.h>
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 
 /* local includes */
 #include <SDL_genode_internal.h>

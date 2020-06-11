@@ -12,7 +12,7 @@
  */
 
 /* Genode includes */
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 #include <framebuffer_session/connection.h>
 #include <base/component.h>
 #include <base/attached_rom_dataspace.h>

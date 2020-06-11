@@ -30,7 +30,7 @@
  */
 
 /* Genode includes */
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 #include <base/log.h>
 #include <input_session/connection.h>
 #include <input/event.h>

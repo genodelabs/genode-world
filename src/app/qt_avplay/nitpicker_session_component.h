@@ -15,7 +15,7 @@
 #define _NITPICKER_SESSION_COMPONENT_H_
 
 /* Genode includes */
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 
 /* Qt includes */
 #include <qnitpickerplatformwindow.h>

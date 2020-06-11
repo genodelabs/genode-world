@@ -6,5 +6,5 @@ zlib
 audio_out_session
 framebuffer_session
 input_session
-nitpicker_session
+gui_session
 timer_session

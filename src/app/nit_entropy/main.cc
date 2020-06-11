@@ -13,7 +13,7 @@
 
 /* Genode includes */
 #include <terminal_session/connection.h>
-#include <nitpicker_session/connection.h>
+#include <gui_session/connection.h>
 #include <framebuffer_session/connection.h>
 #include <base/attached_dataspace.h>
 #include <base/heap.h>
