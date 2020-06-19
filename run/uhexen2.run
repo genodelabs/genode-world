@@ -56,4 +56,4 @@ append boot_modules {
 	nic_loopback
 }
 
-source ${genode_dir}/repos/world/run/nitpicker_app.inc
+source ${genode_dir}/repos/world/run/gui_app.inc

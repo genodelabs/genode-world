@@ -25,4 +25,4 @@ set boot_modules {
 	zlib.lib.so
 }
 
-source ${genode_dir}/repos/world/run/nitpicker_app.inc
+source ${genode_dir}/repos/world/run/gui_app.inc

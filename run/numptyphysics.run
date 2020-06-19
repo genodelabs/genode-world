@@ -30,4 +30,4 @@ set boot_modules {
 	numptyphysics_data.tar
 }
 
-source ${genode_dir}/repos/world/run/nitpicker_app.inc
+source ${genode_dir}/repos/world/run/gui_app.inc

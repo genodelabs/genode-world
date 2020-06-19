@@ -14,4 +14,4 @@ set boot_modules {
 	libc.lib.so vfs.lib.so libm.lib.so sdl.lib.so
 }
 
-source ${genode_dir}/repos/world/run/nitpicker_app.inc
+source ${genode_dir}/repos/world/run/gui_app.inc
