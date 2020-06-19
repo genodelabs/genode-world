@@ -1,4 +1,4 @@
-<runtime ram="4M" caps="128" binary="nit_entropy">
+<runtime ram="4M" caps="128" binary="entropy_view">
 
 	<requires>
 		<gui/>
@@ -7,7 +7,7 @@
 
 	<content>
 		<rom label="ld.lib.so"/>
-		<rom label="nit_entropy"/>
+		<rom label="entropy_view"/>
 	</content>
 
 	<config/>

@@ -65,7 +65,7 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 	</start>
 
-	<start name="nit_entropy">
+	<start name="entropy_view">
 		<resource name="RAM" quantum="4M"/>
 		<route>
 			<service name="Gui"> <child name="nitpicker"/> </service>
@@ -84,7 +84,7 @@ append config {
 </config>}
 
 build {
-	app/nit_entropy
+	app/entropy_view
 	server/jitter_sponge
 }
 
@@ -92,7 +92,7 @@ install_config $config
 
 build_boot_image {
 	jitter_sponge
-	nit_entropy
+	entropy_view
 }
 
 run_genode_until forever

@@ -21,7 +21,7 @@
 #include <base/component.h>
 
 
-namespace Nit_entropy {
+namespace Entropy_view {
 	using namespace Genode;
 	typedef Surface_base::Point Point;
 	typedef Surface_base::Area  Area;
@@ -31,7 +31,7 @@ namespace Nit_entropy {
 };
 
 
-struct Nit_entropy::Main
+struct Entropy_view::Main
 {
 	enum { WIDTH = 256, HEIGHT = 256 };
 
@@ -94,4 +94,4 @@ struct Nit_entropy::Main
 
 
 void Component::construct(Genode::Env &env) {
-	static Nit_entropy::Main inst(env); }
+	static Entropy_view::Main inst(env); }
