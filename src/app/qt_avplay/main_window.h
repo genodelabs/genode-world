@@ -17,7 +17,7 @@
 /* Qt includes */
 #include <QVBoxLayout>
 #include <QWidget>
-#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
+#include <qgenodeviewwidget/qgenodeviewwidget.h>
 
 /* Qoost includes */
 #include <qoost/compound_widget.h>
@@ -32,7 +32,7 @@
 /* local includes */
 #include "avplay_slave.h"
 #include "control_bar.h"
-#include "nitpicker_session_component.h"
+#include "gui_session_component.h"
 
 
 class Main_window : public Compound_widget<QWidget, QVBoxLayout>
@@ -68,25 +68,23 @@ class Main_window : public Compound_widget<QWidget, QVBoxLayout>
 			Mediafile_name(Genode::Env &env) : name(_name_from_config(env)) { }
 		};
 
-		Genode::Env                   &_env;
+		Genode::Env                &_env;
 
-		Genode::size_t const           _ep_stack_size { 16 * 1024 };
-		Genode::Entrypoint             _ep { _env, _ep_stack_size,
-		                                     "avplay_ep",
-		                                     Genode::Affinity::Location() };
+		Genode::size_t const        _ep_stack_size { 16 * 1024 };
+		Genode::Entrypoint          _ep { _env, _ep_stack_size,
+		                                  "avplay_ep",
+		                                  Genode::Affinity::Location() };
 
-		Mediafile_name                 _mediafile_name;
+		Mediafile_name              _mediafile_name;
 
-		QMember<QNitpickerViewWidget>  _avplay_widget;
-		QMember<Control_bar>           _control_bar;
+		QMember<QGenodeViewWidget>  _avplay_widget;
+		QMember<Control_bar>        _control_bar;
 
-		Nitpicker::Session_component   _nitpicker_session_component {
-			_env, _ep, *_avplay_widget };
+		Gui::Session_component _gui_session_component { _env, _ep, *_avplay_widget };
 
-		Nitpicker_service::Single_session_factory _nitpicker_factory {
-			_nitpicker_session_component };
+		Gui_service::Single_session_factory _gui_factory { _gui_session_component };
 
-		Nitpicker_service              _nitpicker_service { _nitpicker_factory };
+		Gui_service _gui_service { _gui_factory };
 
 	public:
 

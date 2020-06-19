@@ -29,9 +29,9 @@
 #include <os/slave.h>
 
 /* local includes */
-#include "nitpicker_session_component.h"
+#include "gui_session_component.h"
 
-typedef Genode::Local_service<Nitpicker::Session_component> Nitpicker_service;
+typedef Genode::Local_service<Gui::Session_component> Gui_service;
 
 class Avplay_slave : public QObject
 {
@@ -56,7 +56,7 @@ class Avplay_slave : public QObject
 		{
 			private:
 
-				Nitpicker_service &_nitpicker_service;
+				Gui_service &_gui_service;
 
 				const char *_mediafile;
 				int _sdl_audio_volume;
@@ -121,24 +121,24 @@ class Avplay_slave : public QObject
 				Genode::Service &_matching_service(Genode::Service::Name const &name)
 				{
 					if (name == "Gui")
-						return _nitpicker_service;
+						return _gui_service;
 
 					throw Genode::Service_denied();
 				}
 
 			public:
 
-				Policy(Genode::Env                    &env,
-				       Genode::Entrypoint             &entrypoint,
-				       Nitpicker_service              &nitpicker_service,
-				       char const                     *mediafile)
+				Policy(Genode::Env        &env,
+				       Genode::Entrypoint &entrypoint,
+				       Gui_service        &gui_service,
+				       char const         *mediafile)
 				:
 					Policy_base(env),
 					Genode::Slave::Policy(env, _name(), _name(),
 					                      Policy_base::_parent_services,
 					                      entrypoint.rpc_ep(), _caps(),
 					                      _ram_quota()),
-					_nitpicker_service(nitpicker_service),
+					_gui_service(gui_service),
 					_mediafile(mediafile),
 					_sdl_audio_volume(100)
 				{
@@ -174,12 +174,12 @@ class Avplay_slave : public QObject
 		/**
 		 * Constructor
 		 */
-		Avplay_slave(Genode::Env                    &env,
-		             Genode::Entrypoint             &ep,
-		             Nitpicker_service              &nitpicker_service,
-		             char const                     *mediafile)
+		Avplay_slave(Genode::Env        &env,
+		             Genode::Entrypoint &ep,
+		             Gui_service        &gui_service,
+		             char const         *mediafile)
 		:
-			_policy(env, ep, nitpicker_service, mediafile),
+			_policy(env, ep, gui_service, mediafile),
 			_child(env.rm(), ep.rpc_ep(), _policy)
 		{ }
 

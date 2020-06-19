@@ -39,8 +39,8 @@
 #include <SDL_genode_internal.h>
 
 
-extern Genode::Env           &global_env();
-extern Nitpicker::Connection &global_nitpicker();
+extern Genode::Env     &global_env();
+extern Gui::Connection &global_gui();
 
 extern Genode::Lock event_lock;
 extern Video        video_events;
@@ -63,16 +63,15 @@ extern "C" {
 
 	struct Sdl_framebuffer
 	{
-		Genode::Env           &_env;
-		Nitpicker::Connection &_nitpicker;
-		Nitpicker::Session::View_handle _view {
-			_nitpicker.create_view() };
+		Genode::Env              &_env;
+		Gui::Connection          &_gui;
+		Gui::Session::View_handle _view { _gui.create_view() };
 
 		void _handle_mode_change()
 		{
 			Genode::Lock_guard<Genode::Lock> guard(event_lock);
 
-			Framebuffer::Mode mode = _nitpicker.mode();
+			Framebuffer::Mode mode = _gui.mode();
 
 			video_events.resize_pending = true;
 			video_events.width  = mode.width();
@@ -82,23 +81,23 @@ extern "C" {
 		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
 			_env.ep(), *this, &Sdl_framebuffer::_handle_mode_change };
 
-		Sdl_framebuffer(Genode::Env &env, Nitpicker::Connection &nitpicker)
+		Sdl_framebuffer(Genode::Env &env, Gui::Connection &gui)
 		:
-			_env(env), _nitpicker(nitpicker)
+			_env(env), _gui(gui)
 		{
-			_nitpicker.mode_sigh(_mode_handler);
+			_gui.mode_sigh(_mode_handler);
 
-			using namespace Nitpicker;
-			_nitpicker.enqueue<Session::Command::To_front>(_view, Session::View_handle());
-			_nitpicker.execute();
+			using namespace Gui;
+			_gui.enqueue<Session::Command::To_front>(_view, Session::View_handle());
+			_gui.execute();
 		}
 
 		~Sdl_framebuffer()
 		{
 			/* clean up and reduce noise about invalid signals */
-			_nitpicker.mode_sigh(Genode::Signal_context_capability());
+			_gui.mode_sigh(Genode::Signal_context_capability());
 			dataspace(0, 0);
-			_nitpicker.destroy_view(_view);
+			_gui.destroy_view(_view);
 		}
 
 		/************************************
@@ -107,35 +106,35 @@ extern "C" {
 
 		Genode::Dataspace_capability dataspace(int width, int height)
 		{
-			_nitpicker.buffer(
+			_gui.buffer(
 				::Framebuffer::Mode(width, height, Framebuffer::Mode::RGB565),
 				false);
 
-			::Framebuffer::Mode mode = _nitpicker.framebuffer()->mode();
+			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
 
-			using namespace Nitpicker;
+			using namespace Gui;
 			Area area(
 				Genode::min(mode.width(), width),
 				Genode::min(mode.height(), height));
 
-			typedef Nitpicker::Session::Command Command;
-			_nitpicker.enqueue<Command::Geometry>(
+			typedef Gui::Session::Command Command;
+			_gui.enqueue<Command::Geometry>(
 				_view, Rect(Point(0, 0), area));
-			_nitpicker.execute();
+			_gui.execute();
 
-			return _nitpicker.framebuffer()->dataspace();
+			return _gui.framebuffer()->dataspace();
 		}
 
 		Framebuffer::Mode mode() const {
-			return _nitpicker.mode(); }
+			return _gui.mode(); }
 
 		void refresh(int x, int y, int w, int h) {
-			_nitpicker.framebuffer()->refresh(x, y, w, h); }
+			_gui.framebuffer()->refresh(x, y, w, h); }
 
 		void title(char const *string)
 		{
-			_nitpicker.enqueue<Nitpicker::Session::Command::Title>(_view, string);
-			_nitpicker.execute();
+			_gui.enqueue<Gui::Session::Command::Title>(_view, string);
+			_gui.execute();
 		}
 	};
 
@@ -353,7 +352,7 @@ extern "C" {
 			return nullptr;
 		}
 
-		data->framebuffer.construct(global_env(), global_nitpicker());
+		data->framebuffer.construct(global_env(), global_gui());
 
 		device->driverdata = data;
 

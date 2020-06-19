@@ -1,5 +1,5 @@
 /*
- * \brief   Nitpicker session component
+ * \brief   GUI session component
  * \author  Christian Prochaska
  * \date    2019-03-12
  */
@@ -11,39 +11,38 @@
  * under the terms of the GNU Affero General Public License version 3.
  */
 
-#ifndef _NITPICKER_SESSION_COMPONENT_H_
-#define _NITPICKER_SESSION_COMPONENT_H_
+#ifndef _GUI_SESSION_COMPONENT_H_
+#define _GUI_SESSION_COMPONENT_H_
 
 /* Genode includes */
 #include <gui_session/connection.h>
 
 /* Qt includes */
-#include <qnitpickerplatformwindow.h>
-#include <qnitpickerviewwidget/qnitpickerviewwidget.h>
+#include <qgenodeplatformwindow.h>
+#include <qgenodeviewwidget/qgenodeviewwidget.h>
 
 
-namespace Nitpicker {
+namespace Gui {
 	using namespace Genode;
 	struct Session_component;
 }
 
 
-struct Nitpicker::Session_component : Rpc_object<Nitpicker::Session>
+struct Gui::Session_component : Rpc_object<Gui::Session>
 {
-	Env                     &_env;
-	Entrypoint              &_ep;
-	QNitpickerViewWidget    &_nitpicker_view_widget;
+	Env               &_env;
+	Entrypoint        &_ep;
+	QGenodeViewWidget &_genode_view_widget;
 
-	Nitpicker::Connection    _connection;
+	Gui::Connection _connection;
 
 	Input::Session_component _input_component { _env, _env.ram() };
 
-	typedef Nitpicker::Session::Command_buffer Command_buffer;
+	using Command_buffer = Gui::Session::Command_buffer;
 	Attached_ram_dataspace _command_ds;
 	Command_buffer &_command_buffer = *_command_ds.local_addr<Command_buffer>();
 
-	Nitpicker::Session::View_handle _view_handle;
-
+	Gui::Session::View_handle _view_handle;
 
 	Input::Session_component &input_component() { return _input_component; }
 
@@ -53,11 +52,9 @@ struct Nitpicker::Session_component : Rpc_object<Nitpicker::Session>
 
 		case Command::OP_GEOMETRY:
 			{
-				Nitpicker::Rect rect = command.geometry.rect;
-				_nitpicker_view_widget.setNitpickerView(&_connection,
-				                                         _view_handle,
-				                                        0, 0,
-				                                        rect.w(), rect.h());
+				Gui::Rect rect = command.geometry.rect;
+				_genode_view_widget.setGenodeView(&_connection, _view_handle,
+				                                  0, 0, rect.w(), rect.h());
 				return;
 			}
 
@@ -71,10 +68,10 @@ struct Nitpicker::Session_component : Rpc_object<Nitpicker::Session>
 	}
 
 	Session_component(Env &env, Entrypoint &ep,
-	                  QNitpickerViewWidget &nitpicker_view_widget)
+	                  QGenodeViewWidget &genode_view_widget)
 	:
 		_env(env), _ep(ep),
-		_nitpicker_view_widget(nitpicker_view_widget),
+		_genode_view_widget(genode_view_widget),
 		_connection(env),
 		_command_ds(env.ram(), env.rm(), sizeof(Command_buffer))
 	{
@@ -97,11 +94,11 @@ struct Nitpicker::Session_component : Rpc_object<Nitpicker::Session>
 
 	View_handle create_view(View_handle parent) override
 	{
-		QNitpickerPlatformWindow *platform_window =
-			dynamic_cast<QNitpickerPlatformWindow*>(_nitpicker_view_widget
+		QGenodePlatformWindow *platform_window =
+			dynamic_cast<QGenodePlatformWindow*>(_genode_view_widget
 				.window()->windowHandle()->handle());
 
-		Nitpicker::Session::View_handle parent_view_handle =
+		Gui::Session::View_handle parent_view_handle =
 			_connection.view_handle(platform_window->view_cap());
 
 		_view_handle = _connection.create_view(parent_view_handle);
@@ -137,9 +134,9 @@ struct Nitpicker::Session_component : Rpc_object<Nitpicker::Session>
 		Framebuffer::Mode connection_mode { _connection.mode() };
 		Framebuffer::Mode new_mode {
 			Genode::min(connection_mode.width(),
-			            _nitpicker_view_widget.maximumWidth()),
+			            _genode_view_widget.maximumWidth()),
 			Genode::min(connection_mode.height(),
-			            _nitpicker_view_widget.maximumHeight()),
+			            _genode_view_widget.maximumHeight()),
 			connection_mode.format()
 		};
 		return new_mode;
@@ -151,8 +148,8 @@ struct Nitpicker::Session_component : Rpc_object<Nitpicker::Session>
 	void buffer(Framebuffer::Mode mode, bool use_alpha) override {
 		_connection.buffer(mode, use_alpha); }
 
-	void focus(Capability<Nitpicker::Session> session) override {
+	void focus(Capability<Gui::Session> session) override {
 		_connection.focus(session); }
 };
 
-#endif /* _NITPICKER_SESSION_COMPONENT_H_ */
+#endif /* _GUI_SESSION_COMPONENT_H_ */

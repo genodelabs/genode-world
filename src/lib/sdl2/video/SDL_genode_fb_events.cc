@@ -46,7 +46,7 @@ Video video_events;
 
 static Genode::Env *_global_env = nullptr;
 
-static Genode::Constructible<Nitpicker::Connection> _global_nitpicker { };
+static Genode::Constructible<Gui::Connection> _global_gui { };
 
 
 Genode::Env &global_env()
@@ -60,12 +60,12 @@ Genode::Env &global_env()
 }
 
 
-Nitpicker::Connection &global_nitpicker()
+Gui::Connection &global_gui()
 {
-	if (!_global_nitpicker.constructed())
-		_global_nitpicker.construct(global_env());
+	if (!_global_gui.constructed())
+		_global_gui.construct(global_env());
 
-	return *_global_nitpicker;
+	return *_global_gui;
 }
 
 
@@ -172,7 +172,7 @@ extern "C" {
 	{
 		try {
 			input.construct(_global_env->rm(),
-			                _global_nitpicker->input_session());
+			                _global_gui->input_session());
 		} catch (...) {
 			Genode::error("no input driver available!");
 			return;

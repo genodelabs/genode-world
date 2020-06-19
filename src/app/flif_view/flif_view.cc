@@ -1,5 +1,5 @@
 /*
- * \brief  FLIF viewer for Nitpicker
+ * \brief  FLIF viewer
  * \author Emery Hemingway
  * \date   2017-12-02
  */
@@ -46,7 +46,7 @@ namespace Flif_view {
 	struct Main;
 
 	using Framebuffer::Mode;
-	typedef Nitpicker::Session::Command Command;
+	typedef Gui::Session::Command Command;
 }
 
 
@@ -59,7 +59,7 @@ struct Flif_view::Main
 
 	Attached_ram_dataspace back_ds { env.pd(), env.rm(), 0 };
 
-	Nitpicker::Connection nitpicker { env };
+	Gui::Connection gui { env };
 
 	Signal_handler<Main> config_handler {
 		env.ep(), *this, &Main::handle_config_signal };
@@ -76,7 +76,7 @@ struct Flif_view::Main
 	/* signal transmitter to wake application from input handling */
 	Signal_transmitter app_transmitter { app_handler };
 
-	Mode nit_mode = nitpicker.mode();
+	Mode nit_mode = gui.mode();
 
 	Surface_base::Area img_area { };
 
@@ -89,16 +89,16 @@ struct Flif_view::Main
 			Mode new_mode(max(nit_mode.width(), width),
 			              max(nit_mode.height(), height),
 			              Mode::RGB565);
-			Genode::log("resize nitpicker buffer to ", new_mode);
+			Genode::log("resize gui buffer to ", new_mode);
 			if (nit_ds.constructed())
 				nit_ds.destruct();
-			nitpicker.buffer(new_mode, false);
-			nit_ds.construct(env.rm(), nitpicker.framebuffer()->dataspace());
-			nit_mode = nitpicker.mode();
+			gui.buffer(new_mode, false);
+			nit_ds.construct(env.rm(), gui.framebuffer()->dataspace());
+			nit_mode = gui.mode();
 			Genode::log("rebuffering complete");
 		} else if (!nit_ds.constructed()) {
-			nitpicker.buffer(nit_mode, false);
-			nit_ds.construct(env.rm(), nitpicker.framebuffer()->dataspace());
+			gui.buffer(nit_mode, false);
+			nit_ds.construct(env.rm(), gui.framebuffer()->dataspace());
 		}
 
 		Genode::size_t const buffer_size =
@@ -126,17 +126,17 @@ struct Flif_view::Main
 			surface, texture, Color(), Surface_base::Point(),
 			Texture_painter::SOLID, true);
 
-		nitpicker.enqueue<Command::Geometry>(
-			view_handle, Nitpicker::Rect(Nitpicker::Point(), img_area));
-		nitpicker.enqueue<Command::To_front>(view_handle);
-		nitpicker.execute();
+		gui.enqueue<Command::Geometry>(
+			view_handle, Gui::Rect(Gui::Point(), img_area));
+		gui.enqueue<Command::To_front>(view_handle);
+		gui.execute();
 
-		nitpicker.framebuffer()->sync_sigh(Signal_context_capability());
+		gui.framebuffer()->sync_sigh(Signal_context_capability());
 	}
 
 	Genode::Attached_rom_dataspace config_rom { env, "config" };
 
-	Input::Session_client &input = *nitpicker.input();
+	Input::Session_client &input = *gui.input();
 
 	Timer::Connection timer { env, "animation" };
 
@@ -145,7 +145,7 @@ struct Flif_view::Main
 	Timer::One_shot_timeout<Main> render_timeout {
 		timer, *this, &Main::render_animation };
 
-	Nitpicker::Session::View_handle view_handle = nitpicker.create_view();
+	Gui::Session::View_handle view_handle = gui.create_view();
 
 	void render(FLIF_IMAGE *img);
 
@@ -309,7 +309,7 @@ void Flif_view::Main::render(FLIF_IMAGE *img)
 
 	/* flush to surface on next sync signal */
 	img_area = Surface_base::Area(f_width, f_height);
-	nitpicker.framebuffer()->sync_sigh(sync_handler);
+	gui.framebuffer()->sync_sigh(sync_handler);
 }
 
 
@@ -329,7 +329,7 @@ bool Flif_view::Main::render_page()
 	flif_decoder_set_resize(flif_dec, nit_mode.width(), nit_mode.height());
 	flif_decoder_set_callback(flif_dec, &(progressive_render), this);
 
-	nitpicker.enqueue<Nitpicker::Session::Command::Title>(view_handle, filename);
+	gui.enqueue<Gui::Session::Command::Title>(view_handle, filename);
 
 	if (verbose)
 		last_ms = timer.elapsed_ms();

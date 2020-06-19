@@ -4,7 +4,7 @@ import_from_depot [depot_user]/raw/qt5_avplay \
                   [depot_user]/src/avplay \
                   [depot_user]/src/libav \
                   [depot_user]/src/qt5_avplay \
-                  [depot_user]/src/qt5_qnitpickerviewwidget \
+                  [depot_user]/src/qt5_qgenodeviewwidget \
                   [depot_user]/src/qt5_widgets \
                   [depot_user]/src/qt5_xml \
                   [depot_user]/src/vfs_pipe \

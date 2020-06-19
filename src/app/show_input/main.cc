@@ -49,20 +49,20 @@ struct Show_input::Main
 
 	Vfs_font _font { _heap, _root, "fonts/text/regular" };
 
-	Nitpicker::Connection  _nitpicker { _env };
+	Gui::Connection _gui { _env };
 
-	Input::Session_client &_input = *_nitpicker.input();
-	Framebuffer::Session  &_fb    = *_nitpicker.framebuffer();
+	Input::Session_client &_input = *_gui.input();
+	Framebuffer::Session  &_fb    = *_gui.framebuffer();
 
 	Dataspace_capability _fb_ds_cap()
 	{
-		_nitpicker.buffer(_nitpicker.mode(), false);
+		_gui.buffer(_gui.mode(), false);
 		return _fb.dataspace();
 	}
 
 	Attached_dataspace _fb_ds { _env.rm(), _fb_ds_cap() };
 
-	Nitpicker::Session::View_handle _view = _nitpicker.create_view();
+	Gui::Session::View_handle _view = _gui.create_view();
 
 	typedef Pixel_rgb565 PT;
 
@@ -105,13 +105,13 @@ struct Show_input::Main
 				auto w = _font.string_width(info.string()).decimal();
 				auto h = _font.height();
 
-				_nitpicker.enqueue<Nitpicker::Session::Command::Geometry>(
+				_gui.enqueue<Gui::Session::Command::Geometry>(
 					_view, Rect(Point(0, 0), Area(w*2, h*2)));
 			});
 		});
 
 		if (refresh) {
-			_nitpicker.execute();
+			_gui.execute();
 			_refresh();
 		}
 	}
@@ -120,12 +120,12 @@ struct Show_input::Main
 	{
 		_input.sigh(_input_sigh);
 
-		_nitpicker.enqueue<Nitpicker::Session::Command::Geometry>(
+		_gui.enqueue<Gui::Session::Command::Geometry>(
 			_view, Rect(Point(0, 0), _size));
 
-		_nitpicker.enqueue<Nitpicker::Session::Command::To_front>(
-			_view, Nitpicker::Session::View_handle());
-		_nitpicker.execute();
+		_gui.enqueue<Gui::Session::Command::To_front>(
+			_view, Gui::Session::View_handle());
+		_gui.execute();
 
 		_surface.clip(Rect(Point(0, 0), _size));
 	}

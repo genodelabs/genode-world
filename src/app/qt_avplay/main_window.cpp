@@ -22,7 +22,7 @@ Main_window::Main_window(Genode::Env &env)
 :
 	_env(env),
 	_mediafile_name(env),
-	_control_bar(_nitpicker_session_component.input_component())
+	_control_bar(_gui_session_component.input_component())
 {
 	/* add widgets to layout */
 
@@ -30,9 +30,9 @@ Main_window::Main_window(Genode::Env &env)
 	_layout->addWidget(_control_bar);
 
 	/*
-	 * The main window must be visible before avplay requests the Nitpicker
-	 * session, because the parent view of the new Nitpicker view is part of
-	 * the QNitpickerPlatformWindow object, which is created when the main
+	 * The main window must be visible before avplay requests the GUI
+	 * session, because the parent view of the new GUI view is part of
+	 * the QGenodePlatformWindow object, which is created when the main
 	 * window becomes visible.
 	 */
 
@@ -41,7 +41,7 @@ Main_window::Main_window(Genode::Env &env)
 	/* start avplay */
 
 	Avplay_slave *avplay_slave = new Avplay_slave(_env, _ep,
-	                                              _nitpicker_service,
+	                                              _gui_service,
 	                                              _mediafile_name.name.string());
 
 	connect(_control_bar, SIGNAL(volume_changed(int)), avplay_slave, SLOT(volume_changed(int)));

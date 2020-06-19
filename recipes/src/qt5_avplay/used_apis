@@ -9,9 +9,9 @@ os
 qoost
 qt5_core
 qt5_gui
-qt5_qpa_nitpicker
+qt5_qpa_genode
 qt5_qjpeg
-qt5_qnitpickerviewwidget
+qt5_qgenodeviewwidget
 qt5_widgets
 qt5_xml
 stdcxx

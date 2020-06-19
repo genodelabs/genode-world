@@ -39,9 +39,9 @@ struct Nit_entropy::Main
 
 	Heap _heap { _env.ram(), _env.rm() };
 
-	Nitpicker::Connection _nitpicker { _env };
+	Gui::Connection _gui { _env };
 
-	Framebuffer::Session &_fb = *_nitpicker.framebuffer();
+	Framebuffer::Session &_fb = *_gui.framebuffer();
 
 	Terminal::Connection _entropy { _env, "entropy" };
 
@@ -49,13 +49,13 @@ struct Nit_entropy::Main
 	{
 		using Framebuffer::Mode;
 		Mode mode(WIDTH, HEIGHT, Mode::RGB565);
-		_nitpicker.buffer(mode, false);
+		_gui.buffer(mode, false);
 		return _fb.dataspace();
 	}
 
 	Attached_dataspace _fb_ds { _env.rm(), _fb_ds_cap() };
 
-	Nitpicker::Session::View_handle _view = _nitpicker.create_view();
+	Gui::Session::View_handle _view = _gui.create_view();
 
 	void _refresh() { _fb.refresh(0, 0, WIDTH, HEIGHT); }
 
@@ -81,12 +81,12 @@ struct Nit_entropy::Main
 
 	Main(Env &env) : _env(env)
 	{
-		_nitpicker.enqueue<Nitpicker::Session::Command::Geometry>(
+		_gui.enqueue<Gui::Session::Command::Geometry>(
 			_view, Rect(Point(0, 0), Area (WIDTH, HEIGHT)));
 
-		_nitpicker.enqueue<Nitpicker::Session::Command::To_front>(
-			_view, Nitpicker::Session::View_handle());
-		_nitpicker.execute();
+		_gui.enqueue<Gui::Session::Command::To_front>(
+			_view, Gui::Session::View_handle());
+		_gui.execute();
 
 		_fb.sync_sigh(_sync_handler);
 	}

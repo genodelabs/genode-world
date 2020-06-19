@@ -93,7 +93,6 @@ install_config $config
 build_boot_image {
 	jitter_sponge
 	nit_entropy
-	libkeccak.lib.so
 }
 
 run_genode_until forever

@@ -1,7 +1,7 @@
 
-	SSH terminal client
+   SSH terminal client
 
-A Nitpicker terminal that connects to a shell on a remote SSH server.
+A GUI terminal that connects to a shell on a remote SSH server.
 
 It is configured with a "host" file found in its root directory with the
 following format:

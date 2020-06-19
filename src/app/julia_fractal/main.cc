@@ -49,11 +49,11 @@ struct Painter_T {
 };
 
 class window {
-  using View_handle            = Nitpicker::Session::View_handle;
+  using View_handle            = Gui::Session::View_handle;
   using Reattachable_dataspace = Genode::Constructible<Genode::Attached_dataspace>;
 
   Genode::Env&           _env;
-  Nitpicker::Connection  _npconn;
+  Gui::Connection        _npconn;
   Framebuffer::Mode      _mode;
   Painter_T&             _draw;
   Reattachable_dataspace _ds{};
@@ -72,26 +72,26 @@ class window {
     _draw_frame();
     _refresh();
 
-    auto rect = Nitpicker::Rect{Nitpicker::Point{0, 0},
-				Nitpicker::Area{(unsigned)_mode.width(), 
-						(unsigned)_mode.height()}};
-    _npconn.enqueue<Nitpicker::Session::Command::Geometry>(_view, rect);
+    auto rect = Gui::Rect{Gui::Point{0, 0},
+                Gui::Area{(unsigned)_mode.width(), 
+                        (unsigned)_mode.height()}};
+    _npconn.enqueue<Gui::Session::Command::Geometry>(_view, rect);
     _npconn.execute();
   }
 
   Genode::Signal_handler<window> _on_resize{_env.ep(), *this, &window::_new_mode};
-  
+
 public:
   using Title_String_T = Genode::String<64>;
  ~window() = default;
   window() = delete;
   window(Genode::Env& env, Painter_T& painter,
-	 Title_String_T title, Nitpicker::Area wsize)
+         Title_String_T title, Gui::Area wsize)
     : _env{env}, _npconn{env},
       _mode{(int)wsize.w(), (int)wsize.h(), Framebuffer::Mode::RGB565},
       _draw{painter}
   {
-    using Nitpicker::Session;
+    using Gui::Session;
 
     _npconn.buffer(_mode, false);
     _view = _npconn.create_view();
@@ -177,8 +177,8 @@ public:
 
 void Libc::Component::construct(Libc::Env& env) {
   static julia painter{-.75, 20};
-  static window win{env, painter, "julia", Nitpicker::Area{256, 256}};
-  
+  static window win{env, painter, "julia", Gui::Area{256, 256}};
+
   auto update_win = [&] {
     painter.C -= 0.003;
     win.draw_next_frame();
