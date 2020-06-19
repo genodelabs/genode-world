@@ -22,7 +22,7 @@ set build_components {
 	timer
 	server/log_tee
 	server/nit_fader
-	server/nit_fb
+	server/gui_fb
 	server/nitpicker
 	server/rom_filter
 	server/terminal_log
@@ -213,7 +213,7 @@ append config {
 		</route>
 	</start>
 	<start name="log_fb">
-		<binary name="nit_fb"/>
+		<binary name="gui_fb"/>
 		<resource name="RAM" quantum="4M"/>
 		<provides>
 			<service name="Framebuffer"/>
@@ -291,7 +291,7 @@ set boot_modules {
 	launchpad
 	log_tee
 	nit_fader
-	nit_fb
+	gui_fb
 	nitpicker
 	pointer
 	report_rom

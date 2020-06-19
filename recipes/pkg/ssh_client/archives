@@ -1,7 +1,7 @@
 _/pkg/terminal
 _/src/libc
 _/src/libcrypto
-_/src/nit_fb
+_/src/gui_fb
 _/src/vfs
 _/src/zlib
 _/src/vfs_jitterentropy

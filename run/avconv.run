@@ -18,7 +18,7 @@ set build_components {
 	drivers/ahci server/vfs
 	lib/vfs/rump
 	drivers/framebuffer drivers/input
-	server/nitpicker server/nit_fb
+	server/nitpicker server/gui_fb
 	app/launchpad app/pointer
 	lib/mesa/swrast
 	test/mesa_demo/gears
@@ -121,7 +121,7 @@ append config {
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="default" layer="2" content="client" focus="click" hover="always" />
 			<policy label="pointer -> " domain="pointer"/>
-			<policy label="nit_fb -> " domain="default"/>
+			<policy label="gui_fb -> " domain="default"/>
 		</config>
 		<route>
 			<service name="Input"><child name="input_drv"/></service>
@@ -134,7 +134,7 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 	</start>
 
-	<start name="nit_fb" priority="-1">
+	<start name="gui_fb" priority="-1">
 		<resource name="RAM" quantum="4M"/>
 		<provides>
 			<service name="Input"/>
@@ -167,7 +167,7 @@ append config {
 			<service name="ROM" label="egl_drv.lib.so">
 				<parent label="egl_swrast.lib.so"/>
 			</service>
-			<service name="Framebuffer"><child name="nit_fb"/></service>
+			<service name="Framebuffer"><child name="gui_fb"/></service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
 		<config>
@@ -232,7 +232,7 @@ set boot_modules {
 	avdevice.lib.so avfilter.lib.so avutil.lib.so avcodec.lib.so
 	avformat.lib.so swscale.lib.so
 	ahci_drv rump.lib.so rump_fs.lib.so vfs vfs_rump.lib.so
-	nitpicker nit_fb
+	nitpicker gui_fb
 	launchpad pointer
 	gears egl.lib.so expat.lib.so glapi.lib.so mesa.lib.so stdcxx.lib.so egl_swrast.lib.so
 	fb_splitter

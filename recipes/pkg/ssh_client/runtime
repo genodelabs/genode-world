@@ -17,7 +17,7 @@
 		<rom label="libcrypto.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="libssh.lib.so"/>
-		<rom label="nit_fb"/>
+		<rom label="gui_fb"/>
 		<rom label="ssh_client"/>
 		<rom label="terminal"/>
 		<rom label="vfs.lib.so"/>
@@ -44,7 +44,7 @@
 
 		<default caps="100"/>
 
-		<start name="nit_fb">
+		<start name="gui_fb">
 			<resource name="RAM" quantum="4M"/>
 			<provides> <service name="Framebuffer"/> <service name="Input"/> </provides>
 			<config xpos="10" ypos="10" initial_width="800" initial_height="600"/>

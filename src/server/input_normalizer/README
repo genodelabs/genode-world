@@ -8,7 +8,7 @@ config node. The default is 200 milliseconds.
 
 An example of injecting delay into VirtualBox:
 
-! <start name="nit_fb">
+! <start name="gui_fb">
 ! 		<resource name="RAM" quantum="8M" />
 ! 		<provides>
 ! 			<service name="Framebuffer" />
@@ -24,7 +24,7 @@ An example of injecting delay into VirtualBox:
 ! 		<config period_ms="150"/>
 ! 		<route>
 ! 			<any-service>
-! 				<child name="nit_fb"/>
+! 				<child name="gui_fb"/>
 ! 				<parent/>
 !				<any-child/>
 ! 			</any-service>
@@ -39,7 +39,7 @@ An example of injecting delay into VirtualBox:
 ! 		<route>
 ! 			<any-service>
 ! 				<child name="input_normalizer"/>
-! 				<child name="nit_fb"/>
+! 				<child name="gui_fb"/>
 ! 				<parent/>
 !				<any-child/>
 ! 			</any-service>

@@ -11,4 +11,4 @@ the recommendation is to use these session bundled in a 'Gui' connection.
 Therefore to screenshot 'Gui' clients a GUI server must be running
 as a client of the 'flif_capture' server, and a window manager may be necessary
 as well. The 'flif_capture', 'nitpicker', and 'wm' stack may be hosted recursively
-by using the 'nit_fb' server beneath 'flif_capture'.
+by using the 'gui_fb' server beneath 'flif_capture'.
