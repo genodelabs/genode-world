@@ -79,12 +79,10 @@ struct Volume_config
 
 		Genode::Xml_node config = _config_rom.xml();
 
-		try {
-			unsigned int config_volume;
-			config.sub_node("sdl_audio_volume").attribute("value")
-				.value(&config_volume);
-			volume = (float)config_volume / 100;
-		} catch (...) { }
+		config.with_sub_node("sdl_audio_volume", [&] (Genode::Xml_node const &node) {
+			volume = (float)node.attribute_value("value", (unsigned)(volume*100))
+			       / 100;
+		});
 
 		Genode::log("Change SDL audio volume to ", volume * 100);
 	}
