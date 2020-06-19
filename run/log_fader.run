@@ -21,7 +21,7 @@ set build_components {
 	drivers/framebuffer
 	timer
 	server/log_tee
-	server/nit_fader
+	server/gui_fader
 	server/gui_fb
 	server/nitpicker
 	server/rom_filter
@@ -202,7 +202,7 @@ append config {
 	</start>
 
 	<start name="log_fader">
-		<binary name="nit_fader"/>
+		<binary name="gui_fader"/>
 		<resource name="RAM" quantum="5M"/>
 		<provides> <service name="Gui"/> </provides>
 		<route>
@@ -290,7 +290,7 @@ set boot_modules {
 	fb_sdl
 	launchpad
 	log_tee
-	nit_fader
+	gui_fader
 	gui_fb
 	nitpicker
 	pointer
