@@ -7,6 +7,7 @@ import_from_depot [depot_user]/raw/qt5_avplay \
                   [depot_user]/src/qt5_qnitpickerviewwidget \
                   [depot_user]/src/qt5_widgets \
                   [depot_user]/src/qt5_xml \
+                  [depot_user]/src/vfs_pipe \
                   [depot_user]/src/sdl
 
 set feature(Audio_out) 1
@@ -52,6 +53,7 @@ append config {
 		<config>
 			<vfs>
 				<dir name="dev">
+					<dir name="pipe"> <pipe/> </dir>
 					<log/>
 					<inline name="rtc">2018-01-01 00:01</inline>
 				</dir>
@@ -61,7 +63,7 @@ append config {
 				<rom name="player_stop.png"/>
 				<rom name="volume.png"/>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
 			<mediafile name="mediafile"/>
 		</config>
 		<route>
