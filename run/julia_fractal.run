@@ -1,6 +1,6 @@
 set app_config {
   <start name="julia_fractal">
-    <resource name="RAM" quantum="4M"/>
+    <resource name="RAM" quantum="8M"/>
     <route>
       <service name="Gui"> <child name="wm"/> </service>
       <any-service> <parent/> <any-child/> </any-service>

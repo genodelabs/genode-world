@@ -71,12 +71,12 @@ extern "C" {
 			Genode::Lock_guard<Genode::Lock> guard(event_lock);
 
 			Framebuffer::Mode mode = _gui.mode();
-			df_mode.w = mode.width();
-			df_mode.h = mode.height();
+			df_mode.w = mode.area.w();
+			df_mode.h = mode.area.h();
 
 			video_events.resize_pending = true;
-			video_events.width  = mode.width();
-			video_events.height = mode.height();
+			video_events.width  = mode.area.w();
+			video_events.height = mode.area.h();
 		}
 
 		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
@@ -98,18 +98,16 @@ extern "C" {
 		 ** Framebuffer::Session Interface **
 		 ************************************/
 
-		Genode::Dataspace_capability dataspace(int width, int height)
+		Genode::Dataspace_capability dataspace(unsigned width, unsigned height)
 		{
-			_gui.buffer(
-				::Framebuffer::Mode(width, height, Framebuffer::Mode::RGB565),
-				false);
+			_gui.buffer(::Framebuffer::Mode { .area = { width, height } }, false);
 
 			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
 
 			using namespace Gui;
 			Area area(
-				Genode::min(mode.width(), width),
-				Genode::min(mode.height(), height));
+				Genode::min(mode.area.w(), width),
+				Genode::min(mode.area.h(), height));
 
 			typedef Gui::Session::Command Command;
 			_gui.enqueue<Command::Geometry>(
@@ -271,7 +269,7 @@ extern "C" {
 			return false;
 		}
 
-		Genode_egl_window egl_window { scr_mode.width(), scr_mode.height(),
+		Genode_egl_window egl_window { (int)scr_mode.area.w(), (int)scr_mode.area.h(),
 		                               (unsigned char*)t->hidden->buffer };
 
 		screen_surf = __eglCreatePixmapSurface(display, config, &egl_window, NULL);
@@ -395,31 +393,21 @@ extern "C" {
 		/* Get the framebuffer size and mode infos */
 		scr_mode = framebuffer->mode();
 
-		t->info.current_w = scr_mode.width();
-		t->info.current_h = scr_mode.height();
+		t->info.current_w = scr_mode.area.w();
+		t->info.current_h = scr_mode.area.h();
 		Genode::log("Framebuffer has "
 		            "width=",  t->info.current_w, " "
 		            "height=", t->info.current_h);
 
 		/* set mode specific values */
-		switch(scr_mode.format())
-		{
-		case Framebuffer::Mode::RGB565:
-			Genode::log("We use pixelformat rgb565.");
-			vformat->BitsPerPixel  = 16;
-			vformat->BytesPerPixel = scr_mode.bytes_per_pixel();
-			vformat->Rmask = 0x0000f800;
-			vformat->Gmask = 0x000007e0;
-			vformat->Bmask = 0x0000001f;
-			break;
-		default:
-			SDL_SetError("Couldn't get console mode info");
-			Genode_Fb_VideoQuit(t);
-			return -1;
-		}
+		vformat->BitsPerPixel  = 32;
+		vformat->BytesPerPixel = scr_mode.bytes_per_pixel();
+		vformat->Rmask = 0x00ff0000;
+		vformat->Gmask = 0x0000ff00;
+		vformat->Bmask = 0x000000ff;
 		modes[0] = &df_mode;
-		df_mode.w = scr_mode.width();
-		df_mode.h = scr_mode.height();
+		df_mode.w = scr_mode.area.w();
+		df_mode.h = scr_mode.area.h();
 		modes[1] = 0;
 
 		t->hidden->buffer = 0;
@@ -447,13 +435,13 @@ extern "C" {
 
 
 	/**
-	 * Any mode is okay if the pixel format is 16bit
+	 * Any mode is okay if the pixel format is 32 bit
 	 */
 	SDL_Rect **Genode_Fb_ListModes(SDL_VideoDevice *t,
 	                               SDL_PixelFormat *format,
 	                               Uint32 flags)
 	{
-		return (SDL_Rect **)((format->BitsPerPixel == 16) ? -1 : 0);
+		return (SDL_Rect **)((format->BitsPerPixel == 32) ? -1 : 0);
 	}
 
 
@@ -611,7 +599,7 @@ extern "C" {
 #if defined(SDL_VIDEO_OPENGL)
 		__eglWaitClient();
 		__eglSwapBuffers(display, screen_surf);
-		framebuffer->refresh(0, 0, scr_mode.width(), scr_mode.height());
+		framebuffer->refresh(0, 0, scr_mode.area.w(), scr_mode.area.h());
 #endif
 	}
 

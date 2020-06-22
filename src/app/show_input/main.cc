@@ -18,7 +18,7 @@
 #include <base/attached_rom_dataspace.h>
 #include <base/log.h>
 #include <base/heap.h>
-#include <os/pixel_rgb565.h>
+#include <os/pixel_rgb888.h>
 #include <os/surface.h>
 #include <nitpicker_gfx/tff_font.h>
 #include <nitpicker_gfx/box_painter.h>
@@ -64,9 +64,9 @@ struct Show_input::Main
 
 	Gui::Session::View_handle _view = _gui.create_view();
 
-	typedef Pixel_rgb565 PT;
+	typedef Pixel_rgb888 PT;
 
-	Surface_base::Area _size { (unsigned)_fb.mode().width(),
+	Surface_base::Area _size { _fb.mode().area.w(),
 	                           (unsigned)_font.height() };
 
 	Surface<PT> _surface { _fb_ds.local_addr<PT>(), _size };

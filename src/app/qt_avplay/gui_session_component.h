@@ -133,12 +133,12 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 	{
 		Framebuffer::Mode connection_mode { _connection.mode() };
 		Framebuffer::Mode new_mode {
-			Genode::min(connection_mode.width(),
-			            _genode_view_widget.maximumWidth()),
-			Genode::min(connection_mode.height(),
-			            _genode_view_widget.maximumHeight()),
-			connection_mode.format()
-		};
+			.area = {
+				Genode::min(connection_mode.area.w(),
+				            (unsigned)_genode_view_widget.maximumWidth()),
+				Genode::min(connection_mode.area.h(),
+				            (unsigned)_genode_view_widget.maximumHeight())
+			}};
 		return new_mode;
 	}
 

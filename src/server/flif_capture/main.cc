@@ -24,6 +24,7 @@
 #include <input/component.h>
 #include <base/attached_dataspace.h>
 #include <os/static_root.h>
+#include <os/pixel_rgb888.h>
 
 namespace Flif_capture {
 	using namespace Genode;
@@ -122,31 +123,29 @@ class Flif_capture::Encoder
 
 			/* TODO: attach/detach each capture? */
 			Genode::Attached_dataspace fb_ds(_env.rm(), fb_cap);
-			if ((mode.format() != Mode::RGB565)
-			 || (fb_ds.size() < (mode.width() * mode.height() * mode.bytes_per_pixel()))) {
+			if (fb_ds.size() < mode.area.count() * mode.bytes_per_pixel()) {
 				Genode::error("invalid framebuffer for capture");
 				return;
 			}
 
-			RGBA row[mode.width()];
+			RGBA row[mode.area.w()];
 
-			_image = flif_create_image(mode.width(), mode.height());
+			_image = flif_create_image(mode.area.w(), mode.area.h());
 			if (!_image) {
 				Genode::error("failed to create image buffer");
 				return;
 			}
 
-			uint16_t const *pixels = fb_ds.local_addr<uint16_t const>();
+			using Pixel = Pixel_rgb888;
+			Pixel const *pixels = fb_ds.local_addr<Pixel const>();
 
-			for (int y = 0; y < mode.height(); y++) {
-				for (int x = 0; x < mode.width(); x++) {
-					uint16_t px = pixels[y*mode.width()+x];
-					row[x] = RGBA {
-						(uint8_t)((px & 0xf800) >> 8),
-						(uint8_t)((px & 0x07e0) >> 3),
-						(uint8_t)((px & 0x1f) << 3),
-						(uint8_t)(0xff)
-					};
+			for (unsigned y = 0; y < mode.area.h(); y++) {
+				for (unsigned x = 0; x < mode.area.w(); x++) {
+					Pixel const px = pixels[y*mode.area.w()+x];
+					row[x] = RGBA { (uint8_t)px.r(),
+					                (uint8_t)px.g(),
+					                (uint8_t)px.b(),
+					                255 };
 				}
 				flif_image_write_row_RGBA8(_image, y, row, sizeof(row));
 			}
@@ -238,7 +237,7 @@ class Flif_capture::Main
 		};
 
 		Flif_capture::Encoder   _encoder      { _env };
-		Framebuffer::Connection _parent_fb    { _env, Mode(0, 0, Mode::RGB565) };
+		Framebuffer::Connection _parent_fb    { _env, Mode { } };
 		Input::Connection       _parent_input { _env };
 
 		Framebuffer_session_component _fb_session {

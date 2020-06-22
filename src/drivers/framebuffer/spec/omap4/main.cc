@@ -41,12 +41,11 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Framebuffer::Se
 		Session_component(Session_component const &);
 		Session_component &operator = (Session_component const &);
 
-		size_t         _width;
-		size_t         _height;
-		bool           _buffered;
-		Mode           _mode { };
-		Driver::Format _format;
-		size_t         _size;
+		size_t _width;
+		size_t _height;
+		bool   _buffered;
+		Mode   _mode { };
+		size_t _size;
 
 		/* dataspace uses a back buffer (if '_buffered' is true) */
 		Genode::Dataspace_capability _bb_ds;
@@ -60,24 +59,13 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Framebuffer::Se
 
 		Timer::Connection _timer;
 
-		/**
-		 * Convert Driver::Format to Framebuffer::Mode::Format
-		 */
-		static Mode::Format _convert_format(Driver::Format driver_format)
-		{
-			switch (driver_format) {
-			case Driver::FORMAT_RGB565: return Mode::RGB565;
-			}
-			return Mode::INVALID;
-		}
-
 		void _refresh_buffered(int x, int y, int w, int h)
 		{
 			Mode _mode = mode();
 
 			/* clip specified coordinates against screen boundaries */
-			int x2 = min(x + w - 1, (int)_mode.width()  - 1),
-				y2 = min(y + h - 1, (int)_mode.height() - 1);
+			int x2 = min(x + w - 1, (int)_mode.area.w()  - 1),
+				y2 = min(y + h - 1, (int)_mode.area.h() - 1);
 			int x1 = max(x, 0),
 				y1 = max(y, 0);
 			if (x1 > x2 || y1 > y2) return;
@@ -85,10 +73,10 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Framebuffer::Se
 			int bypp = _mode.bytes_per_pixel();
 
 			/* copy pixels from back buffer to physical frame buffer */
-			char *src = (char *)_bb_addr + bypp*(_mode.width()*y1 + x1),
-			     *dst = (char *)_fb_addr + bypp*(_mode.width()*y1 + x1);
+			char *src = (char *)_bb_addr + bypp*(_mode.area.w()*y1 + x1),
+			     *dst = (char *)_fb_addr + bypp*(_mode.area.w()*y1 + x1);
 
-			blit(src, bypp*_mode.width(), dst, bypp*_mode.width(),
+			blit(src, bypp*_mode.area.w(), dst, bypp*_mode.area.h(),
 				 bypp*(x2 - x1 + 1), y2 - y1 + 1);
 		}
 
@@ -99,8 +87,7 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Framebuffer::Se
 		: _width(width),
 		  _height(height),
 		  _buffered(buffered),
-		  _format(Driver::FORMAT_RGB565),
-		  _size(driver.buffer_size(width, height, _format)),
+		  _size(driver.buffer_size(width, height)),
 		  _bb_ds(buffered ? env.ram().alloc(_size)
 		                  : Genode::Ram_dataspace_capability()),
 		  _bb_addr(buffered ? (void*)env.rm().attach(_bb_ds) : 0),
@@ -108,7 +95,7 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Framebuffer::Se
 		  _fb_addr((void*)env.rm().attach(_fb_ds)),
 		  _timer(env)
 		{
-			if (!driver.init(width, height, _format, output,
+			if (!driver.init(width, height, output,
 				Dataspace_client(_fb_ds).phys_addr())) {
 				error("Could not initialize display");
 				struct Could_not_initialize_display : Exception { };
@@ -130,9 +117,7 @@ class Framebuffer::Session_component : public Genode::Rpc_object<Framebuffer::Se
 
 		Mode mode() const override
 		{
-			return Mode(_width,
-			            _height,
-			            _convert_format(_format));
+			return Mode { .area = { _width, _height } };
 		}
 
 		void mode_sigh(Genode::Signal_context_capability) override { }
@@ -167,12 +152,8 @@ static Framebuffer::Driver::Output config_output(Genode::Xml_node node,
 {
 	Framebuffer::Driver::Output value = default_value;
 
-	try {
-		Genode::String<8> output;
-		node.attribute("output").value(&output);
-
-		if (output == "LCD") { value = Framebuffer::Driver::OUTPUT_LCD; }
-	} catch (...) { }
+	if (node.attribute_value("output", Genode::String<8>()) == "LDC")
+		value = Framebuffer::Driver::OUTPUT_LCD;
 
 	return value;
 }

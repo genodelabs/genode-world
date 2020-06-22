@@ -25,7 +25,7 @@
 #include <timer_session/connection.h>
 #include <base/attached_dataspace.h>
 #include <util/reconstructible.h>
-#include <os/texture_rgb565.h>
+#include <os/texture_rgb888.h>
 
 /* gems includes */
 #include <gems/texture_utils.h>
@@ -76,51 +76,47 @@ struct Flif_view::Main
 	/* signal transmitter to wake application from input handling */
 	Signal_transmitter app_transmitter { app_handler };
 
-	Mode nit_mode = gui.mode();
+	Mode gui_mode = gui.mode();
 
 	Surface_base::Area img_area { };
 
 	Constructible<Attached_dataspace> nit_ds { };
 
 	template <typename PT, typename FN>
-	void apply_to_texture(int width, int height, FN const &fn)
+	void apply_to_texture(unsigned width, unsigned height, FN const &fn)
 	{
-		if (nit_mode.width() < width || nit_mode.height() < height) {
-			Mode new_mode(max(nit_mode.width(), width),
-			              max(nit_mode.height(), height),
-			              Mode::RGB565);
+		if (gui_mode.area.w() < width || gui_mode.area.h() < height) {
+			Mode new_mode { .area = { max(gui_mode.area.w(), width),
+			                          max(gui_mode.area.h(), height) } };
 			Genode::log("resize gui buffer to ", new_mode);
 			if (nit_ds.constructed())
 				nit_ds.destruct();
 			gui.buffer(new_mode, false);
 			nit_ds.construct(env.rm(), gui.framebuffer()->dataspace());
-			nit_mode = gui.mode();
+			gui_mode = gui.mode();
 			Genode::log("rebuffering complete");
 		} else if (!nit_ds.constructed()) {
-			gui.buffer(nit_mode, false);
+			gui.buffer(gui_mode, false);
 			nit_ds.construct(env.rm(), gui.framebuffer()->dataspace());
 		}
 
 		Genode::size_t const buffer_size =
-			nit_mode.height() * nit_mode.width() * nit_mode.bytes_per_pixel();
+			gui_mode.area.count() * gui_mode.bytes_per_pixel();
 
 		if (buffer_size > back_ds.size())
 			back_ds.realloc(&env.pd(), buffer_size);
 
-		Surface_base::Area nit_area(nit_mode.width(), nit_mode.height());
-		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, nit_area);
+		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, gui_mode.area);
 
 		fn(texture);
 	}
 
 	void handle_sync_signal()
 	{
-		typedef Pixel_rgb565 PT;
+		typedef Pixel_rgb888 PT;
 
-		Surface_base::Area nit_area(nit_mode.width(), nit_mode.height());
-
-		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, nit_area);
-		Surface<PT> surface(nit_ds->local_addr<PT>(), nit_area);
+		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, gui_mode.area);
+		Surface<PT> surface(nit_ds->local_addr<PT>(), gui_mode.area);
 
 		Texture_painter::paint(
 			surface, texture, Color(), Surface_base::Point(),
@@ -297,7 +293,7 @@ void Flif_view::Main::render(FLIF_IMAGE *img)
 	int const f_width  = flif_image_get_width(img);
 	int const f_height = flif_image_get_height(img);
 
-	typedef Pixel_rgb565 PT;
+	typedef Pixel_rgb888 PT;
 	apply_to_texture<PT>(f_width, f_height, [&] (Texture<PT> &texture) {
 		/* fill texture with FLIF image data */
 		char row[f_width*4];
@@ -326,7 +322,7 @@ bool Flif_view::Main::render_page()
 	}
 
 	flif_dec = flif_create_decoder();
-	flif_decoder_set_resize(flif_dec, nit_mode.width(), nit_mode.height());
+	flif_decoder_set_resize(flif_dec, gui_mode.area.w(), gui_mode.area.h());
 	flif_decoder_set_callback(flif_dec, &(progressive_render), this);
 
 	gui.enqueue<Gui::Session::Command::Title>(view_handle, filename);

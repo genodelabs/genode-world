@@ -36,7 +36,7 @@
 
 #include <base/component.h>
 #include <base/log.h>
-#include <os/pixel_rgb565.h>
+#include <os/pixel_rgb888.h>
 #include <base/attached_dataspace.h>
 #include <timer_session/connection.h>
 #include <gui_session/connection.h>
@@ -45,7 +45,7 @@
 
 struct Painter_T {
   virtual ~Painter_T() = default;
-  virtual void paint(Genode::Pixel_rgb565*, unsigned w, unsigned h) = 0;
+  virtual void paint(Genode::Pixel_rgb888*, unsigned w, unsigned h) = 0;
 };
 
 class window {
@@ -60,10 +60,10 @@ class window {
   View_handle            _view{};
 
   void _draw_frame() {
-    _draw.paint(_ds->local_addr<Genode::Pixel_rgb565>(), _mode.width(), _mode.height()); }
+    _draw.paint(_ds->local_addr<Genode::Pixel_rgb888>(), _mode.area.w(), _mode.area.h()); }
 
   void _refresh() {
-    _npconn.framebuffer()->refresh(0, 0, _mode.width(), _mode.height()); }
+    _npconn.framebuffer()->refresh(0, 0, _mode.area.w(), _mode.area.h()); }
 
   void _new_mode() {
     _mode = _npconn.mode();
@@ -72,9 +72,7 @@ class window {
     _draw_frame();
     _refresh();
 
-    auto rect = Gui::Rect{Gui::Point{0, 0},
-                Gui::Area{(unsigned)_mode.width(), 
-                        (unsigned)_mode.height()}};
+    auto rect = Gui::Rect{Gui::Point{0, 0}, _mode.area};
     _npconn.enqueue<Gui::Session::Command::Geometry>(_view, rect);
     _npconn.execute();
   }
@@ -88,7 +86,7 @@ public:
   window(Genode::Env& env, Painter_T& painter,
          Title_String_T title, Gui::Area wsize)
     : _env{env}, _npconn{env},
-      _mode{(int)wsize.w(), (int)wsize.h(), Framebuffer::Mode::RGB565},
+      _mode{ .area = wsize },
       _draw{painter}
   {
     using Gui::Session;
@@ -126,7 +124,7 @@ public:
   /**
    * Draw a calculated set in the buffer. 
    */
-  void paint(Genode::Pixel_rgb565* buf, unsigned w, unsigned h) override
+  void paint(Genode::Pixel_rgb888* buf, unsigned w, unsigned h) override
   {
     --w, --h;
     const auto _w = w;

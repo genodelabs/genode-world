@@ -48,7 +48,7 @@ struct Entropy_view::Main
 	Dataspace_capability _fb_ds_cap()
 	{
 		using Framebuffer::Mode;
-		Mode mode(WIDTH, HEIGHT, Mode::RGB565);
+		Mode mode { .area = { WIDTH, HEIGHT } };
 		_gui.buffer(mode, false);
 		return _fb.dataspace();
 	}
@@ -61,7 +61,7 @@ struct Entropy_view::Main
 
 	void _plot()
 	{
-		uint16_t *pixels = _fb_ds.local_addr<uint16_t>();
+		uint32_t *pixels = _fb_ds.local_addr<uint32_t>();
 		static uint8_t buf[HEIGHT];
 		size_t n = _entropy.read(buf, sizeof(buf));
 		if (n != sizeof(buf)) {
@@ -69,7 +69,7 @@ struct Entropy_view::Main
 		}
 
 		for (int i = 0; i < HEIGHT; ++i) {
-			uint16_t *row = &pixels[i*WIDTH];
+			uint32_t *row = &pixels[i*WIDTH];
 			row[buf[i]] = ~row[buf[i]];
 		}
 

@@ -41,7 +41,7 @@ static void draw(SDL_Surface * const screen, int w, int h, int v)
 	if (screen == nullptr) { return; }
 
 	/* paint something into pixel buffer */
-	short* const pixels = (short*) screen->pixels;
+	Uint32* const pixels = (Uint32*) screen->pixels;
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
 			pixels[i*w+j] = ((i+v)/32)*32*64 + ((j+v)/32)*32 + (i*j+v)/1024;

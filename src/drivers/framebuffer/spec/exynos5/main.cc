@@ -43,24 +43,12 @@ class Framebuffer::Session_component
 
 		Genode::Env &_env;
 
-		unsigned                  _width;
-		unsigned                  _height;
-		Driver::Format            _format;
-		size_t                    _size;
-		Dataspace_capability      _ds;
-		addr_t                    _phys_base;
-		Timer::Connection         _timer { _env };
-
-		/**
-		 * Convert Driver::Format to Framebuffer::Mode::Format
-		 */
-		static Mode::Format _convert_format(Driver::Format driver_format)
-		{
-			switch (driver_format) {
-			case Driver::FORMAT_RGB565: return Mode::RGB565;
-			}
-			return Mode::INVALID;
-		}
+		unsigned             _width;
+		unsigned             _height;
+		size_t               _size;
+		Dataspace_capability _ds;
+		addr_t               _phys_base;
+		Timer::Connection    _timer { _env };
 
 	public:
 
@@ -78,12 +66,11 @@ class Framebuffer::Session_component
 			_env(env),
 			_width(width),
 			_height(height),
-			_format(Driver::FORMAT_RGB565),
-			_size(driver.buffer_size(width, height, _format)),
+			_size(driver.buffer_size(width, height)),
 			_ds(_env.ram().alloc(_size, WRITE_COMBINED)),
 			_phys_base(Dataspace_client(_ds).phys_addr())
 		{
-			if (driver.init(width, height, _format, _phys_base)) {
+			if (driver.init(width, height, _phys_base)) {
 				error("could not initialize display");
 				struct Could_not_initialize_display : Exception { };
 				throw Could_not_initialize_display();
@@ -98,7 +85,7 @@ class Framebuffer::Session_component
 
 		Mode mode() const override
 		{
-			return Mode(_width, _height, _convert_format(_format));
+			return Mode { .area = { _width, _height } };
 		}
 
 		void mode_sigh(Genode::Signal_context_capability) override { }

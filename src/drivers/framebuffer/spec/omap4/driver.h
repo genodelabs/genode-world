@@ -33,7 +33,6 @@ class Framebuffer::Driver
 {
 	public:
 
-		enum Format { FORMAT_RGB565 };
 		enum Output { OUTPUT_LCD, OUTPUT_HDMI };
 
 	private:
@@ -80,27 +79,19 @@ class Framebuffer::Driver
 
 		size_t _fb_width;
 		size_t _fb_height;
-		Format _fb_format;
 
 	public:
 
 		Driver(Genode::Env &env);
 
-		static size_t bytes_per_pixel(Format format)
+		static size_t bytes_per_pixel() { return 4; /* 32-bit RGB */ }
+
+		size_t buffer_size(size_t width, size_t height)
 		{
-			switch (format) {
-			case FORMAT_RGB565: return 2;
-			}
-			return 0;
+			return bytes_per_pixel()*width*height;
 		}
 
-		size_t buffer_size(size_t width, size_t height, Format format)
-		{
-			return bytes_per_pixel(format)*width*height;
-		}
-
-		bool init(size_t width, size_t height, Format format,
-			Output output, addr_t phys_base);
+		bool init(size_t width, size_t height, Output output, addr_t phys_base);
 };
 
 
@@ -117,8 +108,7 @@ Framebuffer::Driver::Driver(Genode::Env &env)
 	_hdmi((addr_t)_hdmi_mmio.local_addr<void>()),
 
 	_fb_width(0),
-	_fb_height(0),
-	_fb_format(FORMAT_RGB565)
+	_fb_height(0)
 { }
 
 
@@ -133,11 +123,7 @@ bool Framebuffer::Driver::_init_lcd(Framebuffer::addr_t phys_base)
 	_dispc.write<Dispc::Size_lcd::Width>(_fb_width - 1);
 	_dispc.write<Dispc::Size_lcd::Height>(_fb_height - 1);
 
-	Dispc::Gfx_attributes::access_t pixel_format = 0;
-	switch (_fb_format) {
-	case FORMAT_RGB565: pixel_format = Dispc::Gfx_attributes::Format::RGB16; break;
-	}
-	_dispc.write<Dispc::Gfx_attributes::Format>(pixel_format);
+	_dispc.write<Dispc::Gfx_attributes::Format>(Dispc::Gfx_attributes::Format::ARGB32);
 
 	_dispc.write<Dispc::Gfx_ba0>(phys_base);
 	_dispc.write<Dispc::Gfx_ba1>(phys_base);
@@ -237,11 +223,7 @@ bool Framebuffer::Driver::_init_hdmi(Framebuffer::addr_t phys_base)
 
 	_hdmi.write<Hdmi::Video_cfg::Start>(1);
 
-	Dispc::Gfx_attributes::access_t pixel_format = 0;
-	switch (_fb_format) {
-	case FORMAT_RGB565: pixel_format = Dispc::Gfx_attributes::Format::RGB16; break;
-	}
-	_dispc.write<Dispc::Gfx_attributes::Format>(pixel_format);
+	_dispc.write<Dispc::Gfx_attributes::Format>(Dispc::Gfx_attributes::Format::ARGB32);
 
 	_dispc.write<Dispc::Gfx_ba0>(phys_base);
 	_dispc.write<Dispc::Gfx_ba1>(phys_base);
@@ -270,13 +252,10 @@ bool Framebuffer::Driver::_init_hdmi(Framebuffer::addr_t phys_base)
 
 
 bool Framebuffer::Driver::init(size_t width, size_t height,
-                               Framebuffer::Driver::Format format,
-                               Output output,
-                               Framebuffer::addr_t phys_base)
+                               Output output, Framebuffer::addr_t phys_base)
 {
 	_fb_width = width;
 	_fb_height = height;
-	_fb_format = format;
 
 	bool ret = false;
 	switch (output) {

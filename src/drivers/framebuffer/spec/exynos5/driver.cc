@@ -372,8 +372,6 @@ class Video_mixer : public Attached_mmio
 
 	public:
 
-		typedef Framebuffer::Driver::Format Format;
-
 		/**
 		 * Constructor
 		 */
@@ -386,13 +384,11 @@ class Video_mixer : public Attached_mmio
 		 * \param fb_phys    physical base of framebuffer
 		 * \param fb_width   width of framebuffer in pixel
 		 * \param fb_height  height of framebuffer in pixel
-		 * \param fb_format  pixel format of framebuffer
 		 *
 		 * \retval  0  succeeded
 		 * \retval -1  failed
 		 */
-		int init(addr_t const fb_phys, size_t const fb_width,
-		         size_t const fb_height, Format const fb_format)
+		int init(addr_t const fb_phys, size_t const fb_width, size_t const fb_height)
 		{
 			using namespace Framebuffer;
 
@@ -439,14 +435,8 @@ class Video_mixer : public Attached_mmio
 			write<M0_g0_cfg>(gcfg);
 
 			/* input pixel format */
-			switch (fb_format) {
-			case Driver::FORMAT_RGB565:
-				write<M0_g0_cfg::Color_format>(4);
-				break;
-			default:
-				error("framebuffer format not supported");
-				return -1;
-			}
+			write<M0_g0_cfg::Color_format>(7);
+
 			/* window measurements */
 			write<M0_g0_span::Span>(fb_width);
 			M0_g0_wh::access_t wh = read<M0_g0_wh>();
@@ -1082,12 +1072,10 @@ class Hdmi : public Attached_mmio
  ** Framebuffer::Driver **
  *************************/
 
-int Framebuffer::Driver::init(size_t width, size_t height, Format format,
-                              addr_t fb_phys)
+int Framebuffer::Driver::init(size_t width, size_t height, addr_t fb_phys)
 {
 	_fb_width  = width;
 	_fb_height = height;
-	_fb_format = format;
 
 	static Timer_delayer delayer(_env);
 
@@ -1101,7 +1089,7 @@ int Framebuffer::Driver::init(size_t width, size_t height, Format format,
 
 	/* set-up video mixer to feed HDMI */
 	static Video_mixer video_mixer(_env);
-	err = video_mixer.init(fb_phys, _fb_width, _fb_height, _fb_format);
+	err = video_mixer.init(fb_phys, _fb_width, _fb_height);
 	if (err) { return -1; }
 
 	/* set-up HDMI to feed connected device */

@@ -47,7 +47,7 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 
 		Genode::Attached_ram_dataspace _client_ds
 			{ _env.ram(), _env.rm(),
-			  Genode::size_t(_client_mode.width()*_client_mode.height())*2
+			  Genode::size_t(_client_mode.area.count()*_client_mode.bytes_per_pixel())
 			};
 
 		Genode::Constructible<Genode::Attached_dataspace> _parent_ds;
@@ -72,21 +72,21 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 
 			/* calculate the scaling using the FPU */
 			float x_factor =
-				float(_parent_mode.width()) /
-				float(_client_mode.width());
+				float(_parent_mode.area.w()) /
+				float(_client_mode.area.w());
 
 			float y_factor =
-				float(_parent_mode.height()) /
-				float(_client_mode.height());
+				float(_parent_mode.area.h()) /
+				float(_client_mode.area.h());
 
 			float factor = Genode::min(x_factor, y_factor);
 
 			_x_offset =
-				(_parent_mode.width() -
-				 (_client_mode.width()*factor)) / 2;
+				(_parent_mode.area.w() -
+				 (_client_mode.area.w()*factor)) / 2;
 			_y_offset =
-				(_parent_mode.height() -
-				 (_client_mode.height()*factor)) / 2;
+				(_parent_mode.area.h() -
+				 (_client_mode.area.h()*factor)) / 2;
 
 			/* shift so the scaling can be done with integeral math */
 			_scale_factor = (1<<SHIFT)*factor;
@@ -97,9 +97,9 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 		{
 			_parent_mode = _parent_fb.mode();
 
-			if (_parent_mode.width() && _parent_mode.height()) {
+			if (_parent_mode.area.w() && _parent_mode.area.h()) {
 				_rescale();
-				refresh(0,0, _client_mode.width(), _client_mode.height());
+				refresh(0,0, _client_mode.area.w(), _client_mode.area.h());
 			} else {
 				/* notify the client of the null mode */
 				if (_client_sig_cap.valid())
@@ -115,10 +115,10 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 		Session_component(Genode::Env &env, Mode client_mode)
 		:
 			_env(env),
-			_client_mode(client_mode.width() && client_mode.height() ?
+			_client_mode(client_mode.area.w() && client_mode.area.h() ?
 			             client_mode : _parent_mode)
 		{
-			if (!(_client_mode.width() && _client_mode.height())) {
+			if (!(_client_mode.area.w() && _client_mode.area.h())) {
 				/* use the parent mode maybe enlarge later */
 				_client_mode = _parent_mode;
 				_handle_mode();
@@ -139,7 +139,7 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 		Mode mode() const override
 		{
 			Mode parent_mode = _parent_fb.mode();
-			return (!parent_mode.width() && !parent_mode.height()) ?
+			return (!parent_mode.area.h() && !parent_mode.area.h()) ?
 				parent_mode : _client_mode;
 		}
 
@@ -158,10 +158,10 @@ class Fb_scaler::Session_component : public Genode::Rpc_object<Framebuffer::Sess
 			uint16_t *dst = _parent_ds->local_addr<uint16_t>();
 
 			for (int y = py; y < ph; ++y) {
-				int src_y = ((y*_scale_ratio) >> SHIFT)*_client_mode.width();
+				int src_y = ((y*_scale_ratio) >> SHIFT)*_client_mode.area.w();
 
 				for (int x = px; x < pw; ++x) {
-					dst[(_y_offset+y)*_parent_mode.width()+x+_x_offset] =
+					dst[(_y_offset+y)*_parent_mode.area.w()+x+_x_offset] =
 						src[src_y+((x*_scale_ratio) >> SHIFT)];
 				}
 			}
@@ -196,7 +196,7 @@ class Fb_scaler::Root_component : Root_component_base
 			unsigned height = Arg_string::find_arg(args, "fb_height").ulong_value(0);
 
 			return new (md_alloc())
-				Session_component(_env, Mode(width, height, Mode::INVALID));
+				Session_component(_env, Mode { .area = { width, height } });
 		}
 
 	public:
