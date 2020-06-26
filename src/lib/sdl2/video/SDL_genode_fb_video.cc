@@ -74,8 +74,8 @@ extern "C" {
 			Framebuffer::Mode mode = _gui.mode();
 
 			video_events.resize_pending = true;
-			video_events.width  = mode.width();
-			video_events.height = mode.height();
+			video_events.width  = mode.area.w();
+			video_events.height = mode.area.h();
 		}
 
 		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
@@ -104,18 +104,19 @@ extern "C" {
 		 ** Framebuffer::Session Interface **
 		 ************************************/
 
-		Genode::Dataspace_capability dataspace(int width, int height)
+		Genode::Dataspace_capability dataspace(unsigned const width,
+		                                       unsigned const height)
 		{
-			_gui.buffer(
-				::Framebuffer::Mode(width, height, Framebuffer::Mode::RGB565),
-				false);
+			Framebuffer::Mode mode { Framebuffer::Area(width, height) };
 
-			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
+			_gui.buffer( mode, false);
+
+			mode = _gui.framebuffer()->mode();
 
 			using namespace Gui;
 			Area area(
-				Genode::min(mode.width(), width),
-				Genode::min(mode.height(), height));
+				Genode::min(mode.area.w(), width),
+				Genode::min(mode.area.h(), height));
 
 			typedef Gui::Session::Command Command;
 			_gui.enqueue<Command::Geometry>(
@@ -180,7 +181,7 @@ extern "C" {
 
 		Genode_Driverdata &drv = *(Genode_Driverdata *)device->driverdata;
 
-		Uint32 const surface_format = SDL_PIXELFORMAT_RGB565;
+		Uint32 const surface_format = SDL_PIXELFORMAT_RGB888;
 
 		/* Free the old surface */
 		SDL_Surface *surface = (SDL_Surface *)SDL_GetWindowData(window,
@@ -298,38 +299,26 @@ extern "C" {
 		/* Get the framebuffer size and mode infos */
 		drv.scr_mode = drv.framebuffer->mode();
 
-		/* set mode specific values */
-		switch(drv.scr_mode.format()) {
-		case Framebuffer::Mode::RGB565:
-		{
-			Genode::log("We use pixelformat rgb565.");
+		Genode::log("We use pixelformat rgb888.");
 
-			device->displays = (SDL_VideoDisplay *)(SDL_calloc(1, sizeof(*device->displays)));
-			if (!device->displays)
-				return SDL_SetError("Memory allocation failed");
+		device->displays = (SDL_VideoDisplay *)(SDL_calloc(1, sizeof(*device->displays)));
+		if (!device->displays)
+			return SDL_SetError("Memory allocation failed");
 
-			SDL_DisplayMode mode {
-				.format = SDL_PIXELFORMAT_RGB565,
-				.w = drv.scr_mode.width(),
-				.h = drv.scr_mode.height(),
-				.refresh_rate = 0,
-				.driverdata = nullptr
-			};
+		SDL_DisplayMode mode {
+			.format = SDL_PIXELFORMAT_RGB888,
+			.w = drv.scr_mode.area.w(),
+			.h = drv.scr_mode.area.h(),
+			.refresh_rate = 0,
+			.driverdata = nullptr
+		};
 
-			SDL_VideoDisplay &display = device->displays[0];
-			if (!SDL_AddDisplayMode(&display, &mode))
-				return SDL_SetError("Setting display mode failed");
+		SDL_VideoDisplay &display = device->displays[0];
+		if (!SDL_AddDisplayMode(&display, &mode))
+			return SDL_SetError("Setting display mode failed");
 
-			display.current_mode = mode;
-			device->num_displays = 1;
-
-			break;
-		}
-		default:
-			SDL_SetError("Couldn't get console mode info");
-			GenodeVideo_Quit(device);
-			return -1;
-		}
+		display.current_mode = mode;
+		device->num_displays = 1;
 
 		return 0;
 	}
