@@ -178,7 +178,7 @@ extern "C" {
 
 		Genode_Driverdata &drv = *(Genode_Driverdata *)device->driverdata;
 
-		Uint32 const surface_format = SDL_PIXELFORMAT_ABGR8888;
+		Uint32 const surface_format = SDL_PIXELFORMAT_ARGB8888;
 
 		/* Free the old surface */
 		SDL_Surface *surface = (SDL_Surface *)SDL_GetWindowData(window,
@@ -302,7 +302,7 @@ extern "C" {
 			return SDL_SetError("Memory allocation failed");
 
 		SDL_DisplayMode mode {
-			.format = SDL_PIXELFORMAT_ABGR8888,
+			.format = SDL_PIXELFORMAT_ARGB8888,
 			.w = drv.scr_mode.area.w(),
 			.h = drv.scr_mode.area.h(),
 			.refresh_rate = 0,
