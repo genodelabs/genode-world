@@ -53,12 +53,11 @@ install_config {
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
-			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Timer">   <child name="timer"/> </service>
+			<service name="Capture"> <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-		<provides>
-			<service name="Input"/> <service name="Framebuffer"/>
-		</provides>
+		<provides> <service name="Input"/> </provides>
 	</start>
 
 	<start name="timer">
@@ -69,10 +68,12 @@ install_config {
 
 	<start name="nitpicker">
 		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Gui"/></provides>
-		<config focus="rom">
+		<provides> <service name="Gui"/> <service name="Capture"/> </provides>
+		<config focus="rom" request_framebuffer="no">
+			<capture/>
+
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
-			<domain name="default" layer="2" content="client" label="no" hover="always"/>
+			<domain name="default" layer="2" content="client" label="no" hover="always" width="1024" height="768"/>
 
 			<policy label_prefix="pointer" domain="pointer"/>
 			<default-policy domain="default"/>

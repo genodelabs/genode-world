@@ -26,6 +26,7 @@ set build_components {
 	server/nitpicker
 	server/rom_filter
 	server/terminal_log
+	server/input_event_bridge
 	test/nitpicker
 }
 
@@ -63,15 +64,22 @@ append config {
 	<default caps="128"/>
 	<start name="fb_sdl" ld="no">
 		<resource name="RAM" quantum="4M"/>
-		<provides>
-			<service name="Input"/>
-			<service name="Framebuffer"/>
-		</provides>
+		<provides> <service name="Input"/> </provides>
 		<config width="800" height="600"/>
 		<route> <any-service> <parent/> <any-child/> </any-service> </route>
 	</start>
-	<alias name="fb_drv" child="fb_sdl"/>
-	<alias name="input_drv" child="fb_sdl"/>
+	<start name="input_event_bridge">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Event"/>
+			<service name="Input"/>
+		</provides>
+		<config/>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+	<alias name="input_drv" child="input_event_bridge"/>
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
@@ -99,7 +107,9 @@ append config {
 				<attribute name="enabled" /> </input>
 
 			<output node="config">
+				<attribute name="request_framebuffer" value="no"/>
 				<inline>
+					<capture/>
 					<report focus="yes" xray="yes" hover="yes" />
 					<domain name="pointer" layer="2" content="client" label="no" origin="pointer" />
 				</inline>
@@ -138,10 +148,9 @@ append config {
 
 	<start name="nitpicker">
 		<resource name="RAM" quantum="4M"/>
-		<provides><service name="Gui"/></provides>
+		<provides> <service name="Gui"/> <service name="Capture"/> </provides>
 		<route>
 			<service name="ROM" label="config"> <child name="nitpicker_config"/> </service>
-			<service name="Framebuffer"> <child name="fb_drv" /> </service>
 			<service name="Input"> <child name="input_drv" /> </service>
 			<service name="Report"> <child name="report_rom" /> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -301,6 +310,7 @@ set boot_modules {
 	testnit
 	timer
 	global_keys_handler
+	input_event_bridge
 }
 
 build_boot_image $boot_modules

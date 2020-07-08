@@ -49,7 +49,7 @@ class Timer_delayer : public Mmio::Delayer, public Timer::Connection
 
 		Timer_delayer(Genode::Env &env) : Timer::Connection(env) { }
 
-		void usleep(uint64_t us) { Timer::Connection::usleep(us); }
+		void usleep(uint64_t us) override { Timer::Connection::usleep(us); }
 };
 
 

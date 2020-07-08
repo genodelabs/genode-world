@@ -18,6 +18,7 @@ set build_components {
 	drivers/gpu/intel
 	server/liquid_framebuffer
 	server/nitpicker
+	server/input_event_bridge
 	lib/mesa/swrast
 	app/launchpad
 	app/pointer
@@ -55,20 +56,26 @@ set config {
 append_if [have_spec linux] config {
 	<start name="fb_sdl" caps="200" ld="no">
 		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Input"/> </provides>
+	</start>
+	<start name="input_event_bridge">
+		<resource name="RAM" quantum="1M"/>
 		<provides>
+			<service name="Event"/>
 			<service name="Input"/>
-			<service name="Framebuffer"/>
 		</provides>
-	</start>}
+		<config/>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+	<alias name="input_drv" child="input_event_bridge"/> }
 
 append_platform_drv_config
 
 append_if [expr ![have_spec linux]] config {
 	<start name="fb_drv">
 		<resource name="RAM" quantum="10M"/>
-		<provides>
-			<service name="Framebuffer"/>
-		</provides>
 		<route><any-service> <parent /> <any-child/> </any-service> </route>
 	</start>}
 
@@ -76,7 +83,8 @@ append_if [have_spec ps2] config {
 	<start name="ps2_drv">
 		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Input"/> </provides>
-	</start> }
+	</start>
+	<alias name="input_drv" child="ps2_drv"/> }
 
 append config {
 	<start name="timer">
@@ -85,14 +93,18 @@ append config {
 	</start>
 	<start name="nitpicker">
 		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Gui"/> </provides>
-		<config>
+		<provides> <service name="Gui"/> <service name="Capture"/> </provides>
+		<config request_framebuffer="no">
+			<capture/>
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="default" layer="2" content="client" label="no" focus="click" hover="always" />
 			<policy label_prefix="pointer" domain="pointer"/>
 			<default-policy                domain="default"/>
 		</config>
-		<route><any-service><parent/><any-child/></any-service></route>
+		<route>
+			<service name="Input"> <child name="input_drv"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 	<start name="pointer">
 		<resource name="RAM" quantum="1M"/>
@@ -120,7 +132,7 @@ set launchpad_config {
 				<service name="RM"/>
 				<service name="CPU"/>
 				<service name="LOG"/>
-				<service name="Nitpicker"/>
+				<service name="Gui"/>
 				<service name="Timer"/>
 				<service name="Gpu"/>
 			</parent-provides>
@@ -178,8 +190,9 @@ install_config $config
 set boot_modules {
 	core init ld.lib.so timer nitpicker pointer liquid_fb
 	launchpad
+	input_event_bridge
 
-	libc.lib.so vfs.lib.so libm.lib.so pthread.lib.so
+	libc.lib.so vfs.lib.so libm.lib.so
 	egl.lib.so mesa.lib.so stdcxx.lib.so
 	expat.lib.so glapi.lib.so sdl.lib.so
 

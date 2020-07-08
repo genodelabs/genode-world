@@ -235,11 +235,12 @@ append_if $use_interactive_pkg config {
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
-			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Timer">   <child name="timer"/> </service>
+			<service name="Capture"> <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<provides>
-			<service name="Input"/> <service name="Framebuffer"/>
+			<service name="Input"/>
 			<service name="Platform"/>
 		</provides>
 	</start>}
@@ -250,7 +251,6 @@ if { !$use_interactive_pkg } {
 	append_if [have_spec x86] config {
 		<start name="intel_fb_drv" caps="1000">
 			<resource name="RAM" quantum="60M"/>
-			<provides><service name="Framebuffer"/></provides>
 			<route>
 				<any-service> <parent/> <any-child /> </any-service>
 			</route>
@@ -342,12 +342,13 @@ append config {
 	<start name="nitpicker" caps="110">
 		<resource name="RAM" quantum="1216K"/>
 		<resource name="CPU" quantum="20"/>
-		<provides><service name="Gui"/></provides>
-		<config>
+		<provides> <service name="Gui"/> <service name="Capture"/> </provides>
+		<config request_framebuffer="no">
+			<capture/>
 			<report focus="yes" />
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="panel"   layer="2" content="client" label="no" focus="none" />
-			<domain name="client"  layer="3" content="client" label="no" focus="click"/>
+			<domain name="client"  layer="3" content="client" label="no" focus="click" width="1024" height="768"/>
 			<policy label_prefix="pointer"    domain="pointer"/>
 			<default-policy domain="client"/>
 		</config>

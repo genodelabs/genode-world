@@ -2,7 +2,7 @@ set build_components { test/sdl2 }
 
 set app_config {
 	<start name="test-sdl2">
-		<resource name="RAM" quantum="32M"/>
+		<resource name="RAM" quantum="48M"/>
 		<config ld_verbose="yes">
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>
 			<libc stdout="/dev/log"/>
