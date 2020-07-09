@@ -28,6 +28,12 @@
 /* Define to 1 if you have the `fsync' function. */
 #define HAVE_FSYNC 1
 
+/* Define to 1 if you have the `getfsstat' function. */
+#define HAVE_GETFSSTAT 1
+
+/* Define to 1 if you have the <fstab.h> header file. */
+#define HAVE_FSTAB_H 1 
+
 /* define to use system printf */
 #define HAVE_GOOD_PRINTF
 
@@ -50,6 +56,7 @@
 /* Define to 1 if you have the `recvmmsg' function. */
 #define HAVE_RECVMMSG 1
 
+/* Define to 1 if you have the `fsync' function. */
 /* Define to 1 if you have the `sendmmsg' function. */
 #define HAVE_SENDMMSG 1
 
@@ -137,25 +144,25 @@
 #define HAVE_UNISTD_H 1
 
 /* The size of `char', as computed by sizeof. */
-#define SIZEOF_CHAR sizeof(char)
+#define SIZEOF_CHAR 1
 
 /* The size of `int', as computed by sizeof. */
-#define SIZEOF_INT sizeof(int)
+#define SIZEOF_INT __SIZEOF_INT__
 
 /* The size of `long', as computed by sizeof. */
-#define SIZEOF_LONG sizeof(long)
+#define SIZEOF_LONG __SIZEOF_LONG__
 
 /* The size of `long long', as computed by sizeof. */
-#define SIZEOF_LONG_LONG sizeof()
+#define SIZEOF_LONG_LONG __SIZEOF_LONG_LONG__
 
 /* The size of `short', as computed by sizeof. */
-#define SIZEOF_SHORT sizeof(short)
+#define SIZEOF_SHORT __SIZEOF__SHORT__
 
 /* The size of `size_t', as computed by sizeof. */
-#define SIZEOF_SIZE_T sizeof(size_t)
+#define SIZEOF_SIZE_T __SIZEOF_SIZE_T__
 
 /* The size of `ssize_t', as computed by sizeof. */
-#define SIZEOF_SSIZE_T sizeof(ssize_t)
+#define SIZEOF_SSIZE_T __SIZEOF_SIZE_T__
 
 /* The size of `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P sizeof(void *)
@@ -172,5 +179,4 @@
 /* Use pthreads */
 #define THREADS_POSIX
 
-/* Using GNU libiconv */
-#define USE_LIBICONV_GNU
+#define USE_STATFS 1

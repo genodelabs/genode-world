@@ -6,6 +6,8 @@ URL(glib) := https://download.gnome.org/sources/glib/2.52/glib-$(VERSION).tar.xz
 SHA(glib) := f00e5d9e2a2948b1da25fcba734a6b7a40f556de8bc9f528a53f6569969ac5d0
 DIR(glib) := src/lib/glib
 
+$(call check_tool,sed)
+
 default: macro_sanity
 
 # This is wacky automess kludge that
@@ -13,9 +15,14 @@ default: macro_sanity
 macro_sanity: $(DOWNLOADS)
 	$(VERBOSE)sed -i '/error/d' src/lib/glib/glib/gversionmacros.h
 
-DIRS := include/glib include/glib/glib include/glib/glib/deprecated
+DIRS := include/glib include/glib/glib include/glib/glib/deprecated \
+	include/glib/gio include/glib/gobject
 
-DIR_CONTENT(include/glib) := src/lib/glib/glib/glib.h
+DIR_CONTENT(include/glib) := \
+	src/lib/glib/glib/glib.h \
+	src/lib/glib/glib/glib-object.h \
+	src/lib/glib/glib/glib-unix.h \
+	src/lib/glib/gmodule/gmodule.h
 
 DIR_CONTENT(include/glib/glib) := \
 	src/lib/glib/glib/galloca.h \
@@ -96,4 +103,268 @@ DIR_CONTENT(include/glib/glib/deprecated) := \
 	src/lib/glib/glib/deprecated/gcompletion.h  \
 	src/lib/glib/glib/deprecated/gmain.h  \
 	src/lib/glib/glib/deprecated/grel.h  \
-	src/lib/glib/glib/deprecated/gthread.h
+	src/lib/glib/glib/deprecated/gthread.h#
+
+DIR_CONTENT(include/glib/gio) := \
+	src/lib/glib/gio/gaction.h \
+	src/lib/glib/gio/gactiongroup.h \
+	src/lib/glib/gio/gactiongroupexporter.h \
+	src/lib/glib/gio/gactionmap.h \
+	src/lib/glib/gio/gappinfo.h \
+	src/lib/glib/gio/gapplication.h \
+	src/lib/glib/gio/gapplicationcommandline.h \
+	src/lib/glib/gio/gapplicationimpl.h \
+	src/lib/glib/gio/gasynchelper.h \
+	src/lib/glib/gio/gasyncinitable.h \
+	src/lib/glib/gio/gasyncresult.h \
+	src/lib/glib/gio/gbufferedinputstream.h \
+	src/lib/glib/gio/gbufferedoutputstream.h \
+	src/lib/glib/gio/gbytesicon.h \
+	src/lib/glib/gio/gcancellable.h \
+	src/lib/glib/gio/gcharsetconverter.h \
+	src/lib/glib/gio/gconstructor_as_data.h \
+	src/lib/glib/gio/gcontenttype.h \
+	src/lib/glib/gio/gcontextspecificgroup.h \
+	src/lib/glib/gio/gconverter.h \
+	src/lib/glib/gio/gconverterinputstream.h \
+	src/lib/glib/gio/gconverteroutputstream.h \
+	src/lib/glib/gio/gnotification-private.h \
+	src/lib/glib/gio/gcredentials.h \
+	src/lib/glib/gio/gdatagrambased.h \
+	src/lib/glib/gio/gdatainputstream.h \
+	src/lib/glib/gio/gdataoutputstream.h \
+	src/lib/glib/gio/gdbus-daemon-generated.h \
+	src/lib/glib/gio/gdbusactiongroup.h \
+	src/lib/glib/gio/gdbusaddress.h \
+	src/lib/glib/gio/gdbusauth.h \
+	src/lib/glib/gio/gdbusauthmechanism.h \
+	src/lib/glib/gio/gdbusauthmechanismanon.h \
+	src/lib/glib/gio/gdbusauthmechanismexternal.h \
+	src/lib/glib/gio/gdbusauthmechanismsha1.h \
+	src/lib/glib/gio/gdbusauthobserver.h \
+	src/lib/glib/gio/gdbusconnection.h \
+	src/lib/glib/gio/gdbusdaemon.h \
+	src/lib/glib/gio/gdbuserror.h \
+	src/lib/glib/gio/gdbusinterface.h \
+	src/lib/glib/gio/gdbusinterfaceskeleton.h \
+	src/lib/glib/gio/gdbusintrospection.h \
+	src/lib/glib/gio/gdbusmenumodel.h \
+	src/lib/glib/gio/gdbusmessage.h \
+	src/lib/glib/gio/gdbusmethodinvocation.h \
+	src/lib/glib/gio/gdbusnameowning.h \
+	src/lib/glib/gio/gdbusnamewatching.h \
+	src/lib/glib/gio/gdbusobject.h \
+	src/lib/glib/gio/gdbusobjectmanager.h \
+	src/lib/glib/gio/gdbusobjectmanagerclient.h \
+	src/lib/glib/gio/gdbusobjectmanagerserver.h \
+	src/lib/glib/gio/gdbusobjectproxy.h \
+	src/lib/glib/gio/gdbusobjectskeleton.h \
+	src/lib/glib/gio/gdbusproxy.h \
+	src/lib/glib/gio/gdbusserver.h \
+	src/lib/glib/gio/gdbusutils.h \
+	src/lib/glib/gio/gdelayedsettingsbackend.h \
+	src/lib/glib/gio/gdesktopappinfo.h \
+	src/lib/glib/gio/gdocumentportal.h \
+	src/lib/glib/gio/gdrive.h \
+	src/lib/glib/gio/gdtlsclientconnection.h \
+	src/lib/glib/gio/gdtlsconnection.h \
+	src/lib/glib/gio/gdtlsserverconnection.h \
+	src/lib/glib/gio/gdummyfile.h \
+	src/lib/glib/gio/gdummyproxyresolver.h \
+	src/lib/glib/gio/gdummytlsbackend.h \
+	src/lib/glib/gio/gemblem.h \
+	src/lib/glib/gio/gemblemedicon.h \
+	src/lib/glib/gio/gfile.h \
+	src/lib/glib/gio/gfileattribute-priv.h \
+	src/lib/glib/gio/gfileattribute.h \
+	src/lib/glib/gio/gfiledescriptorbased.h \
+	src/lib/glib/gio/gfileenumerator.h \
+	src/lib/glib/gio/gfileicon.h \
+	src/lib/glib/gio/gfileinfo-priv.h \
+	src/lib/glib/gio/gfileinfo.h \
+	src/lib/glib/gio/gfileinputstream.h \
+	src/lib/glib/gio/gfileiostream.h \
+	src/lib/glib/gio/gfilemonitor.h \
+	src/lib/glib/gio/gfilenamecompleter.h \
+	src/lib/glib/gio/gfileoutputstream.h \
+	src/lib/glib/gio/gfilterinputstream.h \
+	src/lib/glib/gio/gfilteroutputstream.h \
+	src/lib/glib/gio/ghttpproxy.h \
+	src/lib/glib/gio/gicon.h \
+	src/lib/glib/gio/ginetaddress.h \
+	src/lib/glib/gio/ginetaddressmask.h \
+	src/lib/glib/gio/ginetsocketaddress.h \
+	src/lib/glib/gio/ginitable.h \
+	src/lib/glib/gio/ginputstream.h \
+	src/lib/glib/gio/gio-autocleanups.h \
+	src/lib/glib/gio/gio-tool.h \
+	src/lib/glib/gio/gio.h \
+	src/lib/glib/gio/gio_trace.h \
+	src/lib/glib/gio/gioenums.h \
+	src/lib/glib/gio/gioenumtypes.h \
+	src/lib/glib/gio/gioerror.h \
+	src/lib/glib/gio/giomodule-priv.h \
+	src/lib/glib/gio/giomodule.h \
+	src/lib/glib/gio/gioscheduler.h \
+	src/lib/glib/gio/giostream.h \
+	src/lib/glib/gio/giotypes.h \
+	src/lib/glib/gio/giowin32-priv.h \
+	src/lib/glib/gio/glistmodel.h \
+	src/lib/glib/gio/gliststore.h \
+	src/lib/glib/gio/gloadableicon.h \
+	src/lib/glib/gio/glocalfile.h \
+	src/lib/glib/gio/glocalfileenumerator.h \
+	src/lib/glib/gio/glocalfileinfo.h \
+	src/lib/glib/gio/glocalfileinputstream.h \
+	src/lib/glib/gio/glocalfileiostream.h \
+	src/lib/glib/gio/glocalfilemonitor.h \
+	src/lib/glib/gio/glocalfileoutputstream.h \
+	src/lib/glib/gio/glocalvfs.h \
+	src/lib/glib/gio/gmemoryinputstream.h \
+	src/lib/glib/gio/gmemoryoutputstream.h \
+	src/lib/glib/gio/gmenu.h \
+	src/lib/glib/gio/gmenuexporter.h \
+	src/lib/glib/gio/gmenumodel.h \
+	src/lib/glib/gio/gmount.h \
+	src/lib/glib/gio/gmountoperation.h \
+	src/lib/glib/gio/gnativesocketaddress.h \
+	src/lib/glib/gio/gnativevolumemonitor.h \
+	src/lib/glib/gio/gnetworkaddress.h \
+	src/lib/glib/gio/gnetworkmonitor.h \
+	src/lib/glib/gio/gnetworkmonitorbase.h \
+	src/lib/glib/gio/gnetworkmonitornetlink.h \
+	src/lib/glib/gio/gnetworkmonitornm.h \
+	src/lib/glib/gio/gnetworkmonitorportal.h \
+	src/lib/glib/gio/gnetworkservice.h \
+	src/lib/glib/gio/gnotification.h \
+	src/lib/glib/gio/gnotificationbackend.h \
+	src/lib/glib/gio/gosxappinfo.h \
+	src/lib/glib/gio/goutputstream.h \
+	src/lib/glib/gio/gpermission.h \
+	src/lib/glib/gio/gpollableinputstream.h \
+	src/lib/glib/gio/gpollableoutputstream.h \
+	src/lib/glib/gio/gpollableutils.h \
+	src/lib/glib/gio/gpollfilemonitor.h \
+	src/lib/glib/gio/gportalsupport.h \
+	src/lib/glib/gio/gpropertyaction.h \
+	src/lib/glib/gio/gproxy.h \
+	src/lib/glib/gio/gproxyaddress.h \
+	src/lib/glib/gio/gproxyaddressenumerator.h \
+	src/lib/glib/gio/gproxyresolver.h \
+	src/lib/glib/gio/gproxyresolverportal.h \
+	src/lib/glib/gio/gregistrysettingsbackend.h \
+	src/lib/glib/gio/gremoteactiongroup.h \
+	src/lib/glib/gio/gresolver.h \
+	src/lib/glib/gio/gresource.h \
+	src/lib/glib/gio/gresourcefile.h \
+	src/lib/glib/gio/gseekable.h \
+	src/lib/glib/gio/gsettings-mapping.h \
+	src/lib/glib/gio/gsettings.h \
+	src/lib/glib/gio/gsettingsbackend.h \
+	src/lib/glib/gio/gsettingsschema.h \
+	src/lib/glib/gio/gsimpleaction.h \
+	src/lib/glib/gio/gsimpleactiongroup.h \
+	src/lib/glib/gio/gsimpleasyncresult.h \
+	src/lib/glib/gio/gsimpleiostream.h \
+	src/lib/glib/gio/gsimplepermission.h \
+	src/lib/glib/gio/gsimpleproxyresolver.h \
+	src/lib/glib/gio/gsocket.h \
+	src/lib/glib/gio/gsocketaddress.h \
+	src/lib/glib/gio/gsocketaddressenumerator.h \
+	src/lib/glib/gio/gsocketclient.h \
+	src/lib/glib/gio/gsocketconnectable.h \
+	src/lib/glib/gio/gsocketconnection.h \
+	src/lib/glib/gio/gsocketcontrolmessage.h \
+	src/lib/glib/gio/gsocketinputstream.h \
+	src/lib/glib/gio/gsocketlistener.h \
+	src/lib/glib/gio/gsocketoutputstream.h \
+	src/lib/glib/gio/gsocketservice.h \
+	src/lib/glib/gio/gsocks4aproxy.h \
+	src/lib/glib/gio/gsocks4proxy.h \
+	src/lib/glib/gio/gsocks5proxy.h \
+	src/lib/glib/gio/gsrvtarget.h \
+	src/lib/glib/gio/gsubprocess.h \
+	src/lib/glib/gio/gsubprocesslauncher.h \
+	src/lib/glib/gio/gtask.h \
+	src/lib/glib/gio/gtcpconnection.h \
+	src/lib/glib/gio/gtcpwrapperconnection.h \
+	src/lib/glib/gio/gtestdbus.h \
+	src/lib/glib/gio/gthemedicon.h \
+	src/lib/glib/gio/gthreadedresolver.h \
+	src/lib/glib/gio/gthreadedsocketservice.h \
+	src/lib/glib/gio/gtlsbackend.h \
+	src/lib/glib/gio/gtlscertificate.h \
+	src/lib/glib/gio/gtlsclientconnection.h \
+	src/lib/glib/gio/gtlsconnection.h \
+	src/lib/glib/gio/gtlsdatabase.h \
+	src/lib/glib/gio/gtlsfiledatabase.h \
+	src/lib/glib/gio/gtlsinteraction.h \
+	src/lib/glib/gio/gtlspassword.h \
+	src/lib/glib/gio/gtlsserverconnection.h \
+	src/lib/glib/gio/gunionvolumemonitor.h \
+	src/lib/glib/gio/gunixconnection.h \
+	src/lib/glib/gio/gunixcredentialsmessage.h \
+	src/lib/glib/gio/gunixfdlist.h \
+	src/lib/glib/gio/gunixfdmessage.h \
+	src/lib/glib/gio/gunixinputstream.h \
+	src/lib/glib/gio/gunixmount.h \
+	src/lib/glib/gio/gunixmounts.h \
+	src/lib/glib/gio/gunixoutputstream.h \
+	src/lib/glib/gio/gunixsocketaddress.h \
+	src/lib/glib/gio/gunixvolume.h \
+	src/lib/glib/gio/gunixvolumemonitor.h \
+	src/lib/glib/gio/gvfs.h \
+	src/lib/glib/gio/gvolume.h \
+	src/lib/glib/gio/gvolumemonitor.h \
+	src/lib/glib/gio/gwin32appinfo.h \
+	src/lib/glib/gio/gwin32inputstream.h \
+	src/lib/glib/gio/gwin32mount.h \
+	src/lib/glib/gio/gwin32networking.h \
+	src/lib/glib/gio/gwin32outputstream.h \
+	src/lib/glib/gio/gwin32registrykey.h \
+	src/lib/glib/gio/gwin32volumemonitor.h \
+	src/lib/glib/gio/gzlibcompressor.h \
+	src/lib/glib/gio/gzlibdecompressor.h
+
+DIR_CONTENT(include/glib/gobject) := \
+	src/lib/glib/gobject/gbinding.h \
+	src/lib/glib/gobject/gboxed.h \
+	src/lib/glib/gobject/gclosure.h \
+	src/lib/glib/gobject/genums.h \
+	src/lib/glib/gobject/glib-types.h \
+	src/lib/glib/gobject/gmarshal.h \
+	src/lib/glib/gobject/gobject-autocleanups.h \
+	src/lib/glib/gobject/gobject.h \
+	src/lib/glib/gobject/gobjectnotifyqueue.c \
+	src/lib/glib/gobject/gparam.h \
+	src/lib/glib/gobject/gparamspecs.h \
+	src/lib/glib/gobject/gsignal.h \
+	src/lib/glib/gobject/gsourceclosure.h \
+	src/lib/glib/gobject/gtype.h \
+	src/lib/glib/gobject/gtypemodule.h \
+	src/lib/glib/gobject/gtypeplugin.h \
+	src/lib/glib/gobject/gvalue.h \
+	src/lib/glib/gobject/gvaluearray.h \
+	src/lib/glib/gobject/gvaluecollector.h \
+	src/lib/glib/gobject/gvaluetypes.h
+
+#
+# Generate header files
+#
+
+gen_files := include/glib/gio/gnetworking.h
+
+default: $(gen_files)
+
+$(gen_files): _dirs
+
+subst := \
+	"@WSPIAPI_INCLUDE@/" \
+	"@NAMESER_COMPAT_INCLUDE@/"
+
+apply_substitutions = $(VERBOSE)for i in $(subst); do sed -i "s/$$i/g" $(1); done
+
+include/glib/gio/gnetworking.h:
+	$(MSG_GENERATE)$@
+	$(VERBOSE)cp src/lib/glib/gio/gnetworking.h.in $@
+	$(call apply_substitutions,$@)
