@@ -1,0 +1,84 @@
+set build_components {
+	lib/vfs/pipe
+	app/mbimcli
+	server/lx_file_terminal
+}
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot \
+	[depot_user]/src/[base_src] \
+	[depot_user]/src/init
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="200"/>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="lx_file_terminal" ld="no">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="Terminal"/> </provides>
+		<config>
+			<default-policy filename="/dev/cdc-wdm0" writeable="yes"/>
+		</config>
+	</start>
+	<start name="mbimcli">
+		<resource name="RAM" quantum="32M"/>
+		<config>
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2020-08-05 00:01</inline>
+					<dir name="pipe"> <pipe/> </dir>
+					<terminal name="cdc-wdm0" raw="yes"/>
+				</dir>
+				<ram/>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
+			<env key="HOME" value="/"/>
+			<arg value="mbimcli"/>
+			<arg value="--verbose"/>
+			<arg value="-d"/>
+			<arg value="/dev/cdc-wdm0"/>
+			<arg value="--query-device-caps"/>
+		</config>
+	</start>
+</config>
+}
+# <arg value="--query-subscriber-ready-status"/>
+
+exec ln -sf /home/jws/cdc-wdm0 [run_dir]/genode
+
+build_boot_image {
+	libc.lib.so libm.lib.so vfs.lib.so
+	glib.lib.so libiconv.lib.so zlib.lib.so ffi.lib.so
+	libmbim.lib.so
+	posix.lib.so
+	mbimcli
+
+	lx_file_terminal
+
+	vfs_pipe.lib.so
+}
+
+append qemu_args " -nographic  "
+
+run_genode_until "child .* exited with exit value 0.*\n" 10
+

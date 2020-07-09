@@ -1,0 +1,24 @@
+LICENSE   := GPLv2+
+VERSION   := git
+DOWNLOADS := libmbim_generated.git
+
+URL(libmbim_generated) := https://github.com/m-stein/genode_libmbim_generated.git
+REV(libmbim_generated) := 40a63563f8bcd3709056b2dbfeb11eee3763d90d
+DIR(libmbim_generated) := src/lib/libmbim_generated
+
+DIRS := include/libmbim-glib
+
+DIR_CONTENT(include/libmbim-glib) := \
+	src/lib/libmbim_generated/generated/mbim-atds.h \
+	src/lib/libmbim_generated/generated/mbim-auth.h \
+	src/lib/libmbim_generated/generated/mbim-basic-connect.h \
+	src/lib/libmbim_generated/generated/mbim-dss.h \
+	src/lib/libmbim_generated/generated/mbim-intel-firmware-update.h \
+	src/lib/libmbim_generated/generated/mbim-ms-basic-connect-extensions.h \
+	src/lib/libmbim_generated/generated/mbim-ms-firmware-id.h \
+	src/lib/libmbim_generated/generated/mbim-ms-host-shutdown.h \
+	src/lib/libmbim_generated/generated/mbim-phonebook.h \
+	src/lib/libmbim_generated/generated/mbim-qmi.h \
+	src/lib/libmbim_generated/generated/mbim-sms.h \
+	src/lib/libmbim_generated/generated/mbim-stk.h \
+	src/lib/libmbim_generated/generated/mbim-ussd.h

@@ -1,0 +1,27 @@
+LICENSE   := GPLv2+
+VERSION   := 1.24.2
+DOWNLOADS := libmbim.archive
+
+URL(libmbim) := https://www.freedesktop.org/software/libmbim/libmbim-$(VERSION).tar.xz
+SHA(libmbim) := 32198c099987849c5f442d1cbf4b6e43e645cbdbe9cfdc197b19ddd63c6981e4
+DIR(libmbim) := src/lib/libmbim
+
+PATCHES   := src/lib/libmbim/patches/mbim-message_c.patch
+PATCH_OPT := -p1
+
+DIRS := include/libmbim-glib
+
+DIR_CONTENT(include/libmbim-glib) := \
+	src/lib/libmbim/src/libmbim-glib/libmbim-glib.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-cid.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-compat.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-device.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-enums.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-errors.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-message-private.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-message.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-proxy-helpers.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-proxy.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-utils.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-uuid.h \
+	src/lib/libmbim/src/libmbim-glib/mbim-version.h

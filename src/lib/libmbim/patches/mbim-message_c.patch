@@ -1,0 +1,13 @@
+FreeBSD and to that extend our libc uses 'sys/endian.h'.
+
+--- a/src/lib/libmbim/src/libmbim-glib/mbim-message.c
++++ b/src/lib/libmbim/src/libmbim-glib/mbim-message.c
+@@ -25,7 +25,7 @@
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+-#include <endian.h>
++#include <sys/endian.h>
+ 
+ #include "mbim-message.h"
+ #include "mbim-message-private.h"
