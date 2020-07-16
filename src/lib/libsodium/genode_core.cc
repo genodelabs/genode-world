@@ -10,12 +10,12 @@
 #include "private/implementations.h"
 #include "private/mutex.h"
 
-#include <base/lock.h>
+#include <base/mutex.h>
 #include <base/log.h>
 
 static int initialized;
 
-static Genode::Lock *_sodium_lock;
+static Genode::Mutex *_sodium_mutex;
 
 extern "C"
 int sodium_init(void)
@@ -35,14 +35,14 @@ int sodium_init(void)
 int
 sodium_crit_enter(void)
 {
-    _sodium_lock->lock();
+    _sodium_mutex->acquire();
     return 0;
 }
 
 int
 sodium_crit_leave(void)
 {
-    _sodium_lock->unlock();
+    _sodium_mutex->release();
     return 0;
 }
 

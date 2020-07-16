@@ -42,8 +42,8 @@
 extern Genode::Env     &global_env();
 extern Gui::Connection &global_gui();
 
-extern Genode::Lock event_lock;
-extern Video        video_events;
+extern Genode::Mutex event_mutex;
+extern Video         video_events;
 
 
 extern "C" {
@@ -69,7 +69,7 @@ extern "C" {
 
 		void _handle_mode_change()
 		{
-			Genode::Lock_guard<Genode::Lock> guard(event_lock);
+			Genode::Mutex::Guard guard(event_mutex);
 
 			Framebuffer::Mode mode = _gui.mode();
 

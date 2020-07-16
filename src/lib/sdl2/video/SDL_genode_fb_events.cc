@@ -40,7 +40,7 @@
 #include <SDL_genode_internal.h>
 
 
-Genode::Lock event_lock;
+Genode::Mutex event_mutex;
 Video video_events;
 
 
@@ -107,7 +107,7 @@ extern "C" {
 //			SDL_SetKeymap(0, keymap, SDL_NUM_SCANCODES);
 		}
 
-		Genode::Lock_guard<Genode::Lock> guard(event_lock);
+		Genode::Mutex::Guard guard(event_mutex);
 
 		if (video_events.resize_pending) {
 			video_events.resize_pending = false;

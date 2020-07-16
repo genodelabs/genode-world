@@ -18,7 +18,6 @@
 
 /* Genode includes */
 #include <file_system/node.h>
-#include <base/lock.h>
 #include <base/signal.h>
 #include <os/path.h>
 
