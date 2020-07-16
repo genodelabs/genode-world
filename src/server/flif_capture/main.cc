@@ -54,7 +54,7 @@ class Flif_capture::Encoder
 		// TODO: reuse FLIF_IMAGE, do not reallocate
 		FLIF_IMAGE  *_image = nullptr;
 		Semaphore    _semaphore { };
-		Lock         _lock { Lock::LOCKED };
+		Mutex        _mutex { };
 
 	public:
 
@@ -71,11 +71,13 @@ class Flif_capture::Encoder
 		 */
 		void entry()
 		{
+			_mutex.acquire();
+
 			for (;;) {
 				while (_image == nullptr) {
-					_lock.unlock();
+					_mutex.release();
 					_semaphore.down();
-					_lock.lock();
+					_mutex.acquire();
 				}
 
 				char filename[32] { '\0' };
@@ -119,7 +121,7 @@ class Flif_capture::Encoder
 			if (_image != nullptr)
 				return;
 
-			Lock::Guard guard(_lock);
+			Mutex::Guard guard(_mutex);
 
 			/* TODO: attach/detach each capture? */
 			Genode::Attached_dataspace fb_ds(_env.rm(), fb_cap);

@@ -26,8 +26,8 @@
 #include <SDL_genode_internal.h>
 
 
-extern Genode::Env  *global_env();
-extern Genode::Lock  event_lock;
+extern Genode::Env   *global_env();
+extern Genode::Mutex  event_mutex;
 
 
 enum {
@@ -75,7 +75,7 @@ struct Volume_config
 
 		if (!_config_rom.valid()) { return; }
 
-		Genode::Lock_guard<Genode::Lock> guard(event_lock);
+		Genode::Mutex::Guard guard(event_mutex);
 
 		Genode::Xml_node config = _config_rom.xml();
 
@@ -212,7 +212,7 @@ static void GENODEAUD_WaitAudio(_THIS)
 
 static void GENODEAUD_PlayAudio(_THIS)
 {
-	Genode::Lock_guard<Genode::Lock> guard(event_lock);
+	Genode::Mutex::Guard guard(event_mutex);
 
 	Audio_out::Connection *c[AUDIO_CHANNELS];
 	Audio_out::Packet     *p[AUDIO_CHANNELS];

@@ -58,7 +58,7 @@ extern "C" void data_cb(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 class Tftp_rom::Session_component :
 	public Genode::Rpc_object<Genode::Rom_session>,
 	public Session_list::Element,
-	Genode::Lock
+	Genode::Blockade
 {
 	private:
 
@@ -90,7 +90,7 @@ class Tftp_rom::Session_component :
 
 		inline void finalize()
 		{
-			unlock();
+			wakeup();
 			_ack_timeout = 0;
 			if (_chain_head != NULL) {
 				pbuf_free(_chain_head);
@@ -132,7 +132,6 @@ class Tftp_rom::Session_component :
 		                  unsigned long now,
 		                  unsigned      timeout)
 		:
-			Lock(LOCKED),
 			_env(env),
 			_filename(namestr),
 			_pcb(udp_new()),
@@ -309,7 +308,7 @@ class Tftp_rom::Session_component :
 
 		Rom_dataspace_capability dataspace() override
 		{
-			if (!done()) lock();
+			if (!done()) block();
 
 			Dataspace_capability ds = _dataspace;
 			return static_cap_cast<Genode::Rom_dataspace>(ds);
@@ -370,7 +369,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 		 */
 		Lwip::Nic_netif _netif { _env, *md_alloc(), _config_rom.xml() };
 
-		class Timeout_dispatcher : Genode::Thread, Genode::Lock
+		class Timeout_dispatcher : Genode::Thread, Genode::Mutex
 		{
 			private:
 
@@ -390,7 +389,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 					     ctx == &_sig_ctx;
 					     ctx = _sig_rec.wait_for_signal().context())
 					{
-						Lock::Guard(*this);
+						Mutex::Guard guard(*this);
 
 						Session_component *session = _sessions.first();
 						if (!session) {
@@ -439,7 +438,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 				void insert(Session_component *session)
 				{
-					Lock::Guard(*this);
+					Mutex::Guard guard(*this);
 
 					if (!_sessions.first())
 						_timer.sigh(_sig_cap);
@@ -449,7 +448,7 @@ class Tftp_rom::Root : public Genode::Root_component<Session_component>
 
 				void remove(Session_component *session)
 				{
-					Lock::Guard(*this);
+					Mutex::Guard guard(*this);
 
 					_sessions.remove(session);
 					/* timer will be stopped at the next signal */
