@@ -1,0 +1,7 @@
+LICENSE   := BSD
+VERSION   := 2.0.13
+DOWNLOADS := iperf.archive
+
+URL(iperf) := http://archive.ubuntu.com/ubuntu/pool/universe/i/iperf/iperf_$(VERSION)+dfsg1.orig.tar.xz
+DIR(iperf) := src/app/iperf
+SHA(iperf) := 12680aa68edca21b9563c17b1802d409dad6bd1a414ed678701741680ba3689d
