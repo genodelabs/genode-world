@@ -1,0 +1,15 @@
+#
+# \brief  Test using iperf with a native driver or if not available for
+#         the platform using usb 2.0 by default
+# \author Roland Baer
+# \date   2020-08-04
+#
+
+# network configuration
+set use_nic_bridge      0
+set use_nic_router      0
+set use_wifi_driver     0
+set use_usb_driver      0
+set use_lxip            1
+
+source ${genode_dir}/repos/world/run/iperf.inc
