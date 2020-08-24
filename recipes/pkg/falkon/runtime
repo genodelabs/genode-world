@@ -1,0 +1,73 @@
+<!-- A sub-init is needed to be able to relabel the ROM session for the EGL driver. -->
+<runtime ram="2G" caps="10000" binary="init" config="init.config">
+
+	<requires>
+		<file_system label="downloads"/>
+		<gui/>
+		<nic/>
+		<!--
+		  The shape report label cannot be renamed to 'shape' because then it
+		  would not match anymore with the label of the 'Gui' session. The
+		  label of the 'Gui' session cannot be renamed because there can be
+		  multiple Qt windows with individual labels which need to be
+		  distinguishable for the window manager.
+		-->
+		<report label="falkon -> shape"/>
+		<report label="clipboard"/>
+		<rom label="clipboard"/>
+		<rtc/>
+	</requires>
+
+	<content>
+
+		<rom label="falkon"/>
+		<rom label="egl.lib.so"/>
+		<rom label="egl_swrast.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="libFalkon.lib.so"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
+		<rom label="libQt5Network.lib.so"/>
+		<rom label="libQt5PrintSupport.lib.so"/>
+		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5Quick.lib.so"/>
+		<rom label="libQt5QuickWidgets.lib.so"/>
+		<rom label="libQt5Sql.lib.so"/>
+		<rom label="libQt5Svg.lib.so"/>
+		<rom label="libQt5WebChannel.lib.so"/>
+		<rom label="libQt5WebEngine.lib.so"/>
+		<rom label="libQt5WebEngineCore.lib.so"/>
+		<rom label="libQt5WebEngineWidgets.lib.so"/>
+		<rom label="libQt5Widgets.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libcrypto.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libqgenode.lib.so"/>
+		<rom label="libqjpeg.lib.so"/>
+		<rom label="libqsqlite.lib.so"/>
+		<rom label="libqsvg.lib.so"/>
+		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="libqtwebengineplugin.lib.so"/>
+		<rom label="libwindowplugin.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="qt5_component.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_jitterentropy.lib.so"/>
+		<rom label="vfs_lwip.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="vfs_qtwebengine_shm.lib.so"/>
+		<rom label="qt5_declarative_qml.tar"/>
+		<rom label="qt5_dejavusans.tar"/>
+		<rom label="qt5_libqgenode.tar"/>
+		<rom label="qt5_libqsqlite.tar"/>
+		<rom label="qt5_libqsvg.tar"/>
+		<rom label="qt5_webengine_qml.tar"/>
+		<rom label="qt5_webengine_resources.tar"/>
+		<rom label="falkon_theme.tar"/>
+		<rom label="init.config"/>
+
+	</content>
+
+</runtime>

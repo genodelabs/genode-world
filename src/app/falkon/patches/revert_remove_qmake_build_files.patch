@@ -1,0 +1,1851 @@
+Revert "Remove QMake build files"
+
+From: Christian Prochaska <christian.prochaska@genode-labs.com>
+
+This reverts commit 3b09f115e7f7747524ace4755b8c677a333e99d1.
+---
+ .gitignore                                         |    3 
+ falkon.pro                                         |   37 +
+ src/defines.pri                                    |  102 ++++
+ src/install.pri                                    |   63 +++
+ .../qtsingleapplication/qtsingleapplication.pri    |    8 
+ src/lib/lib.pro                                    |  499 ++++++++++++++++++++
+ src/main/main.pro                                  |   49 ++
+ src/plugins.pri                                    |   58 ++
+ .../AccessKeysNavigation/AccessKeysNavigation.pro  |   74 +++
+ src/plugins/AutoScroll/AutoScroll.pro              |   62 ++
+ .../FlashCookieManager/FlashCookieManager.pro      |   55 ++
+ .../GnomeKeyringPasswords.pro                      |   61 ++
+ src/plugins/GreaseMonkey/GreaseMonkey.pro          |   93 ++++
+ src/plugins/ImageFinder/ImageFinder.pro            |   44 ++
+ src/plugins/KWalletPasswords/KWalletPasswords.pro  |   66 +++
+ src/plugins/MouseGestures/MouseGestures.pro        |   77 +++
+ src/plugins/PIM/PIM.pro                            |   66 +++
+ src/plugins/StatusBarIcons/StatusBarIcons.pro      |   80 +++
+ src/plugins/TabManager/TabManager.pro              |   59 ++
+ src/plugins/TestPlugin/TestPlugin.pro              |   67 +++
+ src/plugins/plugins.pro                            |   44 ++
+ 21 files changed, 1667 insertions(+)
+ create mode 100644 falkon.pro
+ create mode 100644 src/defines.pri
+ create mode 100644 src/install.pri
+ create mode 100644 src/lib/3rdparty/qtsingleapplication/qtsingleapplication.pri
+ create mode 100644 src/lib/lib.pro
+ create mode 100644 src/main/main.pro
+ create mode 100644 src/plugins.pri
+ create mode 100644 src/plugins/AccessKeysNavigation/AccessKeysNavigation.pro
+ create mode 100644 src/plugins/AutoScroll/AutoScroll.pro
+ create mode 100644 src/plugins/FlashCookieManager/FlashCookieManager.pro
+ create mode 100644 src/plugins/GnomeKeyringPasswords/GnomeKeyringPasswords.pro
+ create mode 100644 src/plugins/GreaseMonkey/GreaseMonkey.pro
+ create mode 100644 src/plugins/ImageFinder/ImageFinder.pro
+ create mode 100644 src/plugins/KWalletPasswords/KWalletPasswords.pro
+ create mode 100644 src/plugins/MouseGestures/MouseGestures.pro
+ create mode 100644 src/plugins/PIM/PIM.pro
+ create mode 100644 src/plugins/StatusBarIcons/StatusBarIcons.pro
+ create mode 100644 src/plugins/TabManager/TabManager.pro
+ create mode 100644 src/plugins/TestPlugin/TestPlugin.pro
+ create mode 100644 src/plugins/plugins.pro
+
+diff --git a/.gitignore b/.gitignore
+index c87be73c..cf937804 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -4,10 +4,13 @@ DEBIAN
+ *.pro.user*
+ *.autosave
+ *~
++*.a
+ *.qm
++*.o
+ !qt_*.qm
+ headers*.tar.gz
+ license_template
++Makefile*
+ bin/falkon
+ bin/Falkon.dmg
+ mac/images/falkon-dmg-icon.iconset
+diff --git a/falkon.pro b/falkon.pro
+new file mode 100644
+index 00000000..fc6ab748
+--- /dev/null
++++ b/falkon.pro
+@@ -0,0 +1,37 @@
++#-------------------------------------------------
++#
++#           Falkon - Qt web browser
++#
++# Project created by QtCreator 2010-12-18T14:53:41
++#
++#-------------------------------------------------
++
++lessThan(QT_VERSION, 5.8) {
++    error("Falkon requires at least Qt 5.8!")
++}
++
++lessThan(QT.webengine.VERSION, 5.8) {
++    error("Falkon requires at least QtWebEngine 5.8!")
++}
++
++# Create plugins directory first on Mac / Linux
++mac|unix: system(test -d bin/plugins || mkdir bin/plugins)
++
++TEMPLATE = subdirs
++
++src_lib.subdir = src/lib
++src_lib.target = sub-src-lib
++
++src_main.subdir = src/main
++src_main.depends = sub-src-lib
++
++src_plugins.subdir = src/plugins
++src_plugins.depends = sub-src-lib
++
++SUBDIRS += src_lib src_main src_plugins
++
++mac: {
++    macdeploysh.target = bundle
++    macdeploysh.commands = mac/macdeploy.sh $$[QT_INSTALL_BINS]/macdeployqt
++    QMAKE_EXTRA_TARGETS += macdeploysh
++}
+diff --git a/src/defines.pri b/src/defines.pri
+new file mode 100644
+index 00000000..c26a24e8
+--- /dev/null
++++ b/src/defines.pri
+@@ -0,0 +1,102 @@
++DESTDIR = $$PWD/../bin
++QZ_DESTDIR = $$DESTDIR
++OBJECTS_DIR = $$PWD/../build
++MOC_DIR = $$PWD/../build
++RCC_DIR = $$PWD/../build
++UI_DIR = $$PWD/../build
++
++# workaround for #849: see https://bugreports.qt-project.org/browse/QTBUG-23196
++mocinclude.CONFIG *= fix_target
++
++QZ_VERSION = 2.1.99
++unix: VERSION = $$QZ_VERSION
++DEFINES *= FALKON_VERSION=\\\"""$$QZ_VERSION"\\\""
++
++d_no_system_datapath = $$(NO_SYSTEM_DATAPATH)
++d_kde_integration = $$(KDE_INTEGRATION)
++d_gnome_integration = $$(GNOME_INTEGRATION)
++d_nox11 = $$(NO_X11)
++d_portable = $$(PORTABLE_BUILD)
++d_nonblock_dialogs = $$(NONBLOCK_JS_DIALOGS)
++d_use_lib_path = $$(USE_LIBPATH)
++d_disable_dbus = $$(DISABLE_DBUS)
++d_disable_updates_check = $$(DISABLE_UPDATES_CHECK)
++d_debug_build = $$(DEBUG_BUILD)
++d_prefix = $$(FALKON_PREFIX)
++d_share = $$(SHARE_FOLDER)
++
++equals(d_no_system_datapath, "true") { DEFINES *= NO_SYSTEM_DATAPATH }
++equals(d_kde_integration, "true") { DEFINES *= KDE_INTEGRATION }
++equals(d_gnome_integration, "true") { DEFINES *= GNOME_INTEGRATION }
++equals(d_nox11, "true") { DEFINES *= NO_X11 }
++equals(d_portable, "true") { DEFINES *= PORTABLE_BUILD }
++equals(d_nonblock_dialogs, "true") { DEFINES *= NONBLOCK_JS_DIALOGS }
++equals(d_disable_dbus, "true") { DEFINES *= DISABLE_DBUS }
++equals(d_disable_updates_check, "true") { DEFINES *= DISABLE_UPDATES_CHECK }
++equals(d_debug_build, "true") { CONFIG += debug }
++
++DEFINES *= QT_NO_URL_CAST_FROM_STRING
++DEFINES *= QT_USE_QSTRINGBUILDER
++
++CONFIG(debug, debug|release): DEFINES *= FALKON_DEBUG_BUILD
++
++
++win32-msvc* {
++    DEFINES *= W7API
++    LIBS += User32.lib Ole32.lib Shell32.lib ShlWapi.lib Gdi32.lib ComCtl32.lib
++}
++
++# QtDBus not available on Mac
++mac: DEFINES *= DISABLE_DBUS
++
++!mac:unix {
++    binary_folder = /usr/bin
++    library_folder = /usr/lib
++    arch_lib_path = /usr/lib/$${QT_ARCH}-linux-gnu
++    exists($$arch_lib_path): library_folder = $$arch_lib_path
++    # Define a reasonable default for share_folder
++    share_folder = /usr/share
++
++    !equals(d_prefix, "") {
++        binary_folder = "$$d_prefix"/bin
++        library_folder = "$$d_prefix"/lib
++        share_folder = "$$d_prefix"/share
++    }
++
++    !equals(d_share, "") {
++        share_folder = "$$d_share"
++    }
++
++    data_folder = $$share_folder/falkon
++    launcher_folder = $$share_folder/applications
++    icon_folder = $$share_folder/pixmaps
++    hicolor_folder = $$share_folder/icons/hicolor
++
++    !equals(d_use_lib_path, ""):library_folder = $$d_use_lib_path
++
++    DEFINES *= USE_LIBPATH=\\\"""$$library_folder"\\\""
++    DEFINES *= USE_DATADIR=\\\"""$$data_folder"\\\""
++
++    # Define QZ_WS_X11 even with Qt5 (but only when building for X11)
++    !contains(DEFINES, NO_X11) DEFINES *= QZ_WS_X11
++}
++
++unix: {
++    # Git revision
++    rev = $$system(cd ../ && sh $$PWD/../scripts/getrevision.sh)
++    !equals(rev, ""): DEFINES *= GIT_REVISION=\\\"""$$rev"\\\""
++}
++
++isEmpty(QMAKE_LRELEASE) {
++    win32|os2:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]\\lrelease.exe
++    else:QMAKE_LRELEASE = $$[QT_INSTALL_BINS]/lrelease
++
++    # Try to use lrelease from PATH
++    unix:!exists($$QMAKE_LRELEASE) {
++        QMAKE_LRELEASE = lrelease
++    }
++}
++
++isEmpty(QMAKE_LFLAGS_RPATH) {
++    QMAKE_LFLAGS_RPATH = -Wl,-rpath,
++}
+diff --git a/src/install.pri b/src/install.pri
+new file mode 100644
+index 00000000..eb21b9f4
+--- /dev/null
++++ b/src/install.pri
+@@ -0,0 +1,63 @@
++include(defines.pri)
++
++mac {
++    QMAKE_INFO_PLIST = $$PWD/main/Info.plist
++    ICON = $$PWD/lib/data/icons/exeicons/qupzilla.icns
++
++    bundle_target.files += $$QZ_DESTDIR/locale
++    bundle_target.files += $$QZ_DESTDIR/themes
++    bundle_target.files += $$QZ_DESTDIR/plugins
++    bundle_target.path = Contents/Resources
++
++    QMAKE_BUNDLE_DATA += bundle_target
++}
++
++!mac:unix {
++    target.path = $$binary_folder
++
++    target1.files += $$QZ_DESTDIR/locale
++    target1.files += $$QZ_DESTDIR/themes
++    target1.path = $$data_folder
++
++    target2.files = $$PWD/../linux/applications/org.kde.Falkon.desktop
++    target2.path = $$launcher_folder
++
++    target3.files = $$PWD/../linux/pixmaps/qupzilla.png
++    target3.path = $$icon_folder
++
++    ico16.files = $$PWD/../linux/hicolor/16-apps-qupzilla.png
++    ico16.path = $$hicolor_folder/16x16/apps
++    ico16.extra = cp $$PWD/../linux/hicolor/16-apps-qupzilla.png $$hicolor_folder/16x16/apps/qupzilla.png
++
++    ico32.files = $$PWD/../linux/hicolor/32-apps-qupzilla.png
++    ico32.path = $$hicolor_folder/32x32/apps
++    ico32.extra = cp $$PWD/../linux/hicolor/32-apps-qupzilla.png $$hicolor_folder/32x32/apps/qupzilla.png
++
++    ico48.files = $$PWD/../linux/hicolor/48-apps-qupzilla.png
++    ico48.path = $$hicolor_folder/48x48/apps
++    ico48.extra = cp $$PWD/../linux/hicolor/48-apps-qupzilla.png $$hicolor_folder/48x48/apps/qupzilla.png
++
++    ico64.files = $$PWD/../linux/hicolor/64-apps-qupzilla.png
++    ico64.path = $$hicolor_folder/64x64/apps
++    ico64.extra = cp $$PWD/../linux/hicolor/64-apps-qupzilla.png $$hicolor_folder/64x64/apps/qupzilla.png
++
++    ico128.files = $$PWD/../linux/hicolor/128-apps-qupzilla.png
++    ico128.path = $$hicolor_folder/128x128/apps
++    ico128.extra = cp $$PWD/../linux/hicolor/128-apps-qupzilla.png $$hicolor_folder/128x128/apps/qupzilla.png
++
++    ico256.files = $$PWD/../linux/hicolor/256-apps-qupzilla.png
++    ico256.path = $$hicolor_folder/256x256/apps
++    ico256.extra = cp $$PWD/../linux/hicolor/256-apps-qupzilla.png $$hicolor_folder/256x256/apps/qupzilla.png
++
++    bashcompletion.files = $$PWD/../linux/completion/falkon
++    bashcompletion.path = $$share_folder/bash-completion/completions
++
++    appdata.files = $$PWD/../linux/appdata/org.kde.Falkon.appdata.xml
++    appdata.path = $$share_folder/appdata
++
++
++    INSTALLS += target target1 target2 target3
++    INSTALLS += ico16 ico32 ico48 ico64 ico128 ico256
++    INSTALLS += bashcompletion
++    INSTALLS += appdata
++}
+diff --git a/src/lib/3rdparty/qtsingleapplication/qtsingleapplication.pri b/src/lib/3rdparty/qtsingleapplication/qtsingleapplication.pri
+new file mode 100644
+index 00000000..28b51269
+--- /dev/null
++++ b/src/lib/3rdparty/qtsingleapplication/qtsingleapplication.pri
+@@ -0,0 +1,8 @@
++DEPENDPATH += $$PWD
++SOURCES += $$PWD/qtsingleapplication.cpp $$PWD/qtlocalpeer.cpp
++HEADERS += $$PWD/qtsingleapplication.h $$PWD/qtlocalpeer.h
++
++os2|win32 {
++    contains(TEMPLATE, lib):contains(CONFIG, shared):DEFINES *= QT_QTSINGLEAPPLICATION_EXPORT
++    else:qtsingleapplication-uselib:DEFINES *= QT_QTSINGLEAPPLICATION_IMPORT
++}
+diff --git a/src/lib/lib.pro b/src/lib/lib.pro
+new file mode 100644
+index 00000000..52de094a
+--- /dev/null
++++ b/src/lib/lib.pro
+@@ -0,0 +1,499 @@
++QT += webenginecore webenginewidgets webchannel network widgets sql quickwidgets printsupport
++
++TARGET = Falkon
++TEMPLATE = lib
++
++DEFINES *= FALKON_SHAREDLIBRARY
++
++CONFIG += c++14
++
++include(../defines.pri)
++include(../../translations/translations.pri)
++include(3rdparty/qtsingleapplication/qtsingleapplication.pri)
++
++CONFIG(debug, debug|release): include(../../tests/modeltest/modeltest.pri)
++
++unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
++
++INCLUDEPATH += 3rdparty \
++               adblock \
++               app \
++               autofill \
++               bookmarks \
++               cookies \
++               downloads \
++               history \
++               navigation \
++               network \
++               notifications \
++               opensearch \
++               other \
++               plugins \
++               popupwindow \
++               preferences \
++               session \
++               sidebar \
++               tabwidget \
++               tools \
++               webengine \
++               webtab \
++
++DEPENDPATH += $$INCLUDEPATH \
++              data \
++
++SOURCES += \
++    3rdparty/fancytabwidget.cpp \
++    3rdparty/lineedit.cpp \
++    3rdparty/processinfo.cpp \
++    3rdparty/squeezelabelv1.cpp \
++    3rdparty/squeezelabelv2.cpp \
++    3rdparty/stylehelper.cpp \
++    adblock/adblockaddsubscriptiondialog.cpp \
++    adblock/adblockurlinterceptor.cpp \
++    adblock/adblockdialog.cpp \
++    adblock/adblockicon.cpp \
++    adblock/adblockmanager.cpp \
++    adblock/adblockmatcher.cpp \
++    adblock/adblockrule.cpp \
++    adblock/adblocksearchtree.cpp \
++    adblock/adblocksubscription.cpp \
++    adblock/adblocktreewidget.cpp \
++    app/autosaver.cpp \
++    app/browserwindow.cpp \
++    app/commandlineoptions.cpp \
++    app/datapaths.cpp \
++    app/mainapplication.cpp \
++    app/mainmenu.cpp \
++    app/profilemanager.cpp \
++    app/proxystyle.cpp \
++    app/qzcommon.cpp \
++    app/settings.cpp \
++    autofill/autofill.cpp \
++    autofill/autofillicon.cpp \
++    autofill/autofillnotification.cpp \
++    autofill/autofillwidget.cpp \
++    autofill/passwordbackends/databaseencryptedpasswordbackend.cpp \
++    autofill/passwordbackends/databasepasswordbackend.cpp \
++    autofill/passwordbackends/passwordbackend.cpp \
++    autofill/passwordmanager.cpp \
++    bookmarks/bookmarkitem.cpp \
++    bookmarks/bookmarks.cpp \
++    bookmarks/bookmarksexport/bookmarksexportdialog.cpp \
++    bookmarks/bookmarksexport/bookmarksexporter.cpp \
++    bookmarks/bookmarksexport/htmlexporter.cpp \
++    bookmarks/bookmarksicon.cpp \
++    bookmarks/bookmarksimport/bookmarksimportdialog.cpp \
++    bookmarks/bookmarksimport/bookmarksimporter.cpp \
++    bookmarks/bookmarksimport/firefoximporter.cpp \
++    bookmarks/bookmarksimport/htmlimporter.cpp \
++    bookmarks/bookmarksimport/chromeimporter.cpp \
++    bookmarks/bookmarksimport/ieimporter.cpp \
++    bookmarks/bookmarksimport/operaimporter.cpp \
++    bookmarks/bookmarksitemdelegate.cpp \
++    bookmarks/bookmarksmanager.cpp \
++    bookmarks/bookmarksmenu.cpp \
++    bookmarks/bookmarksmodel.cpp \
++    bookmarks/bookmarkstoolbarbutton.cpp \
++    bookmarks/bookmarkstoolbar.cpp \
++    bookmarks/bookmarkstools.cpp \
++    bookmarks/bookmarkstreeview.cpp \
++    bookmarks/bookmarkswidget.cpp \
++    cookies/cookiejar.cpp \
++    cookies/cookiemanager.cpp \
++    downloads/downloaditem.cpp \
++    downloads/downloadmanager.cpp \
++    downloads/downloadoptionsdialog.cpp \
++    history/history.cpp \
++    history/historyitem.cpp \
++    history/historymanager.cpp \
++    history/historymenu.cpp \
++    history/historymodel.cpp \
++    history/historytreeview.cpp \
++    navigation/completer/locationcompleter.cpp \
++    navigation/completer/locationcompleterdelegate.cpp \
++    navigation/completer/locationcompletermodel.cpp \
++    navigation/completer/locationcompleterrefreshjob.cpp \
++    navigation/completer/locationcompleterview.cpp \
++    navigation/downicon.cpp \
++    navigation/goicon.cpp \
++    navigation/locationbar.cpp \
++    navigation/locationbarpopup.cpp \
++    navigation/navigationbar.cpp \
++    navigation/navigationcontainer.cpp \
++    navigation/reloadstopbutton.cpp \
++    navigation/siteicon.cpp \
++    navigation/websearchbar.cpp \
++    network/networkmanager.cpp \
++    network/networkproxyfactory.cpp \
++    network/networkurlinterceptor.cpp \
++    network/schemehandlers/falkonschemehandler.cpp \
++    network/sslerrordialog.cpp \
++    notifications/desktopnotification.cpp \
++    notifications/desktopnotificationsfactory.cpp \
++    opensearch/editsearchengine.cpp \
++    opensearch/opensearchengine.cpp \
++    opensearch/opensearchenginedelegate.cpp \
++    opensearch/opensearchreader.cpp \
++    opensearch/searchenginesdialog.cpp \
++    opensearch/searchenginesmanager.cpp \
++    other/aboutdialog.cpp \
++    other/browsinglibrary.cpp \
++    other/clearprivatedata.cpp \
++    other/checkboxdialog.cpp \
++    other/iconchooser.cpp \
++    other/licenseviewer.cpp \
++    other/qzsettings.cpp \
++    other/siteinfo.cpp \
++    other/siteinfowidget.cpp \
++    other/statusbarmessage.cpp \
++    other/updater.cpp \
++    other/useragentmanager.cpp \
++    plugins/pluginproxy.cpp \
++    plugins/plugins.cpp \
++    plugins/speeddial.cpp \
++    popupwindow/popuplocationbar.cpp \
++    popupwindow/popupstatusbarmessage.cpp \
++    popupwindow/popupwebview.cpp \
++    popupwindow/popupwindow.cpp \
++    preferences/acceptlanguage.cpp \
++    preferences/autofillmanager.cpp \
++    preferences/jsoptions.cpp \
++    preferences/pluginlistdelegate.cpp \
++    preferences/pluginsmanager.cpp \
++    preferences/preferences.cpp \
++    preferences/thememanager.cpp \
++    preferences/useragentdialog.cpp \
++    session/recoveryjsobject.cpp \
++    session/restoremanager.cpp \
++    session/sessionmanager.cpp \
++    session/sessionmanagerdialog.cpp \
++    sidebar/bookmarkssidebar.cpp \
++    sidebar/historysidebar.cpp \
++    sidebar/sidebar.cpp \
++    tabwidget/combotabbar.cpp \
++    tabwidget/tabbar.cpp \
++    tabwidget/tabicon.cpp \
++    tabwidget/tabstackedwidget.cpp \
++    tabwidget/tabwidget.cpp \
++    tools/aesinterface.cpp \
++    tools/animatedwidget.cpp \
++    tools/buttonbox.cpp \
++    tools/buttonwithmenu.cpp \
++    tools/certificateinfowidget.cpp \
++    tools/clickablelabel.cpp \
++    tools/closedtabsmanager.cpp \
++    tools/colors.cpp \
++    tools/delayedfilewatcher.cpp \
++    tools/docktitlebarwidget.cpp \
++    tools/emptynetworkreply.cpp \
++    tools/enhancedmenu.cpp \
++    tools/focusselectlineedit.cpp \
++    tools/frame.cpp \
++    tools/headerview.cpp \
++    tools/horizontallistwidget.cpp \
++    tools/html5permissions/html5permissionsdialog.cpp \
++    tools/html5permissions/html5permissionsmanager.cpp \
++    tools/html5permissions/html5permissionsnotification.cpp \
++    tools/iconprovider.cpp \
++    tools/listitemdelegate.cpp \
++    tools/mactoolbutton.cpp \
++    tools/menubar.cpp \
++    tools/pagethumbnailer.cpp \
++    tools/progressbar.cpp \
++    tools/qzregexp.cpp \
++    tools/qztools.cpp \
++    tools/removeitemfocusdelegate.cpp \
++    tools/scripts.cpp \
++    tools/sqldatabase.cpp \
++    tools/toolbutton.cpp \
++    tools/treewidget.cpp \
++    tools/widget.cpp \
++    tools/wheelhelper.cpp \
++    webengine/javascript/autofilljsobject.cpp \
++    webengine/javascript/externaljsobject.cpp \
++    webengine/loadrequest.cpp \
++    webengine/webhittestresult.cpp \
++    webengine/webinspector.cpp \
++    webengine/webpage.cpp \
++    webengine/webview.cpp \
++    webengine/webscrollbar.cpp \
++    webengine/webscrollbarmanager.cpp \
++    webtab/searchtoolbar.cpp \
++    webtab/tabbedwebview.cpp \
++    webtab/webtab.cpp \
++
++HEADERS  += \
++    3rdparty/fancytabwidget.h \
++    3rdparty/lineedit.h \
++    3rdparty/processinfo.h \
++    3rdparty/squeezelabelv1.h \
++    3rdparty/squeezelabelv2.h \
++    3rdparty/stylehelper.h \
++    adblock/adblockaddsubscriptiondialog.h \
++    adblock/adblockurlinterceptor.h \
++    adblock/adblockdialog.h \
++    adblock/adblockicon.h \
++    adblock/adblockmanager.h \
++    adblock/adblockmatcher.h \
++    adblock/adblockrule.h \
++    adblock/adblocksearchtree.h \
++    adblock/adblocksubscription.h \
++    adblock/adblocktreewidget.h \
++    app/autosaver.h \
++    app/browserwindow.h \
++    app/commandlineoptions.h \
++    app/datapaths.h \
++    app/mainapplication.h \
++    app/mainmenu.h \
++    app/profilemanager.h \
++    app/proxystyle.h \
++    app/qzcommon.h \
++    app/settings.h \
++    autofill/autofill.h \
++    autofill/autofillicon.h \
++    autofill/autofillnotification.h \
++    autofill/autofillwidget.h \
++    autofill/passwordbackends/databaseencryptedpasswordbackend.h \
++    autofill/passwordbackends/databasepasswordbackend.h \
++    autofill/passwordbackends/passwordbackend.h \
++    autofill/passwordmanager.h \
++    bookmarks/bookmarkitem.h \
++    bookmarks/bookmarksexport/bookmarksexportdialog.h \
++    bookmarks/bookmarksexport/bookmarksexporter.h \
++    bookmarks/bookmarksexport/htmlexporter.h \
++    bookmarks/bookmarks.h \
++    bookmarks/bookmarksicon.h \
++    bookmarks/bookmarksimport/bookmarksimportdialog.h \
++    bookmarks/bookmarksimport/bookmarksimporter.h \
++    bookmarks/bookmarksimport/firefoximporter.h \
++    bookmarks/bookmarksimport/htmlimporter.h \
++    bookmarks/bookmarksimport/chromeimporter.h \
++    bookmarks/bookmarksimport/ieimporter.h \
++    bookmarks/bookmarksimport/operaimporter.h \
++    bookmarks/bookmarksitemdelegate.h \
++    bookmarks/bookmarksmanager.h \
++    bookmarks/bookmarksmenu.h \
++    bookmarks/bookmarksmodel.h \
++    bookmarks/bookmarkstoolbarbutton.h \
++    bookmarks/bookmarkstoolbar.h \
++    bookmarks/bookmarkstools.h \
++    bookmarks/bookmarkstreeview.h \
++    bookmarks/bookmarkswidget.h \
++    cookies/cookiejar.h \
++    cookies/cookiemanager.h \
++    downloads/downloaditem.h \
++    downloads/downloadmanager.h \
++    downloads/downloadoptionsdialog.h \
++    history/history.h \
++    history/historyitem.h \
++    history/historymanager.h \
++    history/historymenu.h \
++    history/historymodel.h \
++    history/historytreeview.h \
++    navigation/completer/locationcompleterdelegate.h \
++    navigation/completer/locationcompleter.h \
++    navigation/completer/locationcompletermodel.h \
++    navigation/completer/locationcompleterrefreshjob.h \
++    navigation/completer/locationcompleterview.h \
++    navigation/downicon.h \
++    navigation/goicon.h \
++    navigation/locationbar.h \
++    navigation/locationbarpopup.h \
++    navigation/navigationbar.h \
++    navigation/navigationcontainer.h \
++    navigation/reloadstopbutton.h \
++    navigation/siteicon.h \
++    navigation/websearchbar.h \
++    network/networkmanager.h \
++    network/networkproxyfactory.h \
++    network/networkurlinterceptor.h \
++    network/schemehandlers/falkonschemehandler.h \
++    network/urlinterceptor.h \
++    network/sslerrordialog.h \
++    notifications/desktopnotification.h \
++    notifications/desktopnotificationsfactory.h \
++    opensearch/editsearchengine.h \
++    opensearch/opensearchenginedelegate.h \
++    opensearch/opensearchengine.h \
++    opensearch/opensearchreader.h \
++    opensearch/searchenginesdialog.h \
++    opensearch/searchenginesmanager.h \
++    other/aboutdialog.h \
++    other/browsinglibrary.h \
++    other/clearprivatedata.h \
++    other/checkboxdialog.h \
++    other/iconchooser.h \
++    other/licenseviewer.h \
++    other/qzsettings.h \
++    other/siteinfo.h \
++    other/siteinfowidget.h \
++    other/statusbarmessage.h \
++    other/updater.h \
++    other/useragentmanager.h \
++    plugins/plugininterface.h \
++    plugins/pluginproxy.h \
++    plugins/plugins.h \
++    plugins/speeddial.h \
++    popupwindow/popuplocationbar.h \
++    popupwindow/popupstatusbarmessage.h \
++    popupwindow/popupwebview.h \
++    popupwindow/popupwindow.h \
++    preferences/acceptlanguage.h \
++    preferences/autofillmanager.h \
++    preferences/jsoptions.h \
++    preferences/pluginlistdelegate.h \
++    preferences/pluginsmanager.h \
++    preferences/preferences.h \
++    preferences/thememanager.h \
++    preferences/useragentdialog.h \
++    session/recoveryjsobject.h \
++    session/restoremanager.h \
++    session/sessionmanager.h \
++    session/sessionmanagerdialog.h \
++    sidebar/bookmarkssidebar.h \
++    sidebar/historysidebar.h \
++    sidebar/sidebar.h \
++    sidebar/sidebarinterface.h \
++    tabwidget/combotabbar.h \
++    tabwidget/tabbar.h \
++    tabwidget/tabicon.h \
++    tabwidget/tabstackedwidget.h \
++    tabwidget/tabwidget.h \
++    tools/aesinterface.h \
++    tools/animatedwidget.h \
++    tools/buttonbox.h \
++    tools/buttonwithmenu.h \
++    tools/certificateinfowidget.h \
++    tools/clickablelabel.h \
++    tools/closedtabsmanager.h \
++    tools/colors.h \
++    tools/delayedfilewatcher.h \
++    tools/docktitlebarwidget.h \
++    tools/emptynetworkreply.h \
++    tools/enhancedmenu.h \
++    tools/focusselectlineedit.h \
++    tools/frame.h \
++    tools/headerview.h \
++    tools/horizontallistwidget.h \
++    tools/html5permissions/html5permissionsdialog.h \
++    tools/html5permissions/html5permissionsmanager.h \
++    tools/html5permissions/html5permissionsnotification.h \
++    tools/iconprovider.h \
++    tools/listitemdelegate.h \
++    tools/mactoolbutton.h \
++    tools/menubar.h \
++    tools/pagethumbnailer.h \
++    tools/progressbar.h \
++    tools/qzregexp.h \
++    tools/qztools.h \
++    tools/removeitemfocusdelegate.h \
++    tools/scripts.h \
++    tools/sqldatabase.h \
++    tools/toolbutton.h \
++    tools/treewidget.h \
++    tools/widget.h \
++    tools/wheelhelper.h \
++    webengine/javascript/autofilljsobject.h \
++    webengine/javascript/externaljsobject.h \
++    webengine/loadrequest.h \
++    webengine/webhittestresult.cpp \
++    webengine/webinspector.h \
++    webengine/webpage.h \
++    webengine/webview.h \
++    webengine/webscrollbar.h \
++    webengine/webscrollbarmanager.h \
++    webtab/searchtoolbar.h \
++    webtab/tabbedwebview.h \
++    webtab/webtab.h \
++
++FORMS    += \
++    adblock/adblockaddsubscriptiondialog.ui \
++    adblock/adblockdialog.ui \
++    autofill/autofillnotification.ui \
++    autofill/autofillwidget.ui \
++    autofill/passwordbackends/masterpassworddialog.ui \
++    bookmarks/bookmarksexport/bookmarksexportdialog.ui \
++    bookmarks/bookmarksimport/bookmarksimportdialog.ui \
++    bookmarks/bookmarksmanager.ui \
++    bookmarks/bookmarkswidget.ui \
++    cookies/cookiemanager.ui \
++    downloads/downloaditem.ui \
++    downloads/downloadmanager.ui \
++    downloads/downloadoptionsdialog.ui \
++    history/historymanager.ui \
++    network/sslerrordialog.ui \
++    notifications/desktopnotification.ui \
++    opensearch/editsearchengine.ui \
++    opensearch/searchenginesdialog.ui \
++    other/aboutdialog.ui \
++    other/browsinglibrary.ui \
++    other/clearprivatedata.ui \
++    other/iconchooser.ui \
++    other/siteinfo.ui \
++    other/siteinfowidget.ui \
++    preferences/acceptlanguage.ui \
++    preferences/addacceptlanguage.ui \
++    preferences/autofillmanager.ui \
++    preferences/jsoptions.ui \
++    preferences/pluginslist.ui \
++    preferences/preferences.ui \
++    preferences/thememanager.ui \
++    preferences/useragentdialog.ui \
++    session/sessionmanagerdialog.ui \
++    sidebar/bookmarkssidebar.ui \
++    sidebar/historysidebar.ui \
++    tools/certificateinfowidget.ui \
++    tools/docktitlebarwidget.ui \
++    tools/html5permissions/html5permissionsdialog.ui \
++    tools/html5permissions/html5permissionsnotification.ui \
++    webengine/jsalert.ui \
++    webengine/jsconfirm.ui \
++    webengine/jsprompt.ui \
++    webtab/searchtoolbar.ui \
++
++RESOURCES += \
++    data/data.qrc \
++    data/html.qrc \
++    data/icons.qrc \
++    data/breeze-fallback.qrc
++
++!mac:unix {
++    target.path = $$library_folder
++
++    INSTALLS += target
++
++    !contains(DEFINES, NO_X11) {
++        LIBS += -lxcb
++        QT *= x11extras
++    }
++
++    LIBS += -lcrypto
++}
++
++win32 {
++    QT *= winextras
++    HEADERS += other/registerqappassociation.h
++    SOURCES += other/registerqappassociation.cpp
++
++    LIBS += -llibeay32
++}
++
++os2 {
++    LIBS += -lcrypto
++}
++
++mac {
++    # homebrew openssl
++    BREW_OPENSSL = /usr/local$$system("readlink `brew --prefix openssl` | sed 's/..//'")
++    INCLUDEPATH += $$BREW_OPENSSL/include
++    LIBS += -L$$BREW_OPENSSL/lib
++
++    LIBS += -lcrypto -framework CoreServices
++
++    OBJECTIVE_SOURCES += tools/disablewindowtabbbing.mm
++    LIBS += -framework AppKit
++}
++
++message(===========================================)
++message( Using following defines:)
++message(  $$DEFINES)
+diff --git a/src/main/main.pro b/src/main/main.pro
+new file mode 100644
+index 00000000..ee9ae20b
+--- /dev/null
++++ b/src/main/main.pro
+@@ -0,0 +1,49 @@
++include(../defines.pri)
++
++QT += webenginecore webenginewidgets network widgets sql
++
++TARGET = falkon
++mac: TARGET = Falkon
++
++TEMPLATE = app
++
++compile_libtool {
++LIBS += $$QZ_DESTDIR/libFalkon.la
++}
++else {
++!unix|mac: LIBS += -L$$QZ_DESTDIR -lFalkon
++!mac:unix: LIBS += $$QZ_DESTDIR/libFalkon.so
++}
++
++unix:!contains(DEFINES, "DISABLE_DBUS") QT += dbus
++
++INCLUDEPATH += ../lib/3rdparty \
++               ../lib/app \
++               ../lib/session \
++               ../lib/webengine \
++               ../lib/webtab \
++
++DEPENDPATH += $$INCLUDEPATH
++
++SOURCES = main.cpp
++
++OTHER_FILES += appicon.rc \
++               appicon_os2.rc \
++               Info.plist \
++
++os2:RC_FILE = appicon_os2.rc
++win32:RC_FILE = appicon.rc
++
++openbsd-*|freebsd-*|haiku-* {
++    LIBS += -lexecinfo
++}
++
++include(../install.pri)
++
++unix:contains(DEFINES, "NO_SYSTEM_DATAPATH") {
++   # For running the app without installing it
++   QMAKE_LFLAGS+=$${QMAKE_LFLAGS_RPATH}\\$\$ORIGIN
++   # For running the app after installation
++   QMAKE_LFLAGS+=$${QMAKE_LFLAGS_RPATH}$${library_folder}
++   message(QMAKE_LFLAGS: $$QMAKE_LFLAGS)
++}
+diff --git a/src/plugins.pri b/src/plugins.pri
+new file mode 100644
+index 00000000..92f6f362
+--- /dev/null
++++ b/src/plugins.pri
+@@ -0,0 +1,58 @@
++include(defines.pri)
++
++INCLUDEPATH += $$PWD/lib/3rdparty \
++               $$PWD/lib/adblock \
++               $$PWD/lib/app \
++               $$PWD/lib/autofill \
++               $$PWD/lib/bookmarks \
++               $$PWD/lib/cookies \
++               $$PWD/lib/downloads \
++               $$PWD/lib/history \
++               $$PWD/lib/navigation \
++               $$PWD/lib/network \
++               $$PWD/lib/notifications \
++               $$PWD/lib/opensearch \
++               $$PWD/lib/other \
++               $$PWD/lib/plugins \
++               $$PWD/lib/popupwindow \
++               $$PWD/lib/preferences \
++               $$PWD/lib/rss \
++               $$PWD/lib/session \
++               $$PWD/lib/sidebar \
++               $$PWD/lib/tabwidget \
++               $$PWD/lib/tools \
++               $$PWD/lib/webengine \
++               $$PWD/lib/webtab \
++
++DEPENDPATH += $$INCLUDEPATH \
++              $$PWD/lib/data \
++
++include(lib/3rdparty/qtsingleapplication/qtsingleapplication.pri)
++
++TEMPLATE = lib
++CONFIG += plugin
++DESTDIR = $$QZ_DESTDIR/plugins/
++
++QT *= webenginecore webenginewidgets network
++
++CONFIG += c++11
++
++OBJECTS_DIR = build
++MOC_DIR = build
++RCC_DIR = build
++UI_DIR = build
++
++!unix|mac: LIBS += -L$$QZ_DESTDIR -lFalkon
++!mac:unix: LIBS += $$QZ_DESTDIR/libFalkon.so
++
++!mac:unix {
++    target.path = $$library_folder/falkon
++
++    INSTALLS += target
++}
++
++updateqm.input = TRANSLATIONS
++updateqm.output = $$PLUGIN_DIR/locale/${QMAKE_FILE_BASE}.qm
++updateqm.commands = $$QMAKE_LRELEASE -silent ${QMAKE_FILE_IN} -qm $$PLUGIN_DIR/locale/${QMAKE_FILE_BASE}.qm
++updateqm.CONFIG += no_link target_predeps
++QMAKE_EXTRA_COMPILERS += updateqm
+diff --git a/src/plugins/AccessKeysNavigation/AccessKeysNavigation.pro b/src/plugins/AccessKeysNavigation/AccessKeysNavigation.pro
+new file mode 100644
+index 00000000..27c06d1d
+--- /dev/null
++++ b/src/plugins/AccessKeysNavigation/AccessKeysNavigation.pro
+@@ -0,0 +1,74 @@
++TARGET = $$qtLibraryTarget(AccessKeysNavigation)
++os2: TARGET  = AcKeyNav
++
++SOURCES = \
++    akn_plugin.cpp \
++    akn_handler.cpp \
++    akn_settings.cpp
++
++HEADERS = \
++    akn_plugin.h \
++    akn_handler.h \
++    akn_settings.h
++
++FORMS += \
++    akn_settings.ui
++
++RESOURCES = akn_res.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/bo_CN.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_419.ts \
++    translations/es_AR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/es_VE.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/he_IL.ts \
++    translations/hi_IN.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ka_GE.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/my_MM.ts \
++    translations/nb_NO.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_BR.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/sv_SE.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/AutoScroll/AutoScroll.pro b/src/plugins/AutoScroll/AutoScroll.pro
+new file mode 100644
+index 00000000..1735b23f
+--- /dev/null
++++ b/src/plugins/AutoScroll/AutoScroll.pro
+@@ -0,0 +1,62 @@
++TARGET = $$qtLibraryTarget(AutoScroll)
++# OS/2 allows only 8 chars in TARGET
++os2: TARGET = AutoScrl
++
++SOURCES += autoscrollplugin.cpp \
++    autoscroller.cpp \
++    framescroller.cpp \
++    autoscrollsettings.cpp
++
++HEADERS += autoscrollplugin.h \
++    autoscroller.h \
++    framescroller.h \
++    autoscrollsettings.h
++
++FORMS += \
++    autoscrollsettings.ui
++
++RESOURCES += autoscroll.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/eu_ES.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_BR.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/FlashCookieManager/FlashCookieManager.pro b/src/plugins/FlashCookieManager/FlashCookieManager.pro
+new file mode 100644
+index 00000000..3e2c40d1
+--- /dev/null
++++ b/src/plugins/FlashCookieManager/FlashCookieManager.pro
+@@ -0,0 +1,55 @@
++TARGET = $$qtLibraryTarget(FlashCookieManager)
++os2: TARGET = FlashCoo
++
++SOURCES += fcm_plugin.cpp \
++    fcm_dialog.cpp \
++    fcm_notification.cpp
++
++HEADERS += fcm_plugin.h \
++    fcm_dialog.h \
++    fcm_notification.h
++
++RESOURCES += flashcookiemanager.qrc
++
++FORMS += \
++    fcm_dialog.ui \
++    fcm_notification.ui
++    
++TRANSLATIONS += \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/pl_PL.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/GnomeKeyringPasswords/GnomeKeyringPasswords.pro b/src/plugins/GnomeKeyringPasswords/GnomeKeyringPasswords.pro
+new file mode 100644
+index 00000000..95b10c64
+--- /dev/null
++++ b/src/plugins/GnomeKeyringPasswords/GnomeKeyringPasswords.pro
+@@ -0,0 +1,61 @@
++include(../../defines.pri)
++
++TARGET = $$qtLibraryTarget(GnomeKeyringPasswords)
++
++SOURCES += gnomekeyringplugin.cpp \
++    gnomekeyringpasswordbackend.cpp
++
++HEADERS += gnomekeyringplugin.h \
++    gnomekeyringpasswordbackend.h
++
++RESOURCES += gnomekeyringpasswords.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ko_KR.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++LIBS += $$system(pkg-config --libs gnome-keyring-1)
++QMAKE_CXXFLAGS += $$system(pkg-config --cflags gnome-keyring-1)
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/GreaseMonkey/GreaseMonkey.pro b/src/plugins/GreaseMonkey/GreaseMonkey.pro
+new file mode 100644
+index 00000000..778f1da1
+--- /dev/null
++++ b/src/plugins/GreaseMonkey/GreaseMonkey.pro
+@@ -0,0 +1,93 @@
++TARGET = $$qtLibraryTarget(GreaseMonkey)
++os2: TARGET = GreaseMo
++
++INCLUDEPATH += . settings\
++DEPENDPATH += settings\
++
++SOURCES += gm_plugin.cpp \
++    gm_manager.cpp \
++    gm_script.cpp \
++    gm_downloader.cpp \
++    gm_addscriptdialog.cpp \
++    gm_notification.cpp \
++    settings/gm_settings.cpp \
++    settings/gm_settingslistdelegate.cpp \
++    settings/gm_settingsscriptinfo.cpp \
++    settings/gm_settingslistwidget.cpp \
++#    gm_jsobject.cpp \
++    gm_icon.cpp \
++
++HEADERS += gm_plugin.h \
++    gm_manager.h \
++    gm_script.h \
++    gm_downloader.h \
++    gm_addscriptdialog.h \
++    gm_notification.h \
++    settings/gm_settings.h \
++    settings/gm_settingslistdelegate.h \
++    settings/gm_settingsscriptinfo.h \
++    settings/gm_settingslistwidget.h \
++#    gm_jsobject.h \
++    gm_icon.h \
++
++FORMS += \
++    gm_addscriptdialog.ui \
++    gm_notification.ui \
++    settings/gm_settings.ui \
++    settings/gm_settingsscriptinfo.ui
++
++RESOURCES += greasemonkey.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_AR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/es_VE.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ka_GE.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/my_MM.ts \
++    translations/nb_NO.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_BR.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/sv_SE.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/ImageFinder/ImageFinder.pro b/src/plugins/ImageFinder/ImageFinder.pro
+new file mode 100644
+index 00000000..5e2bf675
+--- /dev/null
++++ b/src/plugins/ImageFinder/ImageFinder.pro
+@@ -0,0 +1,44 @@
++TARGET = $$qtLibraryTarget(ImageFinder)
++# OS/2 allows only 8 chars in TARGET
++os2: TARGET = ImgFndr
++
++HEADERS += \
++    imagefinderplugin.h \
++    imagefinder.h \
++    imagefindersettings.h \
++
++SOURCES += \
++    imagefinderplugin.cpp \
++    imagefinder.cpp \
++    imagefindersettings.cpp \
++
++RESOURCES += imagefinder.qrc
++
++FORMS += imagefindersettings.ui
++
++TRANSLATIONS += \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/eu_ES.ts \
++    translations/fr_FR.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/lt.ts \
++    translations/nl_NL.ts \
++    translations/pt_PT.ts \
++    translations/ru_RU.ts \
++    translations/sl_SI.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/zh_CN.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/KWalletPasswords/KWalletPasswords.pro b/src/plugins/KWalletPasswords/KWalletPasswords.pro
+new file mode 100644
+index 00000000..30cf27ae
+--- /dev/null
++++ b/src/plugins/KWalletPasswords/KWalletPasswords.pro
+@@ -0,0 +1,66 @@
++include(../../defines.pri)
++
++TARGET = $$qtLibraryTarget(KWalletPasswords)
++
++SOURCES += kwalletplugin.cpp \
++    kwalletpasswordbackend.cpp
++
++HEADERS += kwalletplugin.h \
++    kwalletpasswordbackend.h
++
++RESOURCES += kwalletpasswords.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_AR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ko_KR.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nb_NO.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++isEqual(QT_MAJOR_VERSION, 5) {
++    QT += KWallet
++} else {
++    LIBS += -lkdeui
++}
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/MouseGestures/MouseGestures.pro b/src/plugins/MouseGestures/MouseGestures.pro
+new file mode 100644
+index 00000000..07e254a8
+--- /dev/null
++++ b/src/plugins/MouseGestures/MouseGestures.pro
+@@ -0,0 +1,77 @@
++TARGET = $$qtLibraryTarget(MouseGestures)
++os2: TARGET = MouseGes
++
++INCLUDEPATH = 3rdparty
++DEPENDPATH = 3rdparty
++
++SOURCES = \
++    3rdparty/mousegesturerecognizer.cpp \
++    3rdparty/QjtMouseGesture.cpp \
++    3rdparty/QjtMouseGestureFilter.cpp \
++    3rdparty/adv_recognizer.cpp \
++    mousegestures.cpp \
++    mousegesturesplugin.cpp \
++    mousegesturessettingsdialog.cpp
++
++HEADERS = \
++    3rdparty/QjtMouseGesture.h \
++    3rdparty/QjtMouseGestureFilter.h \
++    mousegestures.h \
++    mousegesturesplugin.h \
++    mousegesturessettingsdialog.h
++
++FORMS += \
++    mousegesturessettingsdialog.ui
++
++RESOURCES = mousegestures.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/es_VE.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ka_GE.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_BR.ts \
++    translations/pt_PT.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/sv_SE.ts \
++    translations/te.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/PIM/PIM.pro b/src/plugins/PIM/PIM.pro
+new file mode 100644
+index 00000000..3c4ef1cc
+--- /dev/null
++++ b/src/plugins/PIM/PIM.pro
+@@ -0,0 +1,66 @@
++TARGET = $$qtLibraryTarget(PIM)
++os2: TARGET  = PIM
++
++SOURCES = \
++    PIM_plugin.cpp \
++    PIM_handler.cpp \
++    PIM_settings.cpp
++
++HEADERS = \
++    PIM_plugin.h \
++    PIM_handler.h \
++    PIM_settings.h
++
++FORMS += \
++    PIM_settings.ui
++
++RESOURCES = PIM_res.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/es_VE.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ko_KR.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_BR.ts \
++    translations/pt_PT.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/StatusBarIcons/StatusBarIcons.pro b/src/plugins/StatusBarIcons/StatusBarIcons.pro
+new file mode 100644
+index 00000000..a864aa79
+--- /dev/null
++++ b/src/plugins/StatusBarIcons/StatusBarIcons.pro
+@@ -0,0 +1,80 @@
++TARGET = $$qtLibraryTarget(StatusBarIcons)
++os2: TARGET = StatusBa
++
++SOURCES += statusbariconsplugin.cpp \
++    sbi_iconsmanager.cpp \
++    sbi_imagesicon.cpp \
++    sbi_javascripticon.cpp \
++    sbi_networkicon.cpp \
++    sbi_networkproxy.cpp \
++    sbi_proxywidget.cpp \
++    sbi_networkicondialog.cpp \
++    sbi_networkmanager.cpp \
++    sbi_settingsdialog.cpp \
++    sbi_icon.cpp \
++    sbi_zoomwidget.cpp
++
++HEADERS += statusbariconsplugin.h \
++    sbi_iconsmanager.h \
++    sbi_imagesicon.h \
++    sbi_javascripticon.h \
++    sbi_networkicon.h \
++    sbi_networkproxy.h \
++    sbi_proxywidget.h \
++    sbi_networkicondialog.h \
++    sbi_networkmanager.h \
++    sbi_settingsdialog.h \
++    sbi_icon.h \
++    sbi_zoomwidget.h
++
++RESOURCES += statusbaricons.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/es_VE.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_PT.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++FORMS += \
++    sbi_proxywidget.ui \
++    sbi_networkicondialog.ui \
++    sbi_settingsdialog.ui
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/TabManager/TabManager.pro b/src/plugins/TabManager/TabManager.pro
+new file mode 100644
+index 00000000..3655ed9b
+--- /dev/null
++++ b/src/plugins/TabManager/TabManager.pro
+@@ -0,0 +1,59 @@
++TARGET = $$qtLibraryTarget(TabManager)
++# OS/2 allows only 8 chars in TARGET
++os2: TARGET = TabManPl
++
++SOURCES += tabmanagerplugin.cpp \
++    tabmanagerwidget.cpp \
++    tabmanagerwidgetcontroller.cpp \
++    tabmanagersettings.cpp \
++    tabmanagerdelegate.cpp
++
++HEADERS += tabmanagerplugin.h \
++    tabmanagerwidget.h \
++    tabmanagerwidgetcontroller.h \
++    tabmanagersettings.h \
++    tabmanagerdelegate.h
++
++RESOURCES += tabmanagerplugin.qrc
++
++FORMS += \
++    tabmanagerwidget.ui \
++    tabmanagersettings.ui
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fr_FR.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nl_NL.ts \
++    translations/pl_PL.ts \
++    translations/pt_PT.ts \
++    translations/ru_RU.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++include(tldextractor/tldextractor.pri)
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/TestPlugin/TestPlugin.pro b/src/plugins/TestPlugin/TestPlugin.pro
+new file mode 100644
+index 00000000..524f31ae
+--- /dev/null
++++ b/src/plugins/TestPlugin/TestPlugin.pro
+@@ -0,0 +1,67 @@
++#-------------------------------------------------
++#
++# Project created by QtCreator 2011-02-13T10:23:13
++#
++#-------------------------------------------------
++TARGET = $$qtLibraryTarget(TestPlugin)
++# OS/2 allows only 8 chars in TARGET
++os2: TARGET = TestPlug
++
++SOURCES += testplugin.cpp \
++    testplugin_sidebar.cpp
++HEADERS += testplugin.h \
++    testplugin_sidebar.h
++RESOURCES += testplugin.qrc
++
++TRANSLATIONS += \
++    translations/ar_SA.ts \
++    translations/bg_BG.ts \
++    translations/ca_ES.ts \
++    translations/cs_CZ.ts \
++    translations/da_DK.ts \
++    translations/de_DE.ts \
++    translations/el_GR.ts \
++    translations/es_ES.ts \
++    translations/es_MX.ts \
++    translations/es_VE.ts \
++    translations/eu_ES.ts \
++    translations/fa_IR.ts \
++    translations/fi_FI.ts \
++    translations/fr_FR.ts \
++    translations/gl_ES.ts \
++    translations/he_IL.ts \
++    translations/hr_HR.ts \
++    translations/hu_HU.ts \
++    translations/id_ID.ts \
++    translations/is.ts \
++    translations/it_IT.ts \
++    translations/ja_JP.ts \
++    translations/ka_GE.ts \
++    translations/ko_KR.ts \
++    translations/lt.ts \
++    translations/lv_LV.ts \
++    translations/nb_NO.ts \
++    translations/nl_NL.ts \
++    translations/nqo.ts \
++    translations/pl_PL.ts \
++    translations/pt_BR.ts \
++    translations/ro_RO.ts \
++    translations/ru_RU.ts \
++    translations/sk_SK.ts \
++    translations/sl_SI.ts \
++    translations/sr@ijekavianlatin.ts \
++    translations/sr@ijekavian.ts \
++    translations/sr@latin.ts \
++    translations/sr.ts \
++    translations/sv_SE.ts \
++    translations/te.ts \
++    translations/tr_TR.ts \
++    translations/uk_UA.ts \
++    translations/uz@Cyrl.ts \
++    translations/uz@Latn.ts \
++    translations/zh_CN.ts \
++    translations/zh_HK.ts \
++    translations/zh_TW.ts \
++
++PLUGIN_DIR = $$PWD
++include(../../plugins.pri)
+diff --git a/src/plugins/plugins.pro b/src/plugins/plugins.pro
+new file mode 100644
+index 00000000..eb16f93f
+--- /dev/null
++++ b/src/plugins/plugins.pro
+@@ -0,0 +1,44 @@
++TEMPLATE = subdirs
++
++include(../defines.pri)
++
++defineTest(addSubdir) {
++    for(subdir, 1) {
++        entries = $$files($$subdir/*)
++        for(entry, entries) {
++            fullPath = $$replace(entry, ;,"")
++            fullPath = $$replace(fullPath, \\\\, /)
++            name = $$replace(fullPath, $$re_escape("$$subdir/"), "")
++            os2|win32: fullPath = $$lower($$fullPath)
++            exists($$fullPath/*.pro): SUBDIRS += $$fullPath
++        }
++    }
++
++    export (SUBDIRS)
++}
++
++defineTest(disablePlugin) {
++    SUBDIRS -= $$PWD/$$1
++    os2|win32: SUBDIRS -= $$lower($$PWD/$$1)
++
++    export(SUBDIRS)
++}
++
++addSubdir($$PWD)
++
++outOfDirPlugins = $$(FALKON_PLUGINS_SRCDIR)
++!equals(outOfDirPlugins, ""): addSubdir($$(FALKON_PLUGINS_SRCDIR))
++
++# TestPlugin only in debug build
++!CONFIG(debug, debug|release): disablePlugin(TestPlugin)
++
++# KWalletPasswords only with KDE_INTEGRATION and KWallet framework
++!contains(DEFINES, KDE_INTEGRATION): disablePlugin(KWalletPasswords)
++!qtHaveModule(KWallet): disablePlugin(KWalletPasswords)
++
++# GnomeKeyringPasswords only with GNOME_INTEGRATION and gnome-keyring pkg-config
++!contains(DEFINES, GNOME_INTEGRATION): disablePlugin(GnomeKeyringPasswords)
++!system(pkg-config --exists gnome-keyring-1): disablePlugin(GnomeKeyringPasswords)
++
++# QtWebEngine disable
++disablePlugin(AccessKeysNavigation)
