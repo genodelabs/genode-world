@@ -13,11 +13,15 @@
 
 #include <platform.h>
 
+#include <base/attached_io_mem_dataspace.h>
 #include <gpio_session/connection.h>
 #include <io_mem_session/connection.h>
+#include <irq_session/connection.h>
 #include <util/mmio.h>
 
 #include <lx_emul.h>
+#include <lx_kit/backend_alloc.h>
+#include <lx_kit/irq.h>
 
 #include <linux/platform_data/usb-omap.h>
 
@@ -298,4 +302,70 @@ void platform_hcd_init(Genode::Env &, Services *services)
 	pdev->dev.coherent_dma_mask = ~0;
 
 	platform_device_register(pdev);
+}
+
+
+/****************************
+ ** lx_kit/backend_alloc.h **
+ ****************************/
+
+void backend_alloc_init(Env & env, Ram_allocator&, Allocator&) { }
+
+
+Ram_dataspace_capability
+Lx::backend_alloc(addr_t size, Cache_attribute cached)
+{
+	return Lx_kit::env().env().ram().alloc(size, cached);
+}
+
+
+void Lx::backend_free(Ram_dataspace_capability cap)
+{
+	return Lx_kit::env().env().ram().free(cap);
+}
+
+
+/**********************
+ ** asm-generic/io.h **
+ **********************/
+
+void * _ioremap(phys_addr_t phys_addr, unsigned long, int)
+{
+	if (phys_addr != EHCI_BASE) {
+		warning("did not found physical resource ", (void*)phys_addr);
+		return nullptr;
+	}
+
+	static Genode::Attached_io_mem_dataspace ehci { Lx_kit::env().env(), EHCI_BASE, 0x400 };
+	return ehci.local_addr<void>();
+}
+
+
+void *ioremap(phys_addr_t offset, unsigned long size)
+{
+	return _ioremap(offset, size, 0);
+}
+
+
+/***********************
+ ** linux/interrupt.h **
+ ***********************/
+
+extern "C" int request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags,
+                           const char *name, void *dev)
+{
+	if (irq != IRQ_EHCI) {
+		warning("irq ", irq, " not available!");
+		return 1;
+	}
+
+	static Genode::Irq_connection ehci_irq { Lx_kit::env().env(), IRQ_EHCI };
+	Lx::Irq::irq().request_irq(ehci_irq.cap(), irq, handler, dev);
+	return 0;
+}
+
+
+int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long irqflags, const char *devname, void *dev_id)
+{
+	return request_irq(irq, handler, irqflags, devname, dev_id);
 }

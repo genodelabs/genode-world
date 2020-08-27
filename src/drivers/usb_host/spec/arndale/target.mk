@@ -11,7 +11,6 @@ INC_DIR += $(DDE_LINUX_DIR)/src/drivers/usb_host/spec/arm
 INC_DIR += $(DDE_LINUX_DIR)/src/include/spec/arm
 INC_DIR += $(DDE_LINUX_DIR)/src/include/spec/arm_v7
 
-SRC_CC  += spec/arm/platform.cc
 SRC_CC  += spec/arndale/platform.cc
 
 SRC_C   += usb/dwc3/core.c

@@ -12,8 +12,10 @@
  */
 
 /* Genode */
+#include <base/allocator.h>
 #include <base/attached_io_mem_dataspace.h>
 #include <io_mem_session/connection.h>
+#include <irq_session/connection.h>
 #include <regulator/consts.h>
 #include <regulator_session/connection.h>
 #include <timer_session/connection.h>
@@ -21,6 +23,8 @@
 
 /* Emulation */
 #include <lx_emul.h>
+#include <lx_kit/backend_alloc.h>
+#include <lx_kit/irq.h>
 #include <platform.h>
 
 
@@ -336,4 +340,85 @@ void platform_hcd_init(Genode::Env &, Services *services)
 {
 	ehci_setup(services);
 	xhci_setup(services);
+}
+
+
+/****************************
+ ** lx_kit/backend_alloc.h **
+ ****************************/
+
+void backend_alloc_init(Env & env, Ram_allocator&, Allocator&) { }
+
+
+Ram_dataspace_capability
+Lx::backend_alloc(addr_t size, Cache_attribute cached)
+{
+	return Lx_kit::env().env().ram().alloc(size, cached);
+}
+
+
+void Lx::backend_free(Ram_dataspace_capability cap)
+{
+	return Lx_kit::env().env().ram().free(cap);
+}
+
+
+/**********************
+ ** asm-generic/io.h **
+ **********************/
+
+void * _ioremap(phys_addr_t phys_addr, unsigned long, int)
+{
+	if (phys_addr >= EHCI_BASE && phys_addr < (EHCI_BASE+1000)) {
+		static Genode::Attached_io_mem_dataspace ehci {
+			Lx_kit::env().env(), EHCI_BASE, 0x1000 };
+		return (void*)((addr_t)ehci.local_addr<void>() + (phys_addr-EHCI_BASE));
+	}
+
+	if (phys_addr >= DWC3_BASE && phys_addr < (DWC3_BASE+0xd000)) {
+		static Genode::Attached_io_mem_dataspace dwc3 {
+			Lx_kit::env().env(), DWC3_BASE, 0xd000 };
+		return (void*)((addr_t)dwc3.local_addr<void>() + (phys_addr-DWC3_BASE));
+	}
+
+	warning("did not found physical resource ", (void*)phys_addr);
+	return nullptr;
+}
+
+
+void *ioremap(phys_addr_t offset, unsigned long size)
+{
+	return _ioremap(offset, size, 0);
+}
+
+
+/***********************
+ ** linux/interrupt.h **
+ ***********************/
+
+extern "C" int request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags,
+                           const char *name, void *dev)
+{
+	if (irq == EHCI_IRQ) {
+		static Genode::Irq_connection ehci_irq {
+			Lx_kit::env().env(), EHCI_IRQ };
+		Lx::Irq::irq().request_irq(ehci_irq.cap(), irq, handler, dev);
+		return 0;
+	}
+
+	if (irq == DWC3_IRQ) {
+		static Genode::Irq_connection dwc3_irq {
+			Lx_kit::env().env(), DWC3_IRQ };
+		Lx::Irq::irq().request_irq(dwc3_irq.cap(), irq, handler, dev);
+		return 0;
+	}
+
+	warning("irq ", irq, " not available!");
+	return 1;
+}
+
+
+int devm_request_irq(struct device *dev, unsigned int irq, irq_handler_t handler, unsigned long irqflags, const char *devname, void *dev_id)
+{
+	return request_irq(irq, handler, irqflags, devname, dev_id);
 }
