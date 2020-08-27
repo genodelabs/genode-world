@@ -1,5 +1,4 @@
 _/src/arndale_drivers
-_/src/input_filter
 _/src/report_rom
 _/src/usb_hid_drv
 _/src/arndale_usb_host_drv
