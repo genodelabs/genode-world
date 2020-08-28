@@ -186,7 +186,7 @@ struct Ssh_client::Main
 
 		Xml_node host_cfg(buf, n);
 		try {
-			host_cfg.attribute("name").value(&_hostname);
+			host_cfg.attribute("name").value(_hostname);
 			ssh_options_set(_session, SSH_OPTIONS_HOST,
 				_hostname.string());
 			ssh_options_set(_session, SSH_OPTIONS_PORT_STR,
