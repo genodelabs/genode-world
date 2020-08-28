@@ -861,7 +861,7 @@ void Audio_player::Main::handle_config()
 		static Genode::String<16> last_state { "-" };
 
 		Genode::String<16> state;
-		config.attribute("state").value(&state);
+		config.attribute("state").value(state);
 
 		state_changed = state != last_state;
 
@@ -896,7 +896,7 @@ void Audio_player::Main::handle_config()
 	/* handle selected track */
 	try {
 		unsigned id = 0;
-		config.attribute("selected_track").value(&id);
+		config.attribute("selected_track").value(id);
 		if (id != track.id) {  /* XXX what happens if the playlist changed? */
 			is_stopped = true; /* XXX do not abuse this flag */
 			track = playlist.get_track(id);
