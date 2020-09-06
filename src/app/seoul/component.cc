@@ -753,10 +753,6 @@ class Machine : public StaticReceiver<Machine>
 		Timeouts               _alarm_thread = { _env, _motherboard, _timeouts };
 		unsigned short         _vcpus_up = 0;
 
-		Genode::addr_t         _alloc_fb_size { 0 };
-		Genode::addr_t         _alloc_fb_mem  { 0 };
-		Genode::addr_t         _vm_phys_fb    { 0 };
-
 		bool                   _map_small    { false   };
 		bool                   _rdtsc_exit   { false   };
 		bool                   _same_cpu     { false   };
@@ -807,13 +803,6 @@ class Machine : public StaticReceiver<Machine>
 				if (verbose_debug)
 					Logging::printf("OP_GUEST_MEM value=0x%lx\n", msg.value);
 
-				if (_alloc_fb_mem) {
-					msg.len = _alloc_fb_size;
-					msg.ptr = (char *)_alloc_fb_mem - _vm_phys_fb;
-					_alloc_fb_mem = _alloc_fb_size = _vm_phys_fb = 0;
-					return true;
-				}
-
 				if (msg.value >= _guest_memory.remaining_size) {
 					msg.value = 0;
 				} else {
@@ -827,28 +816,12 @@ class Machine : public StaticReceiver<Machine>
 				return true;
 
 			/**
-			 * Cut off upper range of guest memory by specified amount
+			 * Reserve IO MEM range for devices
 			 */
-			case MessageHostOp::OP_ALLOC_FROM_GUEST:
+			case MessageHostOp::OP_RESERVE_IO_RANGE:
 
-				if (verbose_debug)
-					Logging::printf("OP_ALLOC_FROM_GUEST\n");
-
-				if (_alloc_fb_mem) {
-					msg.phys = _vm_phys_fb;
-					return true;
-				}
-
-				if (msg.value > _guest_memory.remaining_size)
-					return false;
-
-				_guest_memory.remaining_size -= msg.value;
-
-				msg.phys = _guest_memory.remaining_size;
-
-				if (verbose_debug)
-					Logging::printf("-> allocated from guest %08lx+%lx\n",
-					                msg.phys, msg.value);
+				msg.phys = _guest_memory.alloc_io_memory(msg.value);
+				Genode::warning("alloc from guest ", msg.value, " ", Genode::Hex(msg.phys));
 				return true;
 
 			case MessageHostOp::OP_VCPU_CREATE_BACKEND:
@@ -1205,18 +1178,9 @@ class Machine : public StaticReceiver<Machine>
 		 * configuration.
 		 */
 		void setup_devices(Genode::Xml_node machine_node,
-		                   Seoul::Console &console)
+		                   Seoul::Console &console,
+		                   Gui::Area const &gui_area)
 		{
-			console.apply_msg(Seoul::Console::ID_VGA_VESA, [&](auto &gui) {
-				/* tell vga model about available framebuffer memory */
-				Device_model_info *dmi = device_model_registry()->lookup("vga_fbsize");
-				if (dmi) {
-					unsigned long argv[2] = { gui.fb_size >> 10, ~0UL };
-					dmi->create(_unsynchronized_motherboard, argv, "", 0);
-				}
-				return true;
-			});
-
 			using namespace Genode;
 
 			bool const verbose = machine_node.attribute_value("verbose", false);
@@ -1262,15 +1226,8 @@ class Machine : public StaticReceiver<Machine>
 				 * We never pass any argument string to a device model because
 				 * it is not examined by the existing device models.
 				 */
-				if (!strcmp(dmi->name, "vga", 4)) {
-					_alloc_fb_mem  = console.attached_framebuffer();
-					_alloc_fb_size = console.framebuffer_size();
-					_vm_phys_fb    = console.vm_phys_framebuffer();
-				}
 
 				dmi->create(_unsynchronized_motherboard, argv, "", 0);
-
-				if (_alloc_fb_mem) _alloc_fb_mem = _alloc_fb_size = 0;
 
 				if (node.last())
 					break;
@@ -1410,10 +1367,12 @@ void Component::construct(Genode::Env &env)
 	static Machine machine(env, heap, vm_con, boot_modules, guest_memory,
 	                       map_small, rdtsc_exit, vmm_vcpu_same_cpu);
 
+	Gui::Area const gui_area(width, height);
+
 	/* create console thread */
 	static Seoul::Console vcon(env, heap, machine.motherboard(),
 	                           machine.unsynchronized_motherboard(),
-	                           Gui::Area(width, height), guest_memory);
+	                           gui_area, guest_memory);
 
 	vcon.register_host_operations(machine.unsynchronized_motherboard());
 
@@ -1425,7 +1384,7 @@ void Component::construct(Genode::Env &env)
 
 	vdisk.register_host_operations(machine.unsynchronized_motherboard());
 
-	machine.setup_devices(node.sub_node("machine"), vcon);
+	machine.setup_devices(node.sub_node("machine"), vcon, gui_area);
 
 	Genode::log("\n--- Booting VM ---");
 

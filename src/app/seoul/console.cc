@@ -23,28 +23,18 @@
 /* base includes */
 #include <util/register.h>
 
-/* nitpicker graphics backend */
-#include <nitpicker_gfx/tff_font.h>
-
 #include <nul/motherboard.h>
 #include <host/screen.h>
 
 /* local includes */
 #include "console.h"
 
+
 extern char _binary_mono_tff_start[];
 
-static Tff_font::Static_glyph_buffer<4096> glyph_buffer { };
-static Tff_font default_font(_binary_mono_tff_start, glyph_buffer);
-
 static struct {
-	Genode::uint64_t checksum1   = 0;
-	Genode::uint64_t checksum2   = 0;
-	unsigned         unchanged   = 0;
-	bool             cmp_even    = 1;
-	bool             active      = false;
-	bool             vga_off     = false;
-} fb_state;
+	bool active = false;
+} cpu_state;
 
 
 /**
@@ -196,12 +186,6 @@ void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 }
 
 
-enum {
-	PHYS_FRAME_VGA       = 0xa0,
-	PHYS_FRAME_VGA_COLOR = 0xb8,
-	FRAME_COUNT_COLOR    = 0x8
-};
-
 unsigned Seoul::Console::_input_to_ps2wheel(Input::Event const &ev)
 {
 	int rz = 0;
@@ -211,28 +195,37 @@ unsigned Seoul::Console::_input_to_ps2wheel(Input::Event const &ev)
 }
 
 
-/* bus callbacks */
-
 bool Seoul::Console::receive(MessageConsole &msg)
 {
 	switch (msg.type) {
 	case MessageConsole::TYPE_ALLOC_CLIENT:
 	{
-		Genode::String<12> name("fb", msg.id, ".", msg.view);
-		auto *gui = new (_alloc) Backend_gui(_env, _guis, msg.id, _fb_mode.area,
-		                                     _signal_input, name.string());
-		msg.ptr = _env.rm().attach(gui->fb_ds);
+		Genode::String<12> name((msg.id == ID_VGA_VESA) ?
+		                        "vga/vesa" : "fb", msg.id, ".", msg.view);
+		auto &gui = *new (_alloc) Backend_gui(_env, _guis, msg.id, _gui_area,
+		                                      _signal_input, name.string());
+
+		msg.ptr  = (char *)gui.pixels;
+		msg.size = gui.fb_size;
+
 		return true;
 	}
 	case MessageConsole::TYPE_ALLOC_VIEW :
 	{
-		if (msg.id == ID_VGA_VESA) { /* XXX special handling */
-			_guest_fb = msg.ptr;
-			_regs = msg.regs;
+		if (msg.id == ID_VGA_VESA) {
+			apply_msg(msg.id, [&](auto &gui) {
+				auto const vm_phys_addr_framebuffer = msg.size;
 
+				_vga_vesa.init(msg.regs, msg.ptr, vm_phys_addr_framebuffer);
+				_memory.add_region(_alloc, vm_phys_addr_framebuffer,
+				                   gui.pixels, gui.fb_ds, gui.fb_size);
+
+				return true;
+			});
 			msg.view = 0;
 			return true;
 		}
+
 		bool const found = apply_msg(msg.id, [&](auto &gui) {
 			if (msg.view == 1) {
 				msg.ptr = gui.shape_ptr();
@@ -263,8 +256,8 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		return found;
 	}
 	case MessageConsole::TYPE_FREE_VIEW:
-		if (msg.id == ID_VGA_VESA) { /* XXX special handling */
-			return false; }
+		if (msg.id == ID_VGA_VESA)
+			return false;
 
 		return apply_msg(msg.id, [&](auto &gui) {
 
@@ -280,63 +273,15 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		/* XXX: For now, we only have one view. */
 		return true;
 	case MessageConsole::TYPE_GET_MODEINFO:
-		enum {
-			MEMORY_MODEL_TEXT = 0,
-			MEMORY_MODEL_DIRECT_COLOR = 6,
-		};
-
-		/*
-		 * We supply two modes to the guest, text mode and one
-		 * configured graphics mode 16-bit.
-		 */
-		if (msg.index == 0) {
-			msg.info->_vesa_mode = 3;
-			msg.info->attr = 0x1;
-			msg.info->resolution[0] = 80;
-			msg.info->resolution[1] = 25;
-			msg.info->bytes_per_scanline = 80*2;
-			msg.info->bytes_scanline = 80*2;
-			msg.info->bpp = 4;
-			msg.info->memory_model = MEMORY_MODEL_TEXT;
-			msg.info->phys_base = PHYS_FRAME_VGA_COLOR << 12;
-			msg.info->_phys_size = FRAME_COUNT_COLOR << 12;
-			return true;
-
-		} else if (msg.index == 1) {
-
-			/*
-			 * It's important to set the _vesa_mode field, otherwise the
-			 * device model is going to ignore this mode.
-			 */
-			unsigned const bpp = _fb_mode.bytes_per_pixel();
-			msg.info->_vesa_mode = 0x138;
-			msg.info->attr = 0x39f;
-			msg.info->resolution[0]      = _fb_mode.area.w();
-			msg.info->resolution[1]      = _fb_mode.area.h();
-			msg.info->bytes_per_scanline = _fb_mode.area.w()*bpp;
-			msg.info->bytes_scanline     = _fb_mode.area.w()*bpp;
-			msg.info->bpp = 32;
-			msg.info->memory_model = MEMORY_MODEL_DIRECT_COLOR;
-			msg.info->vbe1[0] =  0x8; /* red mask size */
-			msg.info->vbe1[1] = 0x10; /* red field position */
-			msg.info->vbe1[2] =  0x8; /* green mask size */
-			msg.info->vbe1[3] =  0x8; /* green field position */
-			msg.info->vbe1[4] =  0x8; /* blue mask size */
-			msg.info->vbe1[5] =  0x0; /* blue field position */
-			msg.info->vbe1[6] =  0x0; /* reserved mask size */
-			msg.info->vbe1[7] =  0x0; /* reserved field position */
-			msg.info->colormode = 0x0; /* direct color mode info */
-			msg.info->phys_base = 0xe0000000;
-			msg.info->_phys_size = _fb_mode.area.count()*bpp;
-			return true;
-		}
-		return false;
+		return apply_msg(msg.id, [&](auto &gui) {
+			return _vga_vesa.mode_info(msg, gui);
+		});
 	case MessageConsole::TYPE_PAUSE: /* all CPUs go idle */
-		_handle_fb(fb_state.vga_off); /* refresh before going to sleep */
-		fb_state.active = false;
+		_handle_fb(); /* refresh before going to sleep */
+		cpu_state.active = false;
 		return true;
 	case MessageConsole::TYPE_RESUME: /* first of all sleeping CPUs woke up */
-		_reactivate();
+		_reactivate_periodic_timer();
 		return true;
 	case MessageConsole::TYPE_CONTENT_UPDATE:
 	{
@@ -361,8 +306,8 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		});
 
 		/* if the fb updating was off, reactivate timer - move into vga/vesa class XXX */
-		if (msg.id == ID_VGA_VESA && !fb_state.active)
-			_reactivate();
+		if (msg.id == ID_VGA_VESA && !cpu_state.active)
+			_reactivate_periodic_timer();
 
 		if (!found)
 			Genode::error("unknown graphical backend ", msg.id);
@@ -374,112 +319,39 @@ bool Seoul::Console::receive(MessageConsole &msg)
 	}
 }
 
-void Seoul::Console::_reactivate()
+
+void Seoul::Console::_reactivate_periodic_timer()
 {
-	fb_state.active = true;
+	cpu_state.active = true;
 
 	MessageTimer msg(_timer, _unsynchronized_motherboard.clock()->abstime(1, 1000));
 	_unsynchronized_motherboard.bus_timer.send(msg);
 }
 
+
 bool Seoul::Console::receive(MessageMemRegion &msg)
 {
-	/* we had a fault in the text framebuffer */
-	bool reactivate = (msg.page >= PHYS_FRAME_VGA &&
-	                   msg.page < PHYS_FRAME_VGA_COLOR + FRAME_COUNT_COLOR);
+	bool const reactivate = _vga_vesa.reactivate_update(msg.page);
 
 	if (reactivate) {
-		fb_state.vga_off = false;
-
-		//Logging::printf("Reactivating text buffer loop.\n");
-
-		_reactivate();
+		//Genode::log("Reactivating periodic VGA/VESA update.");
+		_reactivate_periodic_timer();
 	}
+
 	return false;
 }
 
 
-unsigned Seoul::Console::_handle_fb(bool const skip_update)
+Genode::Milliseconds Seoul::Console::_handle_fb()
 {
-	if (!_guest_fb || !_regs)
-		return 0;
+	Milliseconds reprogram_timer(0ULL);
 
-	enum { TEXT_MODE = 0 };
+	apply_msg(ID_VGA_VESA, [&](auto &gui) {
+		reprogram_timer = _vga_vesa.handle_fb_gui(gui, cpu_state.active);
+		return true;
+	});
 
-	/* transfer text buffer content into chunky canvas */
-	if (_regs->mode == TEXT_MODE) {
-
-		if (skip_update || !fb_state.active) return 0;
-
-		memset(_pixels, 0, _fb_size);
-
-		if (fb_state.cmp_even) fb_state.checksum1 = 0;
-		else fb_state.checksum2 = 0;
-
-		Genode::Surface<Pixel_rgb888> _surface(reinterpret_cast<Genode::Pixel_rgb888 *>(_pixels), _fb_mode.area);
-
-		for (int j=0; j<25; j++) {
-			for (int i=0; i<80; i++) {
-				Text_painter::Position const where(i*8, j*15);
-				char character = *((char *) (_guest_fb +(_regs->offset << 1) +j*80*2+i*2));
-				char colorvalue = *((char *) (_guest_fb+(_regs->offset << 1)+j*80*2+i*2+1));
-				char buffer[2]; buffer[0] = character; buffer[1] = 0;
-				char fg = colorvalue & 0xf;
-				if (fg == 0x8) fg = 0x7;
-				unsigned lum = ((fg & 0x8) >> 3)*127;
-				Genode::Color color(((fg & 0x4) >> 2)*127+lum, /* R+luminosity */
-				                    ((fg & 0x2) >> 1)*127+lum, /* G+luminosity */
-				                     (fg & 0x1)*127+lum        /* B+luminosity */);
-
-				Text_painter::paint(_surface, where, default_font, color, buffer);
-
-				/* Checksum for comparing */
-				if (fb_state.cmp_even) fb_state.checksum1 += character;
-				else fb_state.checksum2 += character;
-			}
-		}
-
-		fb_state.cmp_even = !fb_state.cmp_even;
-
-		/* compare checksums to detect changed buffer */
-		if (fb_state.checksum1 != fb_state.checksum2) {
-			fb_state.unchanged = 0;
-			_backend_gui.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
-			return 100;
-		}
-
-		if (++fb_state.unchanged < 10)
-			return fb_state.unchanged * 30;
-
-		/* if we copy the same data 10 times, unmap the text buffer from guest */
-		_memory.detach(PHYS_FRAME_VGA_COLOR << 12,
-		               FRAME_COUNT_COLOR << 12);
-
-		fb_state.vga_off = true;
-		fb_state.unchanged = 0;
-
-		_backend_gui.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
-
-		return 0;
-	}
-
-	if (!fb_state.vga_off) {
-		_memory.detach(PHYS_FRAME_VGA_COLOR << 12,
-		               FRAME_COUNT_COLOR << 12);
-
-		fb_state.vga_off = true;
-	}
-
-	if (!fb_state.active) {
-		fb_state.unchanged = 0;
-		return 0;
-	}
-
-	_backend_gui.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
-
-	fb_state.unchanged++;
-
-	return (fb_state.unchanged > 4) ? 4 * 10 : fb_state.unchanged * 10;
+	return reprogram_timer;
 }
 
 
@@ -488,8 +360,8 @@ void Seoul::Console::_handle_input()
 	for (auto *gui = _guis.first(); gui; gui = gui->next()) {
 		gui->input.for_each_event([&] (Input::Event const &ev) {
 
-			if (!fb_state.active) {
-				fb_state.active = true;
+			if (!cpu_state.active) {
+				cpu_state.active = true;
 				MessageTimer msg(_timer, _motherboard()->clock()->abstime(1, 1000));
 				_motherboard()->bus_timer.send(msg);
 			}
@@ -532,14 +404,15 @@ void Seoul::Console::register_host_operations(Motherboard &motherboard)
 }
 
 
-bool Seoul::Console::receive(MessageTimeout &msg) {
+bool Seoul::Console::receive(MessageTimeout &msg)
+{
 	if (msg.nr != _timer)
 		return false;
 
-	unsigned next_timeout_ms = _handle_fb(fb_state.vga_off);
+	Milliseconds const timeout = _handle_fb();
 
-	if (next_timeout_ms) {
-		MessageTimer msg_t(_timer, _unsynchronized_motherboard.clock()->abstime(next_timeout_ms, 1000));
+	if (timeout.value) {
+		MessageTimer msg_t(_timer, _unsynchronized_motherboard.clock()->abstime(timeout.value, 1000));
 		_unsynchronized_motherboard.bus_timer.send(msg_t);
 	}
 
@@ -557,17 +430,7 @@ Seoul::Console::Console(Genode::Env &env, Genode::Allocator &alloc,
 	_unsynchronized_motherboard(unsynchronized_motherboard),
 	_motherboard(mb),
 	_alloc(alloc),
-	_backend_gui(*new Backend_gui(_env, _guis, ID_VGA_VESA, area, _signal_input, "vga/vesa")),
 	_memory(guest_memory),
-	_fb_mode(_backend_gui.gui.framebuffer()->mode()),
-	_fb_size(Genode::Dataspace_client(_backend_gui.fb_ds).size()),
-	_fb_vm_ds(env.ram().alloc(_fb_size)),
-	_fb_vm_mapping(_env.rm().attach(_fb_vm_ds)),
-	_vm_phys_fb(guest_memory.alloc_io_memory(_fb_size)),
-	_pixels(_env.rm().attach(_backend_gui.fb_ds))
-{
-	guest_memory.add_region(alloc, PHYS_FRAME_VGA << 12,
-	                        _fb_vm_mapping, _fb_vm_ds, _fb_size);
-	guest_memory.add_region(alloc, _vm_phys_fb,
-	                        Genode::addr_t(_pixels), _backend_gui.fb_ds, _fb_size);
-}
+	_gui_area(area),
+	_vga_vesa(_memory, _binary_mono_tff_start)
+{ }
