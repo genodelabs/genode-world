@@ -18,6 +18,8 @@
 #include <os/reporter.h>
 #include <pointer/shape_report.h>
 
+#include <gui_session/connection.h>
+
 struct Backend_gui : Genode::List<Backend_gui>::Element
 {
 	Gui::Connection              gui;
@@ -25,6 +27,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	size_t                       fb_size { 0 };
 	Framebuffer::Mode            fb_mode { };
 	Genode::Dataspace_capability fb_ds   { };
+	Genode::addr_t               pixels  { 0 };
 
 	Input::Session_client &input;
 
@@ -53,6 +56,8 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 
 		fb_size = Genode::align_addr(fb_mode.area.count() *
 		                             fb_mode.bytes_per_pixel(), 12);
+
+		pixels = env.rm().attach(fb_ds);
 
 		input.sigh(input_signal);
 		guis.insert(this);
