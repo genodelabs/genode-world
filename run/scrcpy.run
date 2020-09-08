@@ -229,18 +229,18 @@ append config {
 	</start>}
 
 append_if $use_interactive_pkg config {
-	<start name="drivers" caps="1500">
-		<resource name="RAM" quantum="128M" constrain_phys="yes"/>
+	<start name="drivers" caps="1500" managing_system="yes">
+		<resource name="RAM" quantum="128M"/>
 		<resource name="CPU" quantum="40"/>
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
 			<service name="Timer">   <child name="timer"/> </service>
 			<service name="Capture"> <child name="nitpicker"/> </service>
+			<service name="Event">   <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<provides>
-			<service name="Input"/>
 			<service name="Platform"/>
 		</provides>
 	</start>}
@@ -342,9 +342,13 @@ append config {
 	<start name="nitpicker" caps="110">
 		<resource name="RAM" quantum="1216K"/>
 		<resource name="CPU" quantum="20"/>
-		<provides> <service name="Gui"/> <service name="Capture"/> </provides>
-		<config request_framebuffer="no">
-			<capture/>
+		<provides>
+			<service name="Gui"/>
+			<service name="Capture"/>
+			<service name="Event"/>
+		</provides>
+		<config>
+			<capture/> <event/>
 			<report focus="yes" />
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="panel"   layer="2" content="client" label="no" focus="none" />
