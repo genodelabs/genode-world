@@ -97,10 +97,6 @@ extern "C" {
 
 	void Genode_Fb_PumpEvents(SDL_VideoDevice * const device)
 	{
-		SDL_Window * const window = SDL_GetMouseFocus();
-		if (!window)
-			return;
-
 		if (!input.constructed()) /* XXX */ {
 			Genode_Fb_InitOSKeymap(device);
 			/* there is a default map using the scancode array */
@@ -135,7 +131,8 @@ extern "C" {
 		if (!input->pending())
 			return;
 
-		SDL_MouseID const mouse_id = 0;
+		SDL_MouseID  const mouse_id = 0;
+		SDL_Window * const window   = SDL_GetMouseFocus();
 
 		input->for_each_event([&] (Input::Event const &curr) {
 
@@ -156,6 +153,10 @@ extern "C" {
 					SDL_SendMouseButton(window, mouse_id, SDL_PRESSED, buttonmap[key]);
 				else
 					SDL_SendKeyboardKey(SDL_PRESSED, getscancode(key));
+			});
+
+			curr.handle_wheel([&] (int const x, int const y) {
+				SDL_SendMouseWheel(window, mouse_id, x, y, SDL_MOUSEWHEEL_NORMAL);
 			});
 
 			curr.handle_release([&] (Input::Keycode key) {
