@@ -25,6 +25,7 @@
 		<rom label="egl_swrast.lib.so"/>
 		<rom label="expat.lib.so"/>
 		<rom label="glapi.lib.so"/>
+		<rom label="jitter_sponge"/>
 		<rom label="libFalkon.lib.so"/>
 		<rom label="libQt5Core.lib.so"/>
 		<rom label="libQt5Gui.lib.so"/>
