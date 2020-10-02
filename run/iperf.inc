@@ -266,14 +266,14 @@ append_if $use_nic_bridge config {
 append config {
 	<start name="iperf_genode" caps="320" priority="-1">
 	<binary name="iperf"/>
-		<resource name="RAM" quantum="32M"/>
+		<resource name="RAM" quantum="64M"/>
 		<config>
 			<arg value="iperf"/>
 			<arg value="-s"/>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
 			<vfs>
 				<dir name="dev">
-					<log/> <inline name="rtc">2018-01-01 00:01</inline>
+					<log/> <inline name="rtc">2020-01-01 00:01</inline>
 				</dir>
 				<dir name="socket">
 					<} [socket_fs_plugin] { }
@@ -359,7 +359,7 @@ set iperf_tests "w5K w50K w500K"
 # start iperf client connecting to iperf server running native on Genode
 foreach iperf_test $iperf_tests {
 	puts "\n---------------------------- $iperf_test -----------------------"
- 	spawn iperf -fk -$iperf_test -c $ip_addr $force_ports
+	spawn iperf -fk -$iperf_test -t5 -c$ip_addr $force_ports
 	set iperf_id $spawn_id
 
 	set spawn_id_list [list $iperf_id $serial_id]
@@ -378,4 +378,5 @@ foreach iperf_test $iperf_tests {
 	if {$use_nic_router} { puts -nonewline "_router" }
 	if {$use_usb_driver} { puts -nonewline "_xhci"   }
 	puts "              $throughput KBit/s ok"
+	sleep 1
 }
