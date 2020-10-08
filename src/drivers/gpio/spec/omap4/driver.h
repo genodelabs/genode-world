@@ -27,6 +27,7 @@
 
 class Omap4_driver : public Gpio::Driver
 {
+	using Pin = Gpio::Pin;
 	private:
 
 		enum {
@@ -123,9 +124,9 @@ class Omap4_driver : public Gpio::Driver
 		Gpio_bank _gpio_bank_4;
 		Gpio_bank _gpio_bank_5;
 
-		Gpio_bank *_gpio_bank(int gpio)
+		Gpio_bank *_gpio_bank(Pin gpio)
 		{
-			switch (gpio >> PIN_SHIFT) {
+			switch (gpio.value >> PIN_SHIFT) {
 			case 0:
 				return &_gpio_bank_0;
 			case 1:
@@ -144,7 +145,7 @@ class Omap4_driver : public Gpio::Driver
 			return 0;
 		}
 
-		int _gpio_index(int gpio)       { return gpio & 0x1f; }
+		unsigned _gpio_index(Pin gpio)       { return gpio.value & 0x1f; }
 
 		Omap4_driver(Genode::Env &env)
 		:
@@ -165,13 +166,13 @@ class Omap4_driver : public Gpio::Driver
 		 **  Gpio::Driver interface  **
 		 ******************************/
 
-		void direction(unsigned gpio, bool input) override
+		void direction(Pin gpio, bool input) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Oe>(input ? 1 : 0, _gpio_index(gpio));
 		}
 
-		void write(unsigned gpio, bool level) override
+		void write(Pin gpio, bool level) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 
@@ -181,20 +182,20 @@ class Omap4_driver : public Gpio::Driver
 				gpio_reg->write<Gpio_reg::Cleardataout>(1 << _gpio_index(gpio));
 		}
 
-		bool read(unsigned gpio) override
+		bool read(Pin gpio) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			return gpio_reg->read<Gpio_reg::Datain>(_gpio_index(gpio));
 		}
 
-		void debounce_enable(unsigned gpio, bool enable) override
+		void debounce_enable(Pin gpio, bool enable) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Debounceenable>(enable ? 1 : 0,
 			                                          _gpio_index(gpio));
 		}
 
-		void debounce_time(unsigned gpio, unsigned long us) override
+		void debounce_time(Pin gpio, unsigned long us) override
 		{
 			unsigned char debounce;
 
@@ -209,7 +210,7 @@ class Omap4_driver : public Gpio::Driver
 			gpio_reg->write<Gpio_reg::Debouncingtime::Time>(debounce);
 		}
 
-		void falling_detect(unsigned gpio) override
+		void falling_detect(Pin gpio) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Leveldetect0> (0, _gpio_index(gpio));
@@ -218,7 +219,7 @@ class Omap4_driver : public Gpio::Driver
 			gpio_reg->write<Gpio_reg::Risingdetect> (0, _gpio_index(gpio));
 		}
 
-		void rising_detect(unsigned gpio) override
+		void rising_detect(Pin gpio) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Leveldetect0> (0, _gpio_index(gpio));
@@ -227,7 +228,7 @@ class Omap4_driver : public Gpio::Driver
 			gpio_reg->write<Gpio_reg::Risingdetect> (1, _gpio_index(gpio));
 		}
 
-		void high_detect(unsigned gpio) override
+		void high_detect(Pin gpio) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Leveldetect0> (0, _gpio_index(gpio));
@@ -236,7 +237,7 @@ class Omap4_driver : public Gpio::Driver
 			gpio_reg->write<Gpio_reg::Risingdetect> (0, _gpio_index(gpio));
 		}
 
-		void low_detect(unsigned gpio) override
+		void low_detect(Pin gpio) override
 		{
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Leveldetect0> (1, _gpio_index(gpio));
@@ -245,28 +246,28 @@ class Omap4_driver : public Gpio::Driver
 			gpio_reg->write<Gpio_reg::Risingdetect> (0, _gpio_index(gpio));
 		}
 
-		void irq_enable(unsigned gpio, bool enable) override
+		void irq_enable(Pin gpio, bool enable) override
 		{
 			_gpio_bank(gpio)->irq(_gpio_index(gpio), enable);
 		}
 
-		void ack_irq(unsigned gpio) override
+		void ack_irq(Pin gpio) override
 		{
 			_gpio_bank(gpio)->ack_irq(_gpio_index(gpio));
 		}
 
-		void register_signal(unsigned gpio,
+		void register_signal(Pin gpio,
 		                     Genode::Signal_context_capability cap) override
 		{
 			_gpio_bank(gpio)->sigh(_gpio_index(gpio), cap); }
 
-		void unregister_signal(unsigned gpio) override
+		void unregister_signal(Pin gpio) override
 		{
 			Genode::Signal_context_capability cap;
 			_gpio_bank(gpio)->sigh(_gpio_index(gpio), cap);
 		}
 
-		bool gpio_valid(unsigned gpio) override { return gpio < (MAX_PINS*MAX_BANKS); }
+		bool gpio_valid(Pin gpio) override { return gpio.value < (MAX_PINS*MAX_BANKS); }
 };
 
 #endif /* _DRIVERS__GPIO__SPEC__OMAP4__DRIVER_H_ */
