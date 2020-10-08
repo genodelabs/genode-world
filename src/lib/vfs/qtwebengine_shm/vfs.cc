@@ -40,11 +40,15 @@ class Dataspace_file_system : public Vfs::File_system
 				typedef Genode::String<MAX_NAME_LEN> Filename;
 				Filename               _filename { };
 
+				Genode::Allocator     &_alloc;
 				Genode::Ram_allocator &_ram;
 
 				Vfs::file_size         _length { 0 };
 
 			public:
+
+				unsigned int open_count   { 0 };
+				bool unlink_on_last_close { false };
 
 				bool matches(const char *path)
 				{
@@ -54,14 +58,16 @@ class Dataspace_file_system : public Vfs::File_system
 
 				Genode::Ram_dataspace_capability ds_cap { };
 
-				Dataspace_vfs_file(char const *name, Genode::Ram_allocator &ram)
-				: _filename(name), _ram(ram) { }
+				Dataspace_vfs_file(char const *name, Genode::Allocator &alloc, Genode::Ram_allocator &ram)
+				: _filename(name), _alloc(alloc), _ram(ram) { }
 
 				~Dataspace_vfs_file()
 				{
 					if (_length > 0)
 						_ram.free(ds_cap);
 				}
+
+				Genode::Allocator &alloc() { return _alloc; }
 
 				Vfs::file_size length() { return _length; }
 
@@ -138,14 +144,21 @@ class Dataspace_file_system : public Vfs::File_system
 		class Dataspace_vfs_file_handle : public Dataspace_vfs_handle
 		{
 			private:
-				Dataspace_vfs_file &_file;
+
+				/*
+				 * Noncopyable
+				 */
+				Dataspace_vfs_file_handle(Dataspace_vfs_file_handle const &);
+				Dataspace_vfs_file_handle &operator = (Dataspace_vfs_file_handle const &);
+
+				Dataspace_vfs_file *_file;
 
 			public:
 
 				Dataspace_vfs_file_handle(Directory_service &ds,
 				                    File_io_service   &fs,
 				                    Genode::Allocator &alloc,
-				                    Dataspace_vfs_file &file)
+				                    Dataspace_vfs_file *file)
 				: Dataspace_vfs_handle(ds, fs, alloc, 0), _file(file) { }
 
 				Read_result read(char *, file_size, file_size &) override
@@ -155,9 +168,10 @@ class Dataspace_file_system : public Vfs::File_system
 
 				Ftruncate_result truncate(file_size len)
 				{
-					return _file.truncate(len);
+					return _file->truncate(len);
 				}
 
+				Dataspace_vfs_file *file() { return _file; }
 		};
 
 		Vfs::Env &_env;
@@ -200,9 +214,10 @@ class Dataspace_file_system : public Vfs::File_system
 			return file->ds_cap;
 		}
 
-		void release(char const *, Dataspace_capability ds_cap) override {
-			_env.env().ram().free(
-				static_cap_cast<Genode::Ram_dataspace>(ds_cap)); }
+		void release(char const *, Dataspace_capability) override
+		{
+			/* the dataspace gets freed when the file is deleted */
+		}
 
 		Stat_result stat(char const *path, Stat &out) override
 		{
@@ -215,7 +230,7 @@ class Dataspace_file_system : public Vfs::File_system
 			} else if (_lookup(path)) {
 				out.type  = Node_type::CONTINUOUS_FILE;
 				out.rwx   = Node_rwx::rw();
-				out.inode = (unsigned long)_lookup(path); /* XXX optimize */
+				out.inode = (unsigned long)_lookup(path);
 			} else {
 				return STAT_ERR_NO_ENTRY;
 			}
@@ -278,17 +293,18 @@ class Dataspace_file_system : public Vfs::File_system
 				if (strlen(path) >= MAX_NAME_LEN)
 					return OPEN_ERR_NAME_TOO_LONG;
 
-				try { file = new (_env.alloc()) Dataspace_vfs_file(path, _env.env().ram()); }
+				try { file = new (alloc) Dataspace_vfs_file(path, alloc, _env.env().ram()); }
 				catch (Allocator::Out_of_memory) { return OPEN_ERR_NO_SPACE; }
 
 				_files.insert(file);
 			} else {
-				Dataspace_vfs_file *file = _lookup(path);
+				file = _lookup(path);
 				if (!file) return OPEN_ERR_UNACCESSIBLE;
 			}
 
 			try {
-				*handle = new (alloc) Dataspace_vfs_file_handle(*this, *this, alloc, *file);
+				*handle = new (alloc) Dataspace_vfs_file_handle(*this, *this, alloc, file);
+				file->open_count++;
 				return OPEN_OK;
 			}
 			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
@@ -297,8 +313,24 @@ class Dataspace_file_system : public Vfs::File_system
 
 		void close(Vfs_handle *vfs_handle) override
 		{
-			if (vfs_handle && (&vfs_handle->ds() == this))
+			if (vfs_handle && (&vfs_handle->ds() == this)) {
+
+				Dataspace_vfs_file_handle *handle =
+					dynamic_cast<Dataspace_vfs_file_handle *>(vfs_handle);
+
+				if (!handle)
+					return;
+
+				Dataspace_vfs_file *file = handle->file();
+				file->open_count--;
+
+				if ((file->open_count == 0) && (file->unlink_on_last_close)) {
+					_files.remove(file);
+					destroy(file->alloc(), file);
+				}
+
 				destroy(vfs_handle->alloc(), vfs_handle);
+			}
 		}
 
 		Rename_result rename(char const *, char const *) override
@@ -313,7 +345,12 @@ class Dataspace_file_system : public Vfs::File_system
 			if (!file)
 				return UNLINK_ERR_NO_ENTRY;
 
-			destroy(_env.alloc(), file);
+			if (file->open_count == 0) {
+				_files.remove(file);
+				destroy(file->alloc(), file);
+			} else {
+				file->unlink_on_last_close = true;
+			}
 
 			return UNLINK_OK;
 		}
