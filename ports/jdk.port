@@ -3,8 +3,8 @@ VERSION   := 64892f1c9874938dfcdc235b5c051dd761cdd833
 DOWNLOADS := jdk.archive
 
 NAME(jdk)    := jdk.tgz
-URL(jdk)     := https://api.github.com/repos/dmlloyd/openjdk/tarball/$(VERSION)
-SHA(jdk)     := d5b032d5d312148d1c15cde975aa43c4dfa4f2441472d70270ffd6aa22a33694
+URL(jdk)     := https://api.github.com/repos/unofficial-openjdk/openjdk/tarball/$(VERSION)
+SHA(jdk)     := 4b447e5acbad63ba0da4db6cfa8b61ecf3d926a836f45c4a5db9b7b4608bc31f
 TAR_OPT(jdk) := --strip-components=1 --files-from=$(REP_DIR)/src/app/jdk/files.list
 DIR(jdk)     := src/app/jdk
 HASH_INPUT   += $(REP_DIR)/src/app/jdk/files.list
