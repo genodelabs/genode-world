@@ -4655,14 +4655,13 @@ static void construct_component(Libc::Env &env)
 			/* insert an argument */
 			if (node.has_type("arg")) try {
 				Xml_attribute attr = node.attribute("value");
-
-				Genode::size_t const arg_len = attr.value_size()+1;
-				char *arg = argv[arg_i] = (char*)malloc(arg_len);
-
-				attr.value(arg, arg_len);
+				char *arg = argv[arg_i] = (char*)malloc(attr.value_size() + 1);
+				attr.with_raw_value([&] (char const *start, size_t len) {
+					Genode::copy_cstring(arg, start, len + 1);
+				});
 				++arg_i;
 
-			} catch (Xml_node::Nonexistent_sub_node) { }
+			} catch (Xml_node::Nonexistent_attribute) { }
 
 			else
 
@@ -4677,13 +4676,17 @@ static void construct_component(Libc::Env &env)
 				char *env = envp[env_i] = (char*)malloc(pair_len);
 
 				Genode::size_t off = 0;
-				key_attr.value(&env[off], key_attr.value_size()+1);
+				key_attr.with_raw_value([&] (char const *start, size_t len) {
+					Genode::memcpy(&env[off], start, len);
+				});
 				off = key_attr.value_size();
 				env[off++] = '=';
-				val_attr.value(&env[off], val_attr.value_size()+1);
+				val_attr.with_raw_value([&] (char const *start, size_t len) {
+					Genode::copy_cstring(&env[off], start, len + 1);
+				});
 				++env_i;
 
-			} catch (Xml_node::Nonexistent_sub_node) { }
+			} catch (Xml_node::Nonexistent_attribute) { }
 		});
 
 		envp[env_i] = NULL;
