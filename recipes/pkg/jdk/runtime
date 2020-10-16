@@ -16,7 +16,7 @@
 		<rom label="jzip.lib.so"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libm.lib.so"/>
-		<rom label="libc_pipe.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
 		<rom label="ld.lib.so"/>
 		<rom label="management.lib.so"/>
 		<rom label="nio.lib.so"/>
@@ -55,10 +55,12 @@
 				<arg value="/bin/java" />
 				<arg value="-jar" />
 				<arg value="hello.jar" />
-				<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+				<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
+				      pipe="/dev/pipe" rtc="/dev/rtc" />
 				<vfs rtc="/dev/rtc">
 					<dir name="dev">
 						<log/><null/><inline name="rtc">2000-01-01 00:00</inline>
+						<dir name="pipe"> <pipe/> </dir>
 					</dir>
 					<dir name="bin">
 						<rom name="java" />
