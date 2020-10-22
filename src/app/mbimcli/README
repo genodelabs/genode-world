@@ -1,0 +1,49 @@
+This directory contains a port of the MBIM control interface to Genode. The app
+directly communicates via a Terminal session to Genode 'usb_modem' driver.
+
+Configuration
+~~~~~~~~~~~~~
+
+! <start name="mbimcli" caps="500">
+!   <resource name="RAM" quantum="32M"/>
+!   <config>
+!     <network apn="internet.eplus.de" user="eplus" password="eplus" pin="XXXX"/>
+!     <vfs>
+!       <dir name="dev">
+!         <log/>
+!         <inline name="rtc">2020-08-05 00:01</inline>
+!         <dir name="pipe"> <pipe/> </dir>
+!         <terminal name="cdc-wdm0" raw="yes"/>
+!       </dir>
+!       <ram/>
+!     </vfs>
+!     <libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
+!   </config>
+!   <route>
+!     <service name="Report"> <child name="report_rom"/> </service>
+!     <any-service> <parent/> <any-child/> </any-service>
+!   </route>
+! </start>
+
+Upon successful connection 'mbimcli' will generate a NIC router configuration
+report that can be directly processed by the router. An example is show below:
+
+! <config>
+!   <default-policy domain="default"/>
+!   <uplink domain="uplink"/>
+!   <domain name="uplink" interface="10.207.25.25/30" gateway="10.207.25.26" use_arp="no">
+!     <nat domain="default" tcp-ports="100" udp-ports="100" icmp-ids="100"/>
+!   </domain>
+!   <domain name="default" interface="10.0.3.1/24">
+!     <dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.200" dns_server="62.109.121.17"/>
+!     <tcp dst="0.0.0.0/0">
+!       <permit-any domain="uplink"/>
+!     </tcp>
+!     <udp dst="0.0.0.0/0">
+!       <permit-any domain="uplink"/>
+!     </udp>
+!     <icmp dst="0.0.0.0/0" domain="uplink"/>
+!   </domain>
+! </config>
+
+
