@@ -2,6 +2,7 @@
 <runtime ram="2G" caps="10000" binary="init" config="init.config">
 
 	<requires>
+		<file_system label="config"/>
 		<file_system label="downloads"/>
 		<gui/>
 		<nic/>
