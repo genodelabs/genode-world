@@ -4,15 +4,16 @@ if {![have_spec nit6_solox]} {
 	puts "Run script is only supported on nit6_solox"; exit 0 }
 
 
-set build_components {
+build {
 	core init timer
 
 	app/jdk/lib/generated
 	app/log_core
 
-	drivers/nic
-	drivers/gpio
-	drivers/sd_card
+	drivers/platform/spec/arm
+	drivers/nic/fec
+	drivers/gpio/imx
+	drivers/sd_card/spec/imx6q_sabrelite
 
 	server/fs_log
 	server/fs_rom
@@ -21,12 +22,6 @@ set build_components {
 	server/report_rom
 }
 
-lappend_if [have_spec gpio] build_components drivers/gpio
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-build $build_components
 create_boot_directory
 
 import_from_depot [depot_user]/pkg/boot2java
@@ -52,8 +47,35 @@ append config {
 		<resource name="RAM" quantum="2M" />
 		<provides> <service name="Timer" /> </provides>
 	</start>
+
+	<start name="platform_drv" caps="150">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Platform"/> </provides>
+		<config>
+
+			<!-- GPIO banks -->
+			<device name="gpio1">
+				<io_mem address="0x0209c000" size="0x4000"/>
+				<irq number="98"/>
+				<irq number="99"/>
+			</device>
+
+			<device name="gpio2">
+				<io_mem address="0x020a0000" size="0x4000"/>
+				<irq number="100"/>
+				<irq number="101"/>
+			</device>
+
+			<policy label="imx_gpio_drv -> ">
+				<device name="gpio1"/>
+				<device name="gpio2"/>
+			</policy>
+		</config>
+		<route> <any-service> <parent/> </any-service> </route>
+	</start>
+
 	
-	<start name="imx6_gpio_drv" caps="200">
+	<start name="imx_gpio_drv" caps="200">
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Gpio"/></provides>
 		<config/>
@@ -258,29 +280,20 @@ append config {
 			</vfs>
 		</config>
 	</start>
-}
-
-append_platform_drv_config
-
-append config {
 </config>
 }
 
 install_config $config
 
-set boot_modules {
+build_boot_image {
 	core init ld.lib.so timer
 
-	fec_nic_drv imx6_gpio_drv nit6_solox_sd_card_drv part_block
+	fec_nic_drv imx_gpio_drv nit6_solox_sd_card_drv part_block
 
 	fs_rom report_rom fs_log log_core
 
-	nic_router
+	nic_router platform_drv
 }
-
-append_platform_drv_boot_modules
-
-build_boot_image $boot_modules
 
 #
 # Prepare disk image
@@ -295,8 +308,7 @@ set losetup   [installed_command losetup]
 proc jdk_generated { } {
 	set ::env(MAKEFLAGS) s
 	set jdk_generated_path [exec [genode_dir]/tool/ports/current jdk_generated]
-	return $jdk_generated_path
-}
+	return [lindex $jdk_generated_path 0] }
 
 # create file and partition table
 exec $dd if=/dev/zero of=[run_dir].img bs=1M count=64 2> /dev/null
