@@ -4592,16 +4592,7 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
-  Genode::error(__PRETTY_FUNCTION__, "addr: ", (void *)addr, " size: ", (void *)size);
-  while (1);
-#ifdef __OpenBSD__
-  // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  return ::mprotect(addr, size, PROT_NONE) == 0;
-#else
-  uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
-                                     MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-  return res  != (uintptr_t) MAP_FAILED;
-#endif
+  return true;
 }
 
 
