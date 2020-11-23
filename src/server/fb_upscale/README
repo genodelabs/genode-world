@@ -1,3 +1,0 @@
-The 'fb_upscale' server scales a fixed-resolution framebuffer client session
-to a larger parent framebuffer session. The scaling is linear across height and
-and width. Clients must supply their native resolution at the time of session creation.

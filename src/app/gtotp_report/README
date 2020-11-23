@@ -1,9 +1,0 @@
-This component generates reports containing
-Time-based One-time Passwords generated
-using the common Google Authenticator algorithm.
-
-It is configured by a single XML attribute, the shared secret
-encoded in base32.
-! ...
-! <config secret="Fooobaar"/>
-! ...

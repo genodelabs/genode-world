@@ -1,6 +1,0 @@
-
-	A simple text editor for reading and writing to a Terminal session
-
-
-This editor is intended  for interacting with a intepreter,
-input and output is written in chunks, not byte-by-byte.
