@@ -82,8 +82,9 @@ append config {
 			<domain name="default" interface="10.0.1.1/24">
 				<dhcp-server ip_first="10.0.1.2"
 				             ip_last="10.0.1.200"
-				             ip_lease_time_sec="360"
-				             dns_server="10.0.53.2"/>
+				             ip_lease_time_sec="360">
+					<dns-server ip="10.0.53.2"/>
+				</dhcp-server>
 				<ip dst="10.0.53.0/24" domain="dns"/>
 				<udp dst="10.0.53.0/24"><permit-any domain="dns"/></udp>
 				<tcp dst="0.0.0.0/0"><permit-any domain="uplink"/></tcp>
