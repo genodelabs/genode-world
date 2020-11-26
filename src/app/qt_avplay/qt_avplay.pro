@@ -1,6 +1,6 @@
 TEMPLATE   = app
 TARGET     = qt_avplay
-QT         = core gui widgets xml
+QT         = core gui-private widgets xml
 HEADERS    = avplay_slave.h \
              control_bar.h \
              main_window.h

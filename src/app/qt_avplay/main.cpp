@@ -14,6 +14,9 @@
 /* Qt includes */
 #include <QApplication>
 
+/* qt5_component includes */
+#include <qt5_component/qpa_init.h>
+
 /* qt_avplay includes */
 #include "main_window.h"
 
@@ -35,11 +38,17 @@ static inline void load_stylesheet()
 
 extern void initialize_qt_gui(Genode::Env &);
 
-void Libc::Component::construct(Libc::Env &env)
+/*
+ * The Qt main code is executed in a pthread to keep the entrypoint
+ * ready to handle RPC from 'avplay'
+ */
+void *main_func(void *arg)
 {
 	Libc::with_libc([&] {
 
-		initialize_qt_gui(env);
+		Libc::Env *env = reinterpret_cast<Libc::Env*>(arg);
+
+		qpa_init(*env);
 
 		int argc = 1;
 		char const *argv[] = { "qt_avplay", 0 };
@@ -48,10 +57,20 @@ void Libc::Component::construct(Libc::Env &env)
 
 		load_stylesheet();
 
-		QMember<Main_window> main_window(env);
+		QMember<Main_window> main_window(*env);
 
 		main_window->show();
 
 		app.exec();
+	});
+
+	return nullptr;
+}
+
+void Libc::Component::construct(Libc::Env &env)
+{
+	Libc::with_libc([&] {
+		pthread_t main_thread;
+		pthread_create(&main_thread, nullptr, main_func, &env);
 	});
 }

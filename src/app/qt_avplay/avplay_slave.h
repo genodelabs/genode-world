@@ -129,14 +129,13 @@ class Avplay_slave : public QObject
 			public:
 
 				Policy(Genode::Env        &env,
-				       Genode::Entrypoint &entrypoint,
 				       Gui_service        &gui_service,
 				       char const         *mediafile)
 				:
 					Policy_base(env),
 					Genode::Slave::Policy(env, _name(), _name(),
 					                      Policy_base::_parent_services,
-					                      entrypoint.rpc_ep(), _caps(),
+					                      env.ep().rpc_ep(), _caps(),
 					                      _ram_quota()),
 					_gui_service(gui_service),
 					_mediafile(mediafile),
@@ -175,12 +174,11 @@ class Avplay_slave : public QObject
 		 * Constructor
 		 */
 		Avplay_slave(Genode::Env        &env,
-		             Genode::Entrypoint &ep,
 		             Gui_service        &gui_service,
 		             char const         *mediafile)
 		:
-			_policy(env, ep, gui_service, mediafile),
-			_child(env.rm(), ep.rpc_ep(), _policy)
+			_policy(env, gui_service, mediafile),
+			_child(env.rm(), env.ep().rpc_ep(), _policy)
 		{ }
 
 	public Q_SLOTS:

@@ -70,21 +70,18 @@ class Main_window : public Compound_widget<QWidget, QVBoxLayout>
 
 		Genode::Env                &_env;
 
-		Genode::size_t const        _ep_stack_size { 16 * 1024 };
-		Genode::Entrypoint          _ep { _env, _ep_stack_size,
-		                                  "avplay_ep",
-		                                  Genode::Affinity::Location() };
-
 		Mediafile_name              _mediafile_name;
 
-		QMember<QGenodeViewWidget>  _avplay_widget;
+		QGenodeViewWidget          *_avplay_widget { _create_avplay_widget() };
 		QMember<Control_bar>        _control_bar;
 
-		Gui::Session_component _gui_session_component { _env, _ep, *_avplay_widget };
+		Gui::Session_component _gui_session_component { _env, _avplay_widget };
 
 		Gui_service::Single_session_factory _gui_factory { _gui_session_component };
 
 		Gui_service _gui_service { _gui_factory };
+
+		QGenodeViewWidget *_create_avplay_widget();
 
 	public:
 

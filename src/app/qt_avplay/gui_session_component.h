@@ -18,7 +18,7 @@
 #include <gui_session/connection.h>
 
 /* Qt includes */
-#include <qgenodeplatformwindow.h>
+#include <qpa_genode/qgenodeplatformwindow.h>
 #include <qgenodeviewwidget/qgenodeviewwidget.h>
 
 
@@ -31,8 +31,7 @@ namespace Gui {
 struct Gui::Session_component : Rpc_object<Gui::Session>
 {
 	Env               &_env;
-	Entrypoint        &_ep;
-	QGenodeViewWidget &_genode_view_widget;
+	QGenodeViewWidget *_genode_view_widget;
 
 	Gui::Connection _connection;
 
@@ -48,42 +47,44 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 
 	void _execute_command(Command const &command)
 	{
-		switch (command.opcode) {
+	 	Libc::with_libc([&] {
 
-		case Command::OP_GEOMETRY:
-			{
-				Gui::Rect rect = command.geometry.rect;
-				_genode_view_widget.setGenodeView(&_connection, _view_handle,
-				                                  0, 0, rect.w(), rect.h());
-				return;
+			switch (command.opcode) {
+
+			case Command::OP_GEOMETRY:
+				{
+					Gui::Rect rect = command.geometry.rect;
+					_genode_view_widget->setGenodeView(&_connection, _view_handle,
+				                                   	   0, 0, rect.w(), rect.h());
+					return;
+				}
+
+			case Command::OP_OFFSET:     return;
+			case Command::OP_TO_FRONT:   return;
+			case Command::OP_TO_BACK:    return;
+			case Command::OP_BACKGROUND: return;
+			case Command::OP_TITLE:      return;
+			case Command::OP_NOP:        return;
 			}
-
-		case Command::OP_OFFSET:     return;
-		case Command::OP_TO_FRONT:   return;
-		case Command::OP_TO_BACK:    return;
-		case Command::OP_BACKGROUND: return;
-		case Command::OP_TITLE:      return;
-		case Command::OP_NOP:        return;
-		}
+		});
 	}
 
-	Session_component(Env &env, Entrypoint &ep,
-	                  QGenodeViewWidget &genode_view_widget)
+	Session_component(Env &env, QGenodeViewWidget *genode_view_widget)
 	:
-		_env(env), _ep(ep),
+		_env(env),
 		_genode_view_widget(genode_view_widget),
 		_connection(env),
 		_command_ds(env.ram(), env.rm(), sizeof(Command_buffer))
 	{
-		_ep.manage(_input_component);
-		_ep.manage(*this);
+		_env.ep().manage(_input_component);
+		_env.ep().manage(*this);
 		_input_component.event_queue().enabled(true);
 	}
 
 	~Session_component()
 	{
-		_ep.dissolve(*this);
-		_ep.dissolve(_input_component);
+		_env.ep().dissolve(*this);
+		_env.ep().dissolve(_input_component);
 	}
 
 	Framebuffer::Session_capability framebuffer_session() override {
@@ -92,18 +93,21 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 	Input::Session_capability input_session() override {
 		return _input_component.cap(); }
 
-	View_handle create_view(View_handle parent) override
+	View_handle create_view(View_handle) override
 	{
-		QGenodePlatformWindow *platform_window =
-			dynamic_cast<QGenodePlatformWindow*>(_genode_view_widget
-				.window()->windowHandle()->handle());
+	 	Libc::with_libc([&] {
 
-		Gui::Session::View_handle parent_view_handle =
-			_connection.view_handle(platform_window->view_cap());
+			QGenodePlatformWindow *platform_window =
+				dynamic_cast<QGenodePlatformWindow*>(_genode_view_widget
+					->window()->windowHandle()->handle());
 
-		_view_handle = _connection.create_view(parent_view_handle);
+			Gui::Session::View_handle parent_view_handle =
+				_connection.view_handle(platform_window->view_cap());
 
-		_connection.release_view_handle(parent_view_handle);
+			_view_handle = _connection.create_view(parent_view_handle);
+
+			_connection.release_view_handle(parent_view_handle);
+		});
 
 		return _view_handle;
 	}
@@ -135,9 +139,9 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 		Framebuffer::Mode new_mode {
 			.area = {
 				Genode::min(connection_mode.area.w(),
-				            (unsigned)_genode_view_widget.maximumWidth()),
+				            (unsigned)_genode_view_widget->maximumWidth()),
 				Genode::min(connection_mode.area.h(),
-				            (unsigned)_genode_view_widget.maximumHeight())
+				            (unsigned)_genode_view_widget->maximumHeight())
 			}};
 		return new_mode;
 	}

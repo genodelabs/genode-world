@@ -18,6 +18,26 @@
 using namespace Genode;
 
 
+QGenodeViewWidget *Main_window::_create_avplay_widget()
+{
+	QPluginLoader plugin_loader("/qt/plugins/qgenodeviewwidget/libqgenodeviewwidget.lib.so");
+
+	QObject *plugin = plugin_loader.instance();
+
+	if (!plugin)
+		qFatal("Error: Could not load QGenodeViewWidget Qt plugin");
+
+	QGenodeViewWidgetInterface *genode_view_widget_interface =
+		qobject_cast<QGenodeViewWidgetInterface*>(plugin);
+
+	QGenodeViewWidget *avplay_widget = static_cast<QGenodeViewWidget*>(
+		genode_view_widget_interface->createWidget()
+	);
+
+	return avplay_widget;
+}
+
+
 Main_window::Main_window(Genode::Env &env)
 :
 	_env(env),
@@ -40,7 +60,7 @@ Main_window::Main_window(Genode::Env &env)
 
 	/* start avplay */
 
-	Avplay_slave *avplay_slave = new Avplay_slave(_env, _ep,
+	Avplay_slave *avplay_slave = new Avplay_slave(_env,
 	                                              _gui_service,
 	                                              _mediafile_name.name.string());
 
