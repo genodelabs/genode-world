@@ -66,6 +66,43 @@ append config {
 				<irq number="101"/>
 			</device>
 
+			<!-- Network devices -->
+			<device name="fec0">
+				<io_mem   address="0x2188000" size="0x4000"/>
+				<irq      number="150"/>
+				<irq      number="151"/>
+				<property name="compatible" value="fsl,imx6sx-fec"/>
+				<property name="mii"        value="rgmii"/>
+				<property name="phy"        value="phy0"/>
+			</device>
+			<device name="fec1">
+				<io_mem   address="0x21b4000" size="0x4000"/>
+				<irq      number="134"/>
+				<irq      number="135"/>
+				<property name="compatible" value="fsl,imx6sx-fec"/>
+				<property name="mii"        value="rgmii"/>
+				<property name="phy"        value="phy1"/>
+			</device>
+			<device name="phy0">
+				<property name="compatible" value="ethernet-phy-ieee802.3-c22"/>
+				<property name="mdio_bus"   value="fec0"/>
+				<property name="mdio_reg"   value="4"/>
+				<property name="gpio_irq"   value="36"/>
+			</device>
+			<device name="phy1">
+				<property name="compatible" value="ethernet-phy-ieee802.3-c22"/>
+				<property name="mdio_bus"   value="fec0"/>
+				<property name="mdio_reg"   value="5"/>
+				<property name="gpio_irq"   value="40"/>
+			</device>
+
+			<policy label="nic_drv -> ">
+			        <device name="fec0"/>
+			        <device name="fec1"/>
+			        <device name="phy0"/>
+			        <device name="phy1"/>
+			</policy>
+
 			<policy label="imx_gpio_drv -> ">
 				<device name="gpio1"/>
 				<device name="gpio2"/>
@@ -87,15 +124,6 @@ append config {
 		<binary name="fec_nic_drv"/>
 		<resource name="RAM" quantum="16M"/>
 		<provides><service name="Nic"/></provides>
-		<config>
-			<card name="fec0" type="fsl,imx6sx-fec" mii="rgmii" phy="phy0" irq="150" mmio="0x2188000">
-				<mdio>
-					<phy name="phy0" type="Atheros 8035 ethernet" gpio_irq="36" reg_num="4"/>
-					<phy name="phy1" type="Atheros 8035 ethernet" gpio_irq="40" reg_num="5"/>
-				</mdio>
-			</card>
-			<card name="fec1" type="fsl,imx6sx-fec" mii="rgmii" phy="phy1" irq="134" mmio="0x21b4000"/>
-		</config>
 	</start>
 
 	<start name="report_rom" caps="200">
