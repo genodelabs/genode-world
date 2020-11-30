@@ -13,7 +13,7 @@ build {
 	drivers/platform/spec/arm
 	drivers/nic/fec
 	drivers/gpio/imx
-	drivers/sd_card/spec/imx6q_sabrelite
+	drivers/sd_card/spec/imx6
 
 	server/fs_log
 	server/fs_rom
@@ -96,6 +96,12 @@ append config {
 				<property name="gpio_irq"   value="40"/>
 			</device>
 
+			<device name="usdhc2">
+				<io_mem   address="0x02194000" size="0x4000"/>
+				<irq      number="56"/>
+				<property name="compatible" value="fsl,imx6sx-usdhc"/>
+			</device>
+
 			<policy label="nic_drv -> ">
 			        <device name="fec0"/>
 			        <device name="fec1"/>
@@ -107,6 +113,8 @@ append config {
 				<device name="gpio1"/>
 				<device name="gpio2"/>
 			</policy>
+
+			<policy label="sd_card_drv -> "> <device name="sdhc1"/> </policy>
 		</config>
 		<route> <any-service> <parent/> </any-service> </route>
 	</start>
@@ -173,7 +181,7 @@ append config {
 	<!-- block and file system access -->
 
 	<start name="sd_card_drv">
-		<binary name="nit6_solox_sd_card_drv"/>
+		<binary name="imx6_sd_card_drv"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Block"/></provides>
 	</start>
@@ -316,7 +324,7 @@ install_config $config
 build_boot_image {
 	core init ld.lib.so timer
 
-	fec_nic_drv imx_gpio_drv nit6_solox_sd_card_drv part_block
+	fec_nic_drv imx_gpio_drv imx6_sd_card_drv part_block
 
 	fs_rom report_rom fs_log log_core
 
