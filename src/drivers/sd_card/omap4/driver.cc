@@ -384,7 +384,7 @@ Csd Driver::_read_csd()
 }
 
 
-Driver::Driver(Env &env)
+Driver::Driver(Env &env, Platform::Connection&)
 :
 	Driver_base(env.ram()),
 	Attached_mmio(env, MMCHS1_MMIO_BASE, MMCHS1_MMIO_SIZE), _env(env)

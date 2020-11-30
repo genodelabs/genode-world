@@ -19,7 +19,7 @@ using namespace Genode;
 using namespace Sd_card;
 
 
-Driver::Driver(Env &env)
+Driver::Driver(Env &env, Platform::Connection&)
 :
 	Driver_base(env.ram()),
 	Attached_mmio(env, MSH_BASE, MSH_SIZE), _env(env)

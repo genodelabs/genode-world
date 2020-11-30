@@ -26,6 +26,7 @@
 #include <driver_base.h>
 
 namespace Sd_card { class Driver; }
+namespace Platform { class Connection; }
 
 
 class Sd_card::Driver : public  Driver_base,
@@ -220,7 +221,7 @@ class Sd_card::Driver : public  Driver_base,
 		using Block::Driver::read;
 		using Block::Driver::write;
 
-		Driver(Env &env);
+		Driver(Env &env, Platform::Connection &);
 
 
 		/*******************
