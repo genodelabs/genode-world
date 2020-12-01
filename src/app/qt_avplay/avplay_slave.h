@@ -145,16 +145,17 @@ class Avplay_slave : public QObject
 				}
 
 				Route resolve_session_request(Genode::Service::Name const &name,
-				                              Genode::Session_label const &label) override
+				                              Genode::Session_label const &label,
+				                              Genode::Session::Diag const  diag) override
 				{
 					try {
 						return Route { .service = _matching_service(name),
 						               .label   = label,
-						               .diag    = Genode::Session::Diag() };
+						               .diag    = diag };
 					}
 					catch (Genode::Service_denied) { }
 
-					return Genode::Slave::Policy::resolve_session_request(name, label);
+					return Genode::Slave::Policy::resolve_session_request(name, label, diag);
 				}
 
 				void volume_changed(int value)
