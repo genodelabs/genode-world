@@ -184,10 +184,10 @@ class Mbim
 
 				case ATTACH: {
 					guint32            session_id { 0 };
-					g_autofree gchar  *apn { (gchar *)_network.apn.string() };
+					gchar             *apn { (gchar *)_network.apn.string() };
 					MbimAuthProtocol   auth_protocol { MBIM_AUTH_PROTOCOL_PAP };
-					g_autofree gchar  *username { (char *)_network.user.string() };
-					g_autofree gchar  *password { (char *)_network.password.string() };
+					gchar             *username { (char *)_network.user.string() };
+					gchar             *password { (char *)_network.password.string() };
 					MbimContextIpType  ip_type { MBIM_CONTEXT_IP_TYPE_DEFAULT };
 
 					request = mbim_message_connect_set_new(session_id,
