@@ -1,0 +1,316 @@
+#
+# \brief  Test of fetchurl
+# \author Emery Hemingway
+# \date   2016-06-05
+#
+
+if {[have_spec rpi3] ||
+    [expr [have_spec imx53] && [have_spec trustzone]]} {
+	puts "Run script does not support this platform."
+	exit 0
+}
+
+if {[get_cmd_switch --autopilot] && [have_spec linux]} {
+	puts "Autopilot mode is not supported on this platform."
+	exit 0
+}
+
+#
+# This run script works on Linux with NAT setup from tap0 to uplink
+# device uplink0 like follows.
+#
+# iptables -t nat -A POSTROUTING -o uplink0 -j MASQUERADE
+# iptables -A FORWARD -i tap0    -o uplink0 -j ACCEPT
+# iptables -A FORWARD -i uplink0 -o tap0    -m state --state RELATED,ESTABLISHED -j ACCEPT
+# echo 1 > /proc/sys/net/ipv4/ip_forward
+#
+proc ip_stack { } { return lxip }
+
+proc platform_drv_config_non_x86 {} {
+	if {[have_spec imx8q_evk]} {
+		return {
+			<device name="usb_host_2">
+				<io_mem       address="0x38200000" size="0x10000"/>
+				<irq          number="73"/>
+				<power-domain name="usb_otg_2"/>
+				<clock        name="usb_phy_ref_clk_root"
+				              driver_name="usb_phy_root_clk"
+				              parent="system_pll1_div8"
+				              rate="100000000"/>
+				<clock        name="usb_core_ref_clk_root"
+				              parent="system_pll1_div8"
+				              rate="100000000"/>
+				<clock        name="usb_bus_clk_root"
+				              parent="system_pll2_div2"
+				              rate="500000000"/>
+				<clock        name="usb_ctrl2_gate"/>
+				<clock        name="usb_phy2_gate"/>
+				<property     name="compatible" value="snps,dwc3"/>
+				<property     name="dr_mode"    value="host"/>
+			</device>
+			<policy label="usb_drv -> "> <device name="usb_host_2"/> </policy>
+		}
+	}
+	if {[have_spec imx6q_sabrelite]} {
+		return {
+			<device name="mxs_phy">
+				<io_mem address="0x020ca000" size="0xfff"/>
+				<irq    number="77"/>
+				<property name="compatible" value="fsl,imx6q-usbphy"/>
+				<property name="fsl,anatop" value="0xdeaddead"/>
+			</device>
+			<device name="usbmisc_imx">
+				<io_mem address="0x02184800" size="0x1ff"/>
+				<property name="compatible" value="fsl,imx6q-usbmisc"/>
+			</device>
+			<device name="imx_usb">
+				<io_mem address="0x02184200" size="0x1ff"/>
+				<irq    number="72"/>
+				<property  name="compatible"  value="fsl,imx6q-usb"/>
+				<property  name="fsl,usbmisc" value="usbmisc_imx"/>
+				<property  name="dr_mode"     value="host"/>
+			</device>
+			<policy label="usb_drv -> ">
+				<device name="mxs_phy"/>
+				<device name="usbmisc_imx"/>
+				<device name="imx_usb"/>
+			</policy>
+		}
+	}
+	if {[have_spec rpi]} {
+		return {
+			<device name="dwc_otg">
+				<io_mem       address="0x20980000" size="0x10000"/>
+				<irq          number="9"/>
+				<power-domain name="usb"/>
+				<property     name="compatible" value="brcm,bcm2835-usb"/>
+			</device>
+			<policy label="usb_drv -> "> <device name="dwc_otg"/> </policy>
+		}
+	}
+	return ""
+}
+
+proc platform_drv_binary_non_x86 {} {
+	if {[have_spec imx8q_evk]}       { return imx8mq_platform_drv  }
+	if {[have_spec imx6q_sabrelite]} { return platform_drv         }
+	if {[have_spec rpi]}             { return rpi_new_platform_drv }
+	return no_platform_drv_available
+}
+
+
+proc socket_fs_plugin { } {
+	set result "<[ip_stack]"
+
+	if {[have_spec linux]} {
+		append result { ip_addr="10.0.2.55" netmask="255.255.255.0"}
+		append result { gateway="10.0.2.1" nameserver="1.1.1.1"}
+	} else {
+		append result { dhcp="yes"}
+	}
+
+	append result {/>}
+	return $result
+}
+
+set build_components {
+	lib/vfs/pipe
+	app/mbimcli
+	drivers/usb_host
+	drivers/usb_modem
+	server/nic_router
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+if { [have_spec x86] } { append_platform_drv_build_components
+} else                 { append build_components  { drivers/platform }
+}
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
+                  [depot_user]/src/curl \
+                  [depot_user]/src/fetchurl \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/libcrypto \
+                  [depot_user]/src/libssh \
+                  [depot_user]/src/libssl \
+                  [depot_user]/src/report_rom \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_[ip_stack] \
+                  [depot_user]/src/zlib
+
+append config {
+<config>
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RAM"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default caps="100"/>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+}
+
+if { [have_spec x86] } { append_platform_drv_config
+} else {
+append config "<start name=\"[platform_drv_binary_non_x86]\">"
+append config {
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Platform"/></provides>
+		<config>
+}
+
+append config "[platform_drv_config_non_x86]"
+append config {
+		</config>
+		<route> <any-service> <parent/> </any-service> </route>
+	</start>
+}
+}
+
+append config "<start name=\"usb_drv\" caps=\"120\">"
+append config "<binary name=\"[usb_host_drv_binary]\"/>"
+append config {
+		<resource name="RAM" quantum="12M"/>
+		<provides> <service name="Usb"/> </provides>
+		<config bios_handoff="yes">}
+append_if [have_spec x86] config {
+			<policy label_prefix="usb_modem_drv" vendor_id="0x12d1" product_id="0x15c1"/> }
+append_if [have_spec arm_v8] config {
+			<policy label_prefix="usb_modem_drv" vendor_id="0x12d1" product_id="0x15c1"/> }
+append config {
+		</config>
+		<route>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="usb_modem_drv" caps="120">
+		<resource name="RAM" quantum="10M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Terminal"/>
+		</provides>
+		<config mac="02:00:00:00:01:01" />
+	</start>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides> <service name="ROM"/> <service name="Report"/> </provides>
+		<config verbose="yes">
+			<policy label="nic_router -> config" report="mbimcli -> nic_router.config"/>
+		</config>
+	</start>
+
+	<start name="nic_router" caps="500">
+		<resource name="RAM" quantum="16M"/>
+		<provides> <service  name="Nic" /> </provides>
+		<route>
+			<service name="Nic"> <child name="usb_modem_drv"/> </service>
+			<service name="ROM" label="config"> <child name="report_rom"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="mbimcli" caps="500">
+		<resource name="RAM" quantum="32M"/>
+		<config ld_verbose="false">
+			<network apn="internet.eplus.de" user="eplus" password="eplus" pin="XXX"/>
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2020-08-05 00:01</inline>
+					<dir name="pipe"> <pipe/> </dir>
+					<terminal name="cdc-wdm0" raw="yes"/>
+				</dir>
+				<ram/>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
+		</config>
+		<route>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="fetchurl" caps="500">
+		<resource name="RAM" quantum="32M"/>
+		<config>
+			<report progress="yes"/>
+			<vfs>
+				<dir name="dev">
+					<log/> <null/> <inline name="rtc">2000-01-01 00:00</inline>
+					<inline name="random">01234567890123456789</inline>
+				</dir>
+				<dir name="socket"> } [socket_fs_plugin] { </dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"
+			      rng="/dev/random" socket="/socket"/>
+			<fetch url="https://genode.org/about/LICENSE" path="/dev/log" retry="3"/>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<service name="Report"><child name="report_rom"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>
+}
+
+install_config $config
+
+set boot_modules {
+	libc.lib.so vfs.lib.so
+	glib.lib.so libiconv.lib.so zlib.lib.so ffi.lib.so
+	libmbim.lib.so
+	mbimcli
+
+	usb_modem_drv
+	nic_router
+
+	vfs_pipe.lib.so
+}
+
+append boot_modules [usb_host_drv_binary]
+lappend_if [have_spec linux] boot_modules lx_file_terminal
+
+if {[have_spec x86]} { append_platform_drv_boot_modules
+} else { append boot_modules " [platform_drv_binary_non_x86] " }
+
+build_boot_image $boot_modules
+
+set USB_PORT 0
+
+if {[have_include "power_on/qemu"]} {
+	if [catch { set USB_PORT $env(USB_PORT)}] {
+		puts "No 'USB_PORT=<port>' environment variable set"
+		exit 0
+	}
+	puts "Using USB_PORT=$USB_PORT"
+}
+
+append qemu_args " -nographic  "
+append qemu_args "-usb -device nec-usb-xhci,id=xhci "
+append qemu_args "-device usb-host,hostbus=1,hostaddr=$USB_PORT,bus=xhci.0"
+
+
+run_genode_until {child "fetchurl" exited with exit value 0} 120
