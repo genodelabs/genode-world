@@ -170,11 +170,14 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/nic_router \
                   [depot_user]/src/libpng \
                   [depot_user]/src/libc \
+                  [depot_user]/src/libav \
+                  [depot_user]/src/sdl2 \
+                  [depot_user]/src/scrcpy \
                   [depot_user]/raw/genode_bg \
                   [depot_user]/pkg/backdrop \
                   [depot_user]/pkg/fonts_fs
 
-set build_components { app/scrcpy }
+set build_components { }
 
 if { !$use_interactive_pkg } {
 	append build_components drivers/framebuffer
@@ -557,10 +560,7 @@ set firmware_modules {
 	iwlwifi-8265-36.ucode
 	regulatory.db}
 
-set boot_modules {
-	scrcpy sdl2.lib.so
-	avutil.lib.so avcodec.lib.so avformat.lib.so
-}
+set boot_modules { }
 
 if { !$use_interactive_pkg } {
 	append_platform_drv_boot_modules

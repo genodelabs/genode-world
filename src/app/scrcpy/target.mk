@@ -15,6 +15,6 @@ CC_OPT_cli += -D_C11_SOURCE
 INC_DIR += $(PRG_DIR)
 INC_DIR += $(SCRCPY_DIR)/app/src
 
-LIBS += libc avformat avutil sdl2
+LIBS += libc avformat avutil avcodec sdl2
 
 vpath %.c $(SCRCPY_DIR)/app/src
