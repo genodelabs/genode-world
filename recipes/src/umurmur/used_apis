@@ -1,7 +1,6 @@
 libc
 libconfig
-libcrypto
-libssl
+openssl
 os
 posix
 protobuf-c

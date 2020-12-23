@@ -1,6 +1,6 @@
 base
 libc
-libssl
+openssl
 protobuf
 stdcxx
 zlib

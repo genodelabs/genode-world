@@ -3,6 +3,5 @@ timer_session
 report_session
 posix
 libgetdns
-libcrypto
 libyaml
-libssl
+openssl

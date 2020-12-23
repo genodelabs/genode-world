@@ -5,11 +5,10 @@ import_from_depot [depot_user]/src/[base_src]
 import_from_depot [depot_user]/src/dynamic_rom
 import_from_depot [depot_user]/src/init
 import_from_depot [depot_user]/src/libc
-import_from_depot [depot_user]/src/libcrypto
 import_from_depot [depot_user]/src/nic_router
 import_from_depot [depot_user]/src/posix
 import_from_depot [depot_user]/src/protobuf
-import_from_depot [depot_user]/src/libssl
+import_from_depot [depot_user]/src/openssl
 import_from_depot [depot_user]/src/report_rom
 import_from_depot [depot_user]/src/stdcxx
 import_from_depot [depot_user]/src/vfs

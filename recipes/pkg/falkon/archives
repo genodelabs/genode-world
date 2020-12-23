@@ -4,8 +4,8 @@ _/src/expat
 _/src/falkon
 _/src/jitter_sponge
 _/src/libc
-_/src/libcrypto
 _/src/mesa
+_/src/openssl
 _/src/qt5_base
 _/src/qt5_component
 _/src/qt5_declarative

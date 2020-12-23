@@ -1,5 +1,4 @@
 libc
-libcrypto
-libssl
 libyaml
 libgetdns
+openssl

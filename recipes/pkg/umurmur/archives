@@ -1,7 +1,6 @@
 _/src/libc
 _/src/libconfig
-_/src/libcrypto
-_/src/libssl
+_/src/openssl
 _/src/posix
 _/src/protobuf-c
 _/src/vfs
