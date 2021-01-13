@@ -217,7 +217,10 @@ append config {
 append_if $use_nic_router config {
 	<start name="nic_router" caps="120">
 		<resource name="RAM" quantum="5M"/>
-		<provides><service name="Nic"/></provides>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
 		<config verbose_domain_state="yes">
 
 			<policy label_prefix="iperf_genode" domain="server"/>

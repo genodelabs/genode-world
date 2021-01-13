@@ -145,7 +145,10 @@ append config {
 
 	<start name="nic_router" caps="200">
 		<resource name="RAM" quantum="12M" />
-		<provides> <service name="Nic" /> </provides>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
 		<route>
 			<service name="Nic" label="nic0">
 				<child name="nic_drv" label="fec0"/>

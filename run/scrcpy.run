@@ -283,7 +283,10 @@ append_if $use_nic_router config {
 	<start name="nic_router" caps="120">
 		<resource name="RAM" quantum="5M"/>
 		<resource name="CPU" quantum="10"/>
-		<provides><service name="Nic"/></provides>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
 
 		<config verbose_domain_state="yes" verbose="no">
 <!--

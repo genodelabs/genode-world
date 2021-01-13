@@ -61,7 +61,10 @@ append_if $nic_router_reporting config {
 append config {
 	<start name="nic_router">
 		<resource name="RAM" quantum="8M"/>
-		<provides> <service name="Nic"/> </provides>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
 		<config verbose="no"
 		        verbose_packets="no"
 		        verbose_domain_state="yes"

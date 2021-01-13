@@ -92,7 +92,10 @@ append config {
 
 	<start name="nic_router">
 		<resource name="RAM" quantum="5M"/>
-		<provides><service name="Nic"/></provides>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
 		<config verbose_domain_state="no"
 		        verbose_packets="no"
 		        verbose_packet_drop="no">

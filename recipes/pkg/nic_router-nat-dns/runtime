@@ -20,7 +20,10 @@
 		<start name="router" caps="300">
 			<binary name="nic_router"/>
 			<resource name="RAM" quantum="10M"/>
-			<provides> <service name="Nic"/> </provides>
+			<provides>
+				<service name="Nic"/>
+				<service name="Uplink"/>
+			</provides>
 			<config verbose_domain_state="yes">
 				<default-policy domain="default" />
 				<uplink         domain="uplink"  />

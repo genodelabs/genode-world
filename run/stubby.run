@@ -63,7 +63,10 @@ append config {
 	</start>
 	<start name="nic_router" caps="200">
 		<resource name="RAM" quantum="10M"/>
-		<provides><service name="Nic"/></provides>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
 		<config verbose="no">
 			<policy label_prefix="vfs"    domain="default" />
 			<policy label_prefix="stubby" domain="dns"     />
