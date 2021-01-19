@@ -1,28 +1,27 @@
 source  [genode_dir]/tool/run/boot_dir/hw
 
 
-proc bootstrap_link_address { } {
-	if {[have_spec "arndale"]}   { return "0x88000000" }
-	if {[have_spec "odroid_xu"]} { return "0x88000000" }
-	if {[have_spec "panda"]}     { return "0x88000000" }
+rename bootstrap_link_address orig_bootstrap_link_address
 
-	puts "unknown platform no linker address known"
-	exit -1
+
+proc bootstrap_link_address { } {
+
+	if {[have_board arndale]}   { return "0x88000000" }
+	if {[have_board odroid_xu]} { return "0x88000000" }
+	if {[have_board panda]}     { return "0x88000000" }
+
+	return [orig_bootstrap_link_address]
 }
 
 
-##
-# Base source archive within depot
-#
+rename base_src orig_base_src
+
+
 proc base_src { } {
 
-	if {[have_spec arndale]}   { return base-hw-arndale   }
-	if {[have_spec odroid_xu]} { return base-hw-odroid_xu }
-	if {[have_spec panda]}     { return base-hw-panda     }
+	if {[have_board arndale]}   { return base-hw-arndale   }
+	if {[have_board odroid_xu]} { return base-hw-odroid_xu }
+	if {[have_board panda]}     { return base-hw-panda     }
 
-	global specs
-
-	puts stderr "Test requires base-hw kernel archive, which is missing for this build configuration"
-	puts stderr "  SPECS=\"$specs\""
-	exit 0
+	return [orig_base_src]
 }
