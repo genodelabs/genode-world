@@ -1,5 +1,5 @@
 /*
- * \brief  Board driver for core on pandaboard
+ * \brief  Board driver for core on Pandaboard
  * \author Stefan Kalkowski
  * \author Martin Stein
  * \date   2014-06-02

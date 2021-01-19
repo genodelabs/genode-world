@@ -1,5 +1,5 @@
 #
-# \brief  Build config for Genodes core process
+# \brief  Build description for Genode's core component
 # \author Stefan Kalkowski
 # \author Martin Stein
 # \date   2012-10-04
