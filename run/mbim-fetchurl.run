@@ -4,13 +4,12 @@
 # \date   2016-06-05
 #
 
-if {[have_spec rpi3] ||
-    [expr [have_spec imx53] && [have_spec trustzone]]} {
+if {[have_board rpi3] || [have_board imx53_qsb_tz]} {
 	puts "Run script does not support this platform."
 	exit 0
 }
 
-if {[get_cmd_switch --autopilot] && [have_spec linux]} {
+if {[get_cmd_switch --autopilot] && [have_board linux]} {
 	puts "Autopilot mode is not supported on this platform."
 	exit 0
 }
@@ -27,7 +26,7 @@ if {[get_cmd_switch --autopilot] && [have_spec linux]} {
 proc ip_stack { } { return lxip }
 
 proc platform_drv_config_non_x86 {} {
-	if {[have_spec imx8q_evk]} {
+	if {[have_board imx8q_evk]} {
 		return {
 			<device name="usb_host_2">
 				<io_mem       address="0x38200000" size="0x10000"/>
@@ -51,7 +50,7 @@ proc platform_drv_config_non_x86 {} {
 			<policy label="usb_drv -> "> <device name="usb_host_2"/> </policy>
 		}
 	}
-	if {[have_spec imx6q_sabrelite]} {
+	if {[have_board imx6q_sabrelite]} {
 		return {
 			<device name="mxs_phy">
 				<io_mem address="0x020ca000" size="0xfff"/>
@@ -77,7 +76,7 @@ proc platform_drv_config_non_x86 {} {
 			</policy>
 		}
 	}
-	if {[have_spec rpi]} {
+	if {[have_board rpi]} {
 		return {
 			<device name="dwc_otg">
 				<io_mem       address="0x20980000" size="0x10000"/>
@@ -92,9 +91,9 @@ proc platform_drv_config_non_x86 {} {
 }
 
 proc platform_drv_binary_non_x86 {} {
-	if {[have_spec imx8q_evk]}       { return imx8mq_platform_drv  }
-	if {[have_spec imx6q_sabrelite]} { return platform_drv         }
-	if {[have_spec rpi]}             { return rpi_new_platform_drv }
+	if {[have_board imx8q_evk]}       { return imx8mq_platform_drv  }
+	if {[have_board imx6q_sabrelite]} { return platform_drv         }
+	if {[have_board rpi]}             { return rpi_new_platform_drv }
 	return no_platform_drv_available
 }
 
@@ -102,7 +101,7 @@ proc platform_drv_binary_non_x86 {} {
 proc socket_fs_plugin { } {
 	set result "<[ip_stack]"
 
-	if {[have_spec linux]} {
+	if {[have_board linux]} {
 		append result { ip_addr="10.0.2.55" netmask="255.255.255.0"}
 		append result { gateway="10.0.2.1" nameserver="1.1.1.1"}
 	} else {
@@ -291,7 +290,7 @@ set boot_modules {
 }
 
 append boot_modules [usb_host_drv_binary]
-lappend_if [have_spec linux] boot_modules lx_file_terminal
+lappend_if [have_board linux] boot_modules lx_file_terminal
 
 if {[have_spec x86]} { append_platform_drv_boot_modules
 } else { append boot_modules " [platform_drv_binary_non_x86] " }

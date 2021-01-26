@@ -9,7 +9,6 @@ BASE_HW_DIR := $(TMP:%lib/mk/core-hw.inc=%)
 
 # add include paths
 INC_DIR += $(REP_DIR)/src/core
-INC_DIR += $(BASE_HW_DIR)/src/core/spec/exynos5
 
 # add C++ sources
 SRC_CC += spec/arm/exynos_mct.cc

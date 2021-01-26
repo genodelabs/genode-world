@@ -5,7 +5,7 @@
 #
 
 # add include paths
-INC_DIR += $(REP_DIR)/src/core/spec/arndale
+INC_DIR += $(REP_DIR)/src/core/board/arndale
 INC_DIR += $(REP_DIR)/src/core/spec/arm/virtualization
 INC_DIR += $(REP_DIR)/src/include
 

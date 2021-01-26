@@ -4,7 +4,7 @@
 
 # depends on genodelabs/genode#1806
 
-if {[have_spec pbxa9] || (![have_spec nova] && ![have_spec foc])} {
+if {![have_board pc]} {
 	puts "Platform is unsupported."
 	exit 0
 }
@@ -74,36 +74,20 @@ append config {
 		<config ata="yes">
 			<policy label="vfs -> " device="0" writeable="yes" />
 		</config>
-	</start>}
-
-append_if [have_spec sdl] config {
-	<start name="fb_sdl">
-		<resource name="RAM" quantum="4M"/>
-		<provides>
-			<service name="Input"/>
-			<service name="Framebuffer"/>
-		</provides>
-		<config width="800" height="600"/>
 	</start>
-	<alias name="fb_drv" child="fb_sdl"/>
-	<alias name="input_drv" child="fb_sdl"/>}
 
-append_if [have_spec framebuffer] config {
 	<start name="fb_drv" priority="-1">
 		<binary name="vesa_fb_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="Framebuffer"/></provides>
 		<config width="1024" height="768" buffered="yes"/>
-	</start>}
+	</start>
 
-append_if [have_spec ps2] config {
 	<start name="ps2_drv" priority="-1">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Input"/></provides>
 	</start>
-	<alias name="input_drv" child="ps2_drv"/>}
-
-append config {
+	<alias name="input_drv" child="ps2_drv"/>
 
 	<start name="fb_splitter" priority="-1">
 		<resource name="RAM" quantum="4M"/>
@@ -236,12 +220,8 @@ set boot_modules {
 	launchpad pointer
 	gears egl.lib.so expat.lib.so glapi.lib.so mesa.lib.so stdcxx.lib.so egl_swrast.lib.so
 	fb_splitter
+	vesa_fb_drv ps2_drv
 }
-
-lappend_if [have_spec       linux] boot_modules fb_sdl
-lappend_if [have_spec       linux] boot_modules sdl.lib.so
-lappend_if [have_spec         x86] boot_modules vesa_fb_drv
-lappend_if [have_spec         ps2] boot_modules ps2_drv
 
 append_platform_drv_boot_modules
 

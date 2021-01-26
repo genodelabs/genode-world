@@ -1,6 +1,6 @@
 assert_spec x86
 
-if {[have_spec linux]} {
+if {[have_board linux]} {
 	puts "The [run_name] scenario requires QEMU networking."
 	exit 1
 }

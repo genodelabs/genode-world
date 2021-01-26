@@ -30,7 +30,7 @@ build {
 #
 
 proc rtc_start_attr { } {
-	if {[have_spec linux]} { return {ld="no"} } else { return "" } }
+	if {[have_board linux]} { return {ld="no"} } else { return "" } }
 
 install_config {
 <config verbose="yes">

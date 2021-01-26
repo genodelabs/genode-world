@@ -1,5 +1,5 @@
 
-if {[have_spec linux] && $use_i965} {
+if {[have_board linux] && $use_i965} {
 	puts "i965 driver not supported on Linux."
 	exit 1
 }
@@ -53,7 +53,7 @@ set config {
 	</default-route>
 }
 
-append_if [have_spec linux] config {
+append_if [have_board linux] config {
 	<start name="fb_sdl" caps="200" ld="no">
 		<resource name="RAM" quantum="4M"/>
 		<provides> <service name="Input"/> </provides>
@@ -73,13 +73,13 @@ append_if [have_spec linux] config {
 
 append_platform_drv_config
 
-append_if [expr ![have_spec linux]] config {
+append_if [expr ![have_board linux]] config {
 	<start name="fb_drv">
 		<resource name="RAM" quantum="10M"/>
 		<route><any-service> <parent /> <any-child/> </any-service> </route>
 	</start>}
 
-append_if [have_spec ps2] config {
+append_if [have_board pc] config {
 	<start name="ps2_drv">
 		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Input"/> </provides>
@@ -205,9 +205,9 @@ append_if $use_i965 boot_modules {
 
 append boot_modules $demo_modules
 
-lappend_if [have_spec         linux]  boot_modules fb_sdl
-lappend_if [expr ![have_spec  linux]] boot_modules fb_drv
-lappend_if [have_spec           ps2]  boot_modules ps2_drv
+lappend_if [have_board         linux]  boot_modules fb_sdl
+lappend_if [expr ![have_board  linux]] boot_modules fb_drv
+lappend_if [have_board            pc]  boot_modules ps2_drv
 
 append_platform_drv_boot_modules
 

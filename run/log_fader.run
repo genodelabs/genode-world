@@ -7,7 +7,7 @@
 #
 # Build
 #
-if {![have_spec linux]} {
+if {![have_board linux]} {
 	puts "Runs on Linux only"
 	exit 0
 }

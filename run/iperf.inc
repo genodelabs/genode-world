@@ -20,7 +20,7 @@ if {[have_include "power_on/qemu"] &&
 	exit 0
 }
 
-if {[expr [have_spec imx53] && [have_spec trustzone]]} {
+if {[have_board imx53_qsb_tz]} {
 	puts "Run script is not supported on this platform."
 	exit 0
 }
@@ -227,7 +227,7 @@ append_if $use_nic_router config {
 			<uplink                             domain="uplink"/>
 
 			<domain name="uplink"}
-append_if [expr $use_nic_router && [have_spec linux]] config "
+append_if [expr $use_nic_router && [have_board linux]] config "
 				interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
 append_if $use_nic_router config {
 			>
@@ -255,7 +255,7 @@ append_if $use_nic_bridge config {
 		<resource name="RAM" quantum="5M"/>
 		<provides><service name="Nic"/></provides>
 		<config mac="} $bridge_mac {">}
-append_if [expr $use_nic_bridge && [have_spec linux]] config "
+append_if [expr $use_nic_bridge && [have_board linux]] config "
 			<policy label_prefix=\"iperf_genode\" ip_addr=\"$lx_ip_addr\"/>"
 append_if $use_nic_bridge config {
 			<default-policy/>
@@ -280,7 +280,7 @@ append config {
 				</dir>
 				<dir name="socket">
 					<} [socket_fs_plugin] { }
-if {[expr [have_spec linux] && !$use_nic_router]} {
+if {[expr [have_board linux] && !$use_nic_router]} {
 	append config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
 } else {
 	append config " dhcp=\"yes\""
@@ -316,8 +316,8 @@ build_boot_image { iperf stdcxx.lib.so }
 append qemu_args "  -nographic "
 
 proc qemu_nic_model {} {
-	if [have_spec x86]     { return e1000 }
-	if [have_spec lan9118] { return lan9118 }
+	if [have_board pc]     { return e1000 }
+	if [have_board pbxa9] { return lan9118 }
 	return nic_model_missing
 }
 
@@ -336,7 +336,7 @@ if $use_nic_router {
 	set force_ports "-p 5001"
 }
 
-if {[have_spec linux]} {
+if {[have_board linux]} {
 	run_genode_until {.*TCP window size.*\n} 60
 } else {
 	run_genode_until $ip_match_string 60
@@ -347,7 +347,7 @@ set serial_id [output_spawn_id]
 if {[have_include "power_on/qemu"]} {
 	set ip_addr "localhost"
 	set force_ports "-p 49153"
-} elseif [have_spec linux] {
+} elseif [have_board linux] {
 	set ip_addr $lx_ip_addr
 } else {
 	regexp $ip_match_string $output all ip_addr

@@ -1,5 +1,5 @@
 proc platform_drv_config_non_x86 {} {
-	if {[have_spec imx8q_evk]} {
+	if {[have_board imx8q_evk]} {
 		return {
 			<device name="usb_host_2">
 				<io_mem       address="0x38200000" size="0x10000"/>
@@ -23,7 +23,7 @@ proc platform_drv_config_non_x86 {} {
 			<policy label="usb_drv -> "> <device name="usb_host_2"/> </policy>
 		}
 	}
-	if {[have_spec imx6q_sabrelite]} {
+	if {[have_board imx6q_sabrelite]} {
 		return {
 			<device name="mxs_phy">
 				<io_mem address="0x020ca000" size="0xfff"/>
@@ -49,7 +49,7 @@ proc platform_drv_config_non_x86 {} {
 			</policy>
 		}
 	}
-	if {[have_spec rpi]} {
+	if {[have_board rpi]} {
 		return {
 			<device name="dwc_otg">
 				<io_mem       address="0x20980000" size="0x10000"/>
@@ -64,9 +64,9 @@ proc platform_drv_config_non_x86 {} {
 }
 
 proc platform_drv_binary_non_x86 {} {
-	if {[have_spec imx8q_evk]}       { return imx8mq_platform_drv  }
-	if {[have_spec imx6q_sabrelite]} { return platform_drv         }
-	if {[have_spec rpi]}             { return rpi_new_platform_drv }
+	if {[have_board imx8q_evk]}       { return imx8mq_platform_drv  }
+	if {[have_board imx6q_sabrelite]} { return platform_drv         }
+	if {[have_board rpi]}             { return rpi_new_platform_drv }
 	return no_platform_drv_available
 }
 
@@ -231,7 +231,7 @@ set boot_modules {
 }
 
 append boot_modules [usb_host_drv_binary]
-lappend_if [have_spec linux] boot_modules lx_file_terminal
+lappend_if [have_board linux] boot_modules lx_file_terminal
 
 if {[have_spec x86]} { append_platform_drv_boot_modules
 } else { append boot_modules " [platform_drv_binary_non_x86] " }

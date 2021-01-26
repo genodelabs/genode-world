@@ -10,7 +10,7 @@ if {![file exists bin/mirage]} {
 	exit 1
 }
 
-if {[have_spec linux]} {
+if {[have_board linux]} {
 	puts ""
 	puts "This scenario is not available for Linux."
 	puts ""

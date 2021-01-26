@@ -5,7 +5,7 @@
 #
 
 # add include paths
-INC_DIR += $(REP_DIR)/src/core/spec/odroid_xu
+INC_DIR += $(REP_DIR)/src/core/board/odroid_xu
 INC_DIR += $(REP_DIR)/src/include
 
 # add C++ sources

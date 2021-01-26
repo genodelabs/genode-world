@@ -1,6 +1,6 @@
 proc check_config {bin xml_file xsd_file label avail_xsd_files xsd_inc nesting_level} { }
 
-if {![have_spec nit6_solox]} {
+if {![have_board nit6_solox]} {
 	puts "Run script is only supported on nit6_solox"; exit 0 }
 
 

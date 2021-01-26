@@ -3,8 +3,7 @@
 # \author Emery Hemingway
 #
 
-if {[have_spec odroid_xu] || [have_spec linux] ||
-    [expr [have_spec imx53] && [have_spec trustzone]]} {
+if { ![have_board pbxa9] && ![have_board pc] } {
 	puts "Run script does not support this platform."
 	exit 0
 }
@@ -96,9 +95,9 @@ build_boot_image {
 	tox_dht_bootstrap
 }
 
-append_if [have_spec x86]     qemu_args " -net nic,model=e1000 "
-append_if [have_spec lan9118] qemu_args " -net nic,model=lan9118 "
-append                        qemu_args " -net user -net dump,file=[run_dir].pcap"
-append                        qemu_args " -nographic"
+append_if [have_board pc]    qemu_args " -net nic,model=e1000 "
+append_if [have_board pbx9a] qemu_args " -net nic,model=lan9118 "
+append                       qemu_args " -net user -net dump,file=[run_dir].pcap"
+append                       qemu_args " -nographic"
 
 run_genode_until forever

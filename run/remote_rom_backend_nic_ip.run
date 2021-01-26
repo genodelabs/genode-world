@@ -1,5 +1,5 @@
 proc nic_drv_opt {} {
-	if {[have_spec linux]} {
+	if {[have_board linux]} {
 		return "ld=\"no\""
 	}
 	return ""

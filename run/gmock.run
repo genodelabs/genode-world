@@ -1,4 +1,4 @@
-if {[have_spec linux]} {
+if {[have_board linux]} {
 	puts "Platform is unsupported. (rtc driver support)"
 	exit 0
 }

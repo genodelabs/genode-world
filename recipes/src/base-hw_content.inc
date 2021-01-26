@@ -41,8 +41,3 @@ generalize_target_names: lib/mk src/lib src/timer
 remove_other_board_libs: lib/mk
 	find lib/mk/spec -name core-hw-*.mk -o -name bootstrap-hw-*.mk |\
 		grep -v "hw-$(BOARD).mk" | xargs rm -rf
-
-content: enable_board_spec
-
-enable_board_spec: etc/specs.conf
-	echo "SPECS += $(BOARD)" >> etc/specs.conf

@@ -36,10 +36,10 @@
 set use_lxip 0
 set use_nic_router 1
 set ld_nic "yes"
-if {[have_spec linux]} { set ld_nic "no" }
+if {[have_board linux]} { set ld_nic "no" }
 
 set use_interactive_pkg 1
-if { [have_spec x86] && ![have_include "power_on/qemu"] && ![have_spec linux] } {
+if { [have_board pc] && ![have_include "power_on/qemu"] } {
 	# use intel_fb_drv on x86 to get max resolution
 	set use_interactive_pkg 0
 }
@@ -63,7 +63,7 @@ set use_trace [expr $use_top || $use_top_view]
 set use_backdrop 1
 
 set use_nic  1
-set use_wifi [expr ![have_spec linux] && !$use_nic]
+set use_wifi [expr ![have_board linux] && !$use_nic]
 
 set lx_ip_addr "10.0.2.55"
 set lx_gw_addr "10.0.2.1"
@@ -78,14 +78,14 @@ proc socket_fs_plugin {} {
 }
 
 proc binary_nic_drv { } {
-	if {[have_spec linux]}     { return "linux_nic_drv" }
-	if {[have_spec x86]}       { return "ipxe_nic_drv" }
-	if {[have_spec imx8q_evk]} { return "fec_nic_drv" }
+	if {[have_board linux]}     { return "linux_nic_drv" }
+	if {[have_board pc]}        { return "ipxe_nic_drv" }
+	if {[have_board imx8q_evk]} { return "fec_nic_drv" }
 	return "unknown_nic_drv"
 }
 
 proc binary_nic_config { } {
-	if {[have_spec imx8q_evk]} {
+	if {[have_board imx8q_evk]} {
 		return {<card type="fsl,imx6sx-fec" mii="rgmii" irq="152" mmio="0x30be0000"/>}
 	}
 	return ""
@@ -251,7 +251,7 @@ append_if $use_interactive_pkg config {
 if { !$use_interactive_pkg } {
 	append_platform_drv_config
 
-	append_if [have_spec x86] config {
+	append_if [have_board pc] config {
 		<start name="intel_fb_drv" caps="1000">
 			<resource name="RAM" quantum="60M"/>
 			<route>
@@ -259,7 +259,7 @@ if { !$use_interactive_pkg } {
 			</route>
 		</start>}
 
-	append_if [have_spec x86] config {
+	append_if [have_board pc] config {
 		<start name="ps2_drv">
 			<resource name="RAM" quantum="2M"/>
 			<provides><service name="Input"/></provides>
@@ -298,7 +298,7 @@ append_if $use_nic_router config {
 			<uplink                            domain="uplink"/>
 
 			<domain name="uplink"}
-append_if [expr $use_nic_router && [have_spec linux]] config {
+append_if [expr $use_nic_router && [have_board linux]] config {
 				interface="} $lx_ip_addr {/24" gateway="} $lx_gw_addr {"}
 
 append_if $use_nic_router config {>
@@ -567,7 +567,7 @@ set boot_modules { }
 
 if { !$use_interactive_pkg } {
 	append_platform_drv_boot_modules
-	append_if [have_spec x86] boot_modules { intel_fb_drv }
+	append_if [have_board pc] boot_modules { intel_fb_drv }
 }
 
 lappend_if $use_nic  boot_modules [binary_nic_drv]

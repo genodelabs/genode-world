@@ -6,7 +6,7 @@
 #
 
 # add include paths
-INC_DIR += $(REP_DIR)/src/core/spec/panda
+INC_DIR += $(REP_DIR)/src/core/board/panda
 INC_DIR += $(REP_DIR)/src/include
 
 # add C++ sources

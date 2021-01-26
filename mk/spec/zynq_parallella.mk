@@ -1,6 +1,0 @@
-#
-# Pull in CPU specifics
-#
-SPECS += zynq cadence_gem zynq_sdhci
-
-include $(call select_from_repositories,mk/spec/zynq.mk)

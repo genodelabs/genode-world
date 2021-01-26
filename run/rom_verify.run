@@ -1,4 +1,4 @@
-if {![have_spec linux]} {
+if {![have_board linux]} {
 	puts "ROM padding requires that this script run on linux!"
 	exit 1
 }

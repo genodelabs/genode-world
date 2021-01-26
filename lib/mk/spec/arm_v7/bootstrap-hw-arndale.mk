@@ -1,10 +1,10 @@
-INC_DIR += $(REP_DIR)/src/bootstrap/spec/arndale
+INC_DIR += $(REP_DIR)/src/bootstrap/board/arndale
 INC_DIR += $(REP_DIR)/src/include
 
+SRC_CC  += bootstrap/board/arndale/platform.cc
+SRC_CC  += bootstrap/spec/arm/arm_v7_cpu.cc
 SRC_CC  += bootstrap/spec/arm/cortex_a15_cpu.cc
 SRC_CC  += bootstrap/spec/arm/gicv2.cc
-SRC_CC  += bootstrap/spec/arndale/platform.cc
-SRC_CC  += bootstrap/spec/arm/arm_v7_cpu.cc
 SRC_CC  += hw/spec/32bit/memory_map.cc
 SRC_S   += bootstrap/spec/arm/crt0.s
 
@@ -18,4 +18,4 @@ CC_MARCH = -mcpu=cortex-a15 -mfpu=vfpv3 -mfloat-abi=softfp
 
 include $(call select_from_repositories,lib/mk/bootstrap-hw.inc)
 
-vpath bootstrap/spec/arndale/platform.cc $(REP_DIR)/src
+vpath bootstrap/board/arndale/platform.cc $(REP_DIR)/src
