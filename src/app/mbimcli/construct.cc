@@ -585,9 +585,12 @@ class Mbim
 					xml.node("default-policy", [&] () {
 						xml.attribute("domain", "default");
 					});
-					xml.node("uplink", [&] () {
+
+					xml.node("policy", [&] () {
+						xml.attribute("label_prefix", "usb_modem_drv");
 						xml.attribute("domain", "uplink");
 					});
+
 					/* uplink */
 					xml.node("domain", [&] () {
 						xml.attribute("name", "uplink");

@@ -155,12 +155,11 @@ append config {
 	</start>
 
 	<start name="usb_modem_drv">
-		<resource name="RAM" quantum="10M"/>
+		<resource name="RAM" quantum="16M"/>
 		<provides>
-			<service name="Nic"/>
 			<service name="Terminal"/>
 		</provides>
-		<config mac="02:00:00:00:01:01" />
+		<config mac="02:00:00:00:01:01" mode="uplink_client" />
 	</start>
 
 	<start name="report_rom">
@@ -173,9 +172,11 @@ append config {
 
 	<start name="nic_router" caps="500">
 		<resource name="RAM" quantum="16M"/>
-		<provides> <service  name="Nic" /> </provides>
+		<provides>
+			<service  name="Nic" />
+			<service  name="Uplink"/>
+		</provides>
 		<route>
-			<service name="Nic"> <child name="usb_modem_drv"/> </service>
 			<service name="ROM" label="config"> <child name="report_rom"/></service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
