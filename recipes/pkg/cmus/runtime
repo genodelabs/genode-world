@@ -6,8 +6,6 @@
 		<file_system label="fonts"/>
 		<gui/>
 		<audio_out/>
-		<rom    label="clipboard"/>
-		<report label="clipboard"/>
 		<timer/>
 		<rtc/>
 		<rm/>
@@ -21,7 +19,6 @@
 		<rom label="cmus_ip_opus.lib.so"/>
 		<rom label="cmus_ip_vorbis.lib.so"/>
 		<rom label="cmus_op_oss.lib.so"/>
-		<rom label="gui_fb"/>
 		<rom label="init"/>
 		<rom label="ld.lib.so"/>
 		<rom label="libFLAC.lib.so"/>
