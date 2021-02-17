@@ -1,9 +1,1 @@
-ARCH  := arm_v7
-BOARD := odroid_xu
-
-content: lib/mk/spec/arm_v7/core-hw-exynos5.inc
-
-lib/mk/spec/arm_v7/core-hw-exynos5.inc: lib/mk
-	cp -r $(REP_DIR)/$@ $@
-
-include $(REP_DIR)/recipes/src/base-hw_content.inc
+include $(GENODE_DIR)/repos/base-hw/recipes/src/base-hw_content.inc
