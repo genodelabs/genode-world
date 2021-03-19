@@ -133,6 +133,56 @@ unsigned Seoul::Console::_input_to_ps2mouse(Input::Event const &ev)
 	return packet;
 }
 
+
+void Seoul::Console::_input_to_virtio(Input::Event const &ev)
+{
+	auto button = [] (Input::Event const &ev, Input::Keycode key, bool &state) {
+		if (ev.key_press  (key)) {
+			state = true;
+			return true;
+		}
+		if (ev.key_release(key)) {
+			state = false;
+			return true;
+		}
+		return false;
+	};
+
+	bool left = false, middle = false, right = false;
+	unsigned data = 0, data2 = 0;
+
+	if (button(ev, Input::BTN_LEFT, left)) {
+		data  = 1u << 31;
+		data2 = !!left;
+	} else
+	if (button(ev, Input::BTN_MIDDLE, middle)) {
+		data  = 1u << 30;
+		data2 = !!middle;
+	} else
+	if (button(ev, Input::BTN_RIGHT, right)) {
+		data  = 1u << 29;
+		data2 = !!right;
+	} else {
+		ev.handle_absolute_motion([&] (int x, int y) {
+			unsigned const mask = (0xfu << 28) - 1;
+			MessageInput msg(0x10002, x & mask, y & mask);
+			if (_motherboard()->bus_input.send(msg) && !_absolute)
+				_absolute = true;
+		});
+		ev.handle_wheel([&](int, int z) {
+			MessageInput msg(0x10002, 1u << 28, z);
+			_motherboard()->bus_input.send(msg);
+		});
+
+		return;
+	}
+
+	MessageInput msg(0x10002, data, data2);
+	if (_motherboard()->bus_input.send(msg) && !_absolute)
+		_absolute = true;
+}
+
+
 enum {
 	PHYS_FRAME_VGA       = 0xa0,
 	PHYS_FRAME_VGA_COLOR = 0xb8,
@@ -349,10 +399,14 @@ void Seoul::Console::_handle_input()
 			_motherboard()->bus_timer.send(msg);
 		}
 
-		/* update mouse model (PS2) */
 		if (mouse_event(ev)) {
+			/* update PS2 mouse model */
 			MessageInput msg(0x10001, _input_to_ps2mouse(ev), _input_to_ps2wheel(ev));
-			_motherboard()->bus_input.send(msg);
+			if (_motherboard()->bus_input.send(msg) && !_relative)
+				_relative = true;
+
+			/* update virtio input model */
+			_input_to_virtio(ev);
 		}
 
 		ev.handle_press([&] (Input::Keycode key, Genode::Codepoint) {
