@@ -71,9 +71,12 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		bool                          _left     { false };
 		bool                          _middle   { false };
 		bool                          _right    { false };
+		bool                          _relative { false };
+		bool                          _absolute { false };
 
 		unsigned _input_to_ps2mouse(Input::Event const &);
 		unsigned _input_to_ps2wheel(Input::Event const &);
+		void     _input_to_virtio(Input::Event const &);
 
 		Genode::Signal_handler<Console> _signal_input
 			= { _env.ep(), *this, &Console::_handle_input };
