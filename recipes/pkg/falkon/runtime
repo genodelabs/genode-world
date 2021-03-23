@@ -69,6 +69,7 @@
 		<rom label="qt5_webengine_resources.tar"/>
 		<rom label="falkon_theme.tar"/>
 		<rom label="init.config"/>
+		<rom label="init"/>
 
 	</content>
 
