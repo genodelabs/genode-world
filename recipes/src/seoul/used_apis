@@ -10,3 +10,4 @@ timer_session
 block_session
 nic_session
 rtc_session
+report_session

@@ -225,11 +225,57 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		return true;
 	}
 	case MessageConsole::TYPE_ALLOC_VIEW :
-		_guest_fb = msg.ptr;
-		_regs = msg.regs;
+	{
+		if (msg.id == ID_VGA_VESA) { /* XXX special handling */
+			_guest_fb = msg.ptr;
+			_regs = msg.regs;
 
-		msg.view = 0;
-		return true;
+			msg.view = 0;
+			return true;
+		}
+		bool const found = apply_msg(msg.id, [&](auto &gui) {
+			if (msg.view == 1) {
+				msg.ptr = gui.shape_ptr();
+				msg.size = gui.shape_size();
+				return true;
+			}
+			if (msg.view > 1 && msg.size) {
+				Genode::Ram_dataspace_capability ds { };
+				try {
+					msg.ptr  = nullptr;
+
+					ds = _env.ram().alloc(msg.size);
+					msg.ptr = _env.rm().attach(ds);
+
+					new (_alloc) Backend_gui::Pixel_buffer(gui.pixel_buffers, Backend_gui::Pixel_buffer::Id { msg.view }, ds);
+
+					return true;
+				} catch (...) {
+					Genode::error("insufficient resources to create buffer");
+					if (ds.valid())
+						_env.ram().free(ds);
+					return false;
+				}
+			}
+			Genode::error("xxxx");
+			return false;
+		});
+		return found;
+	}
+	case MessageConsole::TYPE_FREE_VIEW:
+		if (msg.id == ID_VGA_VESA) { /* XXX special handling */
+			return false; }
+
+		return apply_msg(msg.id, [&](auto &gui) {
+
+			Backend_gui::Pixel_buffer::Id const id { msg.view };
+			gui.free_buffer(id, [&](Backend_gui::Pixel_buffer &buffer) {
+				_env.ram().free(buffer.ds);
+				Genode::destroy(_alloc, &buffer);
+			});
+
+			return true;
+		});
 	case MessageConsole::TYPE_SWITCH_VIEW:
 		/* XXX: For now, we only have one view. */
 		return true;
@@ -285,26 +331,44 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			return true;
 		}
 		return false;
-	case MessageConsole::TYPE_KILL: /* all CPUs go idle */
+	case MessageConsole::TYPE_PAUSE: /* all CPUs go idle */
 		_handle_fb(fb_state.vga_off); /* refresh before going to sleep */
 		fb_state.active = false;
 		return true;
-	case MessageConsole::TYPE_RESET: /* first of all sleeping CPUs woke up */
+	case MessageConsole::TYPE_RESUME: /* first of all sleeping CPUs woke up */
 		_reactivate();
 		return true;
 	case MessageConsole::TYPE_CONTENT_UPDATE:
-		for (auto *gui = _guis.first(); gui; gui = gui->next()) {
-			if (gui->id == msg.id) {
-				gui->refresh();
-				return true;
-			}
-		}
+	{
+		bool const found = apply_msg(msg.id, [&](auto &gui) {
+			if (msg.view == 0)
+				gui.refresh(msg.x, msg.y, msg.width, msg.height);
+			else if (msg.view == 1) {
+				int x = 0, y = 0;
+
+				/* makes mouse (somewhat) visible if solely relative input is used */
+				if (_relative && !_absolute) {
+					x = gui.last_host_pos.x() - msg.x;
+					y = gui.last_host_pos.y() - msg.y;
+				}
+
+				gui.mouse_shape(true /* XXX */,
+				                x, y,
+				                msg.width, msg.height);
+			} else
+				return false;
+			return true;
+		});
 
 		/* if the fb updating was off, reactivate timer - move into vga/vesa class XXX */
 		if (msg.id == ID_VGA_VESA && !fb_state.active)
 			_reactivate();
 
+		if (!found)
+			Genode::error("unknown graphical backend ", msg.id);
+
 		return true;
+	}
 	default:
 		return true;
 	}
@@ -431,6 +495,10 @@ void Seoul::Console::_handle_input()
 			}
 
 			if (mouse_event(ev)) {
+				ev.handle_absolute_motion([&] (int x, int y) {
+					gui->last_host_pos = Genode::Point<unsigned>(x, y);
+				});
+
 				/* update PS2 mouse model */
 				_input_to_ps2(ev);
 

@@ -57,7 +57,13 @@ MIRROR_FROM_LIBC := $(addprefix src/lib/libc/lib/libc/,$(SRC_C)) \
                     src/lib/libc/lib/libc/locale/setlocale.h \
                     src/lib/libc/lib/libc/include/libc_private.h \
 
-content: $(MIRROR_FROM_LIBC)
+MIRROR_FROM_OS := include/pointer/shape_report.h
+
+content: $(MIRROR_FROM_LIBC) $(MIRROR_FROM_OS)
+
+$(MIRROR_FROM_OS):
+	mkdir -p $(dir $@)
+	cp -r $(GENODE_DIR)/repos/os/$@ $(dir $@)
 
 $(MIRROR_FROM_LIBC):
 	mkdir -p $(dir $@)
