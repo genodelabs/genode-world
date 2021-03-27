@@ -20,7 +20,9 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_import \
                   [depot_user]/src/ps2_drv \
-                  [depot_user]/raw/drivers_interactive-pc
+                  [depot_user]/raw/drivers_interactive-pc \
+                  [depot_user]/pkg/themed_wm \
+                  [depot_user]/src/report_rom
 
 if {$use_fs_rump} {
 	import_from_depot [depot_user]/src/rump
@@ -79,9 +81,7 @@ lappend_if $use_drv_ahci        build_components drivers/ahci
 lappend_if $use_nic_session     build_components drivers/nic
 lappend_if $use_nic_session     build_components server/nic_router
 lappend_if $use_framebuffer     build_components drivers/framebuffer
-lappend_if $use_fancy_stuff     build_components app/status_bar
 lappend_if $use_fancy_stuff     build_components app/launchpad
-lappend_if $use_fancy_stuff     build_components server/report_rom
 lappend_if $use_genode_iso      build_components server/iso9660
 lappend_if $use_top             build_components app/top
 
@@ -91,7 +91,7 @@ build $build_components
 
 # write Seoul config file
 set vm_cfg_fd [open "bin/vm_seoul.cfg" w]
-puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"16M\">"
+puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\">"
 puts $vm_cfg_fd {	 <machine verbose="no">
 		<mem start="0x0" end="0x9a000"/>
 		<mem start="0x100000" end="0xfffff000"/>
@@ -161,6 +161,7 @@ if {$use_nic_session} {
 		<!-- <rtl8029 irq="9" port="0x300"/> -->
 		<intel82576vf/>
 		<virtio_input irq="11"/>
+		<virtio_gpu   irq="13"/>
 	}
 }
 
@@ -457,7 +458,10 @@ append_if $use_block_vdi config {
 append_if [expr $use_block_sata && $use_part_block] config {
 			<service name="Block"><child name="part_block"/></service>}
 append config {
-			<service name="Rtc"><child name="rtc_drv"/></service>
+			<service name="Gui"> <child name="wm"/> </service>
+			<service name="Rtc"> <child name="rtc_drv"/> </service>
+			<service name="Report" label="shape"> <child name="wm"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
 	</start> }
@@ -471,23 +475,12 @@ append config {
 		</provides>
 		<config>
 			<capture/> <event/>
-			<report focus="yes" />
+			<report focus="yes" hover="yes" />
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
 			<domain name="panel"   layer="2" content="client" label="no" focus="none" />
-			<domain name="init.1"  layer="3" content="client" focus="click"
-			                       hover="always" xpos="20" ypos="30" height="-20"/>
-			<domain name="init.2"  layer="3" content="client" focus="click"
-			                       hover="always" xpos="30" ypos="40" height="-20"/>
-			<domain name="init.3"  layer="3" content="client" focus="click"
-			                       hover="always" xpos="40" ypos="50" height="-20"/>
-			<domain name=""        layer="3" content="client" focus="click"
-			                       hover="always" xpos="10" ypos="20" height="-20"/>
-			<policy label_prefix="pointer"    domain="pointer"/>
-			<policy label_prefix="status_bar" domain="panel"/>
+			<domain name=""        layer="3" content="client" label="no" focus="click" hover="always"/>
 
-			<policy label_prefix="launchpad -> init.1" domain="init.1"/>
-			<policy label_prefix="launchpad -> init.2" domain="init.2"/>
-			<policy label_prefix="launchpad -> init.3" domain="init.3"/>
+			<policy label_prefix="pointer"    domain="pointer"/>
 
 			<default-policy domain=""/>
 		</config>
@@ -498,18 +491,40 @@ append config {
 		</route>
 	</start>
 
-	<start name="pointer">
+	<start name="pointer" priority="-1">
 		<resource name="RAM" quantum="2M"/>
-		<config/>
+		<provides> <service name="Report"/> </provides>
+		<config shapes="yes" verbose="no"/>
+		<route>
+			<service name="Gui"> <child name="nitpicker"/>  </service>
+			<service name="ROM" label="hover"> <child name="report_rom"/> </service>
+			<service name="ROM" label="xray"> <child name="report_rom"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
 	</start>
 
 	<start name="report_rom">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
-			<policy label="status_bar -> focus" report="nitpicker -> focus"/>
+			<policy label="pointer -> hover" report="nitpicker -> hover"/>
+			<policy label="pointer -> xray"  report="nitpicker -> xray"/>
 			<policy label="usb_hid_drv -> report" report="usb_drv -> devices"/>
 		</config>
+	</start>
+
+	<start name="wm" caps="1000" priority="-1">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<provides>
+			<service name="Gui"/> <service name="Report"/> <service name="ROM"/>
+		</provides>
+		<route>
+			<service name="ROM"    label="config"> <parent label="wm.config"/> </service>
+			<service name="Report" label_last="shape">  <child name="pointer"/> </service>
+			<service name="Gui"> <child name="nitpicker"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>}
 
 append_if $use_top config {
@@ -519,19 +534,14 @@ append_if $use_top config {
 	</start>}
 
 append_if $use_fancy_stuff config {
-	<start name="status_bar">
-		<resource name="RAM" quantum="1M"/>
-		<route>
-			<service name="ROM" label="focus"> <child name="report_rom"/> </service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
-	<start name="launchpad" priority="-2" caps="2000">
+	<start name="launchpad" priority="-2" caps="8000">
 		<resource name="RAM" quantum="64000M"/>
 		<route>
-			<service name="Nic"> <child name="nic_router"/> </service>
 			<service name="ROM" label="config">
 				<parent label="launchpad-config"/> </service>
+			<service name="Report" label_last="shape"> <child name="wm"/> </service>
+			<service name="Gui"> <child name="wm"/> </service>
+			<service name="Nic"> <child name="nic_router"/> </service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
 	</start>}
@@ -565,6 +575,7 @@ if {$use_fancy_stuff} {
 				<service name="Block"/>
 				<service name="Rtc"/>
 				<service name="VM"/>
+				<service name="Report"/>
 			</parent-provides>
 
 			<start name="seoul" caps="800">
@@ -604,10 +615,8 @@ lappend_if $use_nic_session   boot_modules ipxe_nic_drv
 lappend_if $use_nic_session   boot_modules nic_router
 lappend_if $use_framebuffer   boot_modules vesa_fb_drv
 
-lappend_if $use_fancy_stuff   boot_modules status_bar
 lappend_if $use_fancy_stuff   boot_modules launchpad
 lappend_if $use_fancy_stuff   boot_modules launchpad-config
-lappend_if $use_fancy_stuff   boot_modules report_rom
 
 lappend_if $use_genode_iso    boot_modules iso9660
 lappend_if $use_genode_iso    boot_modules genode.iso

@@ -941,7 +941,8 @@ class Machine : public StaticReceiver<Machine>
 					_vcpus_active.clear(vcpu_id, 1);
 
 					if (!_vcpus_active.get(0, 64)) {
-						MessageConsole msgcon(MessageConsole::Type::TYPE_KILL);
+						MessageConsole msgcon(MessageConsole::Type::TYPE_PAUSE,
+						                      Seoul::Console::ID_VGA_VESA);
 						_unsynchronized_motherboard.bus_console.send(msgcon);
 					}
 
@@ -952,7 +953,8 @@ class Machine : public StaticReceiver<Machine>
 					_motherboard_mutex.acquire();
 
 					if (!_vcpus_active.get(0, 64)) {
-						MessageConsole msgcon(MessageConsole::Type::TYPE_RESET);
+						MessageConsole msgcon(MessageConsole::Type::TYPE_RESUME,
+						                      Seoul::Console::ID_VGA_VESA);
 						_unsynchronized_motherboard.bus_console.send(msgcon);
 					}
 
