@@ -351,9 +351,9 @@ void backend_alloc_init(Env & env, Ram_allocator&, Allocator&) { }
 
 
 Ram_dataspace_capability
-Lx::backend_alloc(addr_t size, Cache_attribute cached)
+Lx::backend_alloc(addr_t size, Cache cache)
 {
-	return Lx_kit::env().env().ram().alloc(size, cached);
+	return Lx_kit::env().env().ram().alloc(size, cache);
 }
 
 
