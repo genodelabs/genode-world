@@ -1,12 +1,15 @@
 diff --git a/third_party/genode/if_indextoname.c b/third_party/genode/if_indextoname.c
 new file mode 100644
-index 0000000000..9ea67cee0c
+index 0000000..c8c0ac6
 --- /dev/null
 +++ b/third_party/genode/if_indextoname.c
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,9 @@
++#include <string.h>
++
 +char * if_indextoname(unsigned int ifindex, char *ifname)
 +{
-+	const char* name = "eth0";
-+	ifname = name;
++	(void)ifindex;
++	static const char name[] = "eth0";
++	memcpy(ifname, name, sizeof(name));
 +	return ifname;
 +}
