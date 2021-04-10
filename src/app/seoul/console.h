@@ -39,6 +39,7 @@
 #include "keyboard.h"
 #include "synced_motherboard.h"
 #include "guest_memory.h"
+#include "gui.h"
 
 namespace Seoul {
 	class Console;
@@ -53,17 +54,21 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		Genode::Env                  &_env;
 		Motherboard                  &_unsynchronized_motherboard;
 		Synced_motherboard           &_motherboard;
-		Framebuffer::Session         &_framebuffer;
-		Input::Session_client        &_input;
+
+		Genode::Signal_handler<Console> _signal_input
+			= { _env.ep(), *this, &Console::_handle_input };
+
+		Genode::List<Backend_gui>     _guis { };
+		Genode::Allocator            &_alloc;
+
+		Backend_gui                  &_backend_gui;
 		Seoul::Guest_memory          &_memory;
-		Dataspace_capability const    _fb_ds;
 		Framebuffer::Mode    const    _fb_mode;
 		size_t               const    _fb_size;
 		Dataspace_capability const    _fb_vm_ds;
 		Genode::addr_t       const    _fb_vm_mapping;
 		Genode::addr_t       const    _vm_phys_fb;
 		short                        *_pixels;
-		Genode::Surface<Pixel_rgb888> _surface;
 		unsigned                      _timer    { 0 };
 		Keyboard                      _vkeyb    { _motherboard };
 		char                         *_guest_fb { nullptr };
@@ -77,9 +82,7 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		unsigned _input_to_ps2mouse(Input::Event const &);
 		unsigned _input_to_ps2wheel(Input::Event const &);
 		void     _input_to_virtio(Input::Event const &);
-
-		Genode::Signal_handler<Console> _signal_input
-			= { _env.ep(), *this, &Console::_handle_input };
+		void     _input_to_ps2(Input::Event const &);
 
 		void _handle_input();
 		unsigned _handle_fb(bool);
@@ -93,6 +96,8 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		Console &operator = (Console const &);
 
 	public:
+
+		enum { ID_VGA_VESA = 0 };
 
 		Genode::addr_t attached_framebuffer() const { return _fb_vm_mapping; }
 		Genode::addr_t framebuffer_size()     const { return _fb_size; }
@@ -110,7 +115,17 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		 */
 		Console(Genode::Env &env, Genode::Allocator &alloc,
 		        Synced_motherboard &, Motherboard &,
-		        Gui::Connection &, Seoul::Guest_memory &);
+		        Gui::Area const, Seoul::Guest_memory &);
+
+		template <typename FUNC>
+		bool apply_msg(unsigned const id, FUNC const& fn) {
+			for (auto *gui = _guis.first(); gui; gui = gui->next()) {
+				if (gui->id == id) {
+					return fn(*gui);
+				}
+			}
+			return false;
+		}
 };
 
 #endif /* _CONSOLE_H_ */
