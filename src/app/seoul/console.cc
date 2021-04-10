@@ -134,6 +134,19 @@ unsigned Seoul::Console::_input_to_ps2mouse(Input::Event const &ev)
 }
 
 
+void Seoul::Console::_input_to_ps2(Input::Event const &ev)
+{
+	/* if absolute pointing model is avail, don't use relative PS2 */
+	if (_absolute)
+		return;
+
+	/* update PS2 mouse model */
+	MessageInput msg(0x10001, _input_to_ps2mouse(ev), _input_to_ps2wheel(ev));
+	if (_motherboard()->bus_input.send(msg) && !_relative)
+		_relative = true;
+}
+
+
 void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 {
 	auto button = [] (Input::Event const &ev, Input::Keycode key, bool &state) {
@@ -203,6 +216,14 @@ unsigned Seoul::Console::_input_to_ps2wheel(Input::Event const &ev)
 bool Seoul::Console::receive(MessageConsole &msg)
 {
 	switch (msg.type) {
+	case MessageConsole::TYPE_ALLOC_CLIENT:
+	{
+		Genode::String<12> name("fb", msg.id, ".", msg.view);
+		auto *gui = new (_alloc) Backend_gui(_env, _guis, msg.id, _fb_mode.area,
+		                                     _signal_input, name.string());
+		msg.ptr = _env.rm().attach(gui->fb_ds);
+		return true;
+	}
 	case MessageConsole::TYPE_ALLOC_VIEW :
 		_guest_fb = msg.ptr;
 		_regs = msg.regs;
@@ -272,9 +293,17 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		_reactivate();
 		return true;
 	case MessageConsole::TYPE_CONTENT_UPDATE:
-		/* if the fb updating was off, reactivate timer XXX */
-		if (!fb_state.active)
+		for (auto *gui = _guis.first(); gui; gui = gui->next()) {
+			if (gui->id == msg.id) {
+				gui->refresh();
+				return true;
+			}
+		}
+
+		/* if the fb updating was off, reactivate timer - move into vga/vesa class XXX */
+		if (msg.id == ID_VGA_VESA && !fb_state.active)
 			_reactivate();
+
 		return true;
 	default:
 		return true;
@@ -323,6 +352,8 @@ unsigned Seoul::Console::_handle_fb(bool const skip_update)
 		if (fb_state.cmp_even) fb_state.checksum1 = 0;
 		else fb_state.checksum2 = 0;
 
+		Genode::Surface<Pixel_rgb888> _surface(reinterpret_cast<Genode::Pixel_rgb888 *>(_pixels), _fb_mode.area);
+
 		for (int j=0; j<25; j++) {
 			for (int i=0; i<80; i++) {
 				Text_painter::Position const where(i*8, j*15);
@@ -349,7 +380,7 @@ unsigned Seoul::Console::_handle_fb(bool const skip_update)
 		/* compare checksums to detect changed buffer */
 		if (fb_state.checksum1 != fb_state.checksum2) {
 			fb_state.unchanged = 0;
-			_framebuffer.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
+			_backend_gui.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
 			return 100;
 		}
 
@@ -363,7 +394,7 @@ unsigned Seoul::Console::_handle_fb(bool const skip_update)
 		fb_state.vga_off = true;
 		fb_state.unchanged = 0;
 
-		_framebuffer.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
+		_backend_gui.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
 
 		return 0;
 	}
@@ -380,7 +411,7 @@ unsigned Seoul::Console::_handle_fb(bool const skip_update)
 		return 0;
 	}
 
-	_framebuffer.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
+	_backend_gui.refresh(0, 0, _fb_mode.area.w(), _fb_mode.area.h());
 
 	fb_state.unchanged++;
 
@@ -390,33 +421,32 @@ unsigned Seoul::Console::_handle_fb(bool const skip_update)
 
 void Seoul::Console::_handle_input()
 {
-	_input.for_each_event([&] (Input::Event const &ev) {
+	for (auto *gui = _guis.first(); gui; gui = gui->next()) {
+		gui->input.for_each_event([&] (Input::Event const &ev) {
 
-		if (!fb_state.active) {
-			fb_state.active = true;
+			if (!fb_state.active) {
+				fb_state.active = true;
+				MessageTimer msg(_timer, _motherboard()->clock()->abstime(1, 1000));
+				_motherboard()->bus_timer.send(msg);
+			}
 
-			MessageTimer msg(_timer, _motherboard()->clock()->abstime(1, 1000));
-			_motherboard()->bus_timer.send(msg);
-		}
+			if (mouse_event(ev)) {
+				/* update PS2 mouse model */
+				_input_to_ps2(ev);
 
-		if (mouse_event(ev)) {
-			/* update PS2 mouse model */
-			MessageInput msg(0x10001, _input_to_ps2mouse(ev), _input_to_ps2wheel(ev));
-			if (_motherboard()->bus_input.send(msg) && !_relative)
-				_relative = true;
+				/* update virtio input model */
+				_input_to_virtio(ev);
+			}
 
-			/* update virtio input model */
-			_input_to_virtio(ev);
-		}
+			ev.handle_press([&] (Input::Keycode key, Genode::Codepoint) {
+				if (key <= 0xee)
+					_vkeyb.handle_keycode_press(key); });
 
-		ev.handle_press([&] (Input::Keycode key, Genode::Codepoint) {
-			if (key <= 0xee)
-				_vkeyb.handle_keycode_press(key); });
-
-		ev.handle_release([&] (Input::Keycode key) {
-			if (key <= 0xee)
-				_vkeyb.handle_keycode_release(key); });
-	});
+			ev.handle_release([&] (Input::Keycode key) {
+				if (key <= 0xee)
+					_vkeyb.handle_keycode_release(key); });
+		});
+	}
 }
 
 
@@ -452,28 +482,24 @@ bool Seoul::Console::receive(MessageTimeout &msg) {
 Seoul::Console::Console(Genode::Env &env, Genode::Allocator &alloc,
                         Synced_motherboard &mb,
                         Motherboard &unsynchronized_motherboard,
-                        Gui::Connection &gui,
+                        Gui::Area const area,
                         Seoul::Guest_memory &guest_memory)
 :
 	_env(env),
 	_unsynchronized_motherboard(unsynchronized_motherboard),
 	_motherboard(mb),
-	_framebuffer(*gui.framebuffer()),
-	_input(*gui.input()),
+	_alloc(alloc),
+	_backend_gui(*new Backend_gui(_env, _guis, ID_VGA_VESA, area, _signal_input, "vga/vesa")),
 	_memory(guest_memory),
-	_fb_ds(_framebuffer.dataspace()),
-	_fb_mode(_framebuffer.mode()),
-	_fb_size(Genode::Dataspace_client(_fb_ds).size()),
+	_fb_mode(_backend_gui.gui.framebuffer()->mode()),
+	_fb_size(Genode::Dataspace_client(_backend_gui.fb_ds).size()),
 	_fb_vm_ds(env.ram().alloc(_fb_size)),
 	_fb_vm_mapping(_env.rm().attach(_fb_vm_ds)),
 	_vm_phys_fb(guest_memory.alloc_io_memory(_fb_size)),
-	_pixels(_env.rm().attach(_fb_ds)),
-	_surface(reinterpret_cast<Genode::Pixel_rgb888 *>(_pixels), _fb_mode.area)
+	_pixels(_env.rm().attach(_backend_gui.fb_ds))
 {
 	guest_memory.add_region(alloc, PHYS_FRAME_VGA << 12,
 	                        _fb_vm_mapping, _fb_vm_ds, _fb_size);
 	guest_memory.add_region(alloc, _vm_phys_fb,
-	                        Genode::addr_t(_pixels), _fb_ds, _fb_size);
-
-	_input.sigh(_signal_input);
+	                        Genode::addr_t(_pixels), _backend_gui.fb_ds, _fb_size);
 }

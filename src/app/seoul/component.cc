@@ -59,6 +59,7 @@
 #include "state.h"
 #include "guest_memory.h"
 #include "timeout_late.h"
+#include "gui.h"
 
 
 enum { verbose_debug = false };
@@ -1158,7 +1159,6 @@ class Machine : public StaticReceiver<Machine>
 		        Genode::Vm_connection &vm_con,
 		        Boot_module_provider &boot_modules,
 		        Seoul::Guest_memory &guest_memory,
-		        size_t const fb_size,
 		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu)
 		:
 			_env(env), _heap(heap), _vm_con(vm_con),
@@ -1184,13 +1184,6 @@ class Machine : public StaticReceiver<Machine>
 			_unsynchronized_motherboard.bus_hwpcicfg.add(this, receive_static<MessageHwPciConfig>);
 			_unsynchronized_motherboard.bus_acpi.add    (this, receive_static<MessageAcpi>);
 			_unsynchronized_motherboard.bus_legacy.add  (this, receive_static<MessageLegacy>);
-
-			/* tell vga model about available framebuffer memory */
-			Device_model_info *dmi = device_model_registry()->lookup("vga_fbsize");
-			if (dmi) {
-				unsigned long argv[2] = { fb_size >> 10, ~0UL };
-				dmi->create(_unsynchronized_motherboard, argv, "", 0);
-			}
 		}
 
 
@@ -1212,6 +1205,16 @@ class Machine : public StaticReceiver<Machine>
 		void setup_devices(Genode::Xml_node machine_node,
 		                   Seoul::Console &console)
 		{
+			console.apply_msg(Seoul::Console::ID_VGA_VESA, [&](auto &gui) {
+				/* tell vga model about available framebuffer memory */
+				Device_model_info *dmi = device_model_registry()->lookup("vga_fbsize");
+				if (dmi) {
+					unsigned long argv[2] = { gui.fb_size >> 10, ~0UL };
+					dmi->create(_unsynchronized_motherboard, argv, "", 0);
+				}
+				return true;
+			});
+
 			using namespace Genode;
 
 			bool const verbose = machine_node.attribute_value("verbose", false);
@@ -1367,26 +1370,6 @@ void Component::construct(Genode::Env &env)
 
 	Genode::log(" framebuffer ", width, "x", height);
 
-	/* setup framebuffer memory for guest */
-	static Gui::Connection gui { env };
-	gui.buffer(Framebuffer::Mode { .area = { width, height } }, false);
-
-	static Framebuffer::Session &framebuffer { *gui.framebuffer() };
-	Framebuffer::Mode      const fb_mode     { framebuffer.mode() };
-
-	size_t const fb_size = Genode::align_addr(fb_mode.area.count() *
-	                                          fb_mode.bytes_per_pixel(), 12);
-
-	typedef Gui::Session::View_handle View_handle;
-	typedef Gui::Session::Command Command;
-
-	View_handle view = gui.create_view();
-	Gui::Rect rect(Gui::Point(0, 0), fb_mode.area);
-
-	gui.enqueue<Command::Geometry>(view, rect);
-	gui.enqueue<Command::To_front>(view, View_handle());
-	gui.execute();
-
 	/* setup guest memory */
 	static Seoul::Guest_memory guest_memory(env, heap, vm_con, vm_size);
 
@@ -1423,12 +1406,12 @@ void Component::construct(Genode::Env &env)
 
 	/* create the PC machine based on the configuration given */
 	static Machine machine(env, heap, vm_con, boot_modules, guest_memory,
-	                       fb_size, map_small, rdtsc_exit, vmm_vcpu_same_cpu);
+	                       map_small, rdtsc_exit, vmm_vcpu_same_cpu);
 
 	/* create console thread */
 	static Seoul::Console vcon(env, heap, machine.motherboard(),
 	                           machine.unsynchronized_motherboard(),
-	                           gui, guest_memory);
+	                           Gui::Area(width, height), guest_memory);
 
 	vcon.register_host_operations(machine.unsynchronized_motherboard());
 
