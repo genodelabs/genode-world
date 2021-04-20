@@ -26,7 +26,7 @@
 #include <timer_session/timer_session.h>
 #include <audio_out_session/audio_out_session.h>
 #include <os/static_parent_services.h>
-#include <os/slave.h>
+#include <slave.h>
 
 /* local includes */
 #include "gui_session_component.h"
