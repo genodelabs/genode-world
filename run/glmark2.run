@@ -1,0 +1,51 @@
+lappend import [depot_user]/src/glmark2 \
+               [depot_user]/raw/glmark2 \
+               [depot_user]/src/mesa \
+               [depot_user]/src/libdrm \
+               [depot_user]/src/libc \
+               [depot_user]/src/vfs \
+               [depot_user]/src/expat \
+               [depot_user]/src/jpeg \
+               [depot_user]/src/libpng \
+               [depot_user]/src/zlib \
+               [depot_user]/src/stdcxx
+
+set app_config {
+<start name="glmark2" caps="500">
+	<resource name="RAM" quantum="160M"/>
+	<config>
+		<vfs>
+			<dir name="dev">
+				<log/>
+			</dir>
+			<dir name="data">
+				<tar name="glmark2_assets.tar"/>
+			</dir>
+		</vfs>
+		<libc stdout="/dev/log" stderr="/dev/log"/>
+		<arg value="glmark2"/>
+		<!-- <arg value="\-\-debug"/> -->
+		<arg value="-b"/>
+		<arg value=":duration=2.0"/>
+	</config>
+	<route>
+		<service name="Gui"> <child name="wm"/> </service>
+		<service name="ROM" label="egl_drv.lib.so">
+			<parent label="egl_swrast.lib.so"/>
+		</service>
+		<service name="ROM" label="libEGL.so">
+			<parent label="egl.lib.so"/>
+		</service>
+		<service name="ROM" label="libGLESv2.so">
+			<parent label="mesa.lib.so"/>
+		</service>
+		<any-service> <parent/> <any-child/> </any-service>
+	</route>
+</start>
+}
+
+set build_components { }
+
+set boot_modules { }
+
+source ${genode_dir}/repos/world/run/gui_app.inc

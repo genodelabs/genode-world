@@ -11,12 +11,13 @@
 
 create_boot_directory
 
-import_from_depot [depot_user]/src/[base_src] \
-                  [depot_user]/pkg/[drivers_interactive_pkg] \
-                  [depot_user]/src/init \
-                  [depot_user]/src/nitpicker \
-                  [depot_user]/pkg/motif_wm \
+lappend import [depot_user]/src/[base_src] \
+               [depot_user]/pkg/[drivers_interactive_pkg] \
+               [depot_user]/src/init \
+               [depot_user]/src/nitpicker \
+               [depot_user]/pkg/motif_wm
 
+import_from_depot $import
 
 if {![info exists fb_config]} {
 	set fb_config {<config buffered="yes" width="640" height="480"/>} }
@@ -105,8 +106,9 @@ install_config {
 
 </config>}
 
-build $build_components
-
+if {[llength $build_components] > 0} {
+	build $build_components
+}
 #
 # Pin the nitpicker focus to the window manager by providing a static focus ROM
 #

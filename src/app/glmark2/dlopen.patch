@@ -1,0 +1,15 @@
+Bind lazy because iris and etnaviv have many undefined symbols.
+
+diff --git a/src/shared-library.cpp b/src/shared-library.cpp
+index 8fd6292..6ca8373 100644
+--- a/src/shared-library.cpp
++++ b/src/shared-library.cpp
+@@ -44,7 +44,7 @@ bool SharedLibrary::open(const char *libName)
+ #if defined(WIN32)
+     handle_ = LoadLibraryA(libName);
+ #else
+-    handle_ = dlopen(libName, RTLD_NOW | RTLD_NODELETE);
++    handle_ = dlopen(libName, RTLD_NODELETE);
+ #endif
+     return (handle_ != nullptr);
+ }
