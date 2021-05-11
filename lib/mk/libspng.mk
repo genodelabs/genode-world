@@ -11,3 +11,6 @@ vpath %.c $(LIBSPNG_SRC_DIR)
 SHARED_LIB := yes
 
 CC_CXX_WARN_STRICT :=
+
+# Prevent link error with GCC 10, which defaults to -fno-common
+CC_OPT = -fcommon

@@ -11,6 +11,9 @@ LIBS += libc libm sdl sdl_net base
 
 CC_OPT += -std=c99 -DTARGET_UNIX
 
+# Prevent link error with GCC 10, which defaults to -fno-common
+CC_OPT += -fcommon
+
 CC_WARN += -Wno-implicit-function-declaration
 
 .PHONY: tyrian.tar
