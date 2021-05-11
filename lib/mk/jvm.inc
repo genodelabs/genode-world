@@ -671,7 +671,7 @@ SRC_CC += $(SRC_CONE) $(SRC_CTWO) \
           share/vm/utilities/vmError.cpp \
           share/vm/utilities/xmlstream.cpp
 
-#SRC_CC = cpu/arm/vm/runtime_arm.cpp
+CC_OPT_share/vm/utilities/vmError += -Wno-narrowing
 
 vpath os_genode.cpp $(REP_DIR)/src/app/jdk/lib/jvm
 vpath dummies.cpp $(REP_DIR)/src/app/jdk/lib/jvm
