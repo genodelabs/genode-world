@@ -24,7 +24,7 @@ if {[have_board imx53_qsb_tz]} {
 	puts "Run script is not supported on this platform."
 	exit 0
 }
-set bridge_mac "02:02:02:02:02:00"
+set bridge_mac "02:02:02:02:16:00"
 
 # autopilot: configure disjoint mac-address ranges for x86_32, x86_64, and others
 if {[get_cmd_switch --autopilot]} {
@@ -70,12 +70,12 @@ set packages "
 	[depot_user]/src/libc
 	[depot_user]/src/posix
 	[depot_user]/src/vfs
+	[depot_user]/src/nic_router
 "
 #append packages " [depot_user]/src/vfs_lxip          "
 append_if [expr !$use_lxip] packages " [depot_user]/src/vfs_lwip          "
 append_if $use_lxip         packages " [depot_user]/src/vfs_lxip          "
 append_if $use_nic_bridge   packages " [depot_user]/src/nic_bridge        "
-append_if $use_nic_router   packages " [depot_user]/src/nic_router        "
 append_if $use_usb_driver   packages " [depot_user]/src/platform_drv      "
 append_if $use_usb_driver   packages " [depot_user]/src/usb_drv           "
 append_if $use_wifi_driver  packages " [depot_user]/src/fs_rom            "
@@ -166,9 +166,8 @@ append  config { </wifi_config>
 
 	<start name="nic_drv" caps="300">
 		<binary name="wifi_drv"/>
-		<resource name="RAM" quantum="24M"/>
-		<provides> <service name="Nic"/> </provides>
-		<config>
+		<resource name="RAM" quantum="32M"/>
+		<config mode="uplink_client">
 			<libc stdout="/dev/null" stderr="/dev/log" rtc="/dev/rtc"/>
 			<vfs>
 				<dir name="dev">
@@ -184,6 +183,7 @@ append  config { </wifi_config>
 			<service name="File_system"> <child name="config_fs"/> </service>
 			<service name="ROM" label="wifi_config"> <child name="config_rom" /> </service>
 			<service name="Report"> <child name="report_rom"/> </service>
+			<service name="Uplink"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child /> </any-service>
 		</route>
 	</start>}
@@ -207,60 +207,54 @@ append config {
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Uplink"> <child name="nic_router"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-		<provides> <service name="Nic"/> </provides>
 	</start> }
 }
 
-append_if $use_nic_router config {
+
+append config {
 	<start name="nic_router" caps="120">
 		<resource name="RAM" quantum="5M"/>
 		<provides>
 			<service name="Nic"/>
 			<service name="Uplink"/>
 		</provides>
-		<config verbose_domain_state="yes">
-
-			<policy label_prefix="iperf_genode" domain="server"/>
-			<uplink                             domain="uplink"/>
-
-			<domain name="uplink"}
-append_if [expr $use_nic_router && [have_board linux]] config "
-				interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
-append_if $use_nic_router config {
+		<config verbose_domain_state="yes"> }
+if {$use_nic_bridge} { append config {
+			<policy label_prefix="nic_bridge"       domain="server"/> }
+} else { append config {
+			<policy label_prefix="iperf_genode" domain="server"/> }
+}
+append config {
+			<policy label_prefix="nic_drv"          domain="uplink"/>
+			<domain name="uplink" }
+append_if [have_spec linux] config "
+			        interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
+append config {
 			>
 				<nat domain="server" tcp-ports="100" />
 				<tcp-forward port="5001" domain="server" to="10.0.3.2" />
 				<tcp-forward port="12865" domain="server" to="10.0.3.2" />
 			</domain>
-
-			<domain name="server" interface="10.0.3.1/24">
+			<domain name="server" interface="10.0.3.1/24" verbose_packets="no">
 				<dhcp-server ip_first="10.0.3.2"
 				             ip_last="10.0.3.2"
 				             ip_lease_time_sec="600"/>
 			</domain>
-
 		</config>
-		<route>
-			<service name="Nic"> <child name="nic_drv"/> </service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
-}
+	</start> }
 
 append_if $use_nic_bridge config {
 	<start name="nic_bridge">
 		<resource name="RAM" quantum="5M"/>
 		<provides><service name="Nic"/></provides>
-		<config mac="} $bridge_mac {">}
-append_if [expr $use_nic_bridge && [have_board linux]] config "
-			<policy label_prefix=\"iperf_genode\" ip_addr=\"$lx_ip_addr\"/>"
-append_if $use_nic_bridge config {
+		<config mac="} $bridge_mac {">
 			<default-policy/>
 		</config>
 		<route>
-			<service name="Nic"> <child name="nic_drv"/> </service>
+			<service name="Nic"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start> }
@@ -278,13 +272,8 @@ append config {
 					<log/> <inline name="rtc">2020-01-01 00:01</inline>
 				</dir>
 				<dir name="socket">
-					<} [socket_fs_plugin] { }
-if {[expr [have_board linux] && !$use_nic_router]} {
-	append config " ip_addr=\"$lx_ip_addr\" netmask=\"255.255.255.0\" gateway=\"10.0.2.1\""
-} else {
-	append config " dhcp=\"yes\""
-}
-append config {/>
+					<} [socket_fs_plugin] {}
+append config { dhcp="yes"/>
 				</dir>
 			</vfs>
 		</config>}
@@ -293,7 +282,7 @@ append_if $use_nic_bridge config {
 			<service name="Nic"> <child name="nic_bridge"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>}
-append_if $use_nic_router config {
+append_if [expr !$use_nic_bridge] config {
 		<route>
 			<service name="Nic"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
