@@ -1,0 +1,48 @@
+This pkg adds a customizable global key handler to Sculpt in order to toggle
+remapping rules of the event filter. It thereby allows, e.g., to enable/disable
+the remapping of 'KEY_LEFTMETA' to 'KEY_SCREEN' whenever a certain global key is
+pressed. This is particularly helpful when keys like 'KEY_LEFTMETA' shall be
+passed to a virtual machine.
+
+The pkg is configured by creating a 'dynamic_remap.config' and a
+'user_keys.config' in the provided file system. The former provides the config
+for the 'rom_filter' component within this pkg whereas the latter provided the
+config for the 'global_keys_handler' component.
+An exemplary 'user_keys.config' for the aforementioned use case may look as
+follows:
+
+!<config>
+!  <bool name="state" initial="yes"/>
+!  <press name="KEY_SCROLLLOCK" bool="state" change="toggle"/>
+!  <report name="state"> <bool name="state"/> </report>
+!</config>
+
+The 'state' report of the 'global_keys_handler' is made available to the
+'rom_filter' and can be used to react to state changes with the following
+'dynamic_remap.config':
+
+!<config>
+!  <input name="enabled" rom="state" node="state">
+!    <attribute name="enabled" /> </input>
+!  <output node="remap">
+!    <if>
+!      <has_value input="enabled" value="yes"/>
+!      <then>
+!        <inline>
+!          <key name="KEY_LEFTMETA" to="KEY_SCREEN"/>
+!        </inline>
+!      </then>
+!    </if>
+!  </output>
+!</config>
+
+The output of the 'rom_filter' is written to 'user.remap' of the provided
+file system and can be included in the 'event_filter' component.
+Note, that in order to make the 'user.remap' accessible to Sculpt's
+'event_filter' component, you must route this pkg's file system requirement to
+'/config/keyboard'. Moreover, do not forget to add the following line to
+nitpicker's config:
+
+!<global-key name="KEY_SCROLLLOCK" label="runtime -> user_keys -> user_keys -> input"/>
+
+The 'Gui' requirement of this package must be routed to the system GUI server.
