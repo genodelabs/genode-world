@@ -1,0 +1,93 @@
+<runtime ram="7M" caps="600" binary="init">
+
+	<requires>
+		<file_system label="keyboard"/>
+		<gui/>
+	</requires>
+
+	<config>
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="Timer"/>
+			<service name="File_system"/>
+			<service name="Gui"/>
+		</parent-provides>
+
+		<default-route> <any-service> <parent/> </any-service> </default-route>
+		<default caps="100"/>
+
+		<start name="rom_to_file">
+			<resource name="RAM" quantum="1M"/>
+			<config rom="user.remap"/>
+			<route>
+				<service name="ROM" label="user.remap">
+					<child name="rom_filter"/>
+				</service>
+				<service name="File_system"> <parent label="keyboard"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="report">
+			<binary name="report_rom"/>
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config>
+				<policy label="rom_filter -> state" report="user_keys -> state" />
+			</config>
+		</start>
+
+		<start name="user_keys">
+			<binary name="global_keys_handler"/>
+			<resource name="RAM" quantum="1M"/>
+			<route>
+				<service name="ROM" label="config">
+					<child name="fs_rom" label="user_keys.config"/>
+				</service>
+				<service name="Report"> <child name="report"/> </service>
+				<service name="Gui">    <parent/>              </service>
+				<service name="Timer">  <parent/>              </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="rom_filter">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="ROM" /> </provides>
+			<route>
+				<service name="ROM" label="config">
+					<child name="fs_rom" label="dynamic_remap.config"/>
+				</service>
+				<service name="ROM" unscoped_label="ld.lib.so"> <parent/> </service>
+				<service name="ROM" unscoped_label="rom_filter"> <parent/> </service>
+				<service name="ROM"> <child name="report"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="fs_rom">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="ROM"/> </provides>
+			<route>
+				<service name="File_system"> <parent label="keyboard"/> </service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+	</config>
+
+	<content>
+		<rom label="init"/>
+		<rom label="ld.lib.so"/>
+		<rom label="rom_filter"/>
+		<rom label="global_keys_handler"/>
+		<rom label="report_rom"/>
+		<rom label="rom_to_file"/>
+		<rom label="fs_rom"/>
+	</content>
+
+</runtime>
