@@ -1,0 +1,110 @@
+if {![have_include power_on/qemu]} {
+	puts "Run script is only supported on Qemu"
+	exit 0
+}
+
+build "test/vncserver"
+
+create_boot_directory
+
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/nic_router \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_lwip \
+                  [depot_user]/src/jpeg \
+                  [depot_user]/src/libpng \
+                  [depot_user]/src/zlib \
+                  [depot_user]/src/posix
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="200" />
+	<start name="test-vncserver">
+		<resource name="RAM" quantum="20M"/>
+		<config>
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
+			<vfs>
+				<dir name="dev"> <log/> <null/> </dir>
+				<dir name="socket">
+					<lwip dhcp="yes"/>
+				</dir>
+			</vfs>
+		</config>
+	</start>
+	<start name="timer">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="Timer"/>
+		</provides>
+	</start>
+	<start name="drivers" caps="1000" managing_system="yes">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Uplink"> <child name="nic_router"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+	<start name="nic_router" caps="200">
+		<resource name="RAM" quantum="10M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config verbose_domain_state="yes">
+
+			<policy label_prefix="test-vncserver" domain="downlink"/>
+			<policy label_prefix="drivers"   domain="uplink"/>
+
+			<domain name="uplink">
+
+				<nat domain="downlink"
+				     tcp-ports="16384"
+				     udp-ports="16384"
+				     icmp-ids="16384"/>
+
+				<tcp-forward port="5900" domain="downlink" to="10.0.3.100"/>
+
+			</domain>
+
+			<domain name="downlink" interface="10.0.3.1/24">
+				<dhcp-server ip_first="10.0.3.100" ip_last="10.0.3.200"/>
+
+				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
+				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
+				<icmp dst="0.0.0.0/0" domain="uplink"/>
+			</domain>
+
+		</config>
+	</start>
+</config>
+}
+
+build_boot_image { test-vncserver vncserver.lib.so }
+
+append qemu_args " -nographic  "
+append_qemu_nic_args "hostfwd=tcp::5900-:5900"
+
+
+run_genode_until "child \"test-vncserver\" exited with exit value 0" 2000
+
