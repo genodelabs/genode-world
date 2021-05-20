@@ -1,0 +1,185 @@
+#
+# \brief  Test for using iperf complete inside a genode system
+# \author Roland Baer
+# \date   2021-05-20
+#
+
+create_boot_directory
+
+set packages "
+	[depot_user]/src/[base_src]
+	[depot_user]/pkg/[drivers_nic_pkg]
+	[depot_user]/src/init
+	[depot_user]/src/dynamic_rom
+	[depot_user]/src/libc
+	[depot_user]/src/posix
+	[depot_user]/src/vfs
+	[depot_user]/src/nic_router
+"
+append packages " [depot_user]/src/vfs_lxip          "
+
+import_from_depot $packages
+
+build { app/iperf }
+
+#
+# Generate config
+#
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+
+set config {
+<config verbose="yes" prio_levels="2">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="nic_router" caps="120">
+		<resource name="RAM" quantum="5M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config verbose_domain_state="no" verbose="no"> 
+			<policy label_prefix="iperf_server" domain="server"/>
+			<policy label="subinit -> iperf_client -> " domain="client"/>
+			<policy label_prefix="uplink" domain="uplink" />
+			<domain name="client" interface="10.0.2.1/24" verbose_packets="no">
+				<ip dst="10.0.1.0/24" domain="server"/>
+				<dhcp-server ip_first="10.0.2.2"
+				             ip_last="10.0.2.2"
+				             ip_lease_time_sec="600"/>
+			</domain>
+			<domain name="server" interface="10.0.1.1/24" verbose_packets="no">
+				<ip dst="10.0.2.0/24" domain="client"/>
+				<dhcp-server ip_first="10.0.1.2"
+				             ip_last="10.0.1.2"
+				             ip_lease_time_sec="600"/>
+			</domain>
+			<domain name="uplink" />
+		</config>
+	</start>
+
+	<start name="iperf_server" caps="320" priority="-1">
+	<binary name="iperf"/>
+		<resource name="RAM" quantum="64M"/>
+		<config>
+			<arg value="iperf"/>
+			<arg value="-s"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+			<vfs>
+				<dir name="dev">
+					<log/> <inline name="rtc">2020-01-01 00:01</inline>
+				</dir>
+				<dir name="socket">
+					<lxip dhcp="yes"/>
+				</dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="dynamic_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="ROM"/> </provides>
+		<config verbose="yes">
+			<rom name="subinit.config">
+				<inline>
+					<config />
+				</inline>
+				<sleep milliseconds="1000"/>
+				<inline>
+					<config>
+						<parent-provides>
+							<service name="Timer"/>
+							<service name="LOG"/>
+							<service name="ROM"/>
+							<service name="CPU"/>
+							<service name="PD"/>
+							<service name="Nic"/>
+						</parent-provides>					
+						<start name="iperf_client" caps="320">
+							<binary name="iperf"/>
+							<resource name="RAM" quantum="64M"/>
+							<config>
+								<arg value="iperf"/>
+								<arg value="-fk" />
+								<arg value="-t10" />
+								<arg value="-c10.0.1.2" />
+								<arg value="-e" />
+								<arg value="-i1" />
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+								<vfs>
+									<dir name="dev">
+										<log/> <inline name="rtc">2020-01-01 00:01</inline>
+									</dir>
+									<dir name="socket">
+										<lxip dhcp="yes"/>
+									</dir>
+								</vfs>
+							</config>
+							<route>
+								<any-service> <parent/> </any-service>
+							</route>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="12000"/>
+			</rom>
+		</config>
+	</start>
+	<start name="subinit" caps="1000">
+		<binary name="init"/>
+		<resource name="RAM" quantum="80M"/>
+		<route>
+			<service name="ROM" label="config">
+				<child name="dynamic_rom" label="subinit.config"/>
+			</service>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+</config>
+}
+
+install_config $config
+
+build_boot_image { iperf stdcxx.lib.so }
+
+#
+# Execute test case
+#
+
+# qemu config
+append qemu_args "  -nographic "
+
+proc qemu_nic_model {} {
+	if [have_board pc]     { return e1000 }
+	if [have_board pbxa9] { return lan9118 }
+	return nic_model_missing
+}
+
+append qemu_args " -netdev user,id=net0,hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153 "
+append qemu_args " -net nic,model=[qemu_nic_model],netdev=net0 "
+
+run_genode_until "child \"iperf_client\" exited with exit value 0" 20
