@@ -182,7 +182,7 @@
 #define HAVE_SEQNO64b 1
 
 /* Define to 1 if you have the `setitimer' function. */
-#define HAVE_SETITIMER 1
+#undef HAVE_SETITIMER
 
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
