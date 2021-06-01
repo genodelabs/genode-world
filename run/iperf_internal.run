@@ -115,6 +115,7 @@ set config {
 							<service name="ROM"/>
 							<service name="CPU"/>
 							<service name="PD"/>
+							<service name="RM"/>
 							<service name="Nic"/>
 						</parent-provides>					
 						<start name="iperf_client" caps="320">
