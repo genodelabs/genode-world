@@ -1,5 +1,5 @@
 _/src/sdl_vnc
-_/src/libvnc
+_/src/libvncclient
 _/src/init
 _/src/fs_rom
 _/src/vfs
