@@ -1,6 +1,7 @@
 expat
 libc
 mesa
+nss3
 qt5_component
 so
 stdcxx
