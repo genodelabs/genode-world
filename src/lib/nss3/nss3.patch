@@ -1,0 +1,74 @@
+nss3.patch
+
+diff --git a/nspr/pr/include/md/_freebsd.h b/nspr/pr/include/md/_freebsd.h
+index 118cb9f..49ddb03 100644
+--- a/nspr/pr/include/md/_freebsd.h
++++ b/nspr/pr/include/md/_freebsd.h
+@@ -236,11 +236,11 @@ extern void _MD_EarlyInit(void);
+  * We wrapped the select() call.  _MD_SELECT refers to the built-in,
+  * unwrapped version.
+  */
+-#define _MD_SELECT(nfds,r,w,e,tv) syscall(SYS_select,nfds,r,w,e,tv)
++#define _MD_SELECT(nfds,r,w,e,tv) select
+ 
+ #if defined(_PR_POLL_AVAILABLE)
+ #include <poll.h>
+-#define _MD_POLL(fds,nfds,timeout) syscall(SYS_poll,fds,nfds,timeout)
++#define _MD_POLL(fds,nfds,timeout) poll
+ #endif
+ 
+ /* freebsd has INADDR_LOOPBACK defined, but in /usr/include/rpc/types.h, and I didn't
+diff --git a/nspr/pr/src/pthreads/ptthread.c b/nspr/pr/src/pthreads/ptthread.c
+index 92c9c78..d299310 100644
+--- a/nspr/pr/src/pthreads/ptthread.c
++++ b/nspr/pr/src/pthreads/ptthread.c
+@@ -931,6 +931,7 @@ void _PR_InitThreads(
+     pthread_init();
+ #endif
+ 
++#if 0
+ #if _POSIX_THREAD_PRIORITY_SCHEDULING > 0
+ #if defined(FREEBSD)
+     {
+@@ -953,6 +954,7 @@ void _PR_InitThreads(
+     pt_book.minPrio = PT_PRIO_MIN;
+     pt_book.maxPrio = PT_PRIO_MAX;
+ #endif
++#endif
+ #endif
+ 
+     PR_ASSERT(NULL == pt_book.ml);
+diff --git a/nss/lib/nss/nssinit.c b/nss/lib/nss/nssinit.c
+index 9b60127..98febef 100644
+--- a/nss/lib/nss/nssinit.c
++++ b/nss/lib/nss/nssinit.c
+@@ -262,7 +262,7 @@ static const char *dllname =
+ #elif defined(DARWIN)
+     "libnssckbi.dylib";
+ #elif defined(XP_UNIX) || defined(XP_BEOS)
+-    "libnssckbi.so";
++    "nssckbi.lib.so";
+ #else
+ #error "Uh! Oh! I don't know about this platform."
+ #endif
+diff --git a/nss/lib/softoken/sdb.c b/nss/lib/softoken/sdb.c
+index 50625ab..f3a6216 100644
+--- a/nss/lib/softoken/sdb.c
++++ b/nss/lib/softoken/sdb.c
+@@ -1981,6 +1981,8 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
+         goto loser;
+     }
+ 
++/* chmod not supported on Genode */
++#if 0
+     /*
+      * SQL created the file, but it doesn't set appropriate modes for
+      * a database.
+@@ -1991,6 +1993,7 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
+         error = sdb_mapSQLError(type, SQLITE_CANTOPEN);
+         goto loser;
+     }
++#endif
+ 
+     if (flags != SDB_RDONLY) {
+         sqlerr = sqlite3_exec(sqlDB, BEGIN_CMD, NULL, 0, NULL);

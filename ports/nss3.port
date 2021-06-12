@@ -1,0 +1,38 @@
+LICENSE   := GPLv3
+VERSION   := 3.65
+DOWNLOADS := nss3.archive
+
+URL(nss3) := https://ftp.mozilla.org/pub/security/nss/releases/NSS_3_65_RTM/src/nss-3.65-with-nspr-4.30.tar.gz
+SHA(nss3) := 5da275c751d0a4f624089d4589ae68b0dfc9cb77bc846ef903fb819fbf678976
+DIR(nss3) := src/lib
+
+DIRS := include/nspr include/nss
+
+DIR_CONTENT(include/nspr) := src/lib/nspr/lib/ds/*.h \
+                             src/lib/nspr/lib/libc/include/*.h \
+                             src/lib/nspr/pr/include/*.h \
+                             src/lib/nspr/pr/include/obsolete
+
+DIR_CONTENT(include/nss)  := src/lib/nss/lib/base/*.h \
+                             src/lib/nss/lib/certdb/*.h \
+                             src/lib/nss/lib/certhigh/*.h \
+                             src/lib/nss/lib/cryptohi/*.h \
+                             src/lib/nss/lib/freebl/*.h \
+                             src/lib/nss/lib/freebl/ecl/*.h \
+                             src/lib/nss/lib/nss/*.h \
+                             src/lib/nss/lib/pk11wrap/*.h \
+                             src/lib/nss/lib/pkcs12/*.h \
+                             src/lib/nss/lib/pkcs7/*.h \
+                             src/lib/nss/lib/smime/*.h \
+                             src/lib/nss/lib/ssl/*.h \
+                             src/lib/nss/lib/util/*.h
+
+PATCHES   := src/lib/nss3/nss3.patch
+PATCH_OPT := -p1 -d src/lib
+
+$(call check_tool,perl)
+
+src/lib/nss/lib/ckfw/builtins/certdata.c: $(DOWNLOADS)
+	$(VERBOSE)perl $(dir $@)certdata.perl $(dir $@)/certdata.txt > $@
+                           
+default: src/lib/nss/lib/ckfw/builtins/certdata.c
