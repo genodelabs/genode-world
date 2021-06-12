@@ -6,6 +6,7 @@ _/src/init
 _/src/jitter_sponge
 _/src/libc
 _/src/mesa
+_/src/nss3
 _/src/openssl
 _/src/qt5_base
 _/src/qt5_component

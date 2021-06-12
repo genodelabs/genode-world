@@ -10,13 +10,14 @@ QT5_PORT_LIBS += libQt5Svg
 QT5_PORT_LIBS += libQt5WebChannel
 QT5_PORT_LIBS += libQt5WebEngine libQt5WebEngineCore libQt5WebEngineWidgets
 
-LIBS = libc libm mesa qt5_component stdcxx libcrypto $(QT5_PORT_LIBS)
+LIBS = libc libm mesa qt5_component stdcxx nss3 libcrypto $(QT5_PORT_LIBS)
 
 include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
 
 QT5_GENODE_LIBS_APP += libcrypto.lib.so
 
-qmake_prepared.tag: qmake_root/lib/libcrypto.lib.so
+qmake_prepared.tag: qmake_root/lib/nss3.lib.so \
+                    qmake_root/lib/libcrypto.lib.so
 
 $(BUILD_BASE_DIR)/bin/falkon_theme.tar:
 	$(VERBOSE)tar cf $@ --transform='s/themes/.local\/share\/falkon\/themes/' -C $(FALKON_DIR) themes/chrome

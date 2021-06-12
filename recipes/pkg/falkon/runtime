@@ -25,6 +25,7 @@
 		<rom label="egl.lib.so"/>
 		<rom label="egl_swrast.lib.so"/>
 		<rom label="expat.lib.so"/>
+		<rom label="freebl3.lib.so"/>
 		<rom label="glapi.lib.so"/>
 		<rom label="jitter_sponge"/>
 		<rom label="libFalkon.lib.so"/>
@@ -53,7 +54,10 @@
 		<rom label="libqtwebengineplugin.lib.so"/>
 		<rom label="libwindowplugin.lib.so"/>
 		<rom label="mesa.lib.so"/>
+		<rom label="nss3.lib.so"/>
+		<rom label="nssckbi.lib.so"/>
 		<rom label="qt5_component.lib.so"/>
+		<rom label="softokn3.lib.so"/>
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
 		<rom label="vfs_jitterentropy.lib.so"/>
@@ -67,6 +71,7 @@
 		<rom label="qt5_libqsvg.tar"/>
 		<rom label="qt5_webengine_qml.tar"/>
 		<rom label="qt5_webengine_resources.tar"/>
+		<rom label="qt5_webengine_translations.tar"/>
 		<rom label="falkon_theme.tar"/>
 		<rom label="init.config"/>
 		<rom label="init"/>
