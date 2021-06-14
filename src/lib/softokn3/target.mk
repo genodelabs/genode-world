@@ -1,1 +1,0 @@
-LIBS = softokn3
