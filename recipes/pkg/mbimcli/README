@@ -1,0 +1,39 @@
+
+                        MBIM control interface
+
+The app directly communicates via a Terminal session to Genode's
+'usb_modem' driver. As it receives APN and PIN configuration from its config
+ROM, it is best used with a launcher file such as:
+
+<launcher pkg="<depot-user>/pkg/mbimcli/<version>">
+	<route>
+		<service name="Terminal">
+			<child name="usb_modem_drv"/>
+		</service>
+		<service name="Report" label="nic_router.config">
+			<parent/>
+		</service>
+		<service name="Report" label="state">
+			<parent/>
+		</service>
+	</route>
+	<config>
+		<network apn="internet" user="foo" password="bar" pin="XXX"/>
+		<vfs>
+			<dir name="dev">
+				<log/>
+				<inline name="rtc">2020-08-05 00:01</inline>
+				<dir name="pipe"> <pipe/> </dir>
+				<terminal name="cdc-wdm0" raw="yes"/>
+			</dir>
+			<ram/>
+		</vfs>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
+	</config>
+</launcher>
+
+The 'user' and 'password' attributes are optional.
+
+The mbimcli component generate two reports: A 'nic_router.config' that can be
+directly used by the 'nic_router', and a 'state' report that contains
+information on the network state such as signal strength, provider, etc.

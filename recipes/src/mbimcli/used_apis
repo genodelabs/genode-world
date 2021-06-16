@@ -1,0 +1,7 @@
+base
+os
+libc
+net
+glib
+libmbim
+report_session

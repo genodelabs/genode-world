@@ -1,0 +1,36 @@
+<runtime ram="32M" caps="500" binary="mbimcli">
+
+	<requires>
+		<terminal/>
+		<report label="nic_router.config"/>
+		<report label="state"/>
+	</requires>
+
+	<config>
+		<network apn="internet.eplus.de" user="eplus" password="eplus" pin="XXXX"/>
+		<vfs>
+			<dir name="dev">
+				<log/>
+				<inline name="rtc">2020-08-05 00:01</inline>
+				<dir name="pipe"> <pipe/> </dir>
+				<terminal name="cdc-wdm0" raw="yes"/>
+			</dir>
+			<ram/>
+		</vfs>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
+	</config>
+
+	<content>
+		<rom label="mbimcli"/>
+		<rom label="libmbim.lib.so"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="libiconv.lib.so"/>
+		<rom label="glib.lib.so"/>
+		<rom label="ffi.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+
+</runtime>
