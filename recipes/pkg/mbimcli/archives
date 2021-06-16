@@ -1,0 +1,9 @@
+_/src/libmbim
+_/src/libiconv
+_/src/ffi
+_/src/glib
+_/src/libc
+_/src/vfs
+_/src/zlib
+_/src/mbimcli
+_/src/vfs_pipe
