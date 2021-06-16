@@ -38,9 +38,10 @@ class Mbim
 {
 	enum { TRACE = FALSE };
 
-	enum State { NONE, PIN, QUERY, ATTACH, CONNECT };
+	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT };
 
-	using String = Genode::String<32>;
+	using String  = Genode::String<32>;
+	using Cstring = Genode::Cstring;
 
 	struct Connection
 	{
@@ -58,20 +59,34 @@ class Mbim
 		String pin;
 	};
 
+	struct State_report
+	{
+		String sim        { };
+		String error      { };
+		String network    { };
+		String provider   { };
+		String data_class { };
+		String roaming    { };
+		Genode::uint32_t rssi       { 99 };
+		Genode::uint32_t error_rate { 99 };
+	};
+
 	private:
 
-		Genode::Env     &_env;
-		Genode::Reporter _reporter { _env, "config", "nic_router.config" };
+		Genode::Env      &_env;
+		Genode::Reporter  _config_reporter { _env, "config", "nic_router.config" };
+		Genode::Reporter  _state_reporter  { _env, "state",  "state" };
 
-		State       _state { NONE };
-		GMainLoop  *_loop { nullptr };
-		MbimDevice *_device { nullptr };
-		unsigned    _retry { 0 };
+		State       _state      { NONE };
+		GMainLoop  *_loop       { nullptr };
+		MbimDevice *_device     { nullptr };
+		unsigned    _retry      { 0 };
 		guint32     _session_id { 0 };
 		Connection  _connection { };
 
-		Genode::Attached_rom_dataspace _config_rom { _env, "config" };
-		Network                        _network { };
+		Genode::Attached_rom_dataspace _config_rom   { _env, "config" };
+		Network                        _network      { };
+		State_report                   _state_report { };
 
 		static Mbim *_mbim(gpointer user_data)
 		{
@@ -136,6 +151,22 @@ class Mbim
 			switch (_state) {
 
 				case NONE:
+					request = mbim_message_subscriber_ready_status_query_new(nullptr);
+					if (!request) {
+						Genode::error("couldn't create request: ", (char const*)error->message);
+						_shutdown (FALSE);
+						return;
+					}
+					
+					mbim_device_command(_device,
+					                    request,
+					                    10,
+					                    nullptr,
+					                    (GAsyncReadyCallback)_subscriber_state,
+					                    this);
+					break;
+
+				case UNLOCK:
 					request = (mbim_message_pin_set_new(MBIM_PIN_TYPE_PIN1,
 					                                    MBIM_PIN_OPERATION_ENTER,
 					                                    _pin(),
@@ -157,6 +188,12 @@ class Mbim
 
 				case PIN:
 					request = mbim_message_register_state_query_new(nullptr);
+					if (!request) {
+						Genode::error("couldn't create request: ", (char const*)error->message);
+						_shutdown (FALSE);
+						return;
+					}
+
 					mbim_device_command(_device,
 					                    request,
 					                    10,
@@ -276,9 +313,64 @@ class Mbim
 				return;
 			}
 
+			mbim->_state_report.sim = mbim_pin_state_get_string(pin_state);
+			mbim->_report_state();
+
+			if (pin_state != MBIM_PIN_STATE_UNLOCKED) {
+				Genode::error("Unable to unlock SIM card. Wrong PIN?"
+				              " Remaining attempts: ", remaining_attempts);
+				mbim->_shutdown(FALSE);
+				return;
+			}
+
 			if (TRACE)
 				Genode::log("PIN: state: ", mbim_pin_state_get_string(pin_state),
 				            " remaining attempts: ", remaining_attempts);
+
+			mbim->_state = Mbim::PIN;
+			mbim->_send_request();
+		}
+
+		static void _subscriber_state(MbimDevice   *dev,
+		                              GAsyncResult *res, gpointer user_data)
+		{
+			Mbim *mbim = _mbim(user_data);
+			g_autoptr(GError)      error    = nullptr;
+			g_autoptr(MbimMessage) response = mbim->_command_response(res);
+
+			if (!response) return;
+
+			MbimSubscriberReadyState ready_state;
+
+			if (!mbim_message_subscriber_ready_status_response_parse(response,
+			                                                         &ready_state,
+			                                                         nullptr,
+			                                                         nullptr,
+			                                                         nullptr,
+			                                                         nullptr,
+			                                                         nullptr,
+			                                                         &error)) {
+				Genode::error("couldn't parse response message: ", (char const *)error->message);
+				mbim->_shutdown (FALSE);
+				return;
+			}
+
+			mbim->_state_report.sim = mbim_subscriber_ready_state_get_string(ready_state);
+			mbim->_report_state();
+
+			if (ready_state == MBIM_SUBSCRIBER_READY_STATE_DEVICE_LOCKED) {
+				mbim->_state = Mbim::UNLOCK;
+				mbim->_send_request();
+				return;
+			}
+
+			if (ready_state != MBIM_SUBSCRIBER_READY_STATE_INITIALIZED) {
+				Genode::error("subscriber not initialized: ",
+				              mbim_subscriber_ready_state_get_string(ready_state));
+				mbim->_shutdown (FALSE);
+				return;
+			}
+
 			mbim->_state = Mbim::PIN;
 			mbim->_send_request();
 		}
@@ -317,17 +409,48 @@ class Mbim
 				return;
 			}
 
+			/* store info for state report */
+			mbim->_state_report.error      = mbim_nw_error_get_string(nw_error);
+			mbim->_state_report.network    = mbim_register_state_get_string(register_state);
+			mbim->_state_report.provider   = Cstring(provider_name);
+			mbim->_state_report.data_class = Cstring(mbim_data_class_build_string_from_mask(available_data_classes));
+			mbim->_state_report.roaming    = Cstring(roaming_text);
+			mbim->_report_state();
+
 			if (register_state == MBIM_REGISTER_STATE_HOME ||
 			    register_state == MBIM_REGISTER_STATE_ROAMING ||
-			    register_state == MBIM_REGISTER_STATE_PARTNER)
-				mbim->_state = Mbim::QUERY;
+			    register_state == MBIM_REGISTER_STATE_PARTNER) {
+				/* check our state to allow polling registered state periodically 
+ 				 * even if we're already connected */
+				if (mbim->_state == Mbim::PIN) {
+					mbim->_state = Mbim::QUERY;
+					mbim->_retry = 0;
+					mbim->_send_request();
+					return;
+				}
+			}
+			else {
+				/* reset state and wait+retry until registered */
+				mbim->_state = Mbim::PIN;
+			}
 
 			if (mbim->_retry++ >= 100) {
 				Genode::error("Device not registered after ", mbim->_retry, " tries");
 				mbim->_shutdown(FALSE);
+				return;
 			}
 
+			/* delay re-request to leave device time for network registration */
+			g_timeout_add(500, _handle_timeout, mbim); /* 500ms */
+		}
+
+		static gboolean _handle_timeout(gpointer user_data)
+		{
+			Mbim *mbim = _mbim(user_data);
 			mbim->_send_request();
+
+			/* discard timer */
+			return FALSE;
 		}
 
 		static void _packet_service_ready(MbimDevice   *dev,
@@ -482,7 +605,7 @@ class Mbim
 			mbim->_connection.gateway = gateway;
 			mbim->_connection.dns[0]  = dns[0];
 			mbim->_connection.dns[1]  = dns[1];
-			mbim->_report();
+			mbim->_report_config();
 		}
 
 		static void _device_open_ready(MbimDevice   *dev,
@@ -514,12 +637,32 @@ class Mbim
 				exit (EXIT_FAILURE);
 			}
 
-			mbim_device_open_full(mbim->_device,
-			                      open_flags,
-			                      30,
-			                      nullptr,
-			                      (GAsyncReadyCallback) _device_open_ready,
-			                      mbim);
+			/* register handler for status messages */
+			g_signal_connect(mbim->_device,
+			                 MBIM_DEVICE_SIGNAL_INDICATE_STATUS,
+			                 G_CALLBACK(_handle_indicate_status),
+			                 mbim);
+
+			/* register handler for hangup messages */
+			g_signal_connect(mbim->_device,
+			                 MBIM_DEVICE_SIGNAL_REMOVED,
+			                 G_CALLBACK(_handle_hangup),
+			                 mbim);
+
+			if (!mbim_device_is_open(mbim->_device)) {
+				if (TRACE)
+					Genode::log("opening device");
+				mbim_device_open_full(mbim->_device,
+				                      open_flags,
+				                      45,
+				                      nullptr,
+				                      (GAsyncReadyCallback) _device_open_ready,
+				                      mbim);
+			}
+			else {
+				mbim->_retry = 0;
+				mbim->_send_request();
+			}
 		}
 
 		static void _log_handler(const gchar *log_domain,
@@ -567,6 +710,97 @@ class Mbim
 			mbim_device_new(file, nullptr, (GAsyncReadyCallback)_device_new_ready, this);
 		}
 
+		static void _handle_indicate_status(MbimDevice* dev,
+		                             MbimMessage* msg,
+		                             gpointer user_data)
+		{
+			Mbim *mbim = _mbim(user_data);
+
+			GError     *error   = nullptr;
+			MbimService service = mbim_message_indicate_status_get_service(msg);
+			guint32     cid     = mbim_message_indicate_status_get_cid(msg);
+
+			if (service == MBIM_SERVICE_BASIC_CONNECT) {
+				switch(cid) {
+
+					case MBIM_CID_BASIC_CONNECT_SIGNAL_STATE:
+						if (!mbim_message_signal_state_notification_parse(msg,
+						                                                  &mbim->_state_report.rssi,
+						                                                  &mbim->_state_report.error_rate,
+						                                                  nullptr,
+						                                                  nullptr,
+						                                                  nullptr,
+						                                                  &error)) {
+							Genode::error("couldn't parse signal state notification message: ",
+							              (char const *)error->message);
+							return;
+						}
+						mbim->_report_state();
+						break;
+
+					case MBIM_CID_BASIC_CONNECT_REGISTER_STATE:
+					{
+						MbimNwError          nw_error;
+						MbimRegisterState    register_state;
+						MbimDataClass        available_data_classes;
+						g_autofree gchar    *provider_name = nullptr;
+						g_autofree gchar    *roaming_text = nullptr;
+
+						if (!mbim_message_register_state_notification_parse(msg,
+						                                                    &nw_error,
+						                                                    &register_state,
+						                                                    nullptr,
+						                                                    &available_data_classes,
+						                                                    nullptr,
+						                                                    nullptr,
+						                                                    &provider_name,
+						                                                    &roaming_text,
+						                                                    nullptr,
+						                                                    &error)) {
+							Genode::error("couldn't parse register state notification message: ",
+							              (char const *)error->message);
+							return;
+						}
+
+						/* store info for state report */
+						mbim->_state_report.error      = mbim_nw_error_get_string(nw_error);
+						mbim->_state_report.network    = mbim_register_state_get_string(register_state);
+						mbim->_state_report.provider   = Cstring(provider_name);
+						mbim->_state_report.data_class = Cstring(mbim_data_class_build_string_from_mask(available_data_classes));
+						mbim->_state_report.roaming    = Cstring(roaming_text);
+						mbim->_report_state();
+
+						if (register_state != MBIM_REGISTER_STATE_HOME &&
+						    register_state != MBIM_REGISTER_STATE_ROAMING &&
+						    register_state != MBIM_REGISTER_STATE_PARTNER) {
+							Genode::warning("Lost network registration");
+						}
+
+						break;
+
+					}
+					case MBIM_CID_BASIC_CONNECT_PACKET_SERVICE:
+						/* ignore */
+						break;
+					default:
+						const gchar *cid_printable = mbim_cid_get_printable(mbim_message_indicate_status_get_service (msg),
+						                                                    mbim_message_indicate_status_get_cid (msg));
+						Genode::warning("Received unknown status message with cid: ", cid_printable);
+						Genode::warning(Genode::Cstring(mbim_message_get_printable(msg, "  ", FALSE)));
+				}
+			}
+		}
+
+		static void _handle_hangup(MbimDevice* dev,
+		                    gpointer user_data)
+		{
+			Mbim *mbim = _mbim(user_data);
+
+			Genode::warning("Device hung-up. Reconnecting...");
+			mbim->_state = Mbim::PIN;
+			mbim->_send_request();
+		}
+
 		void _connect()
 		{
 			g_main_loop_run(_loop);
@@ -574,13 +808,45 @@ class Mbim
 			g_main_loop_unref(_loop);
 		}
 
-		void _report()
+		void _report_state()
 		{
-			_reporter.enabled(true);
+			_state_reporter.enabled(true);
 			try {
-				Genode::Reporter::Xml_generator xml(_reporter, [&]() {
+				Genode::Reporter::Xml_generator xml(_state_reporter, [&]() {
+					xml.node("device", [&] () {
+						xml.attribute("sim", _state_report.sim);
+					});
+
+					xml.node("network", [&] () {
+						xml.attribute("error",      _state_report.error);
+						xml.attribute("registered", _state_report.network);
+						xml.attribute("provider",   _state_report.provider);
+						xml.attribute("data_class", _state_report.data_class);
+						xml.attribute("roaming",    _state_report.roaming);
+					});
+
+					xml.node("signal", [&] () {
+						if (_state_report.rssi > 31)
+							xml.attribute("rssi_dbm", "unknown");
+						else
+							xml.attribute("rssi_dbm", String("-", 113-2*_state_report.rssi));
+
+						xml.attribute("error_rate", _state_report.error_rate);
+						
+					});
+				});
+			}
+			catch (...) { Genode::warning("Could not report state."); }
+		}
+
+		void _report_config()
+		{
+			_config_reporter.enabled(true);
+			try {
+				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
 				xml.attribute("verbose", "no");
 				xml.attribute("verbose_packets", "no");
+				xml.attribute("verbose_domain_state", "yes");
 
 					xml.node("default-policy", [&] () {
 						xml.attribute("domain", "default");
