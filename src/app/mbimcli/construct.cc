@@ -869,9 +869,9 @@ class Mbim
 
 						xml.node("nat", [&] () {
 							xml.attribute("domain", "default");
-							xml.attribute("tcp-ports", "100");
-							xml.attribute("udp-ports", "100");
-							xml.attribute("icmp-ids", "100");
+							xml.attribute("tcp-ports", "1000");
+							xml.attribute("udp-ports", "1000");
+							xml.attribute("icmp-ids", "1000");
 						});
 					});
 
