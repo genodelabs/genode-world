@@ -777,11 +777,50 @@ class Mbim
 						}
 
 						break;
-
 					}
 					case MBIM_CID_BASIC_CONNECT_PACKET_SERVICE:
 						/* ignore */
 						break;
+					case MBIM_CID_BASIC_CONNECT_SUBSCRIBER_READY_STATUS:
+					{
+						MbimSubscriberReadyState ready_state;
+
+						if (!mbim_message_subscriber_ready_status_notification_parse(msg,
+						                                                             &ready_state,
+						                                                             nullptr,
+						                                                             nullptr,
+						                                                             nullptr,
+						                                                             nullptr,
+						                                                             nullptr,
+						                                                             &error)) {
+							Genode::error("couldn't parse notification message: ", (char const *)error->message);
+							mbim->_shutdown (FALSE);
+							return;
+						}
+
+						mbim->_state_report.sim = mbim_subscriber_ready_state_get_string(ready_state);
+						mbim->_report_state();
+
+						if (ready_state == MBIM_SUBSCRIBER_READY_STATE_DEVICE_LOCKED) {
+							/* unlock with PIN */
+							mbim->_state = Mbim::UNLOCK;
+							mbim->_send_request();
+						}
+						else if (ready_state == MBIM_SUBSCRIBER_READY_STATE_INITIALIZED) {
+							if (mbim->_state == Mbim::NONE) {
+								/* jump ahead and wait for network registration */
+								mbim->_state = Mbim::PIN;
+								mbim->_send_request();
+							}
+						}
+						else {
+							/* reset */
+							mbim->_state = Mbim::NONE;
+							mbim->_send_request();
+						}
+
+						break;
+					}
 					default:
 						const gchar *cid_printable = mbim_cid_get_printable(mbim_message_indicate_status_get_service (msg),
 						                                                    mbim_message_indicate_status_get_cid (msg));
