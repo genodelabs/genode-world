@@ -878,11 +878,11 @@ class Mbim
 					/* default */
 					xml.node("domain", [&] () {
 						xml.attribute("name", "default");
-						xml.attribute("interface", "10.0.3.1/24");
+						xml.attribute("interface", "10.0.1.1/24");
 
 						xml.node("dhcp-server", [&] () {
-							xml.attribute("ip_first", "10.0.3.2");
-							xml.attribute("ip_last", "10.0.3.200");
+							xml.attribute("ip_first", "10.0.1.2");
+							xml.attribute("ip_last", "10.0.1.200");
 
 							xml.node("dns-server", [&] () {
 								xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
