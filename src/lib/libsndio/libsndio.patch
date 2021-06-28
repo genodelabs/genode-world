@@ -1,0 +1,18 @@
+libsndio.patch
+
+With 'O_NONBLOCK' libsndio calls 'poll()' to detect when more data can be
+written, but on Genode a file is always reported as writable.
+
+diff --git a/libsndio/sio_oss.c b/libsndio/sio_oss.c
+index 56b62b5..ec143bd 100644
+--- a/libsndio/sio_oss.c
++++ b/libsndio/sio_oss.c
+@@ -265,7 +265,7 @@ sio_oss_getfd(const char *str, unsigned int mode, int nbio)
+ 		flags = O_RDWR;
+ 	else
+ 		flags = (mode & SIO_PLAY) ? O_WRONLY : O_RDONLY;
+-	while ((fd = open(path, flags | O_NONBLOCK | O_CLOEXEC)) < 0) {
++	while ((fd = open(path, flags /*| O_NONBLOCK*/ | O_CLOEXEC)) < 0) {
+ 		if (errno == EINTR)
+ 			continue;
+ 		DPERROR(path);

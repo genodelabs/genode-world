@@ -1,0 +1,13 @@
+LICENSE   := BSD
+VERSION   := git
+DOWNLOADS := sndio.git
+
+URL(sndio) := http://caoua.org/git/sndio
+REV(sndio) := 10777e22600f6cea8fba064ebbc50e6123f88c45
+DIR(sndio) := src/lib/sndio
+
+DIRS := include/sndio
+DIR_CONTENT(include/sndio) := src/lib/sndio/libsndio/sndio.h
+
+PATCHES   := src/lib/libsndio/libsndio.patch                                                                                                                                                                                                    
+PATCH_OPT := -p1 -d src/lib/sndio
