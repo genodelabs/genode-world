@@ -8,10 +8,10 @@ QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network libQt5Widgets
 QT5_PORT_LIBS += libQt5Qml libQt5Quick libQt5QuickWidgets
 QT5_PORT_LIBS += libQt5WebChannel
 
-LIBS = egl expat libc libm mesa nss3 qt5_component stdcxx $(QT5_PORT_LIBS)
+LIBS = egl expat libc libm libsndio mesa nss3 qt5_component stdcxx $(QT5_PORT_LIBS)
 
-QT5_GENODE_LIBS_SHLIB += nss3.lib.so
-qmake_prepared.tag: qmake_root/lib/nss3.lib.so
+QT5_GENODE_LIBS_SHLIB += nss3.lib.so libsndio.lib.so
+qmake_prepared.tag: qmake_root/lib/nss3.lib.so qmake_root/lib/libsndio.lib.so
 
 built.tag: qmake_prepared.tag
 
@@ -42,7 +42,6 @@ built.tag: qmake_prepared.tag
 		-no-webengine-kerberos \
 		-webengine-widgets \
 		-webengine-qml \
-		-no-webengine-sndio \
 		$(QT5_OUTPUT_FILTER)
 
 	@#

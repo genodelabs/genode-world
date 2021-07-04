@@ -1,5 +1,6 @@
 expat
 libc
+libsndio
 mesa
 nss3
 qt5_component
