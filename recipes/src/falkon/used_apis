@@ -1,7 +1,8 @@
 libc
-openssl
+libsndio
 mesa
 nss3
+openssl
 qt5
 qt5_component
 so
