@@ -38,7 +38,7 @@ class Mbim
 {
 	enum { TRACE = FALSE };
 
-	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT };
+	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT, READY };
 
 	using String  = Genode::String<32>;
 	using Cstring = Genode::Cstring;
@@ -87,6 +87,9 @@ class Mbim
 		Genode::Attached_rom_dataspace _config_rom   { _env, "config" };
 		Network                        _network      { };
 		State_report                   _state_report { };
+
+		Genode::Signal_handler<Mbim> _config_handler {
+			_env.ep(), *this, &Mbim::_report_config };
 
 		static Mbim *_mbim(gpointer user_data)
 		{
@@ -283,6 +286,9 @@ class Mbim
 					                     nullptr,
 					                     (GAsyncReadyCallback)_ip_configuration_query_ready,
 					                     this);
+					break;
+				case READY:
+					break;
 			}
 		}
 
@@ -605,6 +611,7 @@ class Mbim
 			mbim->_connection.gateway = gateway;
 			mbim->_connection.dns[0]  = dns[0];
 			mbim->_connection.dns[1]  = dns[1];
+			mbim->_state = Mbim::READY;
 			mbim->_report_config();
 		}
 
@@ -880,6 +887,8 @@ class Mbim
 
 		void _report_config()
 		{
+			if (_state != Mbim::READY)
+				return;
 			_config_reporter.enabled(true);
 			try {
 				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
