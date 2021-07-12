@@ -56,3 +56,35 @@ customizable by adding a `<default-domain>` node to mbimcli's config, e.g.:
 !   <default-domain interface="10.0.3.1/24" ip_first="10.0.3.2" ip_last="10.0.3.200"/>
 ! </config>
 
+If you want to use the generated nic_router in a cascaded setup of multiple
+nic_routers, you can add a 'nic_client_enable="yes"' attribute to the '<config>'
+node. In consequence, mbimcli will generate a nic_router.config like this:
+
+! <config>
+!   <default-policy domain="default"/>
+!   <uplink domain="downlink"/>
+!   <domain name="uplink" interface="10.207.25.25/30" gateway="10.207.25.26" use_arp="no">
+!     <nat domain="default" tcp-ports="100" udp-ports="100" icmp-ids="100"/>
+!     <nat domain="downlink" tcp-ports="100" udp-ports="100" icmp-ids="100"/>
+!   </domain>
+!   <domain name="downlink" interface="10.0.2.1/24">
+!     <dhcp-server ip_first="10.0.2.2" ip_last="10.0.2.3" dns_server="62.109.121.17"/>
+!     <tcp dst="0.0.0.0/0">
+!       <permit-any domain="uplink"/>
+!     </tcp>
+!     <udp dst="0.0.0.0/0">
+!       <permit-any domain="uplink"/>
+!     </udp>
+!     <icmp dst="0.0.0.0/0" domain="uplink"/>
+!   </domain>
+!   <domain name="default" interface="10.0.3.1/24">
+!     <dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.200" dns_server="62.109.121.17"/>
+!     <tcp dst="0.0.0.0/0">
+!       <permit-any domain="uplink"/>
+!     </tcp>
+!     <udp dst="0.0.0.0/0">
+!       <permit-any domain="uplink"/>
+!     </udp>
+!     <icmp dst="0.0.0.0/0" domain="uplink"/>
+!   </domain>
+! </config>

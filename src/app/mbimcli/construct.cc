@@ -935,7 +935,57 @@ class Mbim
 							xml.attribute("udp-ports", "1000");
 							xml.attribute("icmp-ids", "1000");
 						});
+						if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
+							xml.node("nat", [&] () {
+								xml.attribute("domain", "downlink");
+								xml.attribute("tcp-ports", "1000");
+								xml.attribute("udp-ports", "1000");
+								xml.attribute("icmp-ids", "1000");
+							});
+						}
 					});
+
+					/* link to another nic_router */
+					if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
+						xml.node("uplink", [&] () {
+							xml.attribute("domain", "downlink");
+						});
+						xml.node("domain", [&] () {
+							xml.attribute("name", "downlink");
+
+							xml.attribute("interface", "10.0.2.1/24");
+
+							xml.node("dhcp-server", [&] () {
+								xml.attribute("ip_first", "10.0.2.2");
+								xml.attribute("ip_last",  "10.0.2.3");
+
+								xml.node("dns-server", [&] () {
+									xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
+								});
+
+								xml.node("dns-server", [&] () {
+									xml.attribute("ip", Genode::String<15>(_connection.dns[1]));
+								});
+							});
+
+							xml.node("tcp", [&] () {
+								xml.attribute("dst", "0.0.0.0/0");
+								xml.node("permit-any", [&] () {
+									xml.attribute("domain", "uplink");
+								});
+							});
+							xml.node("udp", [&] () {
+								xml.attribute("dst", "0.0.0.0/0");
+								xml.node("permit-any", [&] () {
+									xml.attribute("domain", "uplink");
+								});
+							});
+							xml.node("icmp", [&] () {
+								xml.attribute("dst", "0.0.0.0/0");
+								xml.attribute("domain", "uplink");
+							});
+						});
+					}
 
 					/* default */
 					xml.node("domain", [&] () {
