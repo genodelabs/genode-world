@@ -26,11 +26,10 @@ Configuration
 ! </start>
 
 Upon successful connection 'mbimcli' will generate a NIC router configuration
-report that can be directly processed by the router. An example is show below:
+report that can be directly processed by the router. An example is shown below:
 
 ! <config>
 !   <default-policy domain="default"/>
-!   <uplink domain="uplink"/>
 !   <domain name="uplink" interface="10.207.25.25/30" gateway="10.207.25.26" use_arp="no">
 !     <nat domain="default" tcp-ports="100" udp-ports="100" icmp-ids="100"/>
 !   </domain>
@@ -46,4 +45,14 @@ report that can be directly processed by the router. An example is show below:
 !   </domain>
 ! </config>
 
+
+Optional Configuration
+~~~~~~~~~~~~~~~~~~~~~~
+
+The interface's IP address and address range for the DHCP server is
+customizable by adding a `<default-domain>` node to mbimcli's config, e.g.:
+
+! <config>
+!   <default-domain interface="10.0.3.1/24" ip_first="10.0.3.2" ip_last="10.0.3.200"/>
+! </config>
 
