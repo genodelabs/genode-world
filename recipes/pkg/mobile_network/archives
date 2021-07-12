@@ -1,0 +1,16 @@
+_/src/init
+_/src/nic_router
+_/src/usb_modem_drv
+_/src/report_rom
+_/src/fs_rom
+_/src/libmbim
+_/src/libiconv
+_/src/ffi
+_/src/glib
+_/src/libc
+_/src/vfs
+_/src/zlib
+_/src/mbimcli
+_/raw/mbimcli
+_/src/vfs_pipe
+_/src/vfs_import

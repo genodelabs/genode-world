@@ -1,0 +1,145 @@
+<runtime ram="46M" caps="1000" binary="init">
+
+	<requires>
+		<usb/>
+		<nic label="nic_router"/>
+		<file_system label="config"/>
+		<report label="state"/>
+		<rm/>
+	</requires>
+	<provides> <nic/> </provides>
+
+	<config>
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="Timer"/>
+			<service name="File_system"/>
+			<service name="Report"/>
+			<service name="Usb"/>
+			<service name="Nic"/>
+		</parent-provides>
+
+		<default-route> <any-service> <parent/> </any-service> </default-route>
+		<default caps="100"/>
+
+		<service name="Nic">
+			<default-policy> <child name="nic_router"/> </default-policy>
+		</service>
+
+		<start name="report_rom">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="Report"/> <service name="ROM"/> </provides>
+			<config>
+				<policy label="nic_router -> config" report="mbimcli -> nic_router.config" />
+			</config>
+		</start>
+
+		<start name="vfs">
+			<resource name="RAM" quantum="4M"/>
+			<provides> <service name="File_system"/> </provides>
+			<config>
+				<vfs>
+					<fs/>
+					<import>
+						<rom name="mbimcli.config"/>
+					</import>
+				</vfs>
+				<policy label_prefix="fs_rom" root="/" writeable="no"/>
+			</config>
+			<route>
+				<service name="File_system"> <parent label="config"/> </service>
+				<service name="ROM" label="mbimcli.config">
+					<parent label="mbimcli_cascaded_router.config"/>
+				</service>
+				<any-service> <parent /> </any-service>
+			</route>
+		</start>
+
+		<start name="fs_rom">
+			<resource name="RAM" quantum="1M"/>
+			<provides> <service name="ROM"/> </provides>
+			<route>
+				<service name="File_system"> <child name="vfs"/> </service>
+				<any-service> <parent /> </any-service>
+			</route>
+		</start>
+
+		<start name="usb_modem_drv" caps="200">
+			<resource name="RAM" quantum="16M"/>
+			<provides>
+				<service name="Terminal"/>
+			</provides>
+			<config mac="02:00:00:00:01:01" mode="uplink_client"/>
+			<route>
+				<service name="Uplink">
+					<child name="nic_router"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="nic_router">
+			<resource name="RAM" quantum="16M"/>
+			<provides>
+				<service name="Uplink"/>
+				<service name="Nic"/>
+			</provides>
+			<route>
+				<service name="ROM" label="config">
+					<child name="report_rom"/>
+				</service>
+				<service name="Nic">
+					<parent label="nic_router"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+		<start name="mbimcli" caps="200">
+			<resource name="RAM" quantum="4M"/>
+			<exit propagate="yes"/>
+			<route>
+				<service name="ROM" label="config">
+					<child name="fs_rom" label="mbimcli.config"/>
+				</service>
+				<service name="Report" label="nic_router.config">
+					<child name="report_rom"/>
+				</service>
+				<service name="Report" label="state">
+					<parent label="state"/>
+				</service>
+				<service name="Terminal">
+					<child name="usb_modem_drv"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
+
+	</config>
+
+	<content>
+		<rom label="init"/>
+		<rom label="mbimcli"/>
+		<rom label="usb_modem_drv"/>
+		<rom label="report_rom"/>
+		<rom label="nic_router"/>
+		<rom label="fs_rom"/>
+		<rom label="libmbim.lib.so"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="vfs"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_import.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="libiconv.lib.so"/>
+		<rom label="glib.lib.so"/>
+		<rom label="ffi.lib.so"/>
+		<rom label="zlib.lib.so"/>
+		<rom label="mbimcli_cascaded_router.config"/>
+	</content>
+
+</runtime>
