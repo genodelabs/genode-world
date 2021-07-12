@@ -889,6 +889,20 @@ class Mbim
 		{
 			if (_state != Mbim::READY)
 				return;
+
+			String interface = "10.0.1.1/24";
+			String ip_first  = "10.0.1.2";
+			String ip_last   = "10.0.1.200";
+
+			try {
+				Genode::Xml_node const &net = _config_rom.xml().sub_node("default-domain");
+
+				interface = net.attribute_value("interface", interface);
+				ip_first  = net.attribute_value("ip_first",  ip_first);
+				ip_last   = net.attribute_value("ip_first",  ip_last);
+
+			} catch (...) { }
+
 			_config_reporter.enabled(true);
 			try {
 				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
@@ -926,11 +940,12 @@ class Mbim
 					/* default */
 					xml.node("domain", [&] () {
 						xml.attribute("name", "default");
-						xml.attribute("interface", "10.0.1.1/24");
+
+						xml.attribute("interface", interface);
 
 						xml.node("dhcp-server", [&] () {
-							xml.attribute("ip_first", "10.0.1.2");
-							xml.attribute("ip_last", "10.0.1.200");
+							xml.attribute("ip_first", ip_first);
+							xml.attribute("ip_last",  ip_last);
 
 							xml.node("dns-server", [&] () {
 								xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
