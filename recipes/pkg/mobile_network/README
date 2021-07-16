@@ -1,0 +1,58 @@
+
+         Subsystem providing access to a mobile LTE network
+
+This package deploys the usb_modem_drv, mbimcli and nic_router components
+among other utility components. It serves as a standalone variant for providing
+network access via a supported USB LTE modem.
+
+The mbimcli component reads its config from the provided file system. A
+'mbimcli.config' file is created with default content in the file system, if it
+does not exist. You need to adapt (or remove) the apn, username, password and
+pin attributes accordingly to be able to register to the mobile network of your
+provider.
+
+After successful connection, the mbimcli component creates a config for the
+package-internal nic_router. By default, this config advises the nic_router
+to provide a default domain as a 'Nic' server and to provide another domain
+as a 'Nic' client. The latter allows a cascaded setup with Sculpt's central
+nic_router. Both domains will be forwarded and NATed to the usb_modem_drv.
+
+The package-internal nic_router operates a DHCP server on both domains. The
+interface's IP address of the default domain and the address range for the DHCP
+is configurable in 'mbimcli.config', e.g.:
+
+!<config>
+!  <default-domain interface="10.0.3.1/24" ip_first="10.0.3.2" ip_last="10.0.3.200"/>
+!</config>
+
+In the default configuration, there are two options for connecting application
+components to the mobile network. Firstly, you can re-route their
+'Nic' requirement to the mobile_network component, in which case they are
+mapped to the default domain. Secondly, you can keep the application component
+connected to the central nic_router instance and change the router's config as
+follows:
+
+!<default-policy domain="default"/>
+!<policy label_prefix="mobile_network -> " domain="mobile_uplink"/>
+!<domain name="mobile_uplink">
+!  <nat domain="default" tcp-ports="1000" udp-ports="1000" icmp-ids="1000"/>
+!</domain>
+!<domain name="default" interface="10.0.1.1/24">
+!  <dhcp-server ip_first="10.0.1.2" ip_last="10.0.1.200" dns_server_from="mobile_uplink"/>
+!  <tcp dst="0.0.0.0/0">
+!    <permit-any domain="mobile_uplink"/>
+!  </tcp>
+!  <udp>
+!    <permit-any domain="mobile_uplink"/>
+!  </udp>
+!  <icmp dst="0.0.0.0/0" domain="mobile_uplink"/>
+!</domain>
+
+This indicates the nic_router to assign the session request from the mobile_network
+component to the mobile_uplink domain.
+Furthermore, TCP, UDP and ICMP packets are forwarded from the default domain to
+the mobile_uplink domain where they are NATed.
+
+Note, that this config is compatible with an already existing uplink domain
+(e.g. from a 'nic_drv' or 'wifi_drv'). You can easily switch the router's
+internal routing by changing the 'domain' attributes in the default domain.

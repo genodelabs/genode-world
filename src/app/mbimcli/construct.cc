@@ -38,7 +38,7 @@ class Mbim
 {
 	enum { TRACE = FALSE };
 
-	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT };
+	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT, READY };
 
 	using String  = Genode::String<32>;
 	using Cstring = Genode::Cstring;
@@ -87,6 +87,9 @@ class Mbim
 		Genode::Attached_rom_dataspace _config_rom   { _env, "config" };
 		Network                        _network      { };
 		State_report                   _state_report { };
+
+		Genode::Signal_handler<Mbim> _config_handler {
+			_env.ep(), *this, &Mbim::_report_config };
 
 		static Mbim *_mbim(gpointer user_data)
 		{
@@ -283,6 +286,9 @@ class Mbim
 					                     nullptr,
 					                     (GAsyncReadyCallback)_ip_configuration_query_ready,
 					                     this);
+					break;
+				case READY:
+					break;
 			}
 		}
 
@@ -605,6 +611,7 @@ class Mbim
 			mbim->_connection.gateway = gateway;
 			mbim->_connection.dns[0]  = dns[0];
 			mbim->_connection.dns[1]  = dns[1];
+			mbim->_state = Mbim::READY;
 			mbim->_report_config();
 		}
 
@@ -880,6 +887,22 @@ class Mbim
 
 		void _report_config()
 		{
+			if (_state != Mbim::READY)
+				return;
+
+			String interface = "10.0.1.1/24";
+			String ip_first  = "10.0.1.2";
+			String ip_last   = "10.0.1.200";
+
+			try {
+				Genode::Xml_node const &net = _config_rom.xml().sub_node("default-domain");
+
+				interface = net.attribute_value("interface", interface);
+				ip_first  = net.attribute_value("ip_first",  ip_first);
+				ip_last   = net.attribute_value("ip_first",  ip_last);
+
+			} catch (...) { }
+
 			_config_reporter.enabled(true);
 			try {
 				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
@@ -912,16 +935,67 @@ class Mbim
 							xml.attribute("udp-ports", "1000");
 							xml.attribute("icmp-ids", "1000");
 						});
+						if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
+							xml.node("nat", [&] () {
+								xml.attribute("domain", "downlink");
+								xml.attribute("tcp-ports", "1000");
+								xml.attribute("udp-ports", "1000");
+								xml.attribute("icmp-ids", "1000");
+							});
+						}
 					});
+
+					/* link to another nic_router */
+					if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
+						xml.node("uplink", [&] () {
+							xml.attribute("domain", "downlink");
+						});
+						xml.node("domain", [&] () {
+							xml.attribute("name", "downlink");
+
+							xml.attribute("interface", "10.0.2.1/24");
+
+							xml.node("dhcp-server", [&] () {
+								xml.attribute("ip_first", "10.0.2.2");
+								xml.attribute("ip_last",  "10.0.2.3");
+
+								xml.node("dns-server", [&] () {
+									xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
+								});
+
+								xml.node("dns-server", [&] () {
+									xml.attribute("ip", Genode::String<15>(_connection.dns[1]));
+								});
+							});
+
+							xml.node("tcp", [&] () {
+								xml.attribute("dst", "0.0.0.0/0");
+								xml.node("permit-any", [&] () {
+									xml.attribute("domain", "uplink");
+								});
+							});
+							xml.node("udp", [&] () {
+								xml.attribute("dst", "0.0.0.0/0");
+								xml.node("permit-any", [&] () {
+									xml.attribute("domain", "uplink");
+								});
+							});
+							xml.node("icmp", [&] () {
+								xml.attribute("dst", "0.0.0.0/0");
+								xml.attribute("domain", "uplink");
+							});
+						});
+					}
 
 					/* default */
 					xml.node("domain", [&] () {
 						xml.attribute("name", "default");
-						xml.attribute("interface", "10.0.1.1/24");
+
+						xml.attribute("interface", interface);
 
 						xml.node("dhcp-server", [&] () {
-							xml.attribute("ip_first", "10.0.1.2");
-							xml.attribute("ip_last", "10.0.1.200");
+							xml.attribute("ip_first", ip_first);
+							xml.attribute("ip_last",  ip_last);
 
 							xml.node("dns-server", [&] () {
 								xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
