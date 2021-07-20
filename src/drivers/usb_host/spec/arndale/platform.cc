@@ -23,8 +23,8 @@
 
 /* Emulation */
 #include <lx_emul.h>
-#include <lx_kit/backend_alloc.h>
-#include <lx_kit/irq.h>
+#include <legacy/lx_kit/backend_alloc.h>
+#include <legacy/lx_kit/irq.h>
 #include <platform.h>
 
 

@@ -25,5 +25,5 @@ CC_OPT  += -DCONFIG_USB_OTG_UTILS=1
 CC_OPT  += -DCONFIG_USB_XHCI_PLATFORM=1
 CC_OPT  += -DDWC3_QUIRK
 
-vpath %.cc $(DDE_LINUX_DIR)/src
+vpath %.cc $(DDE_LINUX_DIR)/src/lib/legacy
 vpath %    $(DDE_LINUX_DIR)/src/drivers/usb_host

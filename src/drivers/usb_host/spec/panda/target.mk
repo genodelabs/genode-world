@@ -18,5 +18,5 @@ CC_OPT  += -DCONFIG_USB_EHCI_HCD_OMAP=1
 CC_OPT  += -DCONFIG_USB_EHCI_TT_NEWSCHED=1
 CC_OPT  += -DCONFIG_EXTCON=1
 
-vpath %.cc $(DDE_LINUX_DIR)/src
+vpath %.cc $(DDE_LINUX_DIR)/src/lib/legacy
 vpath %    $(DDE_LINUX_DIR)/src/drivers/usb_host

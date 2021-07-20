@@ -7,7 +7,9 @@ PORT_DIR := $(call port_dir,$(DDE_LINUX_REP_DIR)/ports/dde_linux)
 
 MIRROR_FROM_DDE_LINUX_REP_DIR := $(LIB_MK) \
                                  lib/import/import-usb_host_include.mk \
-                                 src/include src/lx_kit \
+                                 src/include/legacy src/lib/legacy/lx_kit \
+                                 $(foreach SPEC,arm arm_64 x86_32 x86_64,\
+                                           src/include/spec/$(SPEC)/legacy) \
                                  $(shell cd $(DDE_LINUX_REP_DIR); \
                                     find src/drivers/usb_host -type f -name "*.h" \
                                                                   -or -name "*.c" \
