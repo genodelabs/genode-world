@@ -100,7 +100,7 @@ append config {
 		        verbose_packet_drop="no">
 
 			<policy label="grpc2tee -> " domain="server"/>
-			<uplink                                 domain="uplink"/>
+			<nic-client                  domain="uplink"/>
 
 			<domain name="uplink" interface="10.0.2.55/24" gateway="10.0.2.1">
 				<nat domain="server" tcp-ports="100" />

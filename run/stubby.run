@@ -70,7 +70,7 @@ append config {
 		<config verbose="no">
 			<policy label_prefix="vfs"    domain="default" />
 			<policy label_prefix="stubby" domain="dns"     />
-			<uplink                       domain="uplink"  />
+			<nic-client                   domain="uplink"  />
 
 			<domain name="uplink">
 				<nat domain="dns" tcp-ports="64" udp-ports="64"/>

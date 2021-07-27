@@ -947,7 +947,7 @@ class Mbim
 
 					/* link to another nic_router */
 					if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
-						xml.node("uplink", [&] () {
+						xml.node("nic-client", [&] () {
 							xml.attribute("domain", "downlink");
 						});
 						xml.node("domain", [&] () {
