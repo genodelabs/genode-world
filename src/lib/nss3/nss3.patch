@@ -1,7 +1,7 @@
 nss3.patch
 
 diff --git a/nspr/pr/include/md/_freebsd.h b/nspr/pr/include/md/_freebsd.h
-index 118cb9f..49ddb03 100644
+index 118cb9f..e73378f 100644
 --- a/nspr/pr/include/md/_freebsd.h
 +++ b/nspr/pr/include/md/_freebsd.h
 @@ -236,11 +236,11 @@ extern void _MD_EarlyInit(void);
@@ -38,6 +38,19 @@ index 92c9c78..d299310 100644
  #endif
  
      PR_ASSERT(NULL == pt_book.ml);
+diff --git a/nss/lib/freebl/blinit.c b/nss/lib/freebl/blinit.c
+index 82375fd..a56bc10 100644
+--- a/nss/lib/freebl/blinit.c
++++ b/nss/lib/freebl/blinit.c
+@@ -222,7 +222,7 @@ CheckARMSupport()
+         arm_sha1_support_ = (hwcaps & HWCAP_SHA1) == HWCAP_SHA1;
+         arm_sha2_support_ = (hwcaps & HWCAP_SHA2) == HWCAP_SHA2;
+     }
+-#elif defined(__FreeBSD__)
++#elif defined(__FreeBSD__) && 0
+     /* qemu-user does not support register access from userspace */
+     if (PR_GetEnvSecure("QEMU_EMULATING") == NULL) {
+         uint64_t isar0 = READ_SPECIALREG(id_aa64isar0_el1);
 diff --git a/nss/lib/nss/nssinit.c b/nss/lib/nss/nssinit.c
 index 9b60127..98febef 100644
 --- a/nss/lib/nss/nssinit.c
