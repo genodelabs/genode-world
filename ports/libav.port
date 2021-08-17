@@ -2,7 +2,7 @@ LICENSE   := GPLv3
 VERSION   := 11.6
 DOWNLOADS := libav.archive
 
-URL(libav) := https://www.libav.org/releases/libav-$(VERSION).tar.gz
+URL(libav) := https://genode.org/files/libav-$(VERSION).tar.gz
 SHA(libav) := 4df17921e3b87170d54b738f09241833c618d2173415adf398207b43d27e4b28
 DIR(libav) := src/lib/libav
 SIG(libav) := ${URL(libav)}.asc
