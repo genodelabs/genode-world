@@ -31,7 +31,6 @@ built.tag: qmake_prepared.tag
 		-qt-webengine-webp \
 		-no-webengine-pepper-plugins \
 		-no-webengine-printing-and-pdf \
-		-no-webengine-proprietary-codecs \
 		-no-webengine-pulseaudio \
 		-no-webengine-spellchecker \
 		-no-webengine-native-spellchecker \
@@ -40,6 +39,7 @@ built.tag: qmake_prepared.tag
 		-no-webengine-geolocation \
 		-no-webengine-v8-snapshot \
 		-no-webengine-kerberos \
+		-webengine-proprietary-codecs \
 		-webengine-widgets \
 		-webengine-qml \
 		$(QT5_OUTPUT_FILTER)
