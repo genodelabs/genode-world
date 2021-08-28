@@ -5,6 +5,7 @@ _/src/falkon
 _/src/init
 _/src/jitter_sponge
 _/src/libc
+_/src/libdrm
 _/src/libsndio
 _/src/mesa
 _/src/nss3
@@ -23,3 +24,4 @@ _/src/vfs_lwip
 _/src/vfs_oss
 _/src/vfs_pipe
 _/src/vfs_qtwebengine_shm
+_/src/zlib

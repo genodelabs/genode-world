@@ -46,6 +46,7 @@
 		<rom label="libQt5Widgets.lib.so"/>
 		<rom label="libc.lib.so"/>
 		<rom label="libcrypto.lib.so"/>
+		<rom label="libdrm.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="libqgenode.lib.so"/>
 		<rom label="libqjpeg.lib.so"/>
@@ -67,6 +68,7 @@
 		<rom label="vfs_oss.lib.so"/>
 		<rom label="vfs_pipe.lib.so"/>
 		<rom label="vfs_qtwebengine_shm.lib.so"/>
+		<rom label="zlib.lib.so"/>
 		<rom label="qt5_declarative_qml.tar"/>
 		<rom label="qt5_dejavusans.tar"/>
 		<rom label="qt5_libqgenode.tar"/>
