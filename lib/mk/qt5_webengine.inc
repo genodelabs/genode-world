@@ -36,10 +36,10 @@ built.tag: qmake_prepared.tag
 		-no-webengine-spellchecker \
 		-no-webengine-native-spellchecker \
 		-no-webengine-extensions \
-		-no-webengine-webrtc \
 		-no-webengine-geolocation \
 		-no-webengine-kerberos \
 		-webengine-proprietary-codecs \
+		-webengine-webrtc \
 		-webengine-widgets \
 		-webengine-qml \
 		$(QT5_OUTPUT_FILTER)
