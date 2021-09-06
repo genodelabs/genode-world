@@ -1,0 +1,22 @@
+diff --git a/src/gl-state-egl.cpp b/src/gl-state-egl.cpp
+index af341d5..8444187 100644
+--- a/src/gl-state-egl.cpp
++++ b/src/gl-state-egl.cpp
+@@ -310,6 +310,8 @@ GLStateEGL::init_display(void* native_display, GLVisualConfig& visual_config)
+ {
+ #if defined(WIN32)
+     if (!egl_lib_.open("libEGL.dll")) {
++#elif defined(__GENODE__)
++    if (!egl_lib_.open("egl.lib.so")) {
+ #else
+     if (!egl_lib_.open_from_alternatives({"libEGL.so", "libEGL.so.1" })) {
+ #endif
+@@ -542,6 +544,8 @@ GLStateEGL::gotValidDisplay()
+     EGLenum apiType(EGL_OPENGL_ES_API);
+ #if defined(WIN32)
+     std::initializer_list<const char *> libNames = { "libGLESv2.dll" };
++#elif defined(__GENODE__)
++    std::initializer_list<const char *> libNames = { "mesa.lib.so" };
+ #else
+     std::initializer_list<const char *> libNames = { "libGLESv2.so", "libGLESv2.so.2" };
+ #endif

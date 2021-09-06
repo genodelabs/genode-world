@@ -27,6 +27,14 @@ NativeStateGenode &NativeStateGenode::native_state(Genode::Env *env)
 	return *_native;
 }
 
+static Genode::Constructible<Genode::Entrypoint> signal_ep;
+
+Genode::Entrypoint &genode_entrypoint()
+{
+	return *signal_ep;
+}
+
+
 
 static void component_construct(Libc::Env &env)
 {
@@ -48,6 +56,10 @@ static void component_construct(Libc::Env &env)
 void Libc::Component::construct(Libc::Env &env)
 {
 	genode_env = &env;
+
+	signal_ep.construct(env, 1024*sizeof(long), "drm_signal_ep",
+	                    Genode::Affinity::Location());
+
 
 	Libc::with_libc([&] () { component_construct(env); });
 }
