@@ -1,3 +1,25 @@
+proc get_env_var { var_name default_value } {
+	if {[info exists ::env($var_name)]} {
+		return $::env($var_name)
+	}
+	return $default_value
+}
+
+proc egl_drv { drv } {
+	return "egl_$drv.lib.so"
+}
+
+set gallium_drv [get_env_var GALLIUM_DRIVER "swrast"]
+
+if {$gallium_drv != "swrast" &&
+    $gallium_drv != "iris"   &&
+    $gallium_drv != "etnaviv"} {
+	puts "Invalid GALLIUM_DRIVER: $gallium_drv (supported: swrast, iris, etnaviv)"
+	exit 1
+}
+
+puts "Using gallium driver: $gallium_drv egl: [egl_drv $gallium_drv]"
+
 lappend import [depot_user]/src/glmark2 \
                [depot_user]/raw/glmark2 \
                [depot_user]/src/mesa \
@@ -13,7 +35,7 @@ lappend import [depot_user]/src/glmark2 \
 set app_config {
 <start name="glmark2" caps="500">
 	<resource name="RAM" quantum="160M"/>
-	<config>
+	<config ld_verbose="yes">
 		<vfs>
 			<dir name="dev">
 				<log/>
@@ -26,18 +48,17 @@ set app_config {
 		<arg value="glmark2"/>
 		<!-- <arg value="\-\-debug"/> -->
 		<arg value="-b"/>
-		<arg value=":duration=2.0"/>
+		<arg value=":duration=5.0:"/>
 	</config>
 	<route>
 		<service name="Gui"> <child name="wm"/> </service>
 		<service name="ROM" label="egl_drv.lib.so">
-			<parent label="egl_swrast.lib.so"/>
-		</service>
-		<service name="ROM" label="libEGL.so">
-			<parent label="egl.lib.so"/>
-		</service>
-		<service name="ROM" label="libGLESv2.so">
-			<parent label="mesa.lib.so"/>
+}
+
+append app_config "
+			<parent label=\"[egl_drv $gallium_drv]\"/>"
+
+append app_config {
 		</service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</route>
@@ -45,7 +66,6 @@ set app_config {
 }
 
 set build_components { }
-
 set boot_modules { }
 
 source ${genode_dir}/repos/world/run/gui_app.inc

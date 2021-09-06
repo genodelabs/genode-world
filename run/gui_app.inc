@@ -49,8 +49,8 @@ install_config {
 
 	<default caps="100"/>
 
-	<start name="drivers" caps="1000" managing_system="yes">
-		<resource name="RAM" quantum="64M"/>
+	<start name="drivers" caps="2600" managing_system="yes">
+		<resource name="RAM" quantum="128M"/>
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
@@ -59,7 +59,9 @@ install_config {
 			<service name="Event">   <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-		<provides> <service name="Input"/> </provides>
+		<provides>
+			<service name="Gpu"/>
+		</provides>
 	</start>
 
 	<start name="timer">
