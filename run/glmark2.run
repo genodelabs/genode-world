@@ -60,9 +60,6 @@ append app_config "
 
 append app_config {
 		</service>
-		<service name="ROM" label="libGLESv2.so">
-			<parent label="mesa.lib.so"/>
-		</service>
 		<any-service> <parent/> <any-child/> </any-service>
 	</route>
 </start>
