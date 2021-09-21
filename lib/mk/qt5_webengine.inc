@@ -37,7 +37,6 @@ built.tag: qmake_prepared.tag
 		-no-webengine-extensions \
 		-no-webengine-webrtc \
 		-no-webengine-geolocation \
-		-no-webengine-v8-snapshot \
 		-no-webengine-kerberos \
 		-webengine-proprietary-codecs \
 		-webengine-widgets \
