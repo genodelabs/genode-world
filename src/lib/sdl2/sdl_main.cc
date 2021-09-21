@@ -17,7 +17,6 @@
 
 /* libc includes */
 #include <stdlib.h> /* 'malloc' and 'exit' */
-#include <pthread.h>
 
 extern char **genode_argv;
 extern int    genode_argc;
@@ -34,18 +33,18 @@ extern "C" int main(int argc, char *argv[], char *envp[]);
 extern void sdl_init_genode(Genode::Env &env);
 
 
+Genode::Env *genode_env;
 
-static void* sdl_main(void *)
-{
-	exit(main(genode_argc, genode_argv, genode_envp));
-	return nullptr;
-}
+
+Genode::size_t Libc::Component::stack_size() { return 768 * 1024; }
 
 
 void Libc::Component::construct(Libc::Env &env)
 {
 	using Genode::Xml_node;
 	using Genode::Xml_attribute;
+
+	genode_env = &env;
 
 	env.config([&] (Xml_node const &node) {
 		int argc = 0;
@@ -124,14 +123,7 @@ void Libc::Component::construct(Libc::Env &env)
 	/* pass env to SDL backend */
 	sdl_init_genode(env);
 
-	pthread_attr_t attr;
-	pthread_t      main_thread;
-
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, 768 * 1024);
-
-	if (pthread_create(&main_thread, &attr, sdl_main, nullptr)) {
-		Genode::error("failed to create SDL main thread");
-		exit(1);
-	}
+	Libc::with_libc([&] () {
+		exit(main(genode_argc, genode_argv, genode_envp));
+	});
 }
