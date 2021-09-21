@@ -66,3 +66,35 @@
  #endif
  #ifndef INT_MAX
  /* Make a lucky guess. */
+--- a/include/SDL_egl.h
++++ b/include/SDL_egl.h
+@@ -440,6 +440,12 @@ typedef MirEGLNativeDisplayType EGLNativeDisplayType;
+ typedef void                   *EGLNativePixmapType;
+ typedef MirEGLNativeWindowType  EGLNativeWindowType;
+ 
++#elif defined(GENODE)
++
++typedef long                EGLNativeDisplayType;
++typedef void               *EGLNativePixmapType;
++typedef Genode_egl_window  *EGLNativeWindowType;
++
+ #elif defined(__unix__)
+ 
+ #ifdef MESA_EGL_NO_X11_HEADERS
+--- a/src/video/SDL_egl.c
++++ b/src/video/SDL_egl.c
+@@ -73,6 +73,14 @@
+ #define DEFAULT_OGL_ES_PVR "libGLES_CM.dylib"   //???
+ #define DEFAULT_OGL_ES "libGLESv1_CM.dylib"     //???
+ 
++# elif SDL_VIDEO_DRIVER_GENODE
++
++#define DEFAULT_OGL "mesa.lib.so"
++#define DEFAULT_EGL "mesa.lib.so"
++#define DEFAULT_OGL_ES2 "mesa.lib.so"
++#define DEFAULT_OGL_ES_PVR "mesa.lib.so"
++#define DEFAULT_OGL_ES "mesa.lib.so"
++
+ #else
+ /* Desktop Linux */
+ #define DEFAULT_OGL "libGL.so.1"

@@ -61,6 +61,23 @@ extern "C" {
 #include "SDL_events_c.h"
 #include "SDL_genode_fb_events.h"
 
+#if defined(SDL_VIDEO_OPENGL_EGL)
+#include <SDL_egl_c.h>
+
+#define Genode_GLES_GetAttribute SDL_EGL_GetAttribute
+#define Genode_GLES_GetProcAddress SDL_EGL_GetProcAddress
+#define Genode_GLES_UnloadLibrary SDL_EGL_UnloadLibrary
+#define Genode_GLES_SetSwapInterval SDL_EGL_SetSwapInterval
+#define Genode_GLES_GetSwapInterval SDL_EGL_GetSwapInterval
+
+int Genode_GLES_LoadLibrary(_THIS, const char *path);
+SDL_GLContext Genode_GLES_CreateContext(_THIS, SDL_Window * window);
+int Genode_GLES_SwapWindow(_THIS, SDL_Window * window);
+int Genode_GLES_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context);
+void Genode_GLES_GetDrawableSize(_THIS, SDL_Window * window, int * w, int * h);
+void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
+#endif
+
 	struct Sdl_framebuffer
 	{
 		Genode::Env              &_env;
@@ -144,6 +161,11 @@ extern "C" {
 		Genode::Constructible<Genode::Attached_dataspace>     fb_mem;
 		Genode::Constructible<Genode::Attached_ram_dataspace> fb_double;
 		Framebuffer::Mode                                     scr_mode;
+
+#if defined(SDL_VIDEO_OPENGL_EGL)
+		Genode_egl_window egl_window;
+		EGLSurface        egl_surface;
+#endif
 	};
 
 	/****************************************
@@ -319,6 +341,70 @@ extern "C" {
 		return 0;
 	}
 
+	static int Genode_CreateWindow(_THIS, SDL_Window * window)
+	{
+
+		if (!_this || !window)
+			return SDL_SetError("invalid pointer");
+
+		Genode_Driverdata &drv = *(Genode_Driverdata *)_this->driverdata;
+
+		Uint32 const surface_format = SDL_PIXELFORMAT_ARGB8888;
+
+		/* Free the old surface */
+		SDL_Surface *surface = (SDL_Surface *)SDL_GetWindowData(window,
+		                                                        surface_name);
+		if (surface) {
+			SDL_SetWindowData(window, surface_name, NULL);
+			SDL_FreeSurface(surface);
+			surface = NULL;
+		}
+
+		/* get 32-bit RGB mask values */
+		int bpp;
+		Uint32 r_mask, g_mask, b_mask, a_mask;
+		if (!SDL_PixelFormatEnumToMasks(surface_format, &bpp, &r_mask, &g_mask,
+		                                &b_mask, &a_mask))
+			return SDL_SetError("pixel format setting failed");
+
+		/* get dimensions */
+		int w, h;
+		SDL_GetWindowSize(window, &w, &h);
+
+		/* allocate and attach memory for framebuffer */
+		if (drv.fb_mem.constructed())
+			drv.fb_mem.destruct();
+
+		drv.fb_mem.construct(global_env().rm(),
+		                     drv.framebuffer->dataspace(w, h));
+
+		void * const fb_mem = drv.fb_mem->local_addr<void>();
+
+		/* set name and user data */
+		SDL_SetWindowData(window, surface_name, surface);
+
+#if defined(SDL_VIDEO_OPENGL_EGL)
+		if (window->flags & SDL_WINDOW_OPENGL) {
+
+			drv.egl_window.addr = (unsigned char *)fb_mem;
+			drv.egl_window.width = w;
+			drv.egl_window.height = h;
+
+			drv.egl_surface = SDL_EGL_CreateSurface(_this, (NativeWindowType) &drv.egl_window);
+
+			if (drv.egl_surface == EGL_NO_SURFACE) {
+				return SDL_SetError("failed to create an EGL window surface");
+			}
+		}
+#endif
+
+		/* set focus to window */
+		SDL_SetMouseFocus(window);
+
+		return 0;
+	}
+
+
 	static SDL_VideoDevice *GenodeVideo_CreateDevice(int const devindex)
 	{
 		SDL_VideoDevice   *device;
@@ -351,10 +437,90 @@ extern "C" {
 		device->UpdateWindowFramebuffer  = Genode_Fb_UpdateWindowFramebuffer;
 		device->DestroyWindowFramebuffer = Genode_Fb_DestroyWindowFramebuffer;
 
+		device->CreateSDLWindow = Genode_CreateWindow;
+
+#if defined(SDL_VIDEO_OPENGL_EGL)
+		device->GL_SwapWindow      = Genode_GLES_SwapWindow;
+		device->GL_GetSwapInterval = Genode_GLES_GetSwapInterval;
+		device->GL_SetSwapInterval = Genode_GLES_SetSwapInterval;
+		device->GL_GetDrawableSize = Genode_GLES_GetDrawableSize;
+		device->GL_MakeCurrent     = Genode_GLES_MakeCurrent;
+		device->GL_CreateContext   = Genode_GLES_CreateContext;
+		device->GL_LoadLibrary     = Genode_GLES_LoadLibrary;
+		device->GL_UnloadLibrary   = Genode_GLES_UnloadLibrary;
+		device->GL_GetProcAddress  = Genode_GLES_GetProcAddress;
+		device->GL_DeleteContext   = Genode_GLES_DeleteContext;
+#endif
+
 		device->PumpEvents       = Genode_Fb_PumpEvents;
 
 		return device;
 	}
+
+#if defined(SDL_VIDEO_OPENGL_EGL)
+	int Genode_GLES_LoadLibrary(_THIS, char const *path)
+	{
+		int ret;
+		Genode_Driverdata &drv = *(Genode_Driverdata *)_this->driverdata;
+
+		ret = SDL_EGL_LoadLibrary(_this, path, EGL_DEFAULT_DISPLAY, 0);
+		return ret;
+	}
+
+	SDL_GLContext Genode_GLES_CreateContext(_THIS, SDL_Window *window)
+	{
+		SDL_GLContext context;
+		Genode_Driverdata &drv = *(Genode_Driverdata *)_this->driverdata;
+		context = SDL_EGL_CreateContext(_this, drv.egl_surface);
+		return context;
+	}
+
+	int Genode_GLES_SwapWindow(_THIS, SDL_Window *window)
+	{
+		Genode_Driverdata &drv = *(Genode_Driverdata *)_this->driverdata;
+
+		if (SDL_EGL_SwapBuffers(_this, drv.egl_surface) < 0) {
+			return -1;
+		}
+		drv.framebuffer->refresh(0, 0, drv.egl_window.width, drv.egl_window.height);
+		return 0;
+	}
+
+	int Genode_GLES_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
+	{
+		int ret;
+
+		if (window && context) {
+			Genode_Driverdata &drv = *(Genode_Driverdata *)_this->driverdata;
+			ret = SDL_EGL_MakeCurrent(_this, drv.egl_surface, context);
+		}
+		else {
+			ret = SDL_EGL_MakeCurrent(_this, NULL, NULL);
+		}
+
+		return ret;
+	}
+
+	void Genode_GLES_GetDrawableSize(_THIS, SDL_Window * window, int * w, int * h)
+	{
+		Genode_Driverdata &drv = *(Genode_Driverdata *)_this->driverdata;
+		if (window->driverdata) {
+			if (w) {
+				*w = drv.egl_window.width;
+			}
+
+			if (h) {
+				*h = drv.egl_window.height;
+			}
+		}
+	}
+
+	void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context)
+	{
+		SDL_EGL_DeleteContext(_this, context);
+	}
+
+#endif
 
 	VideoBootStrap GenodeVideo_bootstrap = {
 		"Genode_Fb", "SDL Genode Framebuffer video driver",

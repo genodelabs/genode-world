@@ -8,3 +8,4 @@ framebuffer_session
 input_session
 gui_session
 timer_session
+mesa

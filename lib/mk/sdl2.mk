@@ -6,6 +6,9 @@ SHARED_LIB = yes
 
 CC_OPT  += -DGENODE
 
+CC_OPT += -DSDL_VIDEO_OPENGL=1
+CC_OPT += -DSDL_VIDEO_OPENGL_EGL=1
+
 CC_WARN += -Wno-unused-variable
 
 # because of AARCH_64 : /gcc/aarch64-none-elf/8.3.0/include/arm_neon.h: narrowing conversion
@@ -106,7 +109,7 @@ SRC_C += $(addprefix video/yuv2rgb/,$(notdir $(wildcard $(SDL2_DIR)/src/video/yu
 SRC_CC  += sdl_main.cc
 
 # we need libc
-LIBS = libc
+LIBS = libc egl mesa
 
 # backend path
 vpath % $(REP_DIR)/src/lib/sdl2
