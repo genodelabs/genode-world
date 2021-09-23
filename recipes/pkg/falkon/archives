@@ -18,6 +18,7 @@ _/src/qt5_webchannel
 _/src/qt5_webengine
 _/src/stdcxx
 _/src/vfs
+_/src/vfs_capture
 _/src/vfs_gpu
 _/src/vfs_jitterentropy
 _/src/vfs_lwip

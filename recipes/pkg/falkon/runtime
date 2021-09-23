@@ -19,6 +19,7 @@
 		<rtc/>
 		<audio_out/>
 		<audio_in/>
+		<capture/>
 	</requires>
 
 	<content>
@@ -63,6 +64,7 @@
 		<rom label="softokn3.lib.so"/>
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
+		<rom label="vfs_capture.lib.so"/>
 		<rom label="vfs_gpu.lib.so"/>
 		<rom label="vfs_jitterentropy.lib.so"/>
 		<rom label="vfs_lwip.lib.so"/>
