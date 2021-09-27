@@ -1,0 +1,371 @@
+set dd      [installed_command dd]
+set sshpass [installed_command sshpass]
+
+set depot_archives   { }
+set build_components { }
+set boot_modules     { }
+
+set terminal_user     "genode"
+set terminal_password "xuon"
+
+set sftp_user         "leon"
+set sftp_password     "noel"
+
+
+proc rtc_drv { } {
+	switch [board] {
+		linux   { return "linux_rtc_drv" }
+		pc      { return "rtc_drv" }
+		default { return "dummy_rtc_drv" }
+	}
+}
+
+proc uplink_domain_node { } {
+
+	if { [have_board linux] } {
+		set uplink_domain_node {<domain name="uplink" interface="10.0.2.55/24" gateway="10.0.2.1">}
+	} else {
+		set uplink_domain_node {<domain name="uplink">}
+	}
+
+	append uplink_domain_node {
+
+				<nat domain="downlink"
+				     tcp-ports="16384"
+				     udp-ports="16384"
+				     icmp-ids="16384"/>
+
+				<tcp-forward port="22" domain="downlink" to="10.0.3.2"/>
+
+			</domain>}
+
+	return $uplink_domain_node
+}
+
+
+lappend depot_archives [depot_user]/src/[base_src]
+lappend depot_archives [depot_user]/pkg/[drivers_nic_pkg]
+lappend depot_archives [depot_user]/src/[rtc_drv]
+lappend depot_archives [depot_user]/src/bash
+lappend depot_archives [depot_user]/src/coreutils-minimal
+lappend depot_archives [depot_user]/src/fs_rom
+lappend depot_archives [depot_user]/src/init
+lappend depot_archives [depot_user]/src/libc
+lappend depot_archives [depot_user]/src/libssh
+lappend depot_archives [depot_user]/src/ncurses
+lappend depot_archives [depot_user]/src/nic_router
+lappend depot_archives [depot_user]/src/openssl
+lappend depot_archives [depot_user]/src/posix
+lappend depot_archives [depot_user]/src/report_rom
+lappend depot_archives [depot_user]/src/ssh_server
+lappend depot_archives [depot_user]/src/vfs
+lappend depot_archives [depot_user]/src/vfs_jitterentropy
+lappend depot_archives [depot_user]/src/vfs_lxip
+lappend depot_archives [depot_user]/src/vfs_pipe
+lappend depot_archives [depot_user]/src/vim-minimal
+lappend depot_archives [depot_user]/src/zlib
+
+
+set config {}
+append config {<config>
+
+	<parent-provides>
+		<service name="CPU"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="ROM"/>
+	</parent-provides>
+
+	<default-route>
+		<any-service> <parent/> </any-service>
+	</default-route>
+
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="drivers" caps="1000" managing_system="yes">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Uplink"> <child name="nic_router"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="rtc_drv" ld="} [expr [have_board linux] ? "no" : "yes"] {">
+		<resource name="RAM" quantum="1M"/>
+		<binary name="} [rtc_drv] {"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+	</start>
+
+	<start name="nic_router" caps="200">
+		<resource name="RAM" quantum="10M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config verbose_domain_state="yes">
+
+			<policy label_prefix="ssh_server" domain="downlink"/>
+			<policy label_prefix="drivers"    domain="uplink"/>
+
+			} [uplink_domain_node] {
+
+			<domain name="downlink" interface="10.0.3.1/24">
+
+				<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2"/>
+
+				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
+				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
+				<icmp dst="0.0.0.0/0" domain="uplink"/>
+
+			</domain>
+
+		</config>
+
+		<route>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="ssh_server" caps="250">
+		<resource name="RAM" quantum="132M"/>
+		<provides> <service name="Terminal"/> </provides>
+
+		<config port="22" ed25519_key="/etc/ssh/ed25519_key"
+		        allow_password="yes" show_password="yes">
+			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"
+			      pipe="/pipe" rtc="/dev/rtc" rng="/dev/random"/>
+
+			<policy label_prefix="shell" multi_login="yes" terminal_name="terminal_1"/>
+
+			<login user="} $terminal_user {" password="} $terminal_password {" terminal="terminal_1"/>
+			<login user="} $sftp_user {" password="} $sftp_password {" sftp="yes"/>
+
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+					<rtc/>
+				</dir>
+				<dir name="etc">
+					<dir name="ssh">
+						<rom name="ed25519_key"/>
+					</dir>
+				</dir>
+				<dir name="socket"> <lxip dhcp="yes"/> </dir>
+				<dir name="pipe"> <pipe/> </dir>
+				<dir name="sftp"> <fs/> </dir>
+			</vfs>
+		</config>
+
+		<route>
+			<service name="File_system"> <child name="sftp_fs"/> </service>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<service name="Rtc"> <child name="rtc_drv"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="sftp_fs">
+		<resource name="RAM" quantum="10M"/>
+		<binary name="vfs"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs> <ram/> </vfs>
+			<default-policy root="/" writeable="yes"/>
+		</config>
+	</start>
+
+	<start name="vfs">
+		<resource name="RAM" quantum="10M"/>
+		<provides> <service name="File_system"/> </provides>
+		<config>
+			<vfs>
+				<tar name="bash.tar"/>
+				<tar name="coreutils-minimal.tar"/>
+				<tar name="vim-minimal.tar"/>
+				<dir name="dev">
+					<terminal/>
+				</dir>
+			</vfs>
+			<policy label_prefix="fs_rom" root="/"/>
+			<default-policy root="/" writeable="yes"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="sftp_fs"/> </service>
+			<service name="Terminal"> <child name="ssh_server" label="shell"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="fs_rom">
+		<resource name="RAM" quantum="10M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config/>
+		<route>
+			<service name="File_system"> <child name="vfs"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="/bin/bash" caps="1000">
+		<resource name="RAM" quantum="64M"/>
+		<config>
+			<libc stdin="/dev/terminal" stdout="/dev/terminal"
+			      stderr="/dev/terminal" rtc="/dev/rtc" pipe="/pipe"/>
+			<vfs>
+				<inline name=".bash_profile">echo Welcome to Genode! > /dev/log</inline>
+				<dir name="dev">
+					<zero/> <null/> <log/>
+					<inline name="rtc">2018-01-01 00:01</inline>
+				</dir>
+				<dir name="home"> <ram/> </dir>
+				<dir name="pipe"> <pipe/> </dir>
+				<dir name="sftp"> <fs label="sftp_fs"/> </dir>
+				<dir name="share">
+					<dir name="vim"> <rom name="vimrc"/> </dir>
+				</dir>
+				<dir name="tmp"> <ram/> </dir>
+				<fs/>
+			</vfs>
+			<arg value="bash"/>
+			<arg value="--login"/>
+			<env key="PATH" value="/bin" />
+			<env key="TERM" value="screen"/>
+		</config>
+		<route>
+			<service name="File_system" label="sftp_fs"> <child name="sftp_fs"/> </service>
+			<service name="File_system"> <child name="vfs"/> </service>
+			<service name="ROM" label_last="/bin/bash"> <child name="fs_rom"/> </service>
+			<service name="ROM" label_prefix="/bin"> <child name="fs_rom"/> </service>
+			<service name="ROM" label_suffix=".lib.so"> <parent/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+</config>}
+
+
+#
+# Generate a new host key
+#
+if {![file exists bin/ed25519_key]} {
+	exec ssh-keygen -t ed25519 -f bin/ed25519_key -q -N ""
+}
+lappend boot_modules ed25519_key
+
+set test_file "test.raw"
+catch { exec $dd if=/dev/urandom of=$test_file bs=1024 count=226 }
+
+
+create_boot_directory
+
+install_config $config
+
+import_from_depot $depot_archives
+
+if { [llength $build_components] > 0 } {
+	build $build_components
+}
+
+# write default vimrc file
+set vimrc_fd [open [run_dir]/genode/vimrc w]
+puts $vimrc_fd {
+set noloadplugins
+set hls
+set nocompatible
+set laststatus=2
+set noswapfile
+set viminfo=}
+close $vimrc_fd
+
+build_boot_image $boot_modules
+
+
+append qemu_args     " -nographic "
+append_qemu_nic_args "hostfwd=tcp::5555-:22"
+
+set lxip_match_string "ipaddr=(\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+).*\n"
+
+run_genode_until $lxip_match_string 60
+set serial_id [output_spawn_id]
+
+if {[have_include "power_on/qemu"]} {
+	set host "localhost"
+	set port "5555"
+} elseif {![have_spec linux]} {
+	regexp $lxip_match_string $output all host
+	puts ""
+	set port "22"
+} else {
+	set host "10.0.2.55"
+	set port "22"
+}
+
+# wait for ssh_server to come up
+run_genode_until {.*ssh_server\] --- SSH terminal started.*\n} 5 serial_id
+set options "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o BatchMode=no"
+
+set count 0
+if {[get_cmd_switch --autopilot]} {
+	set count 5
+}
+
+for {set round 0} {$round < $count} {incr round} {
+	foreach testname {
+		"00_bye"
+		"01_ls"
+		"02_cd_ls"
+		"03_mkdir_rmdir"
+		"04_upload_download"
+	} {
+		puts "ROUND: $round, TEST: $testname - START"
+		set testfile "${genode_dir}/repos/world/run/ssh/${testname}.sftp"
+		spawn $sshpass -p $sftp_password sftp -P $port {*}$options -b $testfile $sftp_user@$host
+		set ssh_id $spawn_id
+		set spawn_id_list [list $ssh_id $serial_id]
+		run_genode_until {sftp> bye.*\n} 15 $spawn_id_list
+		run_genode_until ".*\[init -> ssh_server\] .*logout user $sftp_user.*\n" 15 $spawn_id_list
+		expect eof
+		wait
+		puts "ROUND : $round, TEST: $testname - FINISHED"
+		puts ""
+	}
+}
+
+puts ""
+puts "Use `ssh -p $port $terminal_user@$host` (password: $terminal_password)"
+puts "to establish a terminal connection"
+puts "or `sftp -p $port $sftp_user@$host` (password: $sftp_password)"
+puts "for remote file transfer session."
+puts ""
+
+if {![get_cmd_switch --autopilot]} {
+	run_genode_until forever 0 $serial_id
+}
+
+# vi: set ft=tcl :

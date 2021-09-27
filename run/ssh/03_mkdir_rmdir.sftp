@@ -1,0 +1,5 @@
+mkdir sftp/testdir
+ls sftp
+ls sftp/testdir
+rmdir sftp/testdir
+bye

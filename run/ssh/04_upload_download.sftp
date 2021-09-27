@@ -1,0 +1,6 @@
+cd sftp
+put test.raw
+ls -l
+lcd /tmp
+get test.raw
+bye

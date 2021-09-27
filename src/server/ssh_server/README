@@ -5,9 +5,8 @@ SFTP protocol.  Before using the component, please consult the _Notes_
 section to learn about the current subtleties.
 
 For an example on how to use the server please look at the run scripts
-provided by _repos/world/run/ssh_terminal_ and
-_repos/world/run/ssh_exec_channel_.
-
+provided by _repos/world/run/ssh_terminal_,
+_repos/world/run/ssh_exec_channel_ and _repos/world/run/ssh_.
 
 Configuration
 ~~~~~~~~~~~~~
