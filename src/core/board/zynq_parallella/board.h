@@ -36,7 +36,8 @@ namespace Board {
 	using L2_cache = Hw::Pl310;
 	using Serial   = Genode::Xilinx_uart;
 
-	class Pic : public Hw::Gicv2 { };
+	class Global_interrupt_controller { };
+	class Pic : public Hw::Gicv2 { public: Pic(Global_interrupt_controller &) { } };
 
 	enum {
 		UART_BASE  = UART_1_MMIO_BASE,

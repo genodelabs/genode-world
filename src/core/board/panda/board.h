@@ -26,7 +26,8 @@
 namespace Board {
 	using namespace Hw::Panda_board;
 
-	class Pic : public Hw::Gicv2 { };
+	class Global_interrupt_controller { };
+	class Pic : public Hw::Gicv2 { public: Pic(Global_interrupt_controller &) { } };
 
 	class L2_cache : public Hw::Pl310
 	{

@@ -25,7 +25,8 @@
 namespace Board {
 	using namespace Hw::Odroid_xu_board;
 
-	class Pic : public Hw::Gicv2 { };
+	class Global_interrupt_controller { };
+	class Pic : public Hw::Gicv2 { public: Pic(Global_interrupt_controller &) { } };
 }
 
 #endif /* _CORE__SPEC__ODROID_XU__BOARD_H_ */
