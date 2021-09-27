@@ -1,10 +1,10 @@
-<runtime ram="160M" caps="500" binary="glmark2">
+<runtime ram="162M" caps="600" binary="init">
 
 	<requires>
 		<gui/>
 		<gpu/>
 		<timer/>
-		<rom label="egl_drv.lib.so"/>
+		<rom label="mesa_gpu_drv.lib.so"/>
 	</requires>
 
 	<content>
@@ -13,6 +13,7 @@
 		<rom label="glapi.lib.so"/>
 		<rom label="glmark2"/>
 		<rom label="glmark2_assets.tar"/>
+		<rom label="init"/>
 		<rom label="jpeg.lib.so"/>
 		<rom label="ld.lib.so"/>
 		<rom label="libc.lib.so"/>
@@ -25,20 +26,42 @@
 		<rom label="zlib.lib.so"/>
 	</content>
 
-	<config ld_verbose="yes">
-		<vfs>
-			<dir name="dev">
-				<log/>
-			</dir>
-			<dir name="data">
-				<tar name="glmark2_assets.tar"/>
-			</dir>
-		</vfs>
-		<libc stdout="/dev/log" stderr="/dev/log"/>
-		<arg value="glmark2"/>
-		<!-- <arg value="\-\-debug"/> -->
-		<arg value="-b"/>
-		<arg value=":duration=4.0"/>
+	<config>
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="PD"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="LOG"/>
+			<service name="Timer"/>
+			<service name="Gpu"/>
+			<service name="Gui"/>
+		</parent-provides>
+
+		<start name="glmark2" caps="500">
+			<resource name="RAM" quantum="160M"/>
+			<config>
+				<vfs>
+					<dir name="dev">
+						<log/>
+					</dir>
+					<dir name="data">
+						<tar name="glmark2_assets.tar"/>
+					</dir>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log"/>
+				<arg value="glmark2"/>
+				<!-- <arg value="\-\-debug"/> -->
+				<arg value="-b"/>
+				<arg value=":duration=4.0"/>
+			</config>
+			<route>
+				<service name="ROM" label="egl_drv.lib.so">
+					<parent label="mesa_gpu_drv.lib.so"/>
+				</service>
+				<any-service> <parent/> </any-service>
+			</route>
+		</start>
 	</config>
 
 </runtime>

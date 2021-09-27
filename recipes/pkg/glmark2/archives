@@ -1,11 +1,12 @@
 _/src/glmark2
 _/raw/glmark2
-_/src/mesa
-_/src/libdrm
-_/src/libc
-_/src/vfs
 _/src/expat
+_/src/init
 _/src/jpeg
+_/src/libc
+_/src/libdrm
 _/src/libpng
-_/src/zlib
+_/src/mesa
+_/src/vfs
 _/src/stdcxx
+_/src/zlib
