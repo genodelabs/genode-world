@@ -21,7 +21,7 @@
 namespace Board {
 	using namespace Hw::Odroid_xu_board;
 
-	using Pic = Hw::Gicv2;
+	class Pic : public Hw::Gicv2 { };
 }
 
 #endif /* _CORE__SPEC__ODROID_XU__BOARD_H_ */

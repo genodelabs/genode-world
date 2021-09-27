@@ -31,7 +31,8 @@ namespace Board {
 	using Cpu_mmio = Hw::Cortex_a9_mmio<CORTEX_A9_PRIVATE_MEM_BASE>;
 	using L2_cache = Hw::Pl310;
 	using Serial   = Genode::Xilinx_uart;
-	using Pic = Hw::Gicv2;
+
+	class Pic : public Hw::Gicv2 { };
 
 	enum {
 		UART_BASE  = UART_1_MMIO_BASE,

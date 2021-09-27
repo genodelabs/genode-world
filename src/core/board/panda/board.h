@@ -21,7 +21,8 @@
 
 namespace Board {
 	using namespace Hw::Panda_board;
-	using Pic = Hw::Gicv2;
+
+	class Pic : public Hw::Gicv2 { };
 
 	class L2_cache : public Hw::Pl310
 	{
