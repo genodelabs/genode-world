@@ -151,8 +151,12 @@ set config {
 
 		<config port="22" allow_password="yes" show_password="yes" ed25519_key="/etc/ssh/ed25519_key">
 
-			<policy label_prefix="dynamic" user="noux" password="xuon" multi_login="yes" request_terminal="yes"/>
-			<policy label_prefix="always-running-noux" user="charlie" password="xuon"/>
+			<policy label_prefix="dynamic" terminal_name="dynamic_term"
+			        multi_login="yes" request_terminal="yes"/>
+			<policy label_prefix="always-running-noux" terminal_name="running_term"/>
+
+			<login user="noux" password="xuon" terminal="dynamic_term"/>
+			<login user="charlie" password="xuon" terminal="running_term"/>
 
 			<libc stdout="/dev/log" stderr="/dev/log" socket="/socket" pipe="/pipe" rtc="/dev/rtc"/>
 

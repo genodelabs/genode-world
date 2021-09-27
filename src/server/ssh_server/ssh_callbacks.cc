@@ -3,12 +3,13 @@
  * \author Josef Soentgen
  * \author Pirmin Duss
  * \author Sid Hussmann
+ * \author Tomasz Gajewski
  * \date   2019-05-29
  */
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -53,9 +54,13 @@ int channel_data_cb(ssh_session session, ssh_channel channel,
 		return SSH_ERROR;
 	}
 
-	if (!p->terminal) {
-		error("no terminal");
+	if (!p->terminal && p->sftp.uninitialized()) {
+		error("no terminal or sftp");
 		return SSH_ERROR;
+	}
+
+	if (!p->sftp.uninitialized()) {
+		return p->sftp.incoming_sftp_data(data, len);
 	}
 
 	Ssh::Terminal &conn              { *p->terminal };
@@ -79,6 +84,38 @@ int channel_data_cb(ssh_session session, ssh_channel channel,
 	}
 	conn.notify_read_avail();
 	return num_bytes;
+}
+
+
+/**
+ * Handle SSH channel data request
+ */
+void channel_eof_cb(ssh_session session, ssh_channel channel,
+                    void *userdata)
+{
+	using namespace Genode;
+	Ssh::Server &server = *reinterpret_cast<Ssh::Server*>(userdata);
+	Ssh::Session *p = server.lookup_session(session);
+
+	if (!p) {
+		error("session not found");
+		return;
+	}
+
+	if (p->channel != channel) {
+		error("wrong channel");
+		return;
+	}
+
+	if (!p->terminal && p->sftp.uninitialized()) {
+		error("no terminal or sftp");
+		return;
+	}
+
+	if (!p->sftp.uninitialized()) {
+		p->sftp.handle_eof();
+		return;
+	}
 }
 
 
@@ -108,6 +145,12 @@ int channel_pty_request_cb(ssh_session session, ssh_channel channel,
 	Ssh::Server &server = *reinterpret_cast<Ssh::Server*>(userdata);
 	Ssh::Session *p = server.lookup_session(session);
 	if (!p || p->channel != channel) { return SSH_ERROR; }
+
+	Ssh::Login const *l = server.lookup_login(session);
+	if (!l || !l->allow_terminal) {
+		p->terminal_detached = true;
+		return SSH_ERROR;
+	}
 
 	/*
 	 * Look up terminal and in case there is none, check
@@ -204,6 +247,32 @@ int channel_exec_request_cb(ssh_session session, ssh_channel channel,
 	return SSH_ERROR;
 }
 
+
+int channel_subsystem_request_cb(ssh_session session, ssh_channel channel,
+                                 const char *subsystem, void *userdata)
+{
+	using namespace Genode;
+	Ssh::Server &server = *reinterpret_cast<Ssh::Server*>(userdata);
+	Ssh::Session *p = server.lookup_session(session);
+	if (!p || p->channel != channel) { return SSH_ERROR; }
+
+	if (Genode::strcmp(subsystem, "sftp") != 0) { return SSH_ERROR; }
+
+	Ssh::Login const *l = server.lookup_login(session);
+	if (!l || !l->allow_sftp) { return SSH_ERROR; }
+
+	if (!p->sftp.uninitialized()) {
+		Genode::warning("requesting ", subsystem, " when sftp already requested");
+	} else {
+		p->request_sftp_subsystem();
+		if (p->sftp.uninitialized()) {
+			Genode::error("requesting sftp subsystem failed");
+			return SSH_ERROR;
+		}
+	}
+
+	return SSH_OK;
+}
 
 /***********************
  ** Session callbacks **

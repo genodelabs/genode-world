@@ -2,12 +2,13 @@
  * \brief  Component providing a Terminal session via SSH
  * \author Josef Soentgen
  * \author Pirmin Duss
+ * \author Tomasz Gajewski
  * \date   2019-05-29
  */
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -54,7 +55,7 @@ class Ssh::Terminal
 		Signal_context_capability _connected_sigh;
 		Signal_context_capability _read_avail_sigh;
 
-		Ssh::User const _user { };
+		Ssh::Terminal_name const _term_name { };
 
 		unsigned _attached_channels { 0u };
 		unsigned _pending_channels  { 0u };
@@ -68,11 +69,11 @@ class Ssh::Terminal
 		/**
 		 * Constructor
 		 */
-		Terminal(Ssh::User const &user) : _user(user) { }
+		Terminal(Terminal_name const &term_name) : _term_name(term_name) { }
 
 		virtual ~Terminal() = default;
 
-		Ssh::User const &user() const { return _user; }
+		Ssh::Terminal_name const &terminal_name() const { return _term_name; }
 
 		unsigned attached_channels() const { return _attached_channels; }
 

@@ -1,23 +1,29 @@
-This directory contains an minimal SSH Terminal server. It provides
-concurrent access to multiple Terminal sessions via interactive SSH sessions.
-Before using the component, please consult the _Notes_ section to learn
-about the current subtleties.
+This directory contains an minimal SSH Terminal and SFTP server. It
+provides concurrent access to multiple Terminal sessions via
+interactive SSH sessions and access to /sftp part of its vfs through
+SFTP protocol.  Before using the component, please consult the _Notes_
+section to learn about the current subtleties.
 
-For an example on how to use the server please look at the run script
-provided by _repos/gems/run/ssh_terminal_ or _repos/gems/run/ssh_exec_channel_.
+For an example on how to use the server please look at the run scripts
+provided by _repos/world/run/ssh_terminal_ and
+_repos/world/run/ssh_exec_channel_.
 
 
 Configuration
 ~~~~~~~~~~~~~
 
-Examplary configuration:
+Examplary configuration that allows for terminal access:
 
 ! <config port="2022" ed25519_key="/etc/ed25519_host_key
 !         allow_password="yes" allow_publickey="yes"/>
-!   <vfs>
-!   <policy label="noux-system" user="root" password="toor"/>
-!   <policy label="noux-user"   user="user" pub_key="/etc/user.pub"/>
 !
+!   <policy label="noux-system" terminal_name="system"/>
+!   <policy label="noux-user"   terminal_name="user"/>
+!
+!   <login user="root" password="toor"         terminal="system"/>
+!   <login user="user" pub_key="/etc/user.pub" terminal="user"/>
+!
+!   <vfs>
 !     <dir name="dev">
 !       <log/> <rtc/>
 !       <inline name="random">012345678</inline>
@@ -31,8 +37,10 @@ Examplary configuration:
 The above config snippet shows a configuration where two Noux clients may
 connect to the Terminal server and SSH connections with either a password or a
 public are processed on port 2022. All SSH logins for the user 'root' are
-linked to the 'noux-system' session, while all 'user' logins are forwarded
-to the 'noux-user' session.
+linked to the terminal named 'system' (with policy label 'noux-system'),
+while all 'user' logins are forwarded to the 'user' terminal (policy label
+'noux-user'). It is possible to have multiple 'login' entries allowing access
+to a single terminal.
 
 The '<config>' node has several mandatory attributes:
 
@@ -51,12 +59,26 @@ Aside from the mandatory attributes there are optional ones:
 * 'log_logins' enables logging of login attempts. These attempts will
    be printed to the LOG session. The default is 'yes'.
 
-The relation between a Terminal session and a SSH session is established
-by a '<policy>' node. It first specifies which Terminal client may access
-the server. Second and more importantly it specifies which SSH session has
-access to which Terminal session. The non policy-label specific attributes
-of the node form a login that is used to authenticate access via the SSH
-session:
+The relation between a Terminal session and a SSH session is
+established by a 'terminal_name' attribute in '<policy>' node and
+'terminal' value in '<login>' node. Terminal sessions are given a name
+with 'terminal_name' attribute and users are given access to a
+terminal using a 'terminal' attribute in their '<login>' nodes. This
+configuration specifies which SSH session has access to which Terminal
+session.
+
+In addition to 'terminal_name' there are other non policy-label
+specific attributes that allow to specify terminal attributes:
+
+* 'multi_login' allows one Terminal session to be used by mutliple SSH
+  sessions concurrently, the default is false.
+
+* 'request_terminal' (described in more detail below) allows request
+  creation of terminal session after establishing ssh connection, the
+  default is false.
+
+Login specific attributes specify authentication and allowed access to
+services of specific user:
 
 * 'user' sets the name of a login and is used throughout the component
   to establish the relation between Terminal and SSH session and is therefore
@@ -68,8 +90,11 @@ session:
 * 'pub_key' sets the path to the public-key file, which is used to authenticate
   a login attempt.
 
-* 'multi_login' allows one Terminal session to be used by mutliple SSH
-  sessions concurrently, the default is false.
+* 'terminal_name' if set specifies to which terminal session user is
+  allowed to connect to.
+
+* 'sftp' if set 'yes' allows user to use SFTP subsystem and access
+  files in '/sftp' subdirectory of ssh_server virtual file system.
 
 Either one of the 'password' or 'pub_key' attributes must be set in order for
 the login to be valid.
@@ -98,12 +123,45 @@ there are active SSH session after the Terminal in question has been detached, a
 new report will be generated.
 
 
+Following configuration shows how use component for sftp access:
+
+! <config port="2022" ed25519_key="/etc/ed25519_host_key
+!         allow_password="yes" allow_publickey="yes"/>
+!
+!   <login user="root" password="toor" sftp="yes"/>
+!   <login user="user" pub_key="/etc/user.pub" sftp="yes"/>
+!
+!   <vfs>
+!     <dir name="dev">
+!       <log/> <rtc/>
+!       <inline name="random">012345678</inline>
+!     </dir>
+!     <dir name="socket"> <lxip dhcp="yes"/> </dir>
+!     <dir name="etc"> <fs/> </dir>
+!     <dir name="sftp"> <ram/> </dir>
+!   </vfs>
+!   <libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe"
+!         rtc="/dev/rtc" socket="/socket"/>
+! </config>
+
+Important differences in configuration for sftp functionality are:
+
+* there are no 'policy' nodes as there are no terminals connecting
+
+* 'sftp' attribute is set to indicate access to sftp subsystem
+  (not allowed by default).
+
+* 'sftp' directory is required to be configured in root of vfs as
+  other folders than this specific one are hidden from sftp clients.
+
+
 Notes
 ~~~~~
 
 * A helper component is needed, in case an exec channel is required or when
   Terminal sessions need to be started *after* the SSH connection is
-  established. An example can be found here: _repos/gems/src/test/exec_terminal/
+  established. An example can be found here:
+	_repos/world/src/test/exec_terminal/
 
 * The SSH connection MUST be forcefully cut at the client in case the Terminal
   session is established *before* the ssh channel is open. This can be done
@@ -119,3 +177,7 @@ Notes
 * Although concurrent access to one Terminal session via multiple SSH sessions
   at the same time is possible, it should better be avoided as there are no
   safety measures in place.
+
+* Although enabling terminal and sftp access in one component should
+  work properly, from a security perspective it is probably better to
+  have these features provided by different component instances.

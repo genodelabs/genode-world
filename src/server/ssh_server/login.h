@@ -2,12 +2,13 @@
  * \brief  Component providing a Terminal session via SSH
  * \author Josef Soentgen
  * \author Pirmin Duss
+ * \author Tomasz Gajewski
  * \date   2019-05-29
  */
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -37,6 +38,8 @@ namespace Ssh {
 	using Password = String<64>;
 	using Hash     = String<65>;
 
+	using Terminal_name = String<64>;
+
 	struct Login;
 	struct Login_registry;
 }
@@ -48,6 +51,10 @@ struct Ssh::Login : Genode::Registry<Ssh::Login>::Element
 	Ssh::Password password     { };
 	Ssh::Hash     pub_key_hash { };
 	ssh_key       pub_key      { nullptr };
+	bool allow_terminal        { false };
+	bool allow_sftp            { false };
+
+	Ssh::Terminal_name terminal_name;
 	bool multi_login           { false };
 	bool request_terminal      { false };
 
@@ -58,12 +65,17 @@ struct Ssh::Login : Genode::Registry<Ssh::Login>::Element
 	      Ssh::User      const &user,
 	      Ssh::Password  const &pw,
 	      Filename       const &pk_file,
+	      bool           const allow_terminal,
+	      bool           const allow_sftp,
+	      Ssh::Terminal_name const &term_name,
 	      bool           const multi_login,
 	      bool           const request_terminal)
 	:
 		Element(reg, *this),
-		user(user), password(pw), multi_login(multi_login),
-		request_terminal(request_terminal)
+		user(user), password(pw),
+		allow_terminal(allow_terminal), allow_sftp(allow_sftp),
+		terminal_name(term_name),
+		multi_login(multi_login), request_terminal(request_terminal)
 	{
 		Libc::with_libc([&] {
 
@@ -115,16 +127,25 @@ struct Ssh::Login_registry : Genode::Registry<Ssh::Login>
 	/**
 	 * Import one login from node
 	 */
-	bool _import_single(Genode::Xml_node const &node)
+	bool _import_single(Genode::Xml_node const &node,
+	                    Genode::Xml_node const &main)
 	{
 		User     user        = node.attribute_value("user", User());
 		Password pw          = node.attribute_value("password", Password());
 		Filename pub         = node.attribute_value("pub_key", Filename());
-		bool     multi_login = node.attribute_value("multi_login", false);
-		bool     req_term    = node.attribute_value("request_terminal", false);
+
+		Ssh::Terminal_name const terminal
+			= node.attribute_value("terminal", Ssh::Terminal_name());
+		bool     allow_term  = terminal.valid();
+
+		bool     allow_sftp  = node.attribute_value("sftp", false);
+
+		int      policies_found = 0;
+		bool     multi_login    = false;
+		bool     req_term       = false;
 
 		if (!user.valid() || (!pw.valid() && !pub.valid())) {
-			Genode::warning("ignoring invalid policy");
+			Genode::warning("ignoring invalid login: '", user, "'");
 			return false;
 		}
 
@@ -133,8 +154,36 @@ struct Ssh::Login_registry : Genode::Registry<Ssh::Login>
 			return false;
 		}
 
+		if (allow_term) {
+			main.for_each_sub_node("policy",
+				[&] (Genode::Xml_node const &policy) {
+					Ssh::Terminal_name terminal_name
+						= policy.attribute_value("terminal_name", Ssh::Terminal_name());
+					if (terminal_name == terminal) {
+						++policies_found;
+						multi_login = policy.attribute_value("multi_login", false);
+						req_term = policy.attribute_value("request_terminal", false);
+					}
+				});
+			if (policies_found == 0) {
+				Genode::warning("ignoring login: '", user,
+				                "' due to policy with terminal name: '", terminal,
+				                "' not found");
+				return false;
+			}
+			if (policies_found > 1) {
+				Genode::warning("ignoring login: '", user,
+				                "' due to multiple policies with terminal name: '",
+				                terminal, "' found");
+				return false;
+			}
+		}
+
 		try {
-			new (&_alloc) Login(*this, user, pw, pub, multi_login, req_term);
+			new (&_alloc) Login(*this, user, pw, pub,
+			                    allow_term, allow_sftp,
+			                    terminal,
+			                    multi_login, req_term);
 			return true;
 		} catch (...) { return false; }
 	}
@@ -166,9 +215,9 @@ struct Ssh::Login_registry : Genode::Registry<Ssh::Login>
 		_remove_all();
 
 		try {
-			node.for_each_sub_node("policy",
-			[&] (Genode::Xml_node const &node) {
-				_import_single(node);
+			node.for_each_sub_node("login",
+			[&] (Genode::Xml_node const &login) {
+				_import_single(login, node);
 			});
 		} catch (...) { }
 	}

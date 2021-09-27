@@ -7,7 +7,7 @@
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -40,9 +40,9 @@ class Terminal::Session_component : public Genode::Rpc_object<Session, Session_c
 
 		Session_component(Genode::Env &env,
 		                  Genode::size_t io_buffer_size,
-		                  Ssh::User const &user)
+		                  Ssh::Terminal_name const &term_name)
 		:
-			Ssh::Terminal(user),
+			Ssh::Terminal(term_name),
 			_io_buffer(env.ram(), env.rm(), io_buffer_size)
 		{ }
 

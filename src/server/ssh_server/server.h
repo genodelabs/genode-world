@@ -2,12 +2,13 @@
  * \brief  Component providing a Terminal session via SSH
  * \author Josef Soentgen
  * \author Pirmin Duss
+ * \author Tomasz Gajewski
  * \date   2019-05-29
  */
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -32,7 +33,9 @@
 
 /* local includes */
 #include "login.h"
+#include "sftp.h"
 #include "terminal.h"
+#include "wake_up_signaller.h"
 
 
 namespace Ssh {
@@ -45,9 +48,10 @@ namespace Ssh {
 	struct Terminal_registry;
 }
 
-
 struct Ssh::Session : Genode::Registry<Session>::Element
 {
+	Genode::Heap &_heap;
+
 	User     _user { };
 	uint32_t _id   { 0 };
 
@@ -60,12 +64,22 @@ struct Ssh::Session : Genode::Registry<Session>::Element
 
 	Ssh::Terminal *terminal          { nullptr };
 	bool           terminal_detached { false };
+	bool           terminal_requested{ false };
 
-	Session(Genode::Registry<Session> &reg,
+	Ssh::Sftp      sftp;
+
+	Session(Genode::Env &env,
+	        Genode::Heap &heap,
+	        Genode::Registry<Session> &reg,
+	        Wake_up_signaller &wake_up_signaller,
 	        ssh_session s,
 	        ssh_channel_callbacks ccb,
 	        uint32_t id)
-	: Element(reg, *this), _id(id), session(s), channel_cb(ccb) { }
+	: Element(reg, *this), _heap(heap), _id(id), session(s), channel_cb(ccb),
+	  sftp(heap, wake_up_signaller)
+	{
+		ssh_set_blocking(s, false);
+	}
 
 	void adopt(User const &user) { _user = user; }
 
@@ -76,6 +90,11 @@ struct Ssh::Session : Genode::Registry<Session>::Element
 	{
 		ssh_set_channel_callbacks(c, channel_cb);
 		channel = c;
+	}
+
+	void request_sftp_subsystem()
+	{
+		sftp.initialize_subsystem(session, channel, _user);
 	}
 };
 
@@ -245,6 +264,11 @@ class Ssh::Server
 		Session *lookup_session(ssh_session s);
 
 		/**
+		 * Look up Login for SSH session
+		 */
+		Login const *lookup_login(ssh_session s);
+
+		/**
 		 * Request Terminal
 		 */
 		bool request_terminal(Session &session, const char* command = nullptr);
@@ -265,6 +289,20 @@ class Ssh::Server
 		bool auth_pubkey(ssh_session s, char const *u,
 		                 struct ssh_key_struct *pubkey,
                          char signature_state);
+
+		struct Signaller : public Wake_up_signaller
+		{
+			Ssh::Server& _server;
+
+			Signaller(Ssh::Server& server)
+				: _server(server) {}
+
+			void signal_wake_up() override
+			{
+				_server._wake_loop();
+			}
+		};
+		Signaller _signaller { *this };
 };
 
 #endif /* _SSH_TERMINAL_SERVER_H_ */

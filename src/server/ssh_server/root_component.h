@@ -2,12 +2,13 @@
  * \brief  Component providing a Terminal session via SSH
  * \author Josef Soentgen
  * \author Pirmin Duss
+ * \author Tomasz Gajewski
  * \date   2019-05-29
  */
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -73,14 +74,12 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 				Session_label const label = label_from_args(args);
 				Session_policy policy(label, _config);
 
-				Ssh::User const user = policy.attribute_value("user", Ssh::User());
-				if (!user.valid()) { throw -1; }
-
-				Ssh::Login const *login = _logins.lookup(user.string());
-				if (!login) { throw -1; }
+				Ssh::Terminal_name const term_name
+					= policy.attribute_value("terminal_name", Ssh::Terminal_name());
+				if (!term_name.valid()) { throw -1; }
 
 				Session_component *s = nullptr;
-					s = new (md_alloc()) Session_component(_env, 4096, login->user);
+					s = new (md_alloc()) Session_component(_env, 4096, term_name);
 
 				try {
 					Libc::with_libc([&] () { _server.attach_terminal(*s); });

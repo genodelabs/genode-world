@@ -18,6 +18,7 @@ set build_components {
 	drivers/rtc
 	server/ssh_server
 	server/fs_rom
+	server/report_rom
 	server/vfs
 	lib/vfs/jitterentropy
 	lib/vfs/lxip
@@ -71,6 +72,7 @@ set config {
 	<start name="nic_drv">
 		<binary name="ipxe_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
+		<config mode="uplink_client"/>
 		<route>
 			<service name="Uplink"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
@@ -122,8 +124,12 @@ set config {
 		<provides> <service name="Terminal"/> </provides>
 		<config ld_verbose="yes" port="22" allow_password="yes"
 		        show_password="yes" ed25519_key="/etc/ssh/ed25519_key">
-			<policy label_prefix="/bin/bash" user="genode" password="xuon" multi_login="yes" request_terminal="yes"/>
-			<policy label_prefix="test-terminal_echo" user="charlie" password="echo"/>
+			<policy label_prefix="/bin/bash" terminal_name="bash"
+			        multi_login="yes" request_terminal="yes"/>
+			<policy label_prefix="test-terminal_echo" terminal_name="echo"/>
+
+			<login user="genode" password="xuon" terminal="bash"/>
+			<login user="charlie" password="echo" terminal="echo"/>
 
 			<vfs>
 				<dir name="dev">
@@ -239,7 +245,7 @@ build_boot_image $boot_modules
 # Execute test
 #
 
-append qemu_args     " -nographic "
+append qemu_args     " -m 512 -nographic "
 append_qemu_nic_args "hostfwd=tcp::5555-:22"
 
 set lxip_match_string "ipaddr=(\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+).*\n"

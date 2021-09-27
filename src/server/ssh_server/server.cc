@@ -3,12 +3,13 @@
  * \author Josef Soentgen
  * \author Pirmin Duss
  * \author Sid Hussmann
+ * \author Tomasz Gajewski
  * \date   2019-05-29
  */
 
 /*
  * Copyright (C) 2018 Genode Labs GmbH
- * Copyright (C) 2019 gapfruit AG
+ * Copyright (C) 2019-2021 gapfruit AG
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -24,11 +25,13 @@
  */
 
 extern int channel_data_cb(ssh_session, ssh_channel, void *, uint32_t, int, void *);
+extern void channel_eof_cb(ssh_session, ssh_channel, void *);
 extern int channel_env_request_cb(ssh_session, ssh_channel, char const *, char const *, void *);
 extern int channel_pty_request_cb(ssh_session, ssh_channel, char const *, int, int, int, int, void *);
 extern int channel_pty_window_change_cb(ssh_session, ssh_channel, int, int, int, int, void *);
 extern int channel_shell_request_cb(ssh_session, ssh_channel, void *);
 extern int channel_exec_request_cb(ssh_session, ssh_channel, char const *, void *);
+extern int channel_subsystem_request_cb(ssh_session session, ssh_channel channel, const char *subsystem, void *userdata);
 
 extern void bind_incoming_connection(ssh_bind, void *);
 extern int session_service_request_cb(ssh_session, char const *, void *);
@@ -163,11 +166,13 @@ void Ssh::Server::_initialize_channel_callbacks()
 
 	_channel_cb.userdata                           = this;
 	_channel_cb.channel_data_function              = channel_data_cb;
+	_channel_cb.channel_eof_function               = channel_eof_cb;
 	_channel_cb.channel_env_request_function       = channel_env_request_cb;
 	_channel_cb.channel_pty_request_function       = channel_pty_request_cb;
 	_channel_cb.channel_pty_window_change_function = channel_pty_window_change_cb;
 	_channel_cb.channel_shell_request_function     = channel_shell_request_cb;
 	_channel_cb.channel_exec_request_function      = channel_exec_request_cb;
+	_channel_cb.channel_subsystem_request_function = channel_subsystem_request_cb;
 
 	ssh_callbacks_init(&_channel_cb);
 }
@@ -205,7 +210,6 @@ void Ssh::Server::_cleanup_session(Session &s)
 	ssh_channel_free(s.channel);
 	s.channel = nullptr;
 
-	ssh_blocking_flush(s.session, 5*1000);
 	ssh_event_remove_session(_event_loop, s.session);
 	ssh_disconnect(s.session);
 	ssh_free(s.session);
@@ -216,10 +220,13 @@ void Ssh::Server::_cleanup_session(Session &s)
 	}
 
 	try {
-		_request_terminal_reporter.generate([&] (Xml_generator& xml) {
-			xml.attribute("user", s.user());
-			xml.attribute("exit", "now");
-		});
+		if (s.terminal_requested) {
+			_request_terminal_reporter.generate([&] (Xml_generator& xml) {
+				xml.attribute("user", s.user());
+				xml.attribute("exit", "now");
+			});
+			s.terminal_requested = false;
+		}
 	} catch (...) {
 		Genode::warning("could not enable exit reporting");
 	}
@@ -351,15 +358,17 @@ void Ssh::Server::attach_terminal(Ssh::Terminal &conn)
 		new (&_heap) Terminal_session(_terminals,
 		                              conn, _event_loop);
 	} catch (...) {
-		Genode::error("could not attach Terminal for user ",
-		              conn.user());
+		Genode::error("could not attach Terminal ", conn.terminal_name());
 		throw -1;
 	}
 
 	/* there might be sessions already waiting on the terminal */
 	bool attached = false;
 	auto lookup = [&] (Session &s) {
-		if (s.user() == conn.user() && !s.terminal) {
+		Ssh::Login const *l = _logins.lookup(s.user().string());
+		if ((l != nullptr)
+		    && (l->terminal_name == conn.terminal_name())
+		    && !s.terminal) {
 			s.terminal = &conn;
 			s.terminal->attach_channel();
 			attached = true;
@@ -385,7 +394,7 @@ void Ssh::Server::detach_terminal(Ssh::Terminal &conn)
 	_terminals.for_each(lookup);
 
 	if (!p) {
-		Genode::error("could not detach Terminal for user ", conn.user());
+		Genode::error("could not detach Terminal ", conn.terminal_name());
 		return;
 	}
 
@@ -414,9 +423,12 @@ void Ssh::Server::update_config(Genode::Xml_node const &config)
 
 Ssh::Terminal *Ssh::Server::lookup_terminal(Session &s)
 {
+	Ssh::Login const *l = _logins.lookup(s.user().string());
+	if (l == nullptr) return nullptr;
+
 	Ssh::Terminal *p      = nullptr;
 	auto           lookup = [&] (Terminal_session &t) {
-		if (t.conn.user() == s.user()) { p = &t.conn; }
+		if (t.conn.terminal_name() == l->terminal_name) { p = &t.conn; }
 	};
 	_terminals.for_each(lookup);
 	return p;
@@ -431,6 +443,16 @@ Ssh::Session *Ssh::Server::lookup_session(ssh_session s)
 	};
 	_sessions.for_each(lookup);
 	return p;
+}
+
+
+Ssh::Login const *Ssh::Server::lookup_login(ssh_session s)
+{
+	Ssh::Session *p = lookup_session(s);
+	if (!p) return nullptr;
+
+	Ssh::Login const *l = _logins.lookup(p->user().string());
+	return l;
 }
 
 
@@ -454,6 +476,8 @@ bool Ssh::Server::request_terminal(Session &session,
 		Genode::warning("could not enable login reporting");
 		return false;
 	}
+
+	session.terminal_requested = true;
 
 	if (_log_logins) {
 		char const *date = Util::get_time();
@@ -485,7 +509,8 @@ void Ssh::Server::incoming_connection(ssh_session s)
 	 * is taken during _session.for_each(...) and during a 'new' here,
 	 * which would lead to a deadlock.
 	 */
-	new (&_heap) Session(_new_sessions, s, &_channel_cb, ++_session_id);
+	new (&_heap) Session(_env, _heap, _new_sessions, _signaller, s,
+	                     &_channel_cb, ++_session_id);
 }
 
 
@@ -585,7 +610,10 @@ void Ssh::Server::loop()
 {
 	while (true) {
 
+		ssh_event_set_dopoll_immediate(_event_loop, 0);
 		int const events = ssh_event_dopoll(_event_loop, -1);
+		ssh_event_set_dopoll_immediate(_event_loop, 1);
+
 		if (events == SSH_ERROR) {
 			_cleanup_sessions();
 		}
@@ -624,8 +652,20 @@ void Ssh::Server::loop()
 						Genode::destroy(&_heap, p);
 				}
 
-				if (!s.terminal_detached
-				    && ssh_is_connected(s.session)) { return ; }
+				if ((s.sftp._state == Sftp::WORKER_FINISHED) ||
+				    (s.sftp._state == Sftp::CREATE_ERROR) ||
+				    !ssh_is_connected(s.session)) {
+					s.sftp.cleanup();
+				}
+
+				if (!s.terminal_detached &&
+				    (s.sftp._state != Sftp::CLEAN) &&
+				    ssh_is_connected(s.session)) { return ; }
+
+				/* do not call cleanup session if there is data to flush */
+				/* perform check using ssh_blocking_flush with 0 timeout */
+				if (ssh_blocking_flush(s.session, 0) == SSH_AGAIN) { return; }
+
 				_cleanup_session(s);
 			};
 			_sessions.for_each(cleanup);
@@ -648,12 +688,33 @@ void Ssh::Server::loop()
 				catch (...) { _cleanup_session(s); }
 			};
 			_sessions.for_each(send);
+
+			/*
+			 * fourth send pending sftp data on sessions with enabled sftp
+			 * subsystem
+			 */
+			auto send_sftp = [&] (Session &s) {
+				if (s.sftp.uninitialized()) { return; }
+
+				try { s.sftp.send_queued_packets(s.channel); }
+				catch (...) { _cleanup_session(s); }
+			};
+			_sessions.for_each(send_sftp);
+
+			/* fifth flush ssh sessions data */
+			auto flush_output = [&] (Session &s) {
+				ssh_blocking_flush(s.session, 0);
+			};
+			_sessions.for_each(flush_output);
 		}
 
 		/* enable all new sessions that got added by ssh callbacks */
 		auto activate = [&] (Session &inactive_session) {
 			/* re-queue session object */
-			new (&_heap) Session(_sessions,
+			new (&_heap) Session(_env,
+			                     _heap,
+			                     _sessions,
+			                     _signaller,
 			                     inactive_session.session,
 			                     inactive_session.channel_cb,
 			                     inactive_session.id());
@@ -671,23 +732,17 @@ void Ssh::Server::loop()
 			auth_methods += _allow_publickey ? SSH_AUTH_METHOD_PUBLICKEY : 0;
 			ssh_set_auth_methods(s, auth_methods);
 
-			/*
-			 * Normally we would check the result of the key exchange
-			 * function but for better or worse using callbacks leads to
-			 * a false negative. So ignore any result and move on in hope
-			 * that the callsbacks will handle the situation.
-			 *
-			 * FIXME investigate why it somtimes fails in the first place.
-			 */
 			int key_exchange_result = ssh_handle_key_exchange(s);
 
-			if (SSH_OK != key_exchange_result) {
+			if ((SSH_OK != key_exchange_result) &&
+			    (SSH_AGAIN != key_exchange_result)) {
 				Genode::warning("key exchange returned ", key_exchange_result);
 			}
 
 			ssh_event_add_session(_event_loop, s);
 		};
 		_new_sessions.for_each(activate);
+
 	}
 }
 
