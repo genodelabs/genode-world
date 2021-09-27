@@ -14,11 +14,15 @@
 #ifndef _CORE__SPEC__ARNDALE__BOARD_H_
 #define _CORE__SPEC__ARNDALE__BOARD_H_
 
-#include <spec/arm/virtualization/gicv2.h>
+/* base-hw internal includes */
 #include <hw/spec/arm/arndale_board.h>
+
+/* base-hw Core includes */
+#include <spec/arm/virtualization/gicv2.h>
 #include <spec/arm/exynos_mct.h>
 #include <spec/arm/cpu/vm_state_virtualization.h>
 #include <spec/arm/virtualization/board.h>
+#include <spec/arm/address_space_id_allocator.h>
 
 namespace Kernel { class Cpu; }
 

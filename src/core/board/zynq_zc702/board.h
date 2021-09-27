@@ -20,11 +20,15 @@
 #include <drivers/defs/zynq_zc702.h>
 #include <drivers/uart/xilinx.h>
 
+/* base-hw internal includes */
 #include <hw/spec/arm/boot_info.h>
 #include <hw/spec/arm/cortex_a9.h>
 #include <hw/spec/arm/gicv2.h>
 #include <hw/spec/arm/pl310.h>
+
+/* base-hw Core includes */
 #include <spec/arm/cortex_a9_private_timer.h>
+#include <spec/arm/address_space_id_allocator.h>
 
 namespace Board {
 	using namespace Zynq_zc702;

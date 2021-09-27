@@ -16,15 +16,19 @@
 #ifndef _CORE__BOARD__ZYNQ_ZEDBOARD__BOARD_H_
 #define _CORE__BOARD__ZYNQ_ZEDBOARD__BOARD_H_
 
-/* core includes */
+/* base Core includes */
 #include <drivers/defs/zynq_zedboard.h>
 #include <drivers/uart/xilinx.h>
 
+/* base-hw internal includes */
 #include <hw/spec/arm/boot_info.h>
 #include <hw/spec/arm/cortex_a9.h>
 #include <hw/spec/arm/gicv2.h>
 #include <hw/spec/arm/pl310.h>
+
+/* base-hw Core includes */
 #include <spec/arm/cortex_a9_private_timer.h>
+#include <spec/arm/address_space_id_allocator.h>
 
 namespace Board {
 	using namespace Zynq_zedboard;
