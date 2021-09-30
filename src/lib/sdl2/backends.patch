@@ -98,3 +98,25 @@
  #else
  /* Desktop Linux */
  #define DEFAULT_OGL "libGL.so.1"
+--- a/src/audio/SDL_audiodev.c
++++ b/src/audio/SDL_audiodev.c
+@@ -50,7 +50,7 @@
+ test_device(const int iscapture, const char *fname, int flags, int (*test) (int fd))
+ {
+     struct stat sb;
+-    if ((stat(fname, &sb) == 0) && (S_ISCHR(sb.st_mode))) {
++    if ((stat(fname, &sb) == 0)) {
+         const int audio_fd = open(fname, flags, 0);
+         if (audio_fd >= 0) {
+             const int okay = test(audio_fd);
+--- a/src/thread/pthread/SDL_systhread.c
++++ b/src/thread/pthread/SDL_systhread.c
+@@ -188,7 +188,7 @@
+ int
+ SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority)
+ {
+-#if __NACL__ || __RISCOS__
++#if __NACL__ || __RISCOS__ || GENODE
+     /* FIXME: Setting thread priority does not seem to be supported in NACL */
+     return 0;
+ #elif __LINUX__

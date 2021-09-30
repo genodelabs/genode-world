@@ -26,7 +26,7 @@ REP_INC_DIR += include/SDL2
 endif
 
 # backends
-SRC_CC   = audio/SDL_genodeaudio.cc \
+SRC_CC   = \
            video/SDL_genode_fb_video.cc \
            video/SDL_genode_fb_events.cc \
            loadso/SDL_loadso.cc
@@ -39,6 +39,7 @@ INC_DIR += $(REP_DIR)/include/SDL2 \
 # main files
 SRC_C    = SDL.c \
            SDL_assert.c \
+           SDL_dataqueue.c \
            SDL_error.c \
            SDL_hints.c \
            SDL_log.c
@@ -50,6 +51,9 @@ SRC_C += $(addprefix atomic/,$(notdir $(wildcard $(SDL2_DIR)/src/atomic/*.c)))
 # audio subsystem
 SRC_C += $(addprefix audio/,$(notdir $(wildcard $(SDL2_DIR)/src/audio/*.c)))
 INC_DIR += $(SDL2_DIR)/src/audio
+
+SRC_C += $(addprefix audio/dsp/,$(notdir $(wildcard $(SDL2_DIR)/src/audio/dsp/*.c)))
+INC_DIR += $(SDL2_DIR)/src/audio/dsp
 
 # sensor subsystem
 SRC_C += $(addprefix sensor/,$(notdir $(wildcard $(SDL2_DIR)/src/sensor/*.c)))
