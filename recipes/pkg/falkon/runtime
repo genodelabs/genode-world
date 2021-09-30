@@ -24,7 +24,7 @@
 
 		<rom label="falkon"/>
 		<rom label="egl.lib.so"/>
-		<rom label="egl_swrast.lib.so"/>
+		<rom label="mesa_gpu-softpipe.lib.so"/>
 		<rom label="expat.lib.so"/>
 		<rom label="freebl3.lib.so"/>
 		<rom label="glapi.lib.so"/>

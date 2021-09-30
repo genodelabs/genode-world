@@ -20,7 +20,7 @@ set build_components {
 	drivers/framebuffer drivers/input
 	server/nitpicker server/gui_fb
 	app/launchpad app/pointer
-	lib/mesa/swrast
+	lib/mesa/softpipe
 	test/mesa_demo/gears
 	server/fb_splitter
 }
@@ -148,8 +148,8 @@ append config {
 	<start name="gears" priority="-2">
 		<resource name="RAM" quantum="28M"/>
 		<route>
-			<service name="ROM" label="egl_drv.lib.so">
-				<parent label="egl_swrast.lib.so"/>
+			<service name="ROM" label="mesa_gpu_drv.lib.so">
+				<parent label="mesa_gpu-softpipe.lib.so"/>
 			</service>
 			<service name="Framebuffer"><child name="gui_fb"/></service>
 			<any-service><parent/><any-child/></any-service>
@@ -218,7 +218,8 @@ set boot_modules {
 	ahci_drv rump.lib.so rump_fs.lib.so vfs vfs_rump.lib.so
 	nitpicker gui_fb
 	launchpad pointer
-	gears egl.lib.so expat.lib.so glapi.lib.so mesa.lib.so stdcxx.lib.so egl_swrast.lib.so
+	gears egl.lib.so expat.lib.so glapi.lib.so mesa.lib.so stdcxx.lib.so
+	mesa_gpu-sopftpipe.lib.so
 	fb_splitter
 	vesa_fb_drv ps2_drv
 }

@@ -19,12 +19,12 @@ set build_components {
 	server/liquid_framebuffer
 	server/nitpicker
 	server/input_event_bridge
-	lib/mesa/swrast
+	lib/mesa/softpipe
 	app/launchpad
 	app/pointer
 }
 
-lappend_if $use_i965 build_components lib/mesa/i965
+lappend_if $use_i965 build_components lib/mesa/iris
 
 lappend build_components $demo_component
 
@@ -114,9 +114,9 @@ append config {
 #
 #
 
-set backend_library egl_swrast.lib.so
+set backend_library mesa_gpu-softpipe.lib.so
 if {$use_i965} {
-set backend_library egl_i965.lib.so
+set backend_library mesa_gpu-iris.lib.so
 }
 
 set launchpad_config {
@@ -154,7 +154,7 @@ append launchpad_config $demo_config
 
 append launchpad_config "
 				<route>
-					<service name=\"ROM\" label=\"egl_drv.lib.so\">
+					<service name=\"ROM\" label=\"mesa_gpu_drv.lib.so\">
 						<parent label=\"$backend_library\"/>
 					</service>"
 append launchpad_config {
@@ -196,11 +196,11 @@ set boot_modules {
 	egl.lib.so mesa.lib.so stdcxx.lib.so
 	expat.lib.so glapi.lib.so sdl.lib.so
 
-	egl_swrast.lib.so
+	mesa_gpu-softpipe.lib.so
 }
 
 append_if $use_i965 boot_modules {
-	egl_i965.lib.so drm.lib.so intel_gpu_drv
+	mesa_gpu-iris.lib.so drm.lib.so intel_gpu_drv
 }
 
 append boot_modules $demo_modules

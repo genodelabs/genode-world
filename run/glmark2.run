@@ -5,20 +5,20 @@ proc get_env_var { var_name default_value } {
 	return $default_value
 }
 
-proc egl_drv { drv } {
-	return "egl_$drv.lib.so"
+proc mesa_gpu_drv { drv } {
+	return "mesa_gpu-$drv.lib.so"
 }
 
-set gallium_drv [get_env_var GALLIUM_DRIVER "swrast"]
+set gallium_drv [get_env_var GALLIUM_DRIVER "softpipe"]
 
-if {$gallium_drv != "swrast" &&
+if {$gallium_drv != "softpipe" &&
     $gallium_drv != "iris"   &&
     $gallium_drv != "etnaviv"} {
-	puts "Invalid GALLIUM_DRIVER: $gallium_drv (supported: swrast, iris, etnaviv)"
+	puts "Invalid GALLIUM_DRIVER: $gallium_drv (supported: softpipe, iris, etnaviv)"
 	exit 1
 }
 
-puts "Using gallium driver: $gallium_drv egl: [egl_drv $gallium_drv]"
+puts "Using gallium driver: $gallium_drv mesa: [mesa_gpu_drv $gallium_drv]"
 
 lappend import [depot_user]/src/glmark2 \
                [depot_user]/raw/glmark2 \
@@ -52,11 +52,11 @@ set app_config {
 	</config>
 	<route>
 		<service name="Gui"> <child name="wm"/> </service>
-		<service name="ROM" label="egl_drv.lib.so">
+		<service name="ROM" label="mesa_gpu_drv.lib.so">
 }
 
 append app_config "
-			<parent label=\"[egl_drv $gallium_drv]\"/>"
+			<parent label=\"[mesa_gpu_drv $gallium_drv]\"/>"
 
 append app_config {
 		</service>
