@@ -2,10 +2,11 @@ base
 os
 so
 libc
+libiconv
 zlib
 audio_out_session
 framebuffer_session
 input_session
 gui_session
-timer_session
 mesa
+timer_session

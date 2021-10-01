@@ -77,6 +77,7 @@ SRC_C   += haptic/SDL_haptic.c \
 INC_DIR += $(SDL2_DIR)/src/haptic
 
 # joystick subsystem
+CC_OPT  += -DSDL_JOYSTICK_DUMMY
 SRC_C   += joystick/SDL_joystick.c \
            joystick/SDL_gamecontroller.c \
            joystick/dummy/SDL_sysjoystick.c
@@ -89,6 +90,7 @@ INC_DIR += $(SDL2_DIR)/src/render $(SDL2_DIR)/src/render/software
 
 # stdlib files
 SRC_C   += stdlib/SDL_getenv.c \
+           stdlib/SDL_iconv.c \
            stdlib/SDL_malloc.c \
            stdlib/SDL_qsort.c \
            stdlib/SDL_stdlib.c \
@@ -103,7 +105,8 @@ SRC_C   += thread/SDL_thread.c \
            thread/pthread/SDL_systhread.c
 
 # timer subsystem
-SRC_C   += timer/unix/SDL_systimer.c
+SRC_C   += timer/SDL_timer.c \
+           timer/unix/SDL_systimer.c
 
 # video subsystem
 SRC_C += $(addprefix video/,$(notdir $(wildcard $(SDL2_DIR)/src/video/*.c)))
@@ -113,7 +116,7 @@ SRC_C += $(addprefix video/yuv2rgb/,$(notdir $(wildcard $(SDL2_DIR)/src/video/yu
 SRC_CC  += sdl_main.cc
 
 # we need libc
-LIBS = libc egl mesa
+LIBS = libc egl mesa libiconv
 
 # backend path
 vpath % $(REP_DIR)/src/lib/sdl2

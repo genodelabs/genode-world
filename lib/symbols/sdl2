@@ -3,6 +3,7 @@ SDL_AddBasicVideoDisplay T
 SDL_AddDisplayMode T
 SDL_AddEventWatch T
 SDL_AddHintCallback T
+SDL_AddTimer T
 SDL_AddTouch T
 SDL_AddVideoDisplay T
 SDL_AllocBlitMap T
@@ -568,6 +569,7 @@ SDL_RecordGesture T
 SDL_RecreateWindow T
 SDL_RegisterEvents T
 SDL_RemoveAudioDevice T
+SDL_RemoveTimer T
 SDL_RenderClear T
 SDL_RenderCopy T
 SDL_RenderCopyEx T
@@ -739,6 +741,8 @@ SDL_StartEventLoop T
 SDL_StartTextInput T
 SDL_StopEventLoop T
 SDL_StopTextInput T
+SDL_TimerInit T
+SDL_TimerQuit T
 SDL_TLSCreate T
 SDL_TLSGet T
 SDL_TLSSet T
@@ -818,6 +822,10 @@ SDL_fmod T
 SDL_fmodf T
 SDL_free T
 SDL_getenv T
+SDL_iconv T
+SDL_iconv_close T
+SDL_iconv_open T
+SDL_iconv_string T
 SDL_isdigit T
 SDL_islower T
 SDL_isspace T
