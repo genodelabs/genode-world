@@ -96,9 +96,9 @@ SRC_C   += stdlib/SDL_getenv.c \
 
 # thread subsystem
 SRC_C   += thread/SDL_thread.c \
-           thread/generic/SDL_syscond.c \
-           thread/generic/SDL_sysmutex.c \
-           thread/generic/SDL_systls.c \
+           thread/pthread/SDL_syscond.c \
+           thread/pthread/SDL_sysmutex.c \
+           thread/pthread/SDL_systls.c \
            thread/pthread/SDL_syssem.c \
            thread/pthread/SDL_systhread.c
 
