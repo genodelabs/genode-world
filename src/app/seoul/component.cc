@@ -1280,6 +1280,8 @@ class Machine : public StaticReceiver<Machine>
 			Genode::log("VM is starting with ", _vcpus_up, " vCPU",
 			            _vcpus_up > 1 ? "s" : "");
 
+			unsigned apic_id = _vcpus_up - 1;
+
 			/* init VCPUs */
 			for (VCpu *vcpu = _unsynchronized_motherboard.last_vcpu; vcpu; vcpu = vcpu->get_last()) {
 
@@ -1296,21 +1298,23 @@ class Machine : public StaticReceiver<Machine>
 				unsigned ebx_1=0, ecx_1=0, edx_1=0;
 				Cpu::cpuid(1, ebx_1, ecx_1, edx_1);
 
-				/* clflush size */
-				vcpu->set_cpuid(1, 1, ebx_1 & 0xff00, 0xff00ff00);
+				/* clflush size, apic_id */
+				vcpu->set_cpuid(1, 1, (apic_id << 24) | (ebx_1 & 0xff00), 0xff00ff00u);
 
 				/* +SSE3,+SSSE3 */
 				vcpu->set_cpuid(1, 2, ecx_1, 0x00000201);
 
 				/* -PAE,-PSE36, -MTRR,+MMX,+SSE,+SSE2,+CLFLUSH,+SEP */
 				vcpu->set_cpuid(1, 3, edx_1, 0x0f88a9bf | (1 << 28));
+
+				apic_id = apic_id ? apic_id - 1 : _vcpus_up - 1;
 			}
 
-			Logging::printf("RESET device state\n");
+			Genode::log("RESET device state");
 			MessageLegacy msg2(MessageLegacy::RESET, 0);
 			_unsynchronized_motherboard.bus_legacy.send_fifo(msg2);
 
-			Logging::printf("INIT done\n");
+			Genode::log("INIT done");
 
 			_motherboard_mutex.release();
 		}
