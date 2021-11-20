@@ -4347,12 +4347,11 @@ class Genode::Vm_region_map
 
 		addr_t alloc_region(size_t size, int align)
 		{
-			addr_t addr = 0;
-			if (_range.alloc_aligned(size, (void **)&addr,
-			                         align > 12 ? align : 12).error())
-				throw -1;
-
-			return addr;
+			return _range.alloc_aligned(size, align > 12 ? align : 12).convert<addr_t>(
+				[&] (void *ptr) { return (addr_t)ptr; },
+				[&] (Range_allocator::Alloc_error) -> addr_t {
+					error("Vm_region_map::alloc_region failed");
+					throw -1; });
 		}
 
 		void free_region(addr_t vaddr) { _range.free((void *)vaddr); }
