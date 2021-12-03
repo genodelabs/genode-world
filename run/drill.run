@@ -80,6 +80,6 @@ install_config {
 
 build_boot_image { drill }
 
-append qemu_args " -nographic -net nic,model=e1000 -net user -net dump,file=[run_dir]/dump.pcap"
+append qemu_args " -nographic -object filter-dump,id=net0,netdev=net0,file=[run_dir]/dump.pcap"
 
 run_genode_until {child "drill" exited with exit value 0.*\n} 120

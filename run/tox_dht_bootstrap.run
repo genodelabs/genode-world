@@ -95,9 +95,7 @@ build_boot_image {
 	tox_dht_bootstrap
 }
 
-append_if [have_board pc]    qemu_args " -net nic,model=e1000 "
-append_if [have_board pbx9a] qemu_args " -net nic,model=lan9118 "
-append                       qemu_args " -net user -net dump,file=[run_dir].pcap"
-append                       qemu_args " -nographic"
+append qemu_args " -object filter-dump,id=net0,netdev=net0,file=[run_dir].pcap"
+append qemu_args " -nographic"
 
 run_genode_until forever

@@ -91,8 +91,8 @@ default_channel = "Lobby";
 build_boot_image { libconfig.lib.so protobuf-c.lib.so umurmur }
 
 # qemu config
-append qemu_args " -nographic -net nic,model=e1000 "
-append qemu_args " -net user -redir tcp:64738::64738 "
+append qemu_args " -nographic "
+append_qemu_nic_args "hostfwd=tcp::64738-:64738"
 
 run_genode_until forever
 

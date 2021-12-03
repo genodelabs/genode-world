@@ -92,14 +92,4 @@ build_boot_image $boot_modules
 
 append qemu_args " -nographic "
 
-proc qemu_nic_model {} {
-	if [have_board pc]        { return e1000 }
-	if [have_board pbxa9]     { return lan9118 }
-	if [have_board zynq_qemu] { return cadence_gem }
-	return nic_model_missing
-}
-
-append qemu_args " -netdev user,id=net0 "
-append qemu_args " -net nic,model=[qemu_nic_model],netdev=net0 "
-
 run_genode_until forever
