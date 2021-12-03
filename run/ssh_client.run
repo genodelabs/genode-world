@@ -144,7 +144,6 @@ set boot_modules {
 append_platform_drv_boot_modules
 build_boot_image $boot_modules
 
-append qemu_args " -net nic,model=e1000 "
-append qemu_args " -net user -net dump,file=[run_dir].pcap"
+append qemu_args " -object filter-dump,id=net0,netdev=net0,file=[run_dir].pcap"
 
 run_genode_until forever

@@ -174,13 +174,6 @@ build_boot_image { iperf stdcxx.lib.so }
 # qemu config
 append qemu_args "  -nographic "
 
-proc qemu_nic_model {} {
-	if [have_board pc]     { return e1000 }
-	if [have_board pbxa9] { return lan9118 }
-	return nic_model_missing
-}
-
-append qemu_args " -netdev user,id=net0,hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153 "
-append qemu_args " -net nic,model=[qemu_nic_model],netdev=net0 "
+append_qemu_nic_args "hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153"
 
 run_genode_until "child \"iperf_client\" exited with exit value 0" 20

@@ -586,6 +586,4 @@ append_if  $use_top_view boot_modules { menu_view menu_view_styles.tar top_view 
 
 build_boot_image $boot_modules
 
-append qemu_args " -net nic,model=e1000 -net user "
-
 run_genode_until forever

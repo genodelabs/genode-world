@@ -127,7 +127,7 @@ append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 
-append qemu_args " -nographic -net nic,model=e1000 -net user"
+append qemu_args " -nographic "
 
 # append qemu_args " -net dump,file=/tmp/tftp_rom.pcap"
 
