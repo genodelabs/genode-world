@@ -1,0 +1,31 @@
+               iperf component running in server mode
+
+In order to run a test, start the component and add the following forwarding
+rules to your Nic router config (assuming the iperf server got ip 10.0.1.2):
+
+! <domain name="uplink">
+!   [...]
+!   <tcp-forward port="5001" domain="default" to="10.0.1.2"/>
+! </domain>
+
+By default, the component uses 'vfs_lxip.lib.so' as a socket-fs plugin but the
+'vfs_lwip.lib.so' is also packaged so that you are able to modify the
+configuration and thereby replace the TCP/IP stack.
+
+In order to run the client, create a launcher file with the following config,
+assuming the server runs with IP 10.0.1.2.
+
+! <config>
+!   <arg value="iperf"/>
+!   <arg value="-c"/>
+!   <arg value="10.0.1.2"/>
+!   <libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+!   <vfs>
+!     <dir name="dev">
+!       <log/> <rtc/>
+!     </dir>
+!     <dir name="socket">
+!       <lxip dhcp="yes"/>
+!     </dir>
+!   </vfs>
+! </config>
