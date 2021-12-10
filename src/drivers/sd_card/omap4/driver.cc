@@ -410,7 +410,7 @@ void Driver::read(Block::sector_t           block_number,
 	_block_transfer.packet  = pkt;
 	_block_transfer.pending = true;
 
-	if (!issue_command(Read_multiple_block(block_number))) {
+	if (!issue_command(Read_multiple_block((uint32_t)block_number))) {
 		error("Read_multiple_block failed");
 		throw Io_error();
 	}
@@ -441,7 +441,7 @@ void Driver::write(Block::sector_t           block_number,
 	_block_transfer.packet  = pkt;
 	_block_transfer.pending = true;
 
-	if (!issue_command(Write_multiple_block(block_number))) {
+	if (!issue_command(Write_multiple_block((uint32_t)block_number))) {
 		error("Write_multiple_block failed");
 		throw Io_error();
 	}

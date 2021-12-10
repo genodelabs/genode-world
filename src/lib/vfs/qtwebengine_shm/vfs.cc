@@ -80,7 +80,7 @@ class Dataspace_file_system : public Vfs::File_system
 
 					_length = size;
 
-					ds_cap = _ram.alloc(size);
+					ds_cap = _ram.alloc((size_t)size);
 
 					return FTRUNCATE_OK;
 				}

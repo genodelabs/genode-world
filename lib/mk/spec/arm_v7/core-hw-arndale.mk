@@ -32,3 +32,5 @@ CC_MARCH = -mcpu=cortex-a15 -mfpu=vfpv3 -mfloat-abi=softfp
 
 # include less specific configuration
 include $(REP_DIR)/lib/mk/spec/arm_v7/core-hw-exynos5.inc
+
+CC_CXX_WARN_STRICT_CONVERSION =

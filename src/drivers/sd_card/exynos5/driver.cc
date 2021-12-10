@@ -46,7 +46,7 @@ void Driver::read_dma(Block::sector_t           block_number,
 	_block_transfer.packet  = pkt;
 	_block_transfer.pending = true;
 
-	if (!_issue_command(Read_multiple_block(block_number))) {
+	if (!_issue_command(Read_multiple_block((uint32_t)block_number))) {
 		error("Read_multiple_block failed");
 		throw Io_error();
 	}
@@ -67,7 +67,7 @@ void Driver::write_dma(Block::sector_t           block_number,
 	_block_transfer.packet  = pkt;
 	_block_transfer.pending = true;
 
-	if (!_issue_command(Write_multiple_block(block_number))) {
+	if (!_issue_command(Write_multiple_block((uint32_t)block_number))) {
 		error("Read_multiple_block failed");
 		throw Io_error();
 	}
@@ -422,7 +422,7 @@ size_t Driver::_read_ext_csd()
 	uint64_t capacity =  csd.Mmio::read<Ext_csd::Sector_count>() * _block_size();
 
 	/* to MB */
-	return capacity / (1024 * 1024);
+	return (size_t)(capacity / (1024 * 1024));
 }
 
 

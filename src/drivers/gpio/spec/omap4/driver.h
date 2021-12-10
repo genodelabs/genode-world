@@ -204,7 +204,7 @@ class Omap4_driver : public Gpio::Driver
 			else if (us > 7936)
 				debounce = 0xff;
 			else
-				debounce = (us / 0x1f) - 1;
+				debounce = (unsigned char)((us / 0x1f) - 1);
 
 			Gpio_reg *gpio_reg = _gpio_bank(gpio)->regs();
 			gpio_reg->write<Gpio_reg::Debouncingtime::Time>(debounce);

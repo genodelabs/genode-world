@@ -119,3 +119,5 @@ LIBS = libc egl mesa
 vpath % $(REP_DIR)/src/lib/sdl2
 
 vpath % $(SDL2_DIR)/src
+
+CC_CXX_WARN_STRICT_CONVERSION =

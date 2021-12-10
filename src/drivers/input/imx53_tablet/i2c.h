@@ -144,7 +144,7 @@ class I2c::I2c : Genode::Mmio
 			while (true) {
 				try {
 					_start();
-					_write(addr << 1 | 1);
+					_write((Genode::uint8_t)(addr << 1) | 1);
 					write<Control::Tx_rx_select>(0);
 					if (num > 1)
 						write<Control::Tx_ack_enable>(0);
