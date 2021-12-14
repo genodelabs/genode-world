@@ -4,4 +4,4 @@ set mkfs_cmd        mkfs.ext2
 set mkfs_opts       "-F"
 set vfs_dev_blkdev  {<block name="blkdev"/>}
 
-source ${genode_dir}/repos/libports/run/libc_vfs_fs_test.inc
+source ${genode_dir}/repos/world/run/libc_vfs_test_fuse_fs.inc
