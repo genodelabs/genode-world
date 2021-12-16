@@ -1,0 +1,176 @@
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/exec_unix.go gcc/libgo/go/syscall/exec_unix.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/exec_unix.go	2017-09-14 20:11:35.000000000 +0300
++++ gcc/libgo/go/syscall/exec_unix.go	2021-04-12 17:01:41.733892102 +0300
+@@ -2,7 +2,7 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+ 
+-// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
+ 
+ // Fork, exec, wait, etc.
+ 
+@@ -154,7 +154,13 @@
+ 	return bb, nil
+ }
+ 
+-func CloseOnExec(fd int) { fcntl(fd, F_SETFD, FD_CLOEXEC) }
++func CloseOnExec(fd int) {
++	if runtime.GOOS == "inno" {
++		/* FIXME: on genode F_SETFD and FD_CLOEXEC does not supported in 21.11 */
++		return
++	}
++	fcntl(fd, F_SETFD, FD_CLOEXEC) 
++}
+ 
+ func SetNonblock(fd int, nonblocking bool) (err error) {
+ 	flag, err := fcntl(fd, F_GETFL, 0)
+@@ -328,7 +334,7 @@
+ 	runtime_BeforeExec()
+ 
+ 	var err1 error
+-	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" {
++	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" || runtime.GOOS == "inno" {
+ 		// RawSyscall should never be used on Solaris or AIX.
+ 		err1 = raw_execve(argv0p, &argvp[0], &envvp[0])
+ 	} else if runtime.GOOS == "darwin" {
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/socket.go gcc/libgo/go/syscall/socket.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/socket.go	2017-09-14 20:11:35.000000000 +0300
++++ gcc/libgo/go/syscall/socket.go	2021-12-16 22:38:06.172153860 +0300
+@@ -10,7 +10,10 @@
+ 
+ package syscall
+ 
+-import "unsafe"
++import (
++	"runtime"
++	"unsafe"
++)
+ 
+ // For testing: clients can set this flag to force
+ // creation of IPv6 sockets to return EAFNOSUPPORT.
+@@ -266,25 +269,60 @@
+ //sys	setsockopt(s int, level int, name int, val unsafe.Pointer, vallen Socklen_t) (err error)
+ //setsockopt(s _C_int, level _C_int, optname _C_int, val *byte, vallen Socklen_t) _C_int
+ 
++// check which options not supported by genode while need to return non-error
++// return non nil (EGAGIN) if option should be processed by setsockopt
++// return nil if option should imitate support (return 0 to upper leve caller)
++func setsockoptGenode(level, optname int) (err error) {
++	switch level {
++	case SOL_SOCKET:
++		switch optname {
++		case SO_REUSEADDR:  /* supported by socket_fs_setsockopt */ return EAGAIN
++		case SO_LINGER:     /* supported by socket_fs_setsockopt */ return EAGAIN
++		case SO_BROADCAST : /* ignore that this options is unsupported */ return nil
++		case SO_REUSEPORT : /* ignore that this options is unsupported */ return nil
++		}
++	case IPPROTO_TCP:
++		switch optname {
++			case TCP_NODELAY: /* supported by socket_fs_setsockopt */ return EAGAIN
++		}
++	}
++	return EAGAIN
++}
++
+ func SetsockoptByte(fd, level, opt int, value byte) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	var n = byte(value)
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(&n), 1)
+ }
+ 
+ func SetsockoptInt(fd, level, opt int, value int) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	var n = int32(value)
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(&n), 4)
+ }
+ 
+ func SetsockoptInet4Addr(fd, level, opt int, value [4]byte) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(&value[0]), 4)
+ }
+ 
+ func SetsockoptTimeval(fd, level, opt int, tv *Timeval) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(tv), Socklen_t(unsafe.Sizeof(*tv)))
+ }
+ 
+ func SetsockoptICMPv6Filter(fd, level, opt int, filter *ICMPv6Filter) error {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(filter), SizeofICMPv6Filter)
+ }
+ 
+@@ -294,22 +332,37 @@
+ }
+ 
+ func SetsockoptLinger(fd, level, opt int, l *Linger) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(l), Socklen_t(unsafe.Sizeof(*l)))
+ }
+ 
+ func SetsockoptIPMreq(fd, level, opt int, mreq *IPMreq) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(mreq), Socklen_t(unsafe.Sizeof(*mreq)))
+ }
+ 
+ func SetsockoptIPMreqn(fd, level, opt int, mreq *IPMreqn) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(mreq), Socklen_t(unsafe.Sizeof(*mreq)))
+ }
+ 
+ func SetsockoptIPv6Mreq(fd, level, opt int, mreq *IPv6Mreq) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	return setsockopt(fd, level, opt, unsafe.Pointer(mreq), Socklen_t(unsafe.Sizeof(*mreq)))
+ }
+ 
+ func SetsockoptString(fd, level, opt int, s string) (err error) {
++	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++		return nil
++	}
+ 	var p unsafe.Pointer
+ 	if len(s) > 0 {
+ 		p = unsafe.Pointer(&[]byte(s)[0])
+
+diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/net/ipsock_posix.go contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22/src/lib/gcc/libgo/go/net/ipsock_posix.go
+--- contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/net/ipsock_posix.go	2021-12-07 02:11:50.765800653 +0300
++++ gcc/libgo/go/net/ipsock_posix.go	2021-12-07 12:47:49.666132451 +0300
+@@ -41,6 +41,9 @@
+ 		{laddr: TCPAddr{IP: IPv4(127, 0, 0, 1)}, value: 0},
+ 	}
+ 	switch runtime.GOOS {
++	case "inno":
++		// genode does not support ipv6
++		return
+ 	case "dragonfly", "openbsd":
+ 		// The latest DragonFly BSD and OpenBSD kernels don't
+ 		// support IPV6_V6ONLY=0. They always return an error
+diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/netpoll.go contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22/src/lib/gcc/libgo/go/runtime/netpoll.go
+--- contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/netpoll.go	2021-12-07 02:11:50.774800744 +0300
++++ gcc/libgo/go/runtime/netpoll.go	2021-12-07 02:02:27.328111312 +0300
+@@ -203,7 +203,7 @@
+ 		return err
+ 	}
+ 	// As for now only Solaris, illumos, and AIX use level-triggered IO.
+-	if GOOS == "solaris" || GOOS == "illumos" || GOOS == "aix" || GOOS == "hurd" {
++	if GOOS == "solaris" || GOOS == "illumos" || GOOS == "aix" || GOOS == "hurd" || GOOS == "inno" {
+ 		netpollarm(pd, mode)
+ 	}
+ 	for !netpollblock(pd, int32(mode), false) {
