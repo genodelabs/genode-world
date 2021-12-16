@@ -1,0 +1,14 @@
+diff -ru contrib/libatomic-cb6e6b96c6eb2789f5ae26549443d3d58185e4ef/src/lib/gcc/config.sub inno/config.sub
+--- contrib/libatomic-cb6e6b96c6eb2789f5ae26549443d3d58185e4ef/src/lib/gcc/config.sub	2018-01-03 07:25:18.000000000 +0300
++++ inno/config.sub	2020-06-22 16:24:54.000000000 +0300
+@@ -313,6 +313,10 @@
+ 				basic_machine=m68k-ericsson
+ 				os=ose
+ 				;;
++			genode)
++				basic_machine=x86_64-pc
++				os=-elf
++				;;
+ 			gmicro)
+ 				basic_machine=tron-gmicro
+ 				os=sysv
