@@ -81,7 +81,7 @@ class Fuse_fs::Session_component : public Session_rpc_object
 					res_length = open_node.node().read((char *)content, length,
 					                                   packet.position());
 
-					succeeded = res_length > 0;
+					succeeded = res_length >= 0;
 				}
 				break;
 
