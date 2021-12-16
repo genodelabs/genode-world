@@ -1,9 +1,11 @@
 +++ src/lib/fuse-ext2/e2fsprogs-1.41.12.newgit/ext2fs/ext2fs.h
-@@ -49,9 +49,12 @@
+@@ -49,9 +49,14 @@
  #include <sys/types.h>
  #endif
  
-+typedef unsigned int dev_t;
++#ifndef _DEV_T_DECLARED
++typedef unsigned long dev_t;
++#endif
 +
  #include <stdio.h>
  #include <stdlib.h>

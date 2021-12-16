@@ -1,0 +1,10 @@
++++ src/lib/fuse-ext2/e2fsprogs-1.41.12.newgit/ext2fs/gen_bitmap.c
+@@ -517,7 +517,7 @@
+ }
+ 
+ int ext2fs_test_inode_bitmap_range(ext2fs_inode_bitmap bitmap,
+-				   ino_t inode, int num)
++				   ext2_ino_t inode, int num)
+ {
+ 	EXT2_CHECK_MAGIC(bitmap, EXT2_ET_MAGIC_INODE_BITMAP);
+ 	if ((inode < bitmap->start) || (inode+num-1 > bitmap->real_end)) {
