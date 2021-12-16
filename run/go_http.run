@@ -1,0 +1,153 @@
+#
+# \brief  Example for running go http server
+# \author Alexander Tormasov
+# \date   2021-12-16
+#
+
+build {
+	core init timer lib/ld
+	lib/vfs/lwip
+	lib/vfs/pipe
+	drivers/rtc
+	test/go_http
+
+	drivers/nic
+	server/nic_router
+}
+
+create_boot_directory
+import_from_depot [depot_user]/pkg/[drivers_nic_pkg]
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="LOG"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="PD"/>
+		<service name="IRQ"/>
+		<service name="IO_PORT"/>
+		<service name="IO_MEM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="3M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="nic_drv" caps="1000" managing_system="yes" >
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Uplink"> <child name="nic_router"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="rtc_drv" caps="200">
+		<resource name="RAM" quantum="6M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="nic_router" caps="400">
+		<resource name="RAM" quantum="20M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<!-- <config verbose="no"
+		        verbose_packets="no"
+		        verbose_domain_state="no"
+		        verbose_packet_drop="no"> -->
+		<config>
+
+			<policy label_prefix="main_http" domain="downlink" />
+			<policy label_prefix="nic_drv"  domain="uplink"/>
+
+			<domain name="uplink" >
+
+				<nat domain="downlink"
+				     tcp-ports="16384"
+				     udp-ports="16384"
+				     icmp-ids="16384"/>
+
+				<tcp-forward port="80" domain="downlink" to="10.0.3.2" />
+
+			</domain>
+
+			<domain name="downlink" interface="10.0.3.1/24" >
+
+				<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2">
+					<dns-server ip="8.8.8.8"/>
+					<dns-server ip="1.1.1.1"/>
+				</dhcp-server>
+
+				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
+				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
+				<icmp dst="0.0.0.0/0" domain="uplink"/>
+
+			</domain>
+
+		</config>
+	</start>
+
+	<start name="main_http" caps="1000">
+		<resource name="RAM" quantum="120M" />
+		<config  verbose="yes" ld_verbose="yes" >
+			<arg value="main_http" />
+			<vfs>
+				<dir name="dev">
+					<log/> <null/> <inline name="rtc">2020-01-01 00:00</inline>
+					<inline name="random">0123456789012345678901234567890123456789</inline>
+				</dir>
+				<dir name="socket">
+					<lwip dhcp="yes"/>
+				</dir>
+				<rom name="ld.lib.so" label="ld.lib.so"/>
+				<rom name="libc.lib.so" label="libc.lib.so"/>
+				<rom name="vfs.lib.so" label="vfs.lib.so"/>
+				<rom name="libm.lib.so" label="libm.lib.so"/>
+				<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
+				<rom name="vfs_lwip.lib.so" label="vfs_lwip.lib.so"/>
+				<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
+				<rom name="binary" label="main_http"/>
+				<dir name="proc">
+					<dir name="self">
+						<rom name="exe" label="main_http"/>
+					</dir>
+				</dir>
+				<dir name="pipe"> <pipe/>
+				</dir>
+			</vfs>
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
+			      rtc="/dev/rtc" rng="/dev/random" socket="/socket" pipe="/pipe">
+					<mmap local_area_default_size="1610612736" />
+			</libc>
+		</config>
+
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+
+	</start>
+</config>}
+
+build_boot_image {
+	core init timer
+	ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so
+	vfs_lwip.lib.so vfs_pipe.lib.so vfs.lib.so main_http
+	rtc_drv	nic_router
+}
+
+append qemu_args " -nographic -smp 4"
+append_qemu_nic_args "hostfwd=tcp::5555-:80"
+
+run_genode_until forever

@@ -1,0 +1,185 @@
+#
+# \brief  Example for running lighttpd
+# \author Norman Feske
+# \date   2012-08-16
+#
+
+proc ip_stack { } { return lwip }
+
+proc socket_fs_plugin { } {
+	set result "<[ip_stack]"
+
+#	if {[have_spec linux]} {
+		append result { ip_addr="10.0.2.55" netmask="255.255.255.0"}
+		append result { gateway="10.0.2.1" nameserver="1.1.1.1"}
+#	} else {
+#		append result { dhcp="yes"}
+#	}
+
+	append result {/>}
+	return $result
+}
+
+build {
+	core init timer lib/ld
+	lib/vfs/lwip
+	drivers/rtc
+	test/go_http
+
+	drivers/nic
+	server/nic_router
+	server/report_rom
+}
+
+create_boot_directory
+#import_from_depot [depot_user]/src/[base_src] \
+#                  [depot_user]/pkg/[drivers_nic_pkg] \
+#                  [depot_user]/src/init \
+#                  [depot_user]/src/nic_router
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="LOG"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="PD"/>
+		<service name="IRQ"/>
+		<service name="IO_PORT"/>
+		<service name="IO_MEM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="3M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="devices_report_rom">
+		<binary name="report_rom"/>
+		<resource name="RAM" quantum="1200K"/>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
+		<config verbose="yes"/>
+	</start>
+
+	<start name="linux_nic_drv" ld="no">
+		<resource name="RAM" quantum="8M"/>
+		<config>
+			<report mac_address="true"/>
+			<nic mac="02:00:00:00:12:11" tap="tap0"/>
+		</config>
+		<route>
+			<service name="Uplink"> <child name="nic_router"/> </service>
+			<service name="Report"> <child name="devices_report_rom"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="rtc_drv" caps="200">
+		<resource name="RAM" quantum="6M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+
+	<start name="nic_router" caps="400">
+		<resource name="RAM" quantum="20M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config verbose="yes"
+		        verbose_packets="yes"
+		        verbose_domain_state="yes"
+		        verbose_packet_drop="yes">
+
+			<policy label_prefix="main_http" domain="downlink" />
+			<policy label_prefix="linux_nic_drv"     domain="uplink" />
+			<!-- <policy label_prefix="nic_drv"  domain="uplink"/> -->
+
+			<domain name="uplink" interface="10.0.2.55/24" gateway="10.0.2.1">
+
+				<nat domain="downlink"
+				     tcp-ports="16384"
+				     udp-ports="16384"
+				     icmp-ids="16384"/>
+
+				<!-- <tcp-forward port="443" domain="downlink" to="10.0.3.2"/> -->
+				<tcp-forward port="80" domain="downlink" to="10.0.3.2" />
+
+			</domain>
+
+			<domain name="downlink" interface="10.0.3.1/24" >
+
+				<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2">
+					<dns-server ip="8.8.8.8"/>
+					<dns-server ip="1.1.1.1"/>
+				</dhcp-server>
+
+				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
+				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
+				<icmp dst="0.0.0.0/0" domain="uplink"/>
+
+			</domain>
+
+		</config>
+	</start>
+
+	<start name="main_http" caps="1000">
+		<resource name="RAM" quantum="1400M" />
+		<config  verbose="yes" ld_verbose="yes" >
+			<arg value="main_http" />
+			<arg value="PathString" />
+			<vfs>
+				<dir name="dev">
+					<log/> <null/> <inline name="rtc">2020-01-01 00:00</inline>
+					<inline name="random">0123456789012345678901234567890123456789</inline>
+				</dir>
+				<dir name="socket">
+					<!-- <lwip dhcp="yes"/> -->
+					<lwip ip_addr="10.0.3.2" netmask="255.255.255.0" gateway="10.0.3.1"/>
+				</dir>
+				<rom name="ld.lib.so" label="ld.lib.so"/>
+				<rom name="libc.lib.so" label="libc.lib.so"/>
+				<rom name="vfs.lib.so" label="vfs.lib.so"/>
+				<rom name="libm.lib.so" label="libm.lib.so"/>
+				<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
+				<rom name="vfs_lwip.lib.so" label="vfs_lwip.lib.so"/>
+				<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
+				<rom name="binary" label="main_http"/>
+				<dir name="proc">
+					<dir name="self">
+						<rom name="exe" label="main_http"/>
+					</dir>
+				</dir>
+				<dir name="pipe"> <pipe/>
+				</dir>
+			</vfs>
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
+			      rtc="/dev/rtc" rng="/dev/random" socket="/socket" pipe="/pipe">
+					<mmap local_area_default_size="1610612736" />
+			</libc>
+		</config>
+
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+
+	</start>
+</config>}
+
+build_boot_image {
+	core init timer ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
+	rtc_drv vfs_lwip.lib.so vfs_pipe.lib.so vfs.lib.so main_http
+
+	linux_nic_drv
+	nic_router report_rom
+}
+
+append qemu_args " -nographic "
+append_qemu_nic_args "hostfwd=tcp::5555-:80"
+
+run_genode_until forever
