@@ -445,8 +445,8 @@ class Fuse_fs::Session_component : public Session_rpc_object
 					/* XXX remove direct use of FUSE operations */
 					int res = -1;
 					Libc::with_libc([&] () {
-						res = Fuse::fuse()->op.rename(absolute_to_path.base(),
-						                              absolute_from_path.base());
+						res = Fuse::fuse()->op.rename(absolute_from_path.base(),
+						                              absolute_to_path.base());
 					});
 
 					if (res != 0) {
