@@ -380,10 +380,21 @@ class Fuse_fs::Session_component : public Session_rpc_object
 					throw Invalid_name();
 				}
 
-				/* XXX remove direct use of FUSE operations */
+				struct stat s;
 				int res = -1;
+				/* XXX remove direct use of FUSE operations */
 				Libc::with_libc([&] () {
-					res = Fuse::fuse()->op.unlink(absolute_path.base());
+					res = Fuse::fuse()->op.getattr(absolute_path.base(), &s);
+				});
+				if (res != 0)
+					throw Lookup_failed();
+
+				/* XXX remove direct use of FUSE operations */
+				Libc::with_libc([&] () {
+					if (S_ISDIR(s.st_mode))
+						res = Fuse::fuse()->op.rmdir(absolute_path.base());
+					else
+						res = Fuse::fuse()->op.unlink(absolute_path.base());
 				});
 
 				if (res != 0) {
