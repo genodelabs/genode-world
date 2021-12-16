@@ -1,0 +1,67 @@
+build {
+	core init timer lib/ld
+	lib/vfs/pipe
+	test/go_app
+}
+
+create_boot_directory
+
+install_config {
+	<config verbose="no" ld_verbose="no">
+		<parent-provides>
+			<service name="ROM"/>
+			<service name="LOG"/>
+			<service name="RM"/>
+			<service name="CPU"/>
+			<service name="PD"/>
+			<service name="IRQ"/>
+			<service name="IO_MEM"/>
+			<service name="IO_PORT"/>
+		</parent-provides>
+		<default-route>
+			<any-service> <any-child/> <parent/> </any-service>
+		</default-route>
+		<default caps="100"/>
+                <start name="timer">
+                        <resource name="RAM" quantum="4M"/>
+                        <provides><service name="Timer"/></provides>
+                </start>
+		<start name="test-go" caps="300">
+			<resource name="RAM" quantum="120M"/>
+			<config verbose="yes" ld_verbose="yes" >
+			<arg value="main_http" />
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<rom name="ld.lib.so" label="ld.lib.so"/>
+					<rom name="libc.lib.so" label="libc.lib.so"/>
+					<rom name="vfs.lib.so" label="vfs.lib.so"/>
+					<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
+					<rom name="libm.lib.so" label="libm.lib.so"/>
+					<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
+					<rom name="binary" label="test-go"/>
+					<dir name="proc">
+						<dir name="self">
+							<rom name="exe" label="test-go"/>
+						</dir>
+					</dir>
+				<dir name="pipe"> <pipe/>
+				</dir>
+				</vfs>
+                <libc stdout="/dev/log" stderr="/dev/log"  pipe="/pipe">
+					<mmap local_area_default_size="1610612736" />
+				</libc>
+			</config>
+		</start>
+	</config>
+}
+
+build_boot_image {
+	core init timer ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
+	vfs_pipe.lib.so vfs.lib.so test-go
+}
+
+append qemu_args " -m 512M -nographic -smp 4"
+
+run_genode_until forever
+run_genode_until "--- parent done ---.*\n" 20
+run_genode_until "child.*exited.*\n" 5 [output_spawn_id]
