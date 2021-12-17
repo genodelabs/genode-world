@@ -57,11 +57,14 @@ class Fuse_fs::Directory : public Node
 		 */
 		bool _is_dir(char const *path)
 		{
-			struct stat s;
-			if (Fuse::fuse()->op.getattr(path, &s) != 0 || ! S_ISDIR(s.st_mode))
-				return false;
+			bool result = true;
+			Libc::with_libc([&] () {
+				struct stat s;
+				if (Fuse::fuse()->op.getattr(path, &s) != 0 || ! S_ISDIR(s.st_mode))
+					result = false;
+			});
 
-			return true;
+			return result;
 		}
 
 		void _open_path(char const *path, bool create)
@@ -70,7 +73,9 @@ class Fuse_fs::Directory : public Node
 
 			if (create) {
 
-				res = Fuse::fuse()->op.mkdir(path, 0755);
+				Libc::with_libc([&] () {
+					res = Fuse::fuse()->op.mkdir(path, 0755);
+				});
 
 				if (res < 0) {
 					int err = -res;
@@ -99,7 +104,9 @@ class Fuse_fs::Directory : public Node
 				}
 			}
 
-			res = Fuse::fuse()->op.opendir(path, &_file_info);
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.opendir(path, &_file_info);
+			});
 
 			if (res < 0) {
 				int err = -res;
@@ -139,9 +146,13 @@ class Fuse_fs::Directory : public Node
 				.offset = 0,
 			};
 
-			int res = Fuse::fuse()->op.readdir(_path.base(), &dh,
-					Fuse::fuse()->filler, 0,
-					&_file_info);
+			int res = -1;
+
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.readdir(_path.base(), &dh,
+				                               Fuse::fuse()->filler, 0,
+				                               &_file_info);
+			});
 
 			if (res != 0)
 				return 0;
@@ -165,7 +176,9 @@ class Fuse_fs::Directory : public Node
 
 		virtual ~Directory()
 		{
-			Fuse::fuse()->op.release(_path.base(), &_file_info);
+			Libc::with_libc([&] () {
+				Fuse::fuse()->op.release(_path.base(), &_file_info);
+			});
 		}
 
 		Node *node(char const *path)
@@ -173,7 +186,11 @@ class Fuse_fs::Directory : public Node
 			Path node_path(path, _path.base());
 
 			struct stat s;
-			int res = Fuse::fuse()->op.getattr(node_path.base(), &s);
+			int res = -1;
+
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.getattr(node_path.base(), &s);
+			});
 			if (res != 0)
 				throw Lookup_failed();
 
@@ -196,14 +213,18 @@ class Fuse_fs::Directory : public Node
 		Status status() override
 		{
 			struct stat s;
-			int res = Fuse::fuse()->op.getattr(_path.base(), &s);
+			int res = -1;
+
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.getattr(_path.base(), &s);
+			});
 			if (res != 0)
 				return Status();
 
 			Status status;
 			status.inode = s.st_ino ? s.st_ino : 1;
 			status.size  = _num_entries() * sizeof(Directory_entry);
-			status.mode  = File_system::Status::MODE_DIRECTORY;
+			status.type  = File_system::Node_type::DIRECTORY;
 
 			return status;
 		}
@@ -234,9 +255,13 @@ class Fuse_fs::Directory : public Node
 				.offset = 0,
 			};
 
-			int res = Fuse::fuse()->op.readdir(_path.base(), &dh,
-					Fuse::fuse()->filler, 0,
-					&_file_info);
+			int res = -1;
+
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.readdir(_path.base(), &dh,
+				                               Fuse::fuse()->filler, 0,
+				                               &_file_info);
+			});
 			if (res != 0)
 				return 0;
 
@@ -250,9 +275,9 @@ class Fuse_fs::Directory : public Node
 			Directory_entry *e = (Directory_entry *)(dst);
 
 			switch (dent->d_type) {
-			case DT_REG: e->type = Directory_entry::TYPE_FILE;      break;
-			case DT_DIR: e->type = Directory_entry::TYPE_DIRECTORY; break;
-			case DT_LNK: e->type = Directory_entry::TYPE_SYMLINK;   break;
+			case DT_REG: e->type = File_system::Node_type::CONTINUOUS_FILE; break;
+			case DT_DIR: e->type = File_system::Node_type::DIRECTORY;       break;
+			case DT_LNK: e->type = File_system::Node_type::SYMLINK;         break;
 			/**
 			 * There are FUSE file system implementations that do not fill-out
 			 * d_type when calling readdir(). We mark these entries by setting
@@ -264,11 +289,13 @@ class Fuse_fs::Directory : public Node
 			{
 				Genode::Path<4096> path(dent->d_name, _path.base());
 				struct stat sbuf;
-				res = Fuse::fuse()->op.getattr(path.base(), &sbuf);
+				Libc::with_libc([&] () {
+					res = Fuse::fuse()->op.getattr(path.base(), &sbuf);
+				});
 				if (res == 0) {
 					switch (IFTODT(sbuf.st_mode)) {
-					case DT_REG: e->type = Directory_entry::TYPE_FILE;      break;
-					case DT_DIR: e->type = Directory_entry::TYPE_DIRECTORY; break;
+					case DT_REG: e->type = File_system::Node_type::CONTINUOUS_FILE; break;
+					case DT_DIR: e->type = File_system::Node_type::DIRECTORY;       break;
 					}
 					/* break outer switch */
 					break;
@@ -278,7 +305,7 @@ class Fuse_fs::Directory : public Node
 				return 0;
 			}
 
-			strncpy(e->name, dent->d_name, sizeof(e->name));
+			copy_cstring(e->name.buf, dent->d_name, sizeof(e->name.buf));
 
 			return sizeof(Directory_entry);
 		}

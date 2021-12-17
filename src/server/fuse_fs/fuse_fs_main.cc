@@ -98,6 +98,12 @@ class Fuse_fs::Session_component : public Session_rpc_object
 					}
 					succeeded = true;
 				}
+
+			case Packet_descriptor::WRITE_TIMESTAMP:
+				succeeded = true;
+				/* not supported */
+				break;
+
 				break;
 
 			case Packet_descriptor::CONTENT_CHANGED:
@@ -113,7 +119,9 @@ class Fuse_fs::Session_component : public Session_rpc_object
 				break;
 
 			case Packet_descriptor::SYNC:
-				Fuse::sync_fs();
+				Libc::with_libc([&] () {
+					Fuse::sync_fs();
+				});
 				succeeded = true;
 				break;
 			}
@@ -207,7 +215,9 @@ class Fuse_fs::Session_component : public Session_rpc_object
 		 */
 		~Session_component()
 		{
-			Fuse::sync_fs();
+			Libc::with_libc([&] () {
+				Fuse::sync_fs();
+			});
 
 			Dataspace_capability ds = tx_sink()->dataspace();
 			_env.ram().free(static_cap_cast<Ram_dataspace>(ds));
@@ -371,7 +381,10 @@ class Fuse_fs::Session_component : public Session_rpc_object
 				}
 
 				/* XXX remove direct use of FUSE operations */
-				int res = Fuse::fuse()->op.unlink(absolute_path.base());
+				int res = -1;
+				Libc::with_libc([&] () {
+					res = Fuse::fuse()->op.unlink(absolute_path.base());
+				});
 
 				if (res != 0) {
 					Genode::error("fuse()->op.unlink() returned unexpected error code: ", res);
@@ -430,8 +443,11 @@ class Fuse_fs::Session_component : public Session_rpc_object
 					}
 
 					/* XXX remove direct use of FUSE operations */
-					int res = Fuse::fuse()->op.rename(absolute_to_path.base(),
-			                                  	  	  absolute_from_path.base());
+					int res = -1;
+					Libc::with_libc([&] () {
+						res = Fuse::fuse()->op.rename(absolute_to_path.base(),
+						                              absolute_from_path.base());
+					});
 
 					if (res != 0) {
 						Genode::error("fuse()->op.rename() returned unexpected error code: ", res);
@@ -474,9 +490,8 @@ class Fuse_fs::Root : public Root_component<Session_component>
 			char const *root_dir  = ".";
 			bool        writeable = false;
 
-			enum { ROOT_MAX_LEN = 256 };
-			char root[ROOT_MAX_LEN];
-			root[0] = 0;
+			using Root_path = Genode::String<256>;
+			Root_path root;
 
 			Session_label const label = label_from_args(args);
 			try {
@@ -487,17 +502,17 @@ class Fuse_fs::Root : public Root_component<Session_component>
 				 * the session.
 				 */
 				try {
-					policy.attribute("root").value(root, sizeof(root));
+					root = policy.attribute_value("root", Root_path());
 
 					/*
 					 * Make sure the root path is specified with a
 					 * leading path delimiter. For performing the
 					 * lookup, we skip the first character.
 					 */
-					if (root[0] != '/')
+					if (root.string() && root.string()[0] != '/')
 						throw Lookup_failed();
 
-					root_dir = root;
+					root_dir = root.string();
 				}
 				catch (Xml_node::Nonexistent_attribute) {
 					Genode::error("missing \"root\" attribute in policy definition");
@@ -505,7 +520,7 @@ class Fuse_fs::Root : public Root_component<Session_component>
 				}
 				catch (Lookup_failed) {
 					Genode::error("session root directory \"",
-					              Genode::Cstring(root), "\" does not exist");
+					              root, "\" does not exist");
 					throw Service_denied();
 				}
 
@@ -559,6 +574,9 @@ class Fuse_fs::Root : public Root_component<Session_component>
 };
 
 
+extern "C" void wait_for_continue(void);
+
+
 struct Fuse_fs::Main
 {
 	Genode::Env & env;
@@ -567,10 +585,16 @@ struct Fuse_fs::Main
 
 	Main(Genode::Env & env) : env(env)
 	{
-		if (!Fuse::init_fs()) {
-			Genode::error("FUSE fs initialization failed");
+		bool success = false;
+		Libc::with_libc([&] () {
+			if (!Fuse::init_fs()) {
+				Genode::error("FUSE fs initialization failed");
+				return;
+			}
+			success = true;
+		});
+		if (!success)
 			return;
-		}
 
 		env.parent().announce(env.ep().manage(fs_root));
 	}
@@ -578,7 +602,9 @@ struct Fuse_fs::Main
 	~Main()
 	{
 		if (Fuse::initialized()) {
-			Fuse::deinit_fs();
+			Libc::with_libc([&] () {
+				Fuse::deinit_fs();
+			});
 		}
 	}
 };

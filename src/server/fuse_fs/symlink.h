@@ -36,7 +36,10 @@ class Fuse_fs::Symlink : public Node
 		size_t _length() const
 		{
 			struct stat s;
-			int res = Fuse::fuse()->op.getattr(_path.base(), &s);
+			int res = -1;
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.getattr(_path.base(), &s);
+			});
 			if (res != 0)
 				return 0;
 
@@ -55,20 +58,26 @@ class Fuse_fs::Symlink : public Node
 		Status status() override
 		{
 			struct stat s;
-			int res = Fuse::fuse()->op.getattr(_path.base(), &s);
+			int res = -1;
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.getattr(_path.base(), &s);
+			});
 			if (res != 0)
 				return Status();
 
 			Status status;
 			status.inode = s.st_ino ? s.st_ino : 1;
 			status.size = s.st_size;
-			status.mode = File_system::Status::MODE_FILE;
+			status.type = File_system::Node_type::SYMLINK;
 			return status;
 		}
 
 		size_t read(char *dst, size_t len, seek_off_t seek_offset) override
 		{
-			int res = Fuse::fuse()->op.readlink(_path.base(), dst, len);
+			int res = -1;
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.readlink(_path.base(), dst, len);
+			});
 			if (res != 0)
 				return 0;
 
@@ -80,7 +89,10 @@ class Fuse_fs::Symlink : public Node
 			/* Ideal symlink operations are atomic. */
 			if (seek_offset) return 0;
 
-			int res = Fuse::fuse()->op.symlink(src, _path.base());
+			int res = -1;
+			Libc::with_libc([&] () {
+				res = Fuse::fuse()->op.symlink(src, _path.base());
+			});
 			if (res != 0)
 				return 0;
 
