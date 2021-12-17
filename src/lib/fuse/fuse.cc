@@ -106,7 +106,7 @@ static int fill_dir(void *dh, const char *name, const struct stat *sbuf, off_t o
 	if (namelen > 255)
 		namelen = 255;
 
-	Genode::strncpy(entry->d_name, name, namelen + 1);
+	Genode::copy_cstring(entry->d_name, name, namelen + 1);
 
 	entry->d_reclen = sizeof (struct dirent);
 
