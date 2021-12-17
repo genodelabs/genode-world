@@ -1,11 +1,10 @@
 base
 os
 framebuffer_session
-input_session
-mesa
 gui_session
-libc
-stdcxx
-libc
+input_session
 jpeg
+libc
 libpng
+mesa
+stdcxx
