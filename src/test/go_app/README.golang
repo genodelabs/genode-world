@@ -5,9 +5,9 @@ This work is a side result of one of the research project made in Innopolis Univ
 	(c) Alex Tormasov, tor@innopolis.ru - port itsels, Alexey Semenov aleks.semenov@innopolis.ru - build
 
 It allow compilation and execution of simple go applications/packages (without unsupported OS/platform features).
-In this moment it supports linux, nova and sel4 kernels on x86 platform.
+In this moment it supports linux, foc, nova and sel4 kernels on x86 platform.
 
-I use only gccgo version of golang compiler. Things like "go build" in cross mode not supported yet (while we make
+I use only gccgo version of golang compiler (gcc 10.3). Things like "go build" in cross mode not supported yet (while we make
 some techology to produce makefiles from "go build" to compilei go code, not attached yet).
 Other limitations see below.
 
@@ -41,23 +41,23 @@ configure toolchain and prepare  code to compile, setup environment, e.g. (repla
 	...
    and finally cd to genode dir
 1. prepare ports from genode, e.g. by
-	./tool/ports/prepare_port libc nova x86emu stdcxx grub2
+	./tool/ports/prepare_port libc nova stdcxx grub2
 2. prepare ports to build golang libgo from gcc distirbution
 	./tool/ports/prepare_port libatomic libbacktrace libffi libgo
 3. build native libraries (set your own flags if need, eg -O) for genode (libgo should be the last) by
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libatomic
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libbacktrace
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libffi
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libgo
+	make -C build/x86_64/ KERNEL=nova lib/libatomic
+	make -C build/x86_64/ KERNEL=nova lib/libbacktrace
+	make -C build/x86_64/ KERNEL=nova lib/libffi
+	make -C build/x86_64/ KERNEL=nova lib/libgo
 4. build and run test go application by
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" run/go_app
+	make -C build/x86_64/ KERNEL=nova run/go_app
 
 target.mk for test app:
 
 TARGET = test-go
 SRC_GO = main.go
 
-LIBS   = base libc libm libatomic libbacktrace libffi libgo libgo_support stdcxx
+LIBS   = base libc libm libatomic libbacktrace libffi libgo libgo_support stdcxx net
 
 CC_CXX_WARN_STRICT =
 	
@@ -74,7 +74,8 @@ On most systems (like seL4) you can use only debug print, and sometimes print lo
 You can use gdb to debug your application on nova using qemu stub (-s) or internal gdbserver (while gdb 
 support in genode somehow limited, I found a lot of problems with improper breaks/etc); 
 I use Parallels VM or qemu on Mac. To compile code for gdb please, take a look at
-repos/world/run/go_app_dbg.run (on 21.08 gdb_monitor currently not started).
+repos/world/run/go_app_dbg.run
+(probably need to add CFLAGS like make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" run/go_app).
 For convenience I add my VSCode launch.json (to run debugger using VSCode as frontend):
         {
             "type": "gdb",
@@ -84,7 +85,7 @@ For convenience I add my VSCode launch.json (to run debugger using VSCode as fro
             "executable": "build/x86_64/var/libcache/ld-nova/ld-nova.lib.so",
             "target": ":5555",
             "remote": true,
-            "cwd": "/var/services/homes/admin/gen/21.02",
+            "cwd": "/var/services/homes/admin/gen/21.11",
             "autorun": [
                 "set output-radix 16",
                 "set solib-search-path build/x86_64/debug",
@@ -115,18 +116,19 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 [init -> gdb_monitor -> test-go]   0x1310000 .. 0x14c7fff: stdcxx.lib.so
 
 	IMPORTANT:
-run file should contain all libs and binaries from above and "/proc/exe", otherwise stack unwind performed 
-by golang will fail. Like
+run file should contain ALL libs and binaries from above and "/proc/exe", otherwise stack unwind performed 
+by golang will fail (it will say something about "deadlock ahead" inside nested exceptions). Like
 	<start name="test-go" caps="400">
 		<resource name="RAM" quantum="220M"/>
 		<config verbose="yes" ld_verbose="yes" >
 		<vfs>
-			<dir name="dev"> <log/> </dir>
 			<rom name="ld.lib.so" label="ld.lib.so"/>
 			<rom name="libc.lib.so" label="libc.lib.so"/>
 			<rom name="vfs.lib.so" label="vfs.lib.so"/>
 			<rom name="libm.lib.so" label="libm.lib.so"/>
 			<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
+			<rom name="vfs_lwip.lib.so" label="vfs_lwip.lib.so"/>
+			<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
 			<rom name="binary" label="test-go"/>
 			<dir name="proc">
 				<dir name="self">
@@ -139,19 +141,20 @@ by golang will fail. Like
 		</libc>
 Also it should contain size of arena (above is 1.5Gb), this is virtual address space used, not always necessary
 correspond to physical RAM size (probably not significantly less).
+For network and tcp setup please take a look for go_http.run exapmple file (go_http_lx.run for linux)
 
 	Current limitations
 	===================
   -	tested nominally up to 4 CPU (you could setup it in go_app.run file in qemu options like -smp 4)
-  -	it works only on x86_64, tested on nova linux sel4 kernels
+  -	it works only on x86_64, tested on nova foc linux sel4 kernels (sel4 support for Dec 21 seems to be broken)
 	genode do not have makecontex/setcontext/gencontext family while it is crucial to support because of goroutine model;
 	I have to port it from FreeBSD libc. It is machine and platform-dependent;
   -	Genode thread model closer to traditional processes than to threads; in particular, capabilities and their permisions
 	allocated in one thread could became unaccessible in another while posix thread model assume that if you open something
 	in one thread then it could be used in another of the same process. Genode thread binded to the stack; goroutines assume
-	fast changes of CPU and related thread, and therefore during migration of goroutine between OS (Genode) threads we
-	need to update stack content to point to correct OS thread, as well as call all system services via wrappers (which already
-	supported in golang runtime and partially in pthread Genode port in libc).
+	often changes of CPU and related thread affinity, and therefore during migration of goroutine between OS (Genode) threads we
+	need to update stack content to point to correct OS thread, as well as call all system services via wrappers. 
+	Seems that they already supported in golang runtime and partially in pthread Genode port in libc.
 	Current implementation do rewrite stack during context switch, and do nothing with any resources (while use libc port which
 	alredy does something similar and do not fail);
 	!!! if you allocate/directly request resources/caps/etc from genode inside goroutine, it could fail during goroutine thread 
@@ -159,9 +162,11 @@ correspond to physical RAM size (probably not significantly less).
   -	during port I make a set of dirty fixes for the platform (genode/nova/sel4/linux), in particular "empty" C implementaion of
 	sendfile(), getpgid(), lchown(), mount(), settimeofday(), mlock(), munlock(), mlockall(), munlockall(), sigaltstack();
 	See patches for libgo in repos/world/src/lib/libgo/ and dummy.cc in libgo_support. Anything in Golang which use them will fail.
+	For network Genode have a limited support of options/fcntl/etc, some of them should be emulated (e.g to establish tcp socket
+	golang runtime apply BROADCAST option to socket and fail if it return error, so I should return success during setsockopt)
 	NB: Potentially new genode releases will contain something which can replace or fix these and other patched functions
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
-  -	mmap area do not freed during exit - otherwise we will free memory while some theads continue running
+  -	mmap area do not freed during exit() - otherwise we will free memory while some theads continue running
   -	networking: works for at least net/http package, see go_http example of http server
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
