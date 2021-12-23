@@ -28,7 +28,7 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  
  is_darwin=no
  is_freebsd=no
-@@ -13929,9 +13931,11 @@
+@@ -13929,9 +13931,12 @@
  is_solaris=no
  is_aix=no
  is_hurd=no
@@ -37,6 +37,7 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  case ${host} in
    *-*-darwin*)   is_darwin=yes;  GOOS=darwin ;;
 +  x86_64-pc-elf)  is_inno=yes; GOOS=inno ;;
++  aarch64-none-elf)  is_inno=yes; GOOS=inno ;;
    *-*-freebsd*)  is_freebsd=yes; GOOS=freebsd ;;
    *-*-irix6*)    is_irix=yes;    GOOS=irix ;;
    *-*-linux*)    is_linux=yes;   GOOS=linux ;;

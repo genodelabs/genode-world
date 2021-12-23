@@ -5,16 +5,12 @@ LIBS += libatomic libbacktrace libffi libgo_support
 
 #CC_OLEVEL = -O0
 
-# do not use configure default args
-NO_DEFAULT_CONFIGURE_ARGS=
-
 CONFIGURE_ARGS +=	--srcdir=$(PKG_DIR)/ \
 			--cache-file=./config.cache \
 			--disable-multilib \
 			--disable-shared \
-			--with-gnu-ld \
-			--build=x86_64-pc-elf\
-			--host=genode-x86
+			--enable-werror=no \
+			--with-gnu-ld
 
 include $(call select_from_repositories,mk/noux.mk)
 

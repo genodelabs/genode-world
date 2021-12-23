@@ -152,16 +152,17 @@ diff -NaurwB gcc.libgobase/libgo/go/internal/poll/fd_poll_runtime.go gcc.libgomo
 diff -NaurwB gcc.libgobase/libgo/runtime/runtime.h gcc.libgomod/libgo/runtime/runtime.h
 --- gcc.libgobase/libgo/runtime/runtime.h	2021-06-08 12:14:11.374349761 +0300
 +++ gcc.libgomod/libgo/runtime/runtime.h	2021-06-19 20:51:46.959108269 +0300
-@@ -501,9 +501,10 @@
+@@ -501,9 +501,11 @@
  #else
  #define __go_context_t	ucontext_t
  #define __go_getcontext(c)	getcontext(c)
 -#define __go_setcontext(c)	setcontext(c)
 +#define __go_setcontext(c) innosetcontext(c)
 +int innosetcontext(__go_context_t *);
++void initucontext(ucontext_t *uc);
  #define __go_makecontext(c, fn, sp, size) \
 -	((c)->uc_stack.ss_sp = sp, (c)->uc_stack.ss_size = size, makecontext(c, fn, 0))
-+	((c)->uc_stack.ss_sp = sp, (c)->uc_stack.ss_size = size, (c)->uc_mcontext.mc_len = sizeof((c)->uc_mcontext), makecontext(c, fn, 0))
++	((c)->uc_stack.ss_sp = sp, (c)->uc_stack.ss_size = size, initucontext(c), makecontext(c, fn, 0))
  #endif
  
  // Symbols defined by the linker.
