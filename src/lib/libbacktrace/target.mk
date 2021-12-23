@@ -4,17 +4,11 @@ MAKE_TARGET := all
 
 include $(call select_from_repositories,lib/mk/libc-common.inc)
 
-# do not use configure default args
-NO_DEFAULT_CONFIGURE_ARGS=
-
 CONFIGURE_ARGS +=       --srcdir=$(PKG_DIR)/ \
                         --cache-file=./config.cache \
                         --disable-multilib \
                         --disable-shared \
-                        --with-multilib-list=m64 \
-                        --with-cross-host=x86_64-pc-linux-gnu \
                         --disable-libada \
-                        --enable-targets=x86_64-pc-elf \
                         --with-gnu-as \
                         --with-gnu-ld \
                         --disable-tls \
@@ -23,12 +17,7 @@ CONFIGURE_ARGS +=       --srcdir=$(PKG_DIR)/ \
                         --enable-multiarch \
                         --disable-sjlj-exceptions \
                         --enable-languages=c,ada,c++,go,lto \
-                        --program-transform-name='s&^&genode-x86-&;s/x86_64-pc-elf/x86/' \
-                        --disable-option-checking \
-                        --with-target-subdir=x86_64-pc-elf \
-                        --build=x86_64-pc-linux-gnu \
-                        --host=x86_64-pc-elf \
-                        --target=x86_64-pc-elf
+                        --disable-option-checking 
 
 include $(call select_from_repositories,mk/noux.mk)
 

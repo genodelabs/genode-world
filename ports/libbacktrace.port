@@ -9,6 +9,7 @@ KEY(gcc)  := GNU
 DIR(gcc)  := src/lib/gcc
 
 TAR_OPT(gcc) := gcc-$(VERSION)/libbacktrace \
+                gcc-$(VERSION)/gcc/BASE-VER \
                 gcc-$(VERSION)/include/dwarf2.h \
                 gcc-$(VERSION)/include/dwarf2.def \
                 gcc-$(VERSION)/include/filenames.h \
