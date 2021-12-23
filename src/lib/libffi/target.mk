@@ -3,14 +3,10 @@ LD_OPT_NOSTDLIB := -nostdlib -Wl,-nostdlib
 MAKE_TARGET := all
 include $(call select_from_repositories,lib/mk/libc-common.inc)
 
-# do not use configure default args
-NO_DEFAULT_CONFIGURE_ARGS=
-
 CONFIGURE_ARGS +=	--srcdir=$(PKG_DIR)/ \
 			--cache-file=./config.cache \
 			--disable-multilib \
 			--disable-shared \
-			--with-multilib-list=m64 \
 			--disable-libada \
 			--with-gnu-as \
 			--with-gnu-ld \
@@ -20,9 +16,7 @@ CONFIGURE_ARGS +=	--srcdir=$(PKG_DIR)/ \
 			--enable-multiarch \
 			--disable-sjlj-exceptions \
 			--enable-languages=c,ada,c++,go,lto \
-			--disable-option-checking \
-			--build=x86_64-pc-elf\
-			--host=genode-x86
+			--disable-option-checking
 
 include $(call select_from_repositories,mk/noux.mk)
 
