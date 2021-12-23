@@ -5,7 +5,7 @@ This work is a side result of one of the research project made in Innopolis Univ
 	(c) Alex Tormasov, tor@innopolis.ru - port itsels, Alexey Semenov aleks.semenov@innopolis.ru - build
 
 It allow compilation and execution of simple go applications/packages (without unsupported OS/platform features).
-In this moment it supports linux, foc, nova and sel4 kernels on x86 platform.
+In this moment it supports linux, foc, nova and sel4 kernels on x86 platform, and foc on arm64 (arm v8a) platform.
 
 I use only gccgo version of golang compiler (gcc 10.3). Things like "go build" in cross mode not supported yet (while we make
 some techology to produce makefiles from "go build" to compilei go code, not attached yet).
@@ -16,31 +16,42 @@ Also it build a set of standard golang packages (namely fmt, os, syscall, runtim
 Note: Go runtinme support around 9 systems as backend. I use netbsd as simplest one as the prototype for new system - "inno".
 
 To implement context switching I have to port it from the glibc (but use makecontext from genode FreeBSD port, so, to use
-you need to fill mc_len field before call to makecontext()); for stack it use alloc_secondary_stack() from Genode.
+you need to fill mc_len field before call to makecontext() on x86_64); for arm64 I have to combine libc and glibc code;
+for stack it use alloc_secondary_stack() from Genode.
 
 	Installation instruction
 	========================
-0. setup genode on appropriate platform using https://github.com/tor-m6/genode.git and https://github.com/tor-m6/genode-world.git, 
+0. setup genode on appropriate platform using https://github.com/tor-m6/genode-world.git, 
 configure toolchain and prepare  code to compile, setup environment, e.g. (replace by your own dirs):
-	export PATH=/usr/local/genode/tool/current/bin:<your genode dir>build/x86_64/lib/libgo:$PATH
-	export AS=genode-x86-as
-	export LD=genode-x86-ld
-	export GDB=genode-x86-gdb
-	export STRIP=genode-x86-stripexport 
-	export RANLIB=genode-x86-ranlib
-	export OBJCOPY=genode-x86-objcopy
-	export OBJDUMP=genode-x86-objdump
-	export READELF=genode-x86-readelf
-	export AR=genode-x86-ar
-	export NM=genode-x86-gcc-nm
-   correct if need begining of build/x86_64/etc/build.conf and uncomment libports ports world repos inside:
+#!/bin/sh
+ARCH=aarch64
+PARCH=arm_v8a
+#ARCH=x86
+#PARCH=x86_64
+export GOC=genode-$ARCH-gccgo
+export GDB=genode-$ARCH-gdb
+export CXX=genode-$ARCH-c++
+export LD=genode-$ARCH-ld
+export READELF=genode-$ARCH-readelf
+export AR=genode-$ARCH-ar
+export AS=genode-$ARCH-as
+export NM=genode-$ARCH-gcc-nm
+export GCC=genode-$ARCH-gcc
+export OBJCOPY=genode-$ARCH-objcopy
+export STRIP=genode-$ARCH-strip
+export OBJDUMP=genode-$ARCH-objdump
+export PATH=/usr/local/genode/tool/current/bin:<your genode dir>/build/$PARCH/lib/libgo:$PATH
+export CC=genode-$ARCH-gcc
+export RANLIB=genode-$ARCH-ranlib
+	execute file above like '. pathes.sh'
+	correct if need begining of build/x86_64/etc/build.conf and uncomment libports ports world repos inside:
 	GENODE_DIR  := <your genode dir>
 	BASE_DIR    := $(GENODE_DIR)/repos/base
 	CONTRIB_DIR := $(GENODE_DIR)/contrib
 
 	...
    and finally cd to genode dir
-1. prepare ports from genode, e.g. by
+1. prepare ports from genode for apropriate targets, e.g. by
 	./tool/ports/prepare_port libc nova stdcxx grub2
 2. prepare ports to build golang libgo from gcc distirbution
 	./tool/ports/prepare_port libatomic libbacktrace libffi libgo
@@ -66,7 +77,7 @@ CC_CXX_WARN_STRICT =
 Golang package (like fmt) is an object file (e.g. fmt.o) which appears in build/x86_64/lib/libgo/ directory and
 subdirectories. This path should be included during golang/gccgo compilation (not only linking). Built libraries for Go
 will be in ${BUILD_BASE_DIR}/lib/libgo/libgobegin.a ${BUILD_BASE_DIR}/lib/libgo/libgolibbegin.a and 
-${BUILD_BASE_DIR}/lib/libgo/.libs/libgo.a
+${BUILD_BASE_DIR}/lib/libgo/.libs/libgo.a. Everything included into import-libgo.mk
 
 	Debugging
 	=========
@@ -105,7 +116,7 @@ For convenience I add my VSCode launch.json (to run debugger using VSCode as fro
             "valuesFormatting": "parseText"
         }
 
-Addresses like -o 0x10dfe000 you could take from log of program after first start, e.g.
+Addresses like -o 0x10dfe000 you should take from log of program after first start, e.g.
 
 [init -> gdb_monitor -> test-go]   0x1000000 .. 0x10ffffff: linker area
 [init -> gdb_monitor -> test-go]   0x40000000 .. 0x4fffffff: stack area
@@ -146,9 +157,10 @@ For network and tcp setup please take a look for go_http.run exapmple file (go_h
 	Current limitations
 	===================
   -	tested nominally up to 4 CPU (you could setup it in go_app.run file in qemu options like -smp 4)
-  -	it works only on x86_64, tested on nova foc linux sel4 kernels (sel4 support for Dec 21 seems to be broken)
+  -	it works on x86_64, tested on nova foc linux sel4 kernels (sel4 support for Dec 21 seems to be broken)
 	genode do not have makecontex/setcontext/gencontext family while it is crucial to support because of goroutine model;
 	I have to port it from FreeBSD libc. It is machine and platform-dependent;
+  -	it works on ARM V8A (64 bit), tested on foc kernel
   -	Genode thread model closer to traditional processes than to threads; in particular, capabilities and their permisions
 	allocated in one thread could became unaccessible in another while posix thread model assume that if you open something
 	in one thread then it could be used in another of the same process. Genode thread binded to the stack; goroutines assume
@@ -159,16 +171,16 @@ For network and tcp setup please take a look for go_http.run exapmple file (go_h
 	alredy does something similar and do not fail);
 	!!! if you allocate/directly request resources/caps/etc from genode inside goroutine, it could fail during goroutine thread 
 	!!! migration; better use "native" libc calls from genode port which take care of it
-  -	during port I make a set of dirty fixes for the platform (genode/nova/sel4/linux), in particular "empty" C implementaion of
+  -	during port I make a set of dirty fixes for the platform (genode/nova/foc/sel4/linux), in particular "empty" C implementaion of
 	sendfile(), getpgid(), lchown(), mount(), settimeofday(), mlock(), munlock(), mlockall(), munlockall(), sigaltstack();
 	See patches for libgo in repos/world/src/lib/libgo/ and dummy.cc in libgo_support. Anything in Golang which use them will fail.
 	For network Genode have a limited support of options/fcntl/etc, some of them should be emulated (e.g to establish tcp socket
 	golang runtime apply BROADCAST option to socket and fail if it return error, so I should return success during setsockopt)
 	NB: Potentially new genode releases will contain something which can replace or fix these and other patched functions
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
-  -	mmap area do not freed during exit() - otherwise we will free memory while some theads continue running
+  -	mmap area do not call free() during exit() - otherwise we will free memory while some theads continue running on it
   -	networking: works for at least net/http package, see go_http example of http server
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
-Origin in https://github.com/tor-m6/genode.git
+Origin in https://github.com/tor-m6/genode-world.git
 
