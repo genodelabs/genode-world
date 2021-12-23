@@ -9,6 +9,7 @@ KEY(gcc)  := GNU
 DIR(gcc)  := src/lib/gcc
 
 TAR_OPT(gcc) := gcc-$(VERSION)/libatomic \
+                gcc-$(VERSION)/gcc/BASE-VER \
                 gcc-$(VERSION)/config-ml.in \
                 gcc-$(VERSION)/config.sub \
                 gcc-$(VERSION)/depcomp \
