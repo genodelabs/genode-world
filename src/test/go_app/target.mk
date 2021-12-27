@@ -1,4 +1,4 @@
-TARGET = test-go
+TARGET = go_app
 SRC_GO = main.go
 
 LIBS   = base libc libm libatomic libbacktrace libffi libgo libgo_support stdcxx
