@@ -1,4 +1,4 @@
-TARGET = main_http
+TARGET = go_http
 SRC_GO = main_http.go
 
 LIBS   = base net libc libm libatomic libbacktrace libffi libgo libgo_support stdcxx

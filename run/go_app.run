@@ -21,10 +21,10 @@ set executable_place "test"
 set executable_mem "120M"
 set executable_caps "300"
 
-# any libraries for executable above should be listed here
-set libs "ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so vfs.lib.so"
+# any modules for executable above should be listed here
+set modules "ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so vfs.lib.so"
 
-append_if $need_pipe libs { vfs_pipe.lib.so }
+append_if $need_pipe modules { vfs_pipe.lib.so }
 
 set conf_verbose "yes"
 set conf_ld_verbose "yes"
@@ -84,7 +84,7 @@ append config {
 }
 
 # add every library/binaries (mandatory for golang stack unwind)
-foreach lib $libs {
+foreach lib $modules {
 	append config "<rom name=\"$lib\" label=\"$lib\"/>"
 }
 
@@ -129,7 +129,7 @@ append boot_modules { core }
 append boot_modules { init }
 append boot_modules { timer }
 
-foreach lib $libs {
+foreach lib $modules {
 	lappend boot_modules "$lib"
 }
 

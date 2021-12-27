@@ -1,24 +1,119 @@
 #
-# \brief  Example for running go http server
+# \brief  Example for running go http server (based on scrcpy)
 # \author Alexander Tormasov
 # \date   2021-12-16
 #
 
-build {
-	core init timer lib/ld
-	lib/vfs/lwip
-	lib/vfs/pipe
-	drivers/rtc
-	test/go_http
+#
+# To execute this run script on your Linux host you have to do some
+# preparation:
+#
+# 1) Setup a TAP device:
+#    ! export USER=[YOUR_USER_NAME]
+#    ! export TAP_DEV=tap0
+#    ! sudo ip tuntap add dev $TAP_DEV mode tap user $USER
+#    ! sudo ip address flush dev $TAP_DEV
+#    ! sudo ip address add 10.0.2.1/24 brd 10.0.2.255 dev $TAP_DEV
+#    ! sudo ip link set dev $TAP_DEV addr 02:00:00:ca:fe:01
+#    ! sudo ip link set dev $TAP_DEV up
+#
+# 2) Now, start the test and connect using your favorite HTTP client, e.g.:
+#    ! cd build/x86_64
+#    ! make run/lwip_lx KERNEL=linux BOARD=linux
+#    ! lynx -dump http://10.0.2.55
+#
+# 3) Clean up your Linux when done testing:
+#    ! sudo ip tuntap delete $TAP_DEV mode tap
+#
 
-	drivers/nic
-	server/nic_router
+# general config section
+set num_cpu 4
+set mem_size "512M"
+# in bytes - 1610612736 == 1.5Gb
+set arena_mem_size "1610612736"
+
+# pipe is mandatory for netpoll which is compiled now into libgo bu default
+set need_pipe 1
+
+# TARGET= from target.mk
+set executable "go_http"
+# could be like test to refer make target test/go_http
+set executable_place "test"
+
+set executable_mem "164M"
+set executable_caps "1000"
+
+set executable_ip  "10.0.3.2"
+set executable_net "24"
+set executable_gateway "10.0.3.1"
+set executable_port "80"
+
+# config section
+# any libraries for executable above should be listed here
+set modules "ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so vfs.lib.so"
+
+set conf_verbose "yes"
+set conf_ld_verbose "yes"
+
+set use_lxip 0
+
+# for linux - should be pre-configured via linux tap interface
+set lx_ip_addr "10.0.2.55"
+set lx_gw_addr "10.0.2.1"
+
+set use_nic_router 1
+set ld_nic "yes"
+if {[have_board linux]} { set ld_nic "no" }
+
+set use_nic  1
+set use_rtc  1
+
+proc socket_fs_plugin {} {
+	global use_lxip
+	if { $use_lxip } { return lxip }
+	return lwip
 }
 
+proc binary_nic_drv { } {
+	if {[have_board linux]}     { return "linux_nic_drv" }
+	if {[have_board pc]}        { return "ipxe_nic_drv" }
+	return "unknown_nic_drv"
+}
+
+append_if $need_pipe modules { vfs_pipe.lib.so }
+
+append modules { vfs_} [socket_fs_plugin] {.lib.so }
+
+# exception for lxip - need 2 libs
+append_if $use_lxip modules { lxip.lib.so }
+
+# build section
+set build_components { 
+	core init timer lib/ld
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+append_platform_drv_build_components
+
+append build_components { server/nic_router }
+append build_components { lib/vfs/} [socket_fs_plugin] {}
+
+lappend_if $use_nic      build_components drivers/nic
+lappend_if $use_rtc      build_components drivers/rtc
+
+lappend build_components "$executable_place/$executable"
+
+append_if $need_pipe build_components { lib/vfs/pipe }
+
+build $build_components
+
 create_boot_directory
+
 import_from_depot [depot_user]/pkg/[drivers_nic_pkg]
 
-install_config {
+# assemble config for main
+
+set config {
 <config>
 	<parent-provides>
 		<service name="ROM"/>
@@ -30,32 +125,48 @@ install_config {
 		<service name="IO_PORT"/>
 		<service name="IO_MEM"/>
 	</parent-provides>
+}
+
+append config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="100"/>
 
+	<default caps="100"/>
+}
+
+append config {
 	<start name="timer">
 		<resource name="RAM" quantum="3M"/>
 		<provides><service name="Timer"/></provides>
 	</start>
+}
 
-	<start name="nic_drv" caps="1000" managing_system="yes" >
+append_if $use_nic config {
+	<start name="nic_drv" ld="} $ld_nic {" caps="1000" managing_system="yes" >
 		<resource name="RAM" quantum="32M"/>
-		<binary name="init"/>
+		<binary name="} [binary_nic_drv] {"/>
+		<provides> <service name="Nic"/> </provides>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
 			<service name="Uplink"> <child name="nic_router"/> </service>
+			<service name="Platform"> <child name="platform_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
+}
 
+append_platform_drv_config
+
+append_if $use_rtc  config {
 	<start name="rtc_drv" caps="200">
 		<resource name="RAM" quantum="6M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
+}
 
+append_if $use_nic_router config {
 	<start name="nic_router" caps="400">
 		<resource name="RAM" quantum="20M"/>
 		<provides>
@@ -68,23 +179,22 @@ install_config {
 		        verbose_packet_drop="no"> -->
 		<config>
 
-			<policy label_prefix="main_http" domain="downlink" />
+			<policy label_prefix="} $executable {" domain="client" />
 			<policy label_prefix="nic_drv"  domain="uplink"/>
 
-			<domain name="uplink" >
+			<domain name="uplink"}
+append_if [expr $use_nic_router && [have_board linux]] config {
+				interface="} $lx_ip_addr {/24" gateway="} $lx_gw_addr {"}
 
-				<nat domain="downlink"
-				     tcp-ports="16384"
-				     udp-ports="16384"
-				     icmp-ids="16384"/>
-
-				<tcp-forward port="80" domain="downlink" to="10.0.3.2" />
-
+append_if $use_nic_router config {>
+				<nat domain="client" tcp-ports="16384" udp-ports="16384" icmp-ids="16384"/>
+				<tcp-forward port="} $executable_port {" domain="client" to="} $executable_ip {" />
 			</domain>
 
-			<domain name="downlink" interface="10.0.3.1/24" >
+			<domain name="client" interface="} $executable_gateway/$executable_net {"
+					gateway="} $executable_gateway {" >
 
-				<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.2">
+				<dhcp-server ip_first="} $executable_ip {" ip_last="} $executable_ip {">
 					<dns-server ip="8.8.8.8"/>
 					<dns-server ip="1.1.1.1"/>
 				</dhcp-server>
@@ -96,58 +206,106 @@ install_config {
 			</domain>
 
 		</config>
-	</start>
+		<route>}
 
-	<start name="main_http" caps="1000">
-		<resource name="RAM" quantum="120M" />
-		<config  verbose="yes" ld_verbose="yes" >
-			<arg value="main_http" />
+append_if [expr $use_nic_router && $use_nic] config {
+			<service name="Nic"> <child name="nic_drv"/> </service>}
+
+append_if $use_nic_router config {
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>}
+
+# main golang executable
+append config {
+	<start name="} $executable {" caps="} $executable_caps {">
+		<resource name="RAM" quantum="} $executable_mem {" />
+		<config verbose="} $conf_verbose {"  ld_verbose="} $conf_ld_verbose {">
+			<arg value="} $executable {" />
 			<vfs>
 				<dir name="dev">
 					<log/> <null/> <inline name="rtc">2020-01-01 00:00</inline>
 					<inline name="random">0123456789012345678901234567890123456789</inline>
 				</dir>
 				<dir name="socket">
-					<lwip dhcp="yes"/>
+					<} [socket_fs_plugin] {}
+append config { dhcp="yes"/>
 				</dir>
-				<rom name="ld.lib.so" label="ld.lib.so"/>
-				<rom name="libc.lib.so" label="libc.lib.so"/>
-				<rom name="vfs.lib.so" label="vfs.lib.so"/>
-				<rom name="libm.lib.so" label="libm.lib.so"/>
-				<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
-				<rom name="vfs_lwip.lib.so" label="vfs_lwip.lib.so"/>
-				<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
-				<rom name="binary" label="main_http"/>
-				<dir name="proc">
-					<dir name="self">
-						<rom name="exe" label="main_http"/>
-					</dir>
-				</dir>
-				<dir name="pipe"> <pipe/>
-				</dir>
-			</vfs>
-			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
-			      rtc="/dev/rtc" rng="/dev/random" socket="/socket" pipe="/pipe">
-					<mmap local_area_default_size="1610612736" />
-			</libc>
-		</config>
-
-		<route>
-			<service name="Nic"> <child name="nic_router"/> </service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-
-	</start>
-</config>}
-
-build_boot_image {
-	core init timer
-	ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so
-	vfs_lwip.lib.so vfs_pipe.lib.so vfs.lib.so main_http
-	rtc_drv	nic_router
 }
 
-append qemu_args " -nographic -smp 4"
+# add every library/binaries (mandatory for golang stack unwind)
+foreach lib $modules {
+	append config "<rom name=\"$lib\" label=\"$lib\"/>"
+}
+
+append config {
+				<rom name="binary" label="} $executable {"/>
+				<dir name="proc">
+					<dir name="self">
+						<rom name="exe" label="} $executable {"/>
+					</dir>
+				</dir>
+}
+
+append_if $need_pipe config {
+				<!-- pipe need for network polling -->
+				<dir name="pipe"> <pipe/> </dir>
+}
+
+append config {
+			</vfs>
+				<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
+}
+
+append_if $need_pipe config {
+				pipe="/pipe"
+}
+
+append_if $use_rtc config {
+				rtc="/dev/rtc"
+}
+
+append config {
+				rng="/dev/random" socket="/socket">
+					<mmap local_area_default_size="} $arena_mem_size {"  />
+				</libc>
+			</config>
+}
+
+append config {
+			<route>
+				<service name="Nic"> <child name="nic_router"/> </service>
+				<any-service> <parent/> <any-child/> </any-service>
+			</route>
+		</start>
+	</config>
+}
+
+install_config $config
+
+# build boot image section
+
+set boot_modules { }
+
+append_platform_drv_boot_modules
+
+append boot_modules { core }
+append boot_modules { init }
+append boot_modules { timer }
+append_if $use_rtc  boot_modules { rtc_drv }
+
+lappend_if $use_nic  boot_modules [binary_nic_drv]
+lappend_if $use_nic_router boot_modules nic_router
+
+foreach lib $modules {
+	lappend boot_modules "$lib"
+}
+
+lappend boot_modules "$executable"
+
+build_boot_image $boot_modules
+
+append qemu_args " -m $mem_size -nographic -smp $num_cpu"
 append_qemu_nic_args "hostfwd=tcp::5555-:80"
 
 run_genode_until forever
