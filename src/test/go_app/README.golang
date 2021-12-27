@@ -5,10 +5,10 @@ This work is a side result of one of the research project made in Innopolis Univ
 	(c) Alex Tormasov, tor@innopolis.ru - port itsels, Alexey Semenov aleks.semenov@innopolis.ru - build
 
 It allow compilation and execution of simple go applications/packages (without unsupported OS/platform features).
-In this moment it supports linux, foc, nova and sel4 kernels on x86 platform, and foc on arm64 (arm v8a) platform.
+In this moment it supports linux, foc, nova and sel4 kernels on x86_64 platform, and foc on arm64 (arm v8a) platform.
 
 I use only gccgo version of golang compiler (gcc 10.3). Things like "go build" in cross mode not supported yet (while we make
-some techology to produce makefiles from "go build" to compilei go code, not attached yet).
+some techology to produce makefiles from "go build" to compile go code, not attached yet).
 Other limitations see below.
 
 It build a set of libraries, from world repo, as static ones.
@@ -65,7 +65,7 @@ export RANLIB=genode-$ARCH-ranlib
 
 target.mk for test app:
 
-TARGET = test-go
+TARGET = go_app
 SRC_GO = main.go
 
 LIBS   = base libc libm libatomic libbacktrace libffi libgo libgo_support stdcxx net
@@ -87,6 +87,7 @@ support in genode somehow limited, I found a lot of problems with improper break
 I use Parallels VM or qemu on Mac. To compile code for gdb please, take a look at
 repos/world/run/go_app_dbg.run
 (probably need to add CFLAGS like make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" run/go_app).
+Note: gdb_monitor code should not be compiled with -O0 flag (it will generate "pure function call").
 For convenience I add my VSCode launch.json (to run debugger using VSCode as frontend):
         {
             "type": "gdb",
@@ -128,39 +129,21 @@ Addresses like -o 0x10dfe000 you should take from log of program after first sta
 
 	IMPORTANT:
 run file should contain ALL libs and binaries from above and "/proc/exe", otherwise stack unwind performed 
-by golang will fail (it will say something about "deadlock ahead" inside nested exceptions). Like
-	<start name="test-go" caps="400">
-		<resource name="RAM" quantum="220M"/>
-		<config verbose="yes" ld_verbose="yes" >
-		<vfs>
-			<rom name="ld.lib.so" label="ld.lib.so"/>
-			<rom name="libc.lib.so" label="libc.lib.so"/>
-			<rom name="vfs.lib.so" label="vfs.lib.so"/>
-			<rom name="libm.lib.so" label="libm.lib.so"/>
-			<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
-			<rom name="vfs_lwip.lib.so" label="vfs_lwip.lib.so"/>
-			<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
-			<rom name="binary" label="test-go"/>
-			<dir name="proc">
-				<dir name="self">
-				<rom name="exe" label="test-go"/>
-				</dir>
-			</dir>
-		</vfs>
-                <libc stdout="/dev/log" stderr="/dev/log">
-			<mmap local_area_default_size="1610612736" />
-		</libc>
-Also it should contain size of arena (above is 1.5Gb), this is virtual address space used, not always necessary
-correspond to physical RAM size (probably not significantly less).
-For network and tcp setup please take a look for go_http.run exapmple file (go_http_lx.run for linux)
+by golang will fail (it will say something about "deadlock ahead" inside nested exceptions).
+References included into run file, as well as parameters like arena size (virtual-only memory), this is 
+virtual address space used, not always necessary correspond to physical RAM size (probably not significantly
+less).
+
+For network and tcp setup please take a look for go_http.run exapmple file.
+In this moment it support nova/linux/foc on x86_64 and foc on arm_v8a 64 bit.
 
 	Current limitations
 	===================
-  -	tested nominally up to 4 CPU (you could setup it in go_app.run file in qemu options like -smp 4)
-  -	it works on x86_64, tested on nova foc linux sel4 kernels (sel4 support for Dec 21 seems to be broken)
+  -	tested nominally up to 4 CPU (you could setup it in go_app.run/go_http.run parameters)
+  -	it works on x86_64, tested on nova, foc, linux, sel4 kernels (sel4 support for Dec 21 seems to be broken);
 	genode do not have makecontex/setcontext/gencontext family while it is crucial to support because of goroutine model;
 	I have to port it from FreeBSD libc. It is machine and platform-dependent;
-  -	it works on ARM V8A (64 bit), tested on foc kernel
+  -	it works on ARM V8A (64 bit), tested on foc kernel, probably for others.
   -	Genode thread model closer to traditional processes than to threads; in particular, capabilities and their permisions
 	allocated in one thread could became unaccessible in another while posix thread model assume that if you open something
 	in one thread then it could be used in another of the same process. Genode thread binded to the stack; goroutines assume
@@ -179,7 +162,7 @@ For network and tcp setup please take a look for go_http.run exapmple file (go_h
 	NB: Potentially new genode releases will contain something which can replace or fix these and other patched functions
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
   -	mmap area do not call free() during exit() - otherwise we will free memory while some theads continue running on it
-  -	networking: works for at least net/http package, see go_http example of http server
+  -	networking: works for at least net/http package, see go_http example of http server and run file configuration
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
 Origin in https://github.com/tor-m6/genode-world.git
