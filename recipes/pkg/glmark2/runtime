@@ -8,7 +8,7 @@
 	</requires>
 
 	<content>
- 		<rom label="egl.lib.so"/>
+		<rom label="egl.lib.so"/>
 		<rom label="expat.lib.so"/>
 		<rom label="glapi.lib.so"/>
 		<rom label="glmark2"/>

@@ -1,3 +1,6 @@
+all: content
+	rm -rf src/lib/sndio/.git
+
 MIRROR_FROM_REP_DIR = lib/mk/libsndio.mk
 
 content: $(MIRROR_FROM_REP_DIR)
