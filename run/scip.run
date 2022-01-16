@@ -21,7 +21,7 @@ install_config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="100" />
-	<start name="test-scip">
+	<start name="test-scip" caps="150">
 		<resource name="RAM" quantum="16M"/>
 		<config>
 			<arg value="queens"/>
