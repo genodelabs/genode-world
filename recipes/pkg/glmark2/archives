@@ -4,6 +4,7 @@ _/src/mesa
 _/src/libdrm
 _/src/libc
 _/src/vfs
+_/src/vfs_gpu
 _/src/expat
 _/src/jpeg
 _/src/libpng

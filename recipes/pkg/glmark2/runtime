@@ -22,13 +22,14 @@
 		<rom label="mesa.lib.so"/>
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
+		<rom label="vfs_gpu.lib.so"/>
 		<rom label="zlib.lib.so"/>
 	</content>
 
 	<config ld_verbose="yes">
 		<vfs>
 			<dir name="dev">
-				<log/>
+				<log/> <gpu/>
 			</dir>
 			<dir name="data">
 				<tar name="glmark2_assets.tar"/>
