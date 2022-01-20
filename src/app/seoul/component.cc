@@ -723,28 +723,10 @@ class Vcpu : public StaticReceiver<Vcpu>
 				return false;
 
 			/*
-			 * Linux kernels with guest KVM support compiled in, executed
-			 * CPUID to query the presence of KVM.
+			 * handle_cpuid() in contrib vcpu.cc reset eax ... edx to 0
+			 * for all unknown CPUIDs. We may overwrite it here, if we have
+			 * a need for it.
 			 */
-			enum { CPUID_KVM_SIGNATURE = 0x40000000 };
-
-			switch (msg.cpuid_index) {
-
-			case CPUID_KVM_SIGNATURE:
-
-				msg.cpu->eax = 0;
-				msg.cpu->ebx = 0;
-				msg.cpu->ecx = 0;
-				msg.cpu->edx = 0;
-				return true;
-			case 0x80000007U:
-				/* Bit 8 of edx indicates whether invariant TSC is supported */
-				msg.cpu->eax = msg.cpu->ebx = msg.cpu->ecx = msg.cpu->edx = 0;
-				return true;
-			default:
-				Logging::printf("CpuMessage::TYPE_CPUID index %x ignored\n",
-				                msg.cpuid_index);
-			}
 			return true;
 		}
 };
