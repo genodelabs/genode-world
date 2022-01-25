@@ -307,6 +307,6 @@ lappend boot_modules "$executable"
 build_boot_image $boot_modules
 
 append qemu_args " -m $mem_size -nographic -smp $num_cpu"
-append_qemu_nic_args "hostfwd=tcp::5555-:80"
+append_qemu_nic_args "hostfwd=tcp::5555-:$executable_port"
 
 run_genode_until forever

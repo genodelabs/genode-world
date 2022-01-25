@@ -6,7 +6,6 @@ SRC_GO_PK := $(foreach s,$(SRC_GO_PKG),$(realpath $(PRG_DIR)/$s))
 
 GOOS=inno
 GOARCH=amd64
-# PATH:=/var/services/homes/admin/gen/goroot/bin:$(PATH)
 
 
 # substitute $libs variable in generated LD_CMD and remove call to gcc++
@@ -38,8 +37,12 @@ env.sh: $(PRG_DIR)/target.mk
 
 
 $(TARGET): env.sh $(SRC_GO_PKG) $(SHARED_LIBS)
-	$(VERBOSE)source env.sh && go env
-	$(VERBOSE)source env.sh && go build -x -compiler gccgo -a -o $@ $(SRC_GO_PK)
+	$(VERBOSE)for files in $(SRC_GO_PK); do \
+		ln -sf $${files} .; \
+	done
+	$(VERBOSE)source ./env.sh && go mod init $(PKG)
+	$(VERBOSE)source ./env.sh && go mod tidy
+	$(VERBOSE)source ./env.sh && go build -x -compiler gccgo -a -o $@ $(SRC_GO_PK)
 
 STRIP_TARGET_CMD ?= $(STRIP) -o $@ $<
 

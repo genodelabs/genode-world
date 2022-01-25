@@ -1,5 +1,6 @@
-SRC_GO_PKG := im.go
-#greet.go srv.go
+SRC_GO_PKG := greet.go srv.go
+#im.go
+#
 
 MPRG_REL_DIR := $(subst $(REP_DIR)/src/,,$(PRG_DIR))
 MPRG_REL_DIR := $(MPRG_REL_DIR:/=)
