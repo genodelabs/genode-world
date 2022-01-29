@@ -28,15 +28,26 @@ Seoul::Network::Network(Genode::Env &env, Genode::Heap &heap,
 :
 	_motherboard(mb), _tx_block_alloc(&heap),
 	_nic(env, &_tx_block_alloc, BUF_SIZE, BUF_SIZE),
-	_packet_avail(env.ep(), *this, &Network::_handle_packets)
+	_rx_handler(env.ep(), *this, &Network::_handle_rx)
 {
-	_nic.rx_channel()->sigh_packet_avail(_packet_avail);
+	_nic.rx_channel()->sigh_packet_avail(_rx_handler);
+	_nic.rx_channel()->sigh_ready_to_ack(_rx_handler);
+	/* vCPU EPs are synced by sync_motherboard, but adding main EP due
+	 * to an own handler causes SMP trouble - avoid it
+	_nic.tx_channel()->sigh_ready_to_submit(_tx_handler);
+	_nic.tx_channel()->sigh_ack_avail(_tx_handler);
+	*/
 }
 
 
-void Seoul::Network::_handle_packets()
+void Seoul::Network::_handle_rx()
 {
 	while (_nic.rx()->packet_avail()) {
+
+		if (!_nic.rx()->ready_to_ack()) {
+			Genode::warning("network: not ready for receive ack");
+			break;
+		}
 
 		Nic::Packet_descriptor rx_packet = _nic.rx()->get_packet();
 
@@ -48,10 +59,17 @@ void Seoul::Network::_handle_packets()
 		_forward_pkt = 0;
 
 		/* acknowledge received packet */
-		if (!_nic.rx()->ready_to_ack())
-			Logging::printf("not ready for acks");
-
 		_nic.rx()->acknowledge_packet(rx_packet);
+	}
+}
+
+
+void Seoul::Network::_handle_tx()
+{
+	/* check for acknowledgements */
+	while (_nic.tx()->ack_avail()) {
+		Nic::Packet_descriptor const ack = _nic.tx()->get_acked_packet();
+		_nic.tx()->release_packet(ack);
 	}
 }
 
@@ -63,9 +81,12 @@ bool Seoul::Network::transmit(void const * const packet, Genode::size_t len)
 		return false;
 
 	/* check for acknowledgements */
-	while (_nic.tx()->ack_avail()) {
-		Nic::Packet_descriptor const ack = _nic.tx()->get_acked_packet();
-		_nic.tx()->release_packet(ack);
+	_handle_tx();
+
+	/* exception is no option */
+	if (!_nic.tx()->ready_to_submit()) {
+		Genode::warning("network: congested - submit issue\n");
+		return false;
 	}
 
 	/* allocate transmit packet */
@@ -73,7 +94,7 @@ bool Seoul::Network::transmit(void const * const packet, Genode::size_t len)
 	try {
 		tx_packet = _nic.tx()->alloc_packet(len);
 	} catch (Nic::Session::Tx::Source::Packet_alloc_failed) {
-		Logging::printf("error: tx packet alloc failed\n");
+		Genode::warning("network: congested - alloc issue\n");
 		return false;
 	}
 

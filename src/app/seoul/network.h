@@ -49,10 +49,11 @@ class Seoul::Network
 		Nic::Packet_allocator _tx_block_alloc;
 		Nic::Connection       _nic;
 
-		Genode::Signal_handler<Network> const _packet_avail;
+		Genode::Signal_handler<Network> const _rx_handler;
 		void const *                          _forward_pkt = nullptr;
 
-		void _handle_packets();
+		void _handle_rx();
+		void _handle_tx();
 
 		/*
 		 * Noncopyable
