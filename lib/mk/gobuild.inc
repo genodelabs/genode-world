@@ -4,9 +4,17 @@ PKG    ?= $(TARGET)
 
 SRC_GO_PK := $(foreach s,$(SRC_GO_PKG),$(realpath $(PRG_DIR)/$s))
 
-GOOS=inno
-GOARCH=amd64
+GOROOT:=$(BUILD_BASE_DIR)/app/goroot
 
+GOOS:=inno
+
+ifeq ($(findstring x86_64,$(SPECS)),x86_64)
+GOARCH:=amd64
+else ifeq ($(findstring arm_64,$(SPECS)),arm_64)
+GOARCH:=arm64
+else
+$(error unsipported arch SPECS $(SPECS))
+endif
 
 # substitute $libs variable in generated LD_CMD and remove call to gcc++
 CGO_LDFLAGS = $(subst $$libs,$(LIB_CACHE_DIR),$(filter-out $(firstword $(LD_CMD)) ,$(LD_CMD)))
@@ -32,17 +40,20 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export GOARCH='$(GOARCH)'" >> $@
 	$(VERBOSE)echo "export GCCGO='$(CUSTOM_GO)'" >> $@
 	$(VERBOSE)echo "export CGO_LDFLAGS='$(CGO_LDFLAGS)'" >> $@
-	$(VERBOSE)echo "export GOROOT=/var/services/homes/admin/gen/goroot" >> $@
-	$(VERBOSE)echo "export PATH=/var/services/homes/admin/gen/goroot/bin:${PATH}" >> $@
+	$(VERBOSE)echo "export GOROOT='$(GOROOT)'" >> $@
+	$(VERBOSE)echo "export GOPATH='$(LIBGO_PKG_BUILD)'" >> $@
+	$(VERBOSE)echo "export PATH=$(GOROOT)/bin:${PATH}" >> $@
 
 
-$(TARGET): env.sh $(SRC_GO_PKG) $(SHARED_LIBS)
+$(TARGET): env.sh $(SRC_GO_PKG) $(SHARED_LIBS) $(GOROOT)/bin
 	$(VERBOSE)for files in $(SRC_GO_PK); do \
 		ln -sf $${files} .; \
 	done
-	$(VERBOSE)source ./env.sh && go mod init $(PKG)
+	$(VERBOSE)if [ ! -f go.mod ]; then \
+		source ./env.sh && go mod init $(PKG); \
+	fi
 	$(VERBOSE)source ./env.sh && go mod tidy
-	$(VERBOSE)source ./env.sh && go build -x -compiler gccgo -a -o $@ $(SRC_GO_PK)
+	$(VERBOSE)source ./env.sh && go build -x -compiler gccgo -gccgoflags 'all=$(CUSTOM_GO_FLAGS)' -a -o $@ $(SRC_GO_PK)
 
 STRIP_TARGET_CMD ?= $(STRIP) -o $@ $<
 
@@ -57,4 +68,4 @@ $(DEBUG_DIR)/$(TARGET): $(TARGET)
 	$(VERBOSE)ln -sf $(CURDIR)/$< $@
 endif
 
-LIBS   = base libc libm libgo libgo_support stdcxx 
+LIBS   = base libc libm libgo libgo_support stdcxx
