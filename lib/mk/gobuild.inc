@@ -1,8 +1,42 @@
+# to be defined in target.mk
+# SRC_GO_PKG - list of go files to be compiled (e.g. "a.go b.go")
+#            - OR directory with go package like github.com/woojiahao/tower-of-hanoi-solver
+# optional
+# SRC_GO_PKG_MAIN - directory where go files with "package main" resides
+# by default equal to SRC_GO_PKG if it is directory (or CURDIR where "go build ..." will run)
+# single base packet downloaded with no-mod mode, others in mod
+# mods stored in libgo; use goroot
+# GOBUILD_VERBOSE can be set to -x in target.mk to show build process
 
+ifeq ($(VERBOSE),)
+GOBUILD_VERBOSE ?= -v 
+endif
+
+ifneq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
+# assume set of .go files to be compiled
 TARGET ?= $(lastword $(subst /, ,$(PRG_DIR)))
 PKG    ?= $(TARGET)
 
 SRC_GO_PK := $(foreach s,$(SRC_GO_PKG),$(realpath $(PRG_DIR)/$s))
+SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
+SRC_GO_BUILD_DIR = .
+
+else
+# assume package name wihout .go substng
+TARGET ?= $(lastword $(subst /, ,$(SRC_GO_PKG)))
+PKG    ?= $(SRC_GO_PKG)
+
+SRC_GO_PK := $(SRC_GO_PKG)
+SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
+SRC_GO_BUILD_DIR = src/$(SRC_GO_PKG_MAIN)
+
+$(PKG):
+	ifeq ($(VERBOSE),)
+		echo Building $@
+	endif
+	$(VERBOSE)mkdir -p src
+	$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) go get -d $(SRC_GO_PKG_MAIN)
+endif
 
 GOROOT:=$(BUILD_BASE_DIR)/app/goroot
 
@@ -17,8 +51,10 @@ $(error unsipported arch SPECS $(SPECS))
 endif
 
 # substitute $libs variable in generated LD_CMD and remove call to gcc++
-CGO_LDFLAGS = $(subst $$libs,$(LIB_CACHE_DIR),$(filter-out $(firstword $(LD_CMD)) ,$(LD_CMD)))
-
+CGO_LDFLAGS0 = $(subst $$libs,$(LIB_CACHE_DIR),$(filter-out $(firstword $(LD_CMD)) ,$(LD_CMD)))
+CGO_LDFLAGS1 = $(subst =ld.lib.so,=ld_lib_so,$(CGO_LDFLAGS0))
+CGO_LDFLAGS2 = $(patsubst %.lib.so, -l:%.lib.so,$(CGO_LDFLAGS1))
+CGO_LDFLAGS  = $(subst =ld_lib_so,=ld.lib.so,$(CGO_LDFLAGS2))
 
 env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)rm -f $@
@@ -39,23 +75,33 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export GOOS='$(GOOS)'" >> $@
 	$(VERBOSE)echo "export GOARCH='$(GOARCH)'" >> $@
 	$(VERBOSE)echo "export GCCGO='$(CUSTOM_GO)'" >> $@
-	$(VERBOSE)echo "export CGO_LDFLAGS='$(CGO_LDFLAGS)'" >> $@
+	$(VERBOSE)echo "export CGO_LDFLAGS='$(CGO_LDFLAGS) -L$(realpath .)'" >> $@
 	$(VERBOSE)echo "export GOROOT='$(GOROOT)'" >> $@
-	$(VERBOSE)echo "export GOPATH='$(LIBGO_PKG_BUILD)'" >> $@
+	$(VERBOSE)echo "export GOPATH='$(LIBGO_PKG_BUILD):$(CURDIR)'" >> $@
 	$(VERBOSE)echo "export PATH=$(GOROOT)/bin:${PATH}" >> $@
+	$(VERBOSE)echo "export GCC='$(GCC)'" >> $@
+	$(VERBOSE)echo "export GOC='$(GOC)'" >> $@
+	$(VERBOSE)echo "export READELF='$(READELF)'" >> $@
+	$(VERBOSE)echo "export AS='$(AS)'" >> $@
+	$(VERBOSE)echo "export OBJCOPY='$(OBJCOPY)'" >> $@
+	$(VERBOSE)echo "export OBJDUMP='$(OBJDUMP)'" >> $@
+	$(VERBOSE)echo "export GDB='$(GDB)'" >> $@
 
 
-$(TARGET): env.sh $(SRC_GO_PKG) $(SHARED_LIBS) $(GOROOT)/bin
+$(TARGET): env.sh $(SRC_GO_PK) $(SHARED_LIBS) $(GOROOT)/bin
 	$(VERBOSE)for files in $(SRC_GO_PK); do \
-		ln -sf $${files} .; \
+		if [ -f $${files} ]; then \
+			ln -sf $${files} .; \
+		fi \
 	done
 	$(VERBOSE)if [ ! -f go.mod ]; then \
 		source ./env.sh && go mod init $(PKG); \
 	fi
 	$(VERBOSE)source ./env.sh && go mod tidy
-	$(VERBOSE)source ./env.sh && go build -x -compiler gccgo -gccgoflags 'all=$(CUSTOM_GO_FLAGS)' -a -o $@ $(SRC_GO_PK)
+	$(VERBOSE)source ./env.sh && cd $(SRC_GO_BUILD_DIR) && \
+		go build $(GOBUILD_VERBOSE) -compiler gccgo -a -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
 
-STRIP_TARGET_CMD ?= $(STRIP) -o $@ $<
+STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
 
 $(TARGET).stripped: $(TARGET)
 	$(VERBOSE)$(STRIP_TARGET_CMD)

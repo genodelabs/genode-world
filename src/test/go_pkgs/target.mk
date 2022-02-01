@@ -1,5 +1,8 @@
-SRC_GO_PKG := greet.go srv.go
-#im.go
+SRC_GO_PKG := im.go
+# greet.go srv.go
+#
+
+GOBUILD_VERBOSE := -x
 
 include $(REP_DIR)/lib/mk/gobuild.inc
 
