@@ -19,7 +19,6 @@
  */
 
 /* Genode includes */
-#include <gems/magic_ring_buffer.h>
 #include <os/static_root.h>
 #include <libc/component.h>
 #include <audio_out_session/connection.h>
@@ -32,6 +31,9 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <mpg123.h>
+
+/* local includes */
+#include <magic_ring_buffer.h>
 
 namespace Mp3_audio_sink {
 

@@ -12,13 +12,14 @@
  */
 
 /* Genode includes */
-#include <gems/magic_ring_buffer.h>
 #include <audio_out_session/connection.h>
 #include <terminal_session/connection.h>
 #include <os/static_root.h>
 #include <base/attached_ram_dataspace.h>
 #include <base/component.h>
 
+/* local includes */
+#include <magic_ring_buffer.h>
 
 namespace Raw_audio {
 	using namespace Genode;
