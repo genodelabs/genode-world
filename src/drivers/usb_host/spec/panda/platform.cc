@@ -14,6 +14,7 @@
 #include <platform.h>
 
 #include <base/attached_io_mem_dataspace.h>
+#include <platform_session/connection.h>
 #include <gpio_session/connection.h>
 #include <io_mem_session/connection.h>
 #include <irq_session/connection.h>
@@ -309,18 +310,34 @@ void platform_hcd_init(Genode::Env &, Services *services)
  ** lx_kit/backend_alloc.h **
  ****************************/
 
-void backend_alloc_init(Env & env, Ram_allocator&, Allocator&) { }
-
-
-Ram_dataspace_capability Lx::backend_alloc(addr_t size, Cache cache)
+Platform::Connection & platform_connection(Genode::Env * env = nullptr)
 {
-	return Lx_kit::env().env().ram().alloc(size, cache);
+	static Platform::Connection plat(*env);
+	return plat;
 }
 
 
-void Lx::backend_free(Ram_dataspace_capability cap)
+void backend_alloc_init(Env & env, Ram_allocator&, Allocator&)
 {
-	return Lx_kit::env().env().ram().free(cap);
+	platform_connection(&env);
+}
+
+
+Genode::Ram_dataspace_capability Lx::backend_alloc(addr_t size, Cache cache)
+{
+	return platform_connection().alloc_dma_buffer(size, cache);
+}
+
+
+void Lx::backend_free(Genode::Ram_dataspace_capability cap)
+{
+	return platform_connection().free_dma_buffer(cap);
+}
+
+
+Genode::addr_t Lx::backend_dma_addr(Genode::Ram_dataspace_capability cap)
+{
+	return platform_connection().dma_addr(cap);
 }
 
 
