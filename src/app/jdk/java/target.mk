@@ -1,6 +1,6 @@
 TARGET   = java
 SRC_C    = main.c
-LIBS     = base jli java jvm libc libm
+LIBS     = base jli java jvm libc libm zlib stdcxx verify jimage jnet jzip nio
 
 #
 # native C implementations for standard library Java classes
