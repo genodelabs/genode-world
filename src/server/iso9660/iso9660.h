@@ -69,7 +69,8 @@ namespace Iso {
 	 *
 	 * \return Pointer to File_info class
 	 */
-	File_info *file_info(Genode::Allocator &alloc, Block::Connection<> &block, char const *path);
+	File_info *file_info(Genode::Allocator &alloc, Block::Connection<> &block,
+	                     char const *path, Genode::Entrypoint &);
 
 	/**
 	 * Read data from ISO
@@ -84,6 +85,7 @@ namespace Iso {
 	 *
 	 * \return Number of bytes read
 	 */
-	unsigned long read_file(Block::Connection<> &block, File_info *info, Genode::off_t file_offset,
-	                        Genode::uint32_t length, void *buf);
+	unsigned long read_file(Block::Connection<> &block, File_info *info,
+	                        Genode::off_t file_offset, Genode::uint32_t length,
+	                        void *buf, Genode::Entrypoint &);
 } /* namespace Iso */
