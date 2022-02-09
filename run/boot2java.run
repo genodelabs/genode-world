@@ -1,374 +1,52 @@
-proc check_config {bin xml_file xsd_file label avail_xsd_files xsd_inc nesting_level} { }
+#
+# This test case uses the modular Sculpt approach in order to start a Java
+# scenario that features two NIC interfaces on x86_64 Qemu only. The servlet
+# spawns two HTTP server instances that are redirected to the two NICs and to
+# the host on port 8080 and 8081. Therefore, http://localhost:8080 will display
+# a Genode log that is stored in a 'log' file on the AHCI device while
+# http://localhost:8081 will display a small webpage for testing.
+#
 
-if {![have_board nit6_solox]} {
-	puts "Run script is only supported on nit6_solox"; exit 0 }
+# Sculpt env variables
+set ::env(SCULPT) boot2java
+set ::env(LOG)    core
 
+set lynx [installed_command lynx]
 
-build {
-	core init timer
+if {[expr ![have_include "power_on/qemu"] && [have_board pc]]} {
+	puts "\n Run script is not supported on this platform. \n"; exit 0 }
 
-	app/jdk/lib/generated
-	app/log_core
+source ${genode_dir}/repos/gems/run/sculpt.run
 
-	drivers/platform/spec/arm
-	drivers/nic/fec
-	drivers/gpio/imx
-	drivers/sd_card/spec/imx6
+# enable Qemu networking, usable via the nic_drv
+append qemu_args " -m 1024 "
 
-	server/fs_log
-	server/fs_rom
-	server/nic_router
-	server/part_block
-	server/report_rom
+# attach small SATA disk to Qemu to experiment with file-system access
+set disk_image "bin/boot2java-ahci.raw"
+if {![file exists bin/boot2java-ahci.raw]} {
+	puts stderr "creating toy disk image $disk_image for use in Qemu"
+	catch { exec dd if=/dev/zero of=$disk_image bs=1M count=16 }
+	catch { exec mke2fs -F $disk_image }
 }
+append qemu_args " -device ahci,id=ahci "
+append qemu_args " -drive id=hdd,file=$disk_image,format=raw,if=none -device ide-hd,drive=hdd,bus=ahci.1 "
 
-create_boot_directory
+# configure nic interfaces
+append_qemu_nic_args "hostfwd=tcp::8080-:8080"
+append qemu_args " -nographic -net nic,model=e1000,netdev=net1 -netdev user,id=net1,hostfwd=tcp::8081-:8081 "
 
-import_from_depot [depot_user]/pkg/boot2java
-
-append config {
-<config verbose="yes">
-	<parent-provides>
-		<service name="ROM"/>
-		<service name="LOG"/>
-		<service name="RM"/>
-		<service name="CPU"/>
-		<service name="PD"/>
-		<service name="IRQ"/>
-		<service name="IO_PORT"/>
-		<service name="IO_MEM"/>
-	</parent-provides>
-	<default-route>
-		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>
-	<default caps="100" />
-
-	<start name="timer">
-		<resource name="RAM" quantum="2M" />
-		<provides> <service name="Timer" /> </provides>
-	</start>
-
-	<start name="platform_drv" caps="150">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Platform"/> </provides>
-		<config>
-
-			<!-- GPIO banks -->
-			<device name="gpio1">
-				<io_mem address="0x0209c000" size="0x4000"/>
-				<irq number="98"/>
-				<irq number="99"/>
-			</device>
-
-			<device name="gpio2">
-				<io_mem address="0x020a0000" size="0x4000"/>
-				<irq number="100"/>
-				<irq number="101"/>
-			</device>
-
-			<!-- Network devices -->
-			<device name="fec0">
-				<io_mem   address="0x2188000" size="0x4000"/>
-				<irq      number="150"/>
-				<irq      number="151"/>
-				<property name="compatible" value="fsl,imx6sx-fec"/>
-				<property name="mii"        value="rgmii"/>
-				<property name="phy"        value="phy0"/>
-			</device>
-			<device name="fec1">
-				<io_mem   address="0x21b4000" size="0x4000"/>
-				<irq      number="134"/>
-				<irq      number="135"/>
-				<property name="compatible" value="fsl,imx6sx-fec"/>
-				<property name="mii"        value="rgmii"/>
-				<property name="phy"        value="phy1"/>
-			</device>
-			<device name="phy0">
-				<property name="compatible" value="ethernet-phy-ieee802.3-c22"/>
-				<property name="mdio_bus"   value="fec0"/>
-				<property name="mdio_reg"   value="4"/>
-				<property name="gpio_irq"   value="36"/>
-			</device>
-			<device name="phy1">
-				<property name="compatible" value="ethernet-phy-ieee802.3-c22"/>
-				<property name="mdio_bus"   value="fec0"/>
-				<property name="mdio_reg"   value="5"/>
-				<property name="gpio_irq"   value="40"/>
-			</device>
-
-			<device name="usdhc2">
-				<io_mem   address="0x02194000" size="0x4000"/>
-				<irq      number="56"/>
-				<property name="compatible" value="fsl,imx6sx-usdhc"/>
-			</device>
-
-			<policy label="nic_drv -> ">
-			        <device name="fec0"/>
-			        <device name="fec1"/>
-			        <device name="phy0"/>
-			        <device name="phy1"/>
-			</policy>
-
-			<policy label="imx_gpio_drv -> ">
-				<device name="gpio1"/>
-				<device name="gpio2"/>
-			</policy>
-
-			<policy label="sd_card_drv -> "> <device name="sdhc1"/> </policy>
-		</config>
-		<route> <any-service> <parent/> </any-service> </route>
-	</start>
-
-	
-	<start name="imx_gpio_drv" caps="200">
-		<resource name="RAM" quantum="8M"/>
-		<provides><service name="Gpio"/></provides>
-		<config/>
-	</start>
-
-	<!-- networking -->
-
-	<start name="nic_drv" caps="200">
-		<binary name="fec_nic_drv"/>
-		<resource name="RAM" quantum="16M"/>
-		<provides><service name="Nic"/></provides>
-	</start>
-
-	<start name="report_rom" caps="200">
-		<resource name="RAM" quantum="2M"/>
-		<provides>
-			<service name="Report"/>
-			<service name="ROM"/>
-		</provides>
-		<config verbose="yes"/>
-	</start>
-
-	<start name="nic_router" caps="200">
-		<resource name="RAM" quantum="12M" />
-		<provides>
-			<service name="Nic"/>
-			<service name="Uplink"/>
-		</provides>
-		<route>
-			<service name="Nic" label="nic0">
-				<child name="nic_drv" label="fec0"/>
-			</service>
-			<service name="Nic" label="nic1">
-				<child name="nic_drv" label="fec1"/>
-			</service>
-			<service name="ROM" label="config">
-				<child name="fs_rom" label="nic_router.config"/>
-			</service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
-
-	<start name="vfs_nic" caps="300">
-		<binary name="vfs"/>
-		<resource name="RAM" quantum="64M"/>
-		<provides> <service name="File_system"/> </provides>
-		<route>
-			<service name="Nic"><child name="nic_router"/></service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-		<config>
-			<vfs>
-				<dir name="socket">
-					<lxip dhcp="yes" />
-				</dir>
-			</vfs>
-			<default-policy root="/" writeable="yes" />
-		</config>
-	</start>
-
-	<!-- block and file system access -->
-
-	<start name="sd_card_drv">
-		<binary name="imx6_sd_card_drv"/>
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Block"/></provides>
-	</start>
-
-	<start name="part_block">
-		<resource name="RAM" quantum="5M"/>
-		<provides><service name="Block"/></provides>
-		<route>
-			<service name="Block"><child name="sd_card_drv" /></service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-		<config> <default-policy partition="1" writeable="yes"/> </config>
-	</start>
-
-	<start name="vfs_block" caps="300">
-		<binary name="vfs"/>
-		<resource name="RAM" quantum="32M"/>
-		<provides> <service name="File_system"/> </provides>
-		<route>
-			<service name="Block"><child name="part_block"/></service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-		<config>
-			<vfs>
-				<rump fs="ext2fs" ram="32M" writeable="yes"/>
-			</vfs>
-			<default-policy root="/" writeable="yes" />
-		</config>
-	</start>
-
-	<start name="fs_rom">
-		<resource name="RAM" quantum="64M" />
-		<provides><service name="ROM"/></provides>
-		<route>
-			<service name="File_system"> <child name="vfs_block"/> </service>
-			<any-service> <parent/> </any-service>
-		</route>
-	</start>
-
-	<!-- logging onto file system -->
-
-	<start name="fs_log">
-		<resource name="RAM" quantum="2M"/>
-		<provides><service name="LOG"/></provides>
-		<config>
-			<default-policy merge="yes"/>
-		</config>
-		<route>
-			<service name="File_system"> <child name="vfs_block"/> </service>
-			<any-service> <parent/> </any-service>
-		</route>
-	</start>
-
-	<start name="log_core">
-		<resource name="RAM" quantum="10M"/>
-		<config period_ms="2000"/>
-		<route>
-			<service name="ROM" unscoped_label="log_core"> <parent/> </service>
-			<service name="ROM" unscoped_label="ld.lib.so"> <parent/> </service>
-			<service name="ROM" label="log"> <parent label="core_log"/> </service>
-			<service name="Timer"> <child name="timer"/> </service>
-			<service name="LOG" label="log"> <child name="fs_log"/> </service>
-			<service name="PD"> <parent/> </service>
-			<service name="CPU"> <parent/> </service>
-			<service name="LOG"> <parent/> </service>
-		</route>
-	</start>
-
-	<!-- Java virtual machine -->
-
-	<start name="java" caps="750">
-		<resource name="RAM" quantum="256M" />
-		<route>
-			<service name="ROM" label="zip.lib.so">
-				<parent label="jzip.lib.so" />
-			</service>
-			<service name="ROM" label="net.lib.so">
-				<parent label="jnet.lib.so" />
-			</service>
-			<service name="ROM" label="classes.tar">
-				<child name="fs_rom" />
-			</service>
-			<service name="File_system" label="nic">
-				<child name="vfs_nic"/>
-			</service>
-			<service name="File_system" label="block">
-				<child name="vfs_block"/>
-			</service>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-		<config ld_verbose="no">
-			<arg value="/bin/java" />
-			<arg value="-XX:+NeverActAsServerClassMachine"/>
-			<arg value="-XX:+UnlockDiagnosticVMOptions"/>
-			<arg value="-XX:-ImplicitNullChecks"/>
-			<arg value="-XX:+CITime" />
-			<arg value="-jar" />
-			<arg value="servlet.jar" />
-			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" />
-			<vfs>
-				<dir name="etc">
-					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
-				</dir>
-				<dir name="dev">
-					<log/><null/><inline name="rtc">2000-01-01 00:00</inline>
-				</dir>
-				<dir name="bin">
-					<rom name="java" />
-				</dir>
-				<dir name="lib">
-					<rom name="java.lib.so" />
-					<inline name="jvm.cfg">-server KNOWN
--client IGNORE
-</inline>
-					<dir name="server">
-						<rom name="jvm.lib.so" />
-					</dir>
-				</dir>
-				<dir name="modules">
-					<tar name="classes.tar"/>
-				</dir>
-				<dir name="var">
-					<dir name="tmp"> <ram/> </dir>
-				</dir>
-				<rom name="zip.lib.so" />
-				<rom name="nio.lib.so" />
-				<rom name="net.lib.so" />
-				<rom name="management.lib.so"/>
-				<fs label="block" buffer_size="524288"/>
-				<fs label="nic"/>
-				<ram/>
-			</vfs>
-		</config>
-	</start>
-</config>
-}
-
-install_config $config
-
-build_boot_image {
-	core init ld.lib.so timer
-
-	fec_nic_drv imx_gpio_drv imx6_sd_card_drv part_block
-
-	fs_rom report_rom fs_log log_core
-
-	nic_router platform_drv
-}
+run_genode_until {.*Server started.*\n} 60
 
 #
-# Prepare disk image
+# Download and check website from server
 #
-set image     jdk_demo.img
-set dd        [installed_command dd]
-set sfdisk    [installed_command sfdisk]
-set mkfsext2  [installed_command mkfs.ext2]
-set losetup   [installed_command losetup]
+set uri "http://localhost:8081"
 
-# return jdk_generated port path
-proc jdk_generated { } {
-	set ::env(MAKEFLAGS) s
-	set jdk_generated_path [exec [genode_dir]/tool/ports/current jdk_generated]
-	return [lindex $jdk_generated_path 0] }
+puts "http server is up, try to query website $uri"
 
-# create file and partition table
-exec $dd if=/dev/zero of=[run_dir].img bs=1M count=64 2> /dev/null
-exec  echo ";" | $sfdisk [run_dir].img
+set website [exec $lynx -dump $uri]
 
-# scan file
-set dev [exec sudo $losetup  --partscan --show --find [run_dir].img]
-
-# mount and copy data to image
-exec mkdir -p [run_dir].tmp
-exec sudo $mkfsext2 -q "${dev}p1"
-exec sudo  mount "${dev}p1" [run_dir].tmp
-
-foreach f [glob -directory [jdk_generated]/src/app/jdk/bin *] {
-	exec sudo cp -rf $f [run_dir].tmp }
-
-exec sudo cp -f [run_dir]/uImage [run_dir].tmp
-
-# unmount
-exec sudo  umount "${dev}p1"
-exec sudo $losetup -d $dev
-exec rm -rf [run_dir].tmp
-
-puts "The image can be found under '[run_dir].img'"
+if {![regexp {Meet us at FOSDEM 2012} $website dummy]} {
+	puts stderr "Query returned unexpected website"
+	exit 2;
+}

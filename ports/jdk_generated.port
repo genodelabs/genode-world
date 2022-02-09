@@ -3,7 +3,7 @@ VERSION   := git
 DOWNLOADS := jdk_generated.git
 
 URL(jdk_generated) := https://github.com/ssumpf/jdk_generated.git
-REV(jdk_generated) := b926f9cd244431335a1b0c84d46b56d146731a2f
+REV(jdk_generated) := 721164e19f4aa1fc7ee4348394b2be5e2e07c248
 DIR(jdk_generated) := src/app/jdk
 
 # vi: set ft=make :

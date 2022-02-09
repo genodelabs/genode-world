@@ -1,0 +1,231 @@
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="Timer"/>
+		<service name="Platform"/>
+	</parent-provides>
+	<default-route> <any-service> <parent/> </any-service> </default-route>
+	<default caps="100"/>
+
+	<!-- networking -->
+
+	<start name="nic_inner" caps="120">
+		<binary name="ipxe_nic_drv"/>
+		<resource name="RAM" quantum="8M"/>
+		<route>
+			<service name="Platform"> <parent/> </service>
+			<service name="ROM">      <parent/> </service>
+			<service name="PD">       <parent/> </service>
+			<service name="RM">       <parent/> </service>
+			<service name="CPU">      <parent/> </service>
+			<service name="LOG">      <parent/> </service>
+			<service name="Timer">    <parent/> </service>
+			<service name="Uplink">   <child name="nic_router"/> </service>
+		</route>
+	</start>
+
+	<start name="nic_outer" caps="120">
+		<binary name="ipxe_nic_drv"/>
+		<resource name="RAM" quantum="8M"/>
+		<route>
+			<service name="Platform"> <parent/> </service>
+			<service name="ROM">      <parent/> </service>
+			<service name="PD">       <parent/> </service>
+			<service name="RM">       <parent/> </service>
+			<service name="CPU">      <parent/> </service>
+			<service name="LOG">      <parent/> </service>
+			<service name="Timer">    <parent/> </service>
+			<service name="Uplink">   <child name="nic_router"/> </service>
+		</route>
+	</start>
+
+	<start name="nic_router" caps="200">
+		<resource name="RAM" quantum="12M" />
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config>
+			<policy label_prefix="nic_inner" domain="uplink_inner"/>
+			<policy label_prefix="nic_outer" domain="uplink_outer"/>
+			<default-policy domain="default"/>
+
+			<domain name="uplink_inner">
+				<nat domain="default" tcp-ports="1000" udp-ports="1000" icmp-ids="1000"/>
+				<tcp-forward port="8080" domain="default" to="10.0.1.2"/>·
+			</domain>
+
+			<domain name="uplink_outer">
+				<nat domain="default" tcp-ports="1000" udp-ports="1000" icmp-ids="1000"/>
+				<tcp-forward port="8081" domain="default" to="10.0.1.2"/>·
+			</domain>
+
+			<domain name="default" interface="10.0.1.1/24">
+				<dhcp-server ip_first="10.0.1.2" ip_last="10.0.1.2" dns_server_from="uplink_inner"/>
+				<tcp dst="0.0.0.0/0">
+					<permit-any domain="uplink_inner"/>
+				</tcp>
+				<udp dst="0.0.0.0/0">
+					<permit-any domain="uplink_outer"/>
+				</udp>
+				<icmp dst="0.0.0.0/0" domain="uplink_inner"/>
+			</domain>
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<!-- logging onto file system -->
+
+	<start name="ahci_drv">
+		<resource name="RAM" quantum="10M" />
+		<provides><service name="Block" /></provides>
+		<config>
+			<policy label_prefix="logging_fs" device="1" writeable="yes" />
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="logging_fs" caps="300">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="File_system"/> </provides>
+		<route>
+			<service name="Block"> <child name="ahci_drv"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<config>
+			<vfs>
+				<rump fs="ext2fs" ram="32M" />
+			</vfs>
+			<default-policy root="/" writeable="yes" />
+		</config>
+	</start>
+
+	<start name="file_terminal">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Terminal"/> </provides>
+		<config>
+			<default-policy filename="log" />
+			<vfs> <dir name="dev"> <log/> </dir> <fs/> </vfs>
+			<libc stdout="/dev/log"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="logging_fs"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="terminal_log">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="LOG"/> </provides>
+		<route>
+			<service name="Terminal"> <child name="file_terminal"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="log_core">
+		<resource name="RAM" quantum="10M"/>
+		<config period_ms="2000"/>
+		<route>
+			<service name="ROM" label="log"> <parent label="core_log"/> </service>
+			<service name="LOG" label="log"> <child name="terminal_log"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<!-- IP stack -->
+	<start name="vfs_nic" caps="300">
+		<binary name="vfs"/>
+		<resource name="RAM" quantum="64M"/>
+		<provides> <service name="File_system"/> </provides>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<config>
+			<vfs>
+				<dir name="socket">
+					<lxip dhcp="yes" />
+				</dir>
+			</vfs>
+			<default-policy root="/" writeable="yes" />
+		</config>
+	</start>
+
+	<!-- Java -->
+	<start name="java" caps="1000">
+		<resource name="RAM" quantum="512M" />
+		<route>
+			<service name="ROM" label="zip.lib.so">
+				<parent label="jzip.lib.so" />
+			</service>
+			<service name="ROM" label="net.lib.so">
+				<parent label="jnet.lib.so" />
+			</service>
+			<service name="File_system" label="nic">
+				<child name="vfs_nic"/>
+			</service>
+			<service name="File_system" label="block">
+				<child name="logging_fs"/>
+			</service>
+			<any-service> <parent/> </any-service>
+		</route>
+		<config ld_verbose="yes">
+			<arg value="/bin/java" />
+			<arg value="-XX:+NeverActAsServerClassMachine"/>
+			<arg value="-XX:+UnlockDiagnosticVMOptions"/>
+			<arg value="-XX:-ImplicitNullChecks"/>
+			<arg value="-XX:+CITime" />
+			<arg value="-XX:ReservedCodeCacheSize=67108864"/>
+			<arg value="-jar" />
+			<arg value="servlet.jar" />
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" pipe="/pipe"/>
+			<vfs>
+				<dir name="etc">
+					<inline name="resolv.conf">nameserver 1.1.1.1</inline>
+				</dir>
+				<dir name="dev">
+					<log/><null/><inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
+				<dir name="pipe"> <pipe/> </dir>
+				<dir name="bin">
+					<rom name="java" />
+				</dir>
+				<dir name="lib">
+					<rom name="java.lib.so" />
+					<rom name="tzdb.dat"/>
+					<inline name="jvm.cfg">-server KNOWN
+-client IGNORE
+</inline>
+					<dir name="server">
+						<rom name="jvm.lib.so" />
+					</dir>
+				</dir>
+				<dir name="modules">
+					<tar name="classes.tar"/>
+				</dir>
+				<dir name="var">
+					<dir name="tmp"> <ram/> </dir>
+				</dir>
+				<tar name="servlet.tar"/>
+				<rom name="zip.lib.so" />
+				<rom name="nio.lib.so" />
+				<rom name="net.lib.so" />
+				<rom name="management.lib.so"/>
+				<rom name="Genode - Genode News.htm"/>
+				<fs label="nic"/>
+				<fs label="block" buffer_size="524288"/>
+				<ram/>
+			</vfs>
+		</config>
+	</start>
+</config>
