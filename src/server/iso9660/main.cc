@@ -73,10 +73,10 @@ class Iso::File : public File_base
 		     Block::Connection<> &block, char const *path)
 		:
 			File_base(path), _alloc(alloc),
-			_info(Iso::file_info(_alloc, block, path)),
+			_info(Iso::file_info(_alloc, block, path, env.ep())),
 			_ds(env.ram(), env.rm(), align_addr(_info->page_sized(), 12))
 		{
-			Iso::read_file(block, _info, 0, _ds.size(), _ds.local_addr<void>());
+			Iso::read_file(block, _info, 0, _ds.size(), _ds.local_addr<void>(), env.ep());
 		}
 		
 		~File() { destroy(_alloc, _info); }
@@ -138,6 +138,8 @@ class Iso::Root : public Iso::Root_component
 		Allocator_avl       _block_alloc { &_alloc };
 		Block::Connection<> _block       { _env, &_block_alloc };
 
+		Genode::Io_signal_handler<Root>  sigh { _env.ep(), *this, &Root::_signal };
+
 		/*
 		 * Entries in the cache are never freed, even if the ROM session
 		 * gets destroyed.
@@ -145,6 +147,8 @@ class Iso::Root : public Iso::Root_component
 		File_cache _cache { };
 
 		char _path[PATH_LENGTH];
+
+		void _signal() { }
 
 	protected:
 
@@ -158,6 +162,9 @@ class Iso::Root : public Iso::Root_component
 
 			Session_label const label = label_from_args(args);
 			copy_cstring(_path, label.last_element().string(), sizeof(_path));
+
+			_block.tx_channel()->sigh_ack_avail(sigh);
+			_block.tx_channel()->sigh_ready_to_submit(sigh);
 
 			if (verbose)
 				Genode::log("Request for file ", Cstring(_path), " len ", strlen(_path));

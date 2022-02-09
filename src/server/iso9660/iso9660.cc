@@ -51,7 +51,8 @@ class Iso::Sector {
 	public:
 
 		Sector(Block::Connection<> &block,
-		       unsigned long blk_nr, unsigned long count)
+		       unsigned long blk_nr, unsigned long count,
+		       Genode::Entrypoint &ep)
 		: _source(*block.tx())
 		{
 			try {
@@ -61,7 +62,14 @@ class Iso::Sector {
 					blk_nr * ((float)blk_size() / BLOCK_SIZE),
 					count * ((float)blk_size() / BLOCK_SIZE));
 
+				while (!_source.ready_to_submit())
+					ep.wait_and_dispatch_one_io_signal();
+
 				_source.submit_packet(_p);
+
+				while (!_source.ack_avail())
+					ep.wait_and_dispatch_one_io_signal();
+
 				_p = _source.get_acked_packet();
 
 				if (!_p.succeeded()) {
@@ -328,11 +336,12 @@ class Volume_descriptor : public Iso::Iso_base
  * Locate the root-directory record in the primary volume descriptor
  */
 static Directory_record *locate_root(Genode::Allocator &alloc,
-                                     Block::Connection<> &block)
+                                     Block::Connection<> &block,
+                                     Genode::Entrypoint &ep)
 {
 	/* volume descriptors in ISO9660 start at block 16 */
 	for (unsigned long blk_nr = 16;; blk_nr++) {
-		Iso::Sector sec(block, blk_nr, 1);
+		Iso::Sector sec(block, blk_nr, 1, ep);
 		Volume_descriptor *vol = sec.addr<Volume_descriptor *>();
 
 		if (vol->primary())
@@ -348,9 +357,10 @@ static Directory_record *locate_root(Genode::Allocator &alloc,
  * Return root directory record
  */
 static Directory_record *root_dir(Genode::Allocator &alloc,
-                                  Block::Connection<> &block)
+                                  Block::Connection<> &block,
+                                  Genode::Entrypoint &ep)
 {
-	Directory_record *root = locate_root(alloc, block);
+	Directory_record *root = locate_root(alloc, block, ep);
 
 	if (!root) { throw Iso::Non_data_disc(); }
 
@@ -366,7 +376,8 @@ static Directory_record *_root_dir;
 
 
 Iso::File_info *Iso::file_info(Genode::Allocator &alloc,
-                               Block::Connection<> &block, char const *path)
+                               Block::Connection<> &block, char const *path,
+                               Genode::Entrypoint &ep)
 {
 	char level[PATH_LENGTH];
 
@@ -387,7 +398,7 @@ Iso::File_info *Iso::file_info(Genode::Allocator &alloc,
 	Token t(path);
 
 	if (!_root_dir) {
-		_root_dir = root_dir(alloc, block);
+		_root_dir = root_dir(alloc, block, ep);
 	}
 
 	Directory_record *dir = _root_dir;
@@ -412,7 +423,7 @@ Iso::File_info *Iso::file_info(Genode::Allocator &alloc,
 
 		/* load extent of directory record and search for level */
 		for (unsigned long i = 0; i < Sector::to_blk(dir->data_length()); i++) {
-			Sector sec(block, current_blk_nr + i, 1);
+			Sector sec(block, current_blk_nr + i, 1, ep);
 			Directory_record *tmp = sec.addr<Directory_record *>()->locate(level);
 
 			if (!tmp && i == Sector::to_blk(dir->data_length()) - 1) {
@@ -448,7 +459,8 @@ Iso::File_info *Iso::file_info(Genode::Allocator &alloc,
 
 
 unsigned long Iso::read_file(Block::Connection<> &block, File_info *info,
-                             off_t file_offset, uint32_t length, void *buf_ptr)
+                             off_t file_offset, uint32_t length, void *buf_ptr,
+                             Genode::Entrypoint &ep)
 {
 	uint8_t *buf = (uint8_t *)buf_ptr;
 	if (info->size() <= (size_t)(length + file_offset))
@@ -461,7 +473,7 @@ unsigned long Iso::read_file(Block::Connection<> &block, File_info *info,
 	unsigned long blk_nr = info->blk_nr() + (file_offset / Sector::blk_size());
 
 	while ((blk_count = min<unsigned long>(Sector::MAX_SECTORS, total_blk_count))) {
-		Sector sec(block, blk_nr, blk_count);
+		Sector sec(block, blk_nr, blk_count, ep);
 
 		total_blk_count -= blk_count;
 		blk_nr          += blk_count;
