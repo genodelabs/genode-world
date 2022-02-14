@@ -15,7 +15,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/event_filter \
                   [depot_user]/src/init \
                   [depot_user]/src/nitpicker \
-                  [depot_user]/src/usb_host_drv \
+                  [depot_user]/src/legacy_usb_host_drv \
                   [depot_user]/src/usb_hid_drv \
                   [depot_user]/src/vfs_import \
                   [depot_user]/src/ps2_drv \
@@ -232,7 +232,7 @@ append config {
 	</start>
 
 	<start name="usb_drv" priority="-1" caps="120">
-		<binary name="x86_pc_usb_host_drv"/>
+		<binary name="legacy_pc_usb_host_drv"/>
 		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Usb"/> </provides>
 		<config uhci="yes" ohci="yes" ehci="yes" xhci="yes">
