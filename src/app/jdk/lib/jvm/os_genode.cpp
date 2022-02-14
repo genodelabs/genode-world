@@ -4330,7 +4330,7 @@ class Genode::Vm_region_map
 
 	private:
 
-		enum { VM_SIZE = (sizeof(long) == 8 ? 1512ul : 512ul) * 1024 * 1024 };
+		enum { VM_SIZE = (sizeof(long) == 8 ? 2048ul : 512ul) * 1024 * 1024 };
 		Env               &_env;
 		Rm_connection      _rm_connection { _env };
 		Region_map_client  _rm { _rm_connection.create(VM_SIZE) };
@@ -4360,7 +4360,10 @@ class Genode::Vm_region_map
 		{
 			return retry<Genode::Out_of_ram>(
 				[&] () {
-					return _rm.attach_at(ds, local_addr - _base);
+					return retry<Genode::Out_of_caps>(
+						[&] () { return _rm.attach_at(ds, local_addr - _base); },
+						[&] () { _rm_connection.upgrade_caps(2); },
+						~0u);
 				},
 				[&] () { _env.upgrade(Parent::Env::pd(), "ram_quota=8K"); });
 		}
@@ -4369,7 +4372,10 @@ class Genode::Vm_region_map
 		{
 			return retry<Genode::Out_of_ram>(
 				[&] () {
-					return _rm.attach_executable(ds, local_addr - _base);
+					return retry<Genode::Out_of_caps>(
+						[&] () { return _rm.attach_executable(ds, local_addr - _base); },
+						[&] () { _rm_connection.upgrade_caps(2); },
+						~0u);
 				},
 				[&] () { _env.upgrade(Parent::Env::pd(), "ram_quota=8K"); });
 		}
@@ -4421,15 +4427,10 @@ class Genode::Vm_area
 
 			Ram_dataspace_capability ds = _env.ram().alloc(size);
 
-			try {
-				if (executable)
-					_rm.attach_executable(ds, base);
-				else
-					_rm.attach_at(ds, base);
-			} catch (...) {
-				_env.ram().free(ds);
-				return false;
-			}
+			if (executable)
+				_rm.attach_executable(ds, base);
+			else
+				_rm.attach_at(ds, base);
 
 			new (_heap) Vm_handle(_ds, base, size, ds);
 
