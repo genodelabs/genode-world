@@ -52,7 +52,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 		Allocator                   &_md_alloc;
 		Directory                   &_root;
 		Id_space<File_system::Node>  _open_node_registry;
-		bool                         _writable;
+		bool                         _writeable;
 
 		Signal_handler<Session_component> _process_packet_handler;
 
@@ -191,7 +191,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 			_env(env),
 			_md_alloc(md_alloc),
 			_root(*new (&_md_alloc) Directory(root_dir, false)),
-			_writable(writeable),
+			_writeable(writeable),
 			_process_packet_handler(env.ep(), *this, &Session_component::_process_packets)
 		{
 			_tx.sigh_packet_avail(_process_packet_handler);
@@ -223,7 +223,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 
 				Node &dir = open_node.node();
 
-				if (!_writable) {
+				if (!_writeable) {
 					if (create || (mode != STAT_ONLY && mode != READ_ONLY)) {
 						throw Permission_denied();
 					}
@@ -265,7 +265,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 
 				Node &dir = open_node.node();
 
-				if (!_writable && create) { throw Permission_denied(); }
+				if (!_writeable && create) { throw Permission_denied(); }
 
 				Absolute_path absolute_path(_root.name());
 
@@ -302,7 +302,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 			/* skip leading '/' */
 			path_str++;
 
-			if (!_writable && create)
+			if (!_writeable && create)
 				throw Permission_denied();
 
 			if (!path.valid_string())
@@ -390,7 +390,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 			if (!valid_name(name.string()))
 				throw Invalid_name();
 
-			if (!_writable)
+			if (!_writeable)
 				throw Permission_denied();
 
 			auto unlink_fn = [&] (Open_node &open_node) {
@@ -439,7 +439,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 
 		void truncate(File_handle file_handle, file_size_t size)
 		{
-			if (!_writable)
+			if (!_writeable)
 				throw Permission_denied();
 
 			auto truncate_fn = [&] (Open_node &open_node) {
@@ -456,7 +456,7 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 		void move(Dir_handle from_dir_handle, Name const &from_name,
 		          Dir_handle   to_dir_handle, Name const   &to_name)
 		{
-			if (!_writable) { throw Permission_denied(); }
+			if (!_writeable) { throw Permission_denied(); }
 
 			auto move_fn = [&] (Open_node &open_from_dir_node) {
 
