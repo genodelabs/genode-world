@@ -376,6 +376,11 @@ Iso::File_info *Iso::file_info(Genode::Allocator &alloc,
 		{
 			return c != '/' && c != 0;
 		}
+
+		static bool end_of_quote(const char *s)
+		{
+			return s[0] != '\\' && s[1] == '\"';
+		}
 	};
 	typedef ::Genode::Token<Scanner_policy_file> Token;
 
