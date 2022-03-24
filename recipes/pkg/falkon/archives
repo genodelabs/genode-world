@@ -6,7 +6,6 @@ _/src/init
 _/src/jitter_sponge
 _/src/libc
 _/src/libdrm
-_/src/libsndio
 _/src/mesa
 _/src/nss3
 _/src/openssl

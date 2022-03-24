@@ -2,11 +2,10 @@
 <runtime ram="2G" caps="10000" binary="init" config="init.config">
 
 	<requires>
-		<audio_out/>
+		<nic/>
 		<file_system label="config"/>
 		<file_system label="downloads"/>
 		<gui/>
-		<nic/>
 		<!--
 		  The shape report label cannot be renamed to 'shape' because then it
 		  would not match anymore with the label of the 'Gui' session. The
@@ -18,6 +17,8 @@
 		<report label="clipboard"/>
 		<rom label="clipboard"/>
 		<rtc/>
+		<audio_out/>
+		<audio_in/>
 	</requires>
 
 	<content>
@@ -54,7 +55,6 @@
 		<rom label="libqsvg.lib.so"/>
 		<rom label="libqtquick2plugin.lib.so"/>
 		<rom label="libqtwebengineplugin.lib.so"/>
-		<rom label="libsndio.lib.so"/>
 		<rom label="libwindowplugin.lib.so"/>
 		<rom label="mesa.lib.so"/>
 		<rom label="nss3.lib.so"/>
