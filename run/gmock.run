@@ -27,12 +27,10 @@ install_config {
 <config verbose="yes">
 	<parent-provides>
 		<service name="ROM"/>
-		<service name="CAP"/>
 		<service name="RM"/>
 		<service name="PD"/>
 		<service name="CPU"/>
 		<service name="LOG"/>
-		<service name="SIGNAL"/>
 		<service name="IO_PORT"/>
 	</parent-provides>
 	<default-route>
