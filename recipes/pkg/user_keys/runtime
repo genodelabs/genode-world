@@ -22,7 +22,9 @@
 
 		<start name="rom_to_file">
 			<resource name="RAM" quantum="1M"/>
-			<config rom="user.remap"/>
+			<config rom="user.remap">
+				<vfs> <fs/> </vfs>
+			</config>
 			<route>
 				<service name="ROM" label="user.remap">
 					<child name="rom_filter"/>
@@ -83,6 +85,7 @@
 	<content>
 		<rom label="init"/>
 		<rom label="ld.lib.so"/>
+		<rom label="vfs.lib.so"/>
 		<rom label="rom_filter"/>
 		<rom label="global_keys_handler"/>
 		<rom label="report_rom"/>

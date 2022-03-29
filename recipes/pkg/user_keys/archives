@@ -4,3 +4,4 @@ _/src/fs_rom
 _/src/rom_filter
 _/src/global_keys_handler
 _/src/rom_to_file
+_/src/vfs
