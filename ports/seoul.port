@@ -4,7 +4,7 @@ DOWNLOADS := seoul.git
 
 URL(seoul) := https://github.com/alex-ab/seoul.git
 # branch genode_22_04
-REV(seoul) := 880ba641b414abfb2f7e28a48b49a26d5d362310
+REV(seoul) := 74b6d364c6bfed5257418bcfec96c85cebd4d8be
 DIR(seoul) := src/app/seoul
 
 #
@@ -29,6 +29,7 @@ additional_steps : $(DOWNLOADS)
 	sed -i "/Generated on/d" $(I82576VF_DIR)/genreg.py && \
 	echo "call code generators ... takes a while ..." && \
 	cd $(EXECUTOR_DIR) && \
+	          CROSS_DEV_PREFIX=genode-x86- \
 	          ./build_instructions.py > instructions.inc && \
 	cd $(CURDIR)/$(I82576VF_DIR) && \
 	          ./genreg.py reg_pci.py ../../include/model/intel82576vfpci.inc && \
