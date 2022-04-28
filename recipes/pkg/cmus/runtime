@@ -1,4 +1,4 @@
-<runtime ram="64M" caps="500" binary="init" config="cmus.config">
+<runtime ram="64M" caps="600" binary="init" config="cmus.config">
 
 	<requires>
 		<file_system label="media"/>
@@ -12,6 +12,7 @@
 	</requires>
 
 	<content>
+		<rom label="black_hole"/>
 		<rom label="cmus"/>
 		<rom label="cmus.config"/>
 		<rom label="cmus_ip_flac.lib.so"/>
