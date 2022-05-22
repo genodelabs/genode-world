@@ -85,6 +85,7 @@ MODEL_INFO(rtl8029, "bdf", "irq", "port")
 
 MODEL_INFO(virtio_input, "bdf", "irq")
 MODEL_INFO(virtio_gpu,   "bdf", "irq")
+MODEL_INFO(virtio_sound, "bdf", "irq")
 
 MODEL_INFO(ide, "port0", "port1", "irq", "bdf", "disk")
 MODEL_INFO(ahci, "mem", "irq", "bdf")

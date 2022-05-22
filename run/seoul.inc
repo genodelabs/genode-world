@@ -44,6 +44,14 @@ if {![info exists use_virtio]} {
 	set use_virtio 0
 }
 
+if {![info exists use_audio]} {
+	set use_audio 0
+}
+
+if {$use_audio} {
+	import_from_depot [depot_user]/src/bsd_audio_drv
+}
+
 #
 # Build
 #
@@ -170,6 +178,12 @@ if {$use_virtio} {
 	puts $vm_cfg_fd {
 		<virtio_input irq="11"/>
 		<virtio_gpu   irq="13"/>
+	}
+}
+
+if {$use_audio} {
+	puts $vm_cfg_fd {
+		<virtio_sound irq="15"/>
 	}
 }
 
@@ -335,6 +349,16 @@ append_if $use_usb config {
 		</route>
 	</start>}
 
+append_if $use_audio config {
+	<start name="audio_drv">
+		<binary name="pci_audio_drv"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="Audio_in"/>
+			<service name="Audio_out"/>
+		</provides>
+		<config/>
+	</start>}
 
 append_if $use_drv_ahci config {
 	<start name="ahci_drv" priority="-1">
@@ -665,3 +689,8 @@ build_boot_image $boot_modules
 
 # A copy of the config is placed in the run folder.
 exec rm -f bin/vm_seoul.cfg
+
+
+if {$use_audio} {
+	append qemu_args " -device ES1370 "
+}

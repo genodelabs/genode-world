@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2011-2019 Genode Labs GmbH
+ * Copyright (C) 2011-2022 Genode Labs GmbH
  * Copyright (C) 2012 Intel Corporation
  *
  * This file is distributed under the terms of the GNU General Public License
@@ -60,11 +60,13 @@
 #include "guest_memory.h"
 #include "timeout_late.h"
 #include "gui.h"
+#include "audio.h"
 
 
 enum { verbose_debug = false };
 enum { verbose_npt   = false };
 enum { verbose_io    = false };
+enum { verbose_audio = false };
 
 enum {
 	PAGE_SIZE_LOG2 = 12UL,
@@ -758,6 +760,7 @@ class Machine : public StaticReceiver<Machine>
 		bool                   _same_cpu     { false   };
 		Seoul::Network        *_nic          { nullptr };
 		Rtc::Session          *_rtc          { nullptr };
+		Seoul::Audio          *_audio        { nullptr };
 
 		enum { MAX_CPUS = 8 };
 		Vcpu *                 _vcpus[MAX_CPUS] { nullptr };
@@ -1041,6 +1044,22 @@ class Machine : public StaticReceiver<Machine>
 			}
 		}
 
+		bool receive(MessageAudio &msg)
+		{
+			if (!_audio) {
+				try {
+					_audio = new (_heap) Seoul::Audio(_env, _motherboard,
+					                                  _unsynchronized_motherboard);
+					_audio->verbose(verbose_audio);
+				} catch (...) {
+					Genode::error("Creating audio backend failed");
+					return false;
+				}
+			}
+
+			return _audio->receive(msg);
+		}
+
 		bool receive(MessageTimer &msg)
 		{
 			switch (msg.type) {
@@ -1159,6 +1178,7 @@ class Machine : public StaticReceiver<Machine>
 			_unsynchronized_motherboard.bus_hwpcicfg.add(this, receive_static<MessageHwPciConfig>);
 			_unsynchronized_motherboard.bus_acpi.add    (this, receive_static<MessageAcpi>);
 			_unsynchronized_motherboard.bus_legacy.add  (this, receive_static<MessageLegacy>);
+			_unsynchronized_motherboard.bus_audio.add   (this, receive_static<MessageAudio>);
 		}
 
 
