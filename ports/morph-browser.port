@@ -1,0 +1,8 @@
+LICENSE := GPL3
+VERSION := xenial-genode
+
+DOWNLOADS := morph-browser.git
+
+URL(morph-browser) := https://github.com/cproc/morph-browser.git
+REV(morph-browser) := $(VERSION)
+DIR(morph-browser) := src/app/morph-browser

@@ -1,0 +1,115 @@
+<!-- A sub-init is needed to be able to relabel the ROM session for the EGL driver. -->
+<runtime ram="1G" caps="10000" binary="init" config="init.config">
+
+	<requires>
+		<nic/>
+		<file_system label="config"/>
+		<file_system label="downloads"/>
+		<gui/>
+		<!--
+		  The shape report label cannot be renamed to 'shape' because then it
+		  would not match anymore with the label of the 'Gui' session. The
+		  label of the 'Gui' session cannot be renamed because there can be
+		  multiple Qt windows with individual labels which need to be
+		  distinguishable for the window manager.
+		-->
+		<report label="morph-browser -> shape"/>
+		<report label="clipboard"/>
+		<rom label="clipboard"/>
+		<rtc/>
+		<audio_out/>
+		<audio_in/>
+		<capture/>
+		<gpu/>
+		<rom label="mesa_gpu_drv.lib.so"/>
+	</requires>
+
+	<content>
+
+		<rom label="morph-browser"/>
+		<rom label="egl.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="freebl3.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="jitter_sponge"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
+		<rom label="libQt5Network.lib.so"/>
+		<rom label="libQt5PrintSupport.lib.so"/>
+		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5Quick.lib.so"/>
+		<rom label="libQt5QuickControls2.lib.so"/>
+		<rom label="libQt5QuickTemplates2.lib.so"/>
+		<rom label="libQt5QuickWidgets.lib.so"/>
+		<rom label="libQt5Sql.lib.so"/>
+		<rom label="libQt5Svg.lib.so"/>
+		<rom label="libQt5Test.lib.so"/>
+		<rom label="libQt5WebChannel.lib.so"/>
+		<rom label="libQt5WebEngine.lib.so"/>
+		<rom label="libQt5WebEngineCore.lib.so"/>
+		<rom label="libQt5WebEngineWidgets.lib.so"/>
+		<rom label="libQt5Widgets.lib.so"/>
+		<rom label="libQt5Xml.lib.so"/>
+		<rom label="libUbuntuComponents.lib.so"/>
+		<rom label="libUbuntuComponentsStyles.lib.so"/>
+		<rom label="libUbuntuGestures.lib.so"/>
+		<rom label="libUbuntuMetrics.lib.so"/>
+		<rom label="libUbuntuToolkit.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libcrypto.lib.so"/>
+		<rom label="libdrm.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libmodelsplugin.lib.so"/>
+		<rom label="libmorph-web-plugin.lib.so"/>
+		<rom label="libqgenode.lib.so"/>
+		<rom label="libqjpeg.lib.so"/>
+		<rom label="libqmlfolderlistmodelplugin.lib.so"/>
+		<rom label="libqmlsettingsplugin.lib.so"/>
+		<rom label="libqquicklayoutsplugin.lib.so"/>
+		<rom label="libqsqlite.lib.so"/>
+		<rom label="libqsvg.lib.so"/>
+		<rom label="libqtgraphicaleffectsplugin.lib.so"/>
+		<rom label="libqtgraphicaleffectsprivate.lib.so"/>
+		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="libqtquickcontrols2plugin.lib.so"/>
+		<rom label="libqtquicktemplates2plugin.lib.so"/>
+		<rom label="libqtwebengineplugin.lib.so"/>
+		<rom label="libubuntu-ui-extras-plugin.lib.so"/>
+		<rom label="libwindowplugin.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="nss3.lib.so"/>
+		<rom label="nssckbi.lib.so"/>
+		<rom label="qt5_component.lib.so"/>
+		<rom label="softokn3.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_capture.lib.so"/>
+		<rom label="vfs_gpu.lib.so"/>
+		<rom label="vfs_jitterentropy.lib.so"/>
+		<rom label="vfs_lwip.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="vfs_qtwebengine_shm.lib.so"/>
+		<rom label="zlib.lib.so"/>
+
+		<rom label="morph-browser_qml.tar"/>
+		<rom label="qt5_declarative_qml.tar"/>
+		<rom label="qt5_dejavusans.tar"/>
+		<rom label="qt5_graphicaleffects_qml.tar"/>
+		<rom label="qt5_libqgenode.tar"/>
+		<rom label="qt5_libqsqlite.tar"/>
+		<rom label="qt5_libqsvg.tar"/>
+		<rom label="qt5_quickcontrols2_qml.tar"/>
+		<rom label="qt5_webengine_qml.tar"/>
+		<rom label="qt5_webengine_resources.tar"/>
+		<rom label="qt5_webengine_translations.tar"/>
+		<rom label="ubuntu-themes.tar"/>
+		<rom label="ubuntu-ui-extras_qml.tar"/>
+		<rom label="ubuntu-ui-toolkit_qml.tar"/>
+
+		<rom label="init.config"/>
+		<rom label="init"/>
+
+	</content>
+
+</runtime>
