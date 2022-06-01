@@ -138,7 +138,7 @@ class Genode::Vm_region_map
 
 		void free(addr_t vaddr) { _range.free((void *)vaddr); }
 
-		size_t size_at(void const *addr) const { return _range.size_at(addr); }
+		// size_t size_at(void const *addr) const { return _range.size_at(addr); }
 
 		Local_addr attach_at(Dataspace_capability ds, addr_t local_addr, size_t size)
 		{
@@ -239,7 +239,7 @@ class Genode::Vm_area
 
 		void free(addr_t vaddr) { _rm.free(vaddr); }
 
-		size_t size_at(void const *addr) const { return _rm.size_at(addr); }
+		// size_t size_at(void const *addr) const { return _rm.size_at(addr); }
 
 		bool commit(addr_t base, size_t size, bool executable)
 		{
