@@ -29,16 +29,16 @@ installed_tar.tag: installed.tag
 	rm -f $(BUILD_BASE_DIR)/debug/libgolibbegin.a; \
 	rm -f $(BUILD_BASE_DIR)/debug/libgolibbegin.la; \
 	rm -rf $(BUILD_BASE_DIR)/var/libcache/libgo; \
-	if test -e $(BUILD_BASE_DIR)/noux-pkg/libgo/.libs/libgo.a; then \
+	if test -e $(BUILD_BASE_DIR)/lib/libgo/.libs/libgo.a; then \
 	echo ".... remove built.tag and installed.tag ....."; \
-	rm $(BUILD_BASE_DIR)/noux-pkg/libgo/built.tag; \
-	rm $(BUILD_BASE_DIR)/noux-pkg/libgo/installed.tag; \
+	rm $(BUILD_BASE_DIR)/lib/libgo/built.tag; \
+	rm $(BUILD_BASE_DIR)/lib/libgo/installed.tag; \
 	echo ".... remove install dir ....."; \
-	rm -rf $(BUILD_BASE_DIR)/noux-pkg/libgo/install; \
+	rm -rf $(BUILD_BASE_DIR)/lib/libgo/install; \
 	echo ".... copy libgo.a to ./var/libcache ....."; \
 	mkdir -p $(LIB_CACHE_DIR)/libgo/include; \
-	ln -sf $(BUILD_BASE_DIR)/noux-pkg/libgo/.libs/libgo.a $(LIB_CACHE_DIR)/libgo/libgo.a; \
-	ln -sf $(BUILD_BASE_DIR)/noux-pkg/libgo/libgo.la $(LIB_CACHE_DIR)/libgo/libgo.la; \
-	ln -sf $(BUILD_BASE_DIR)/noux-pkg/libgo/libgobegin.a $(LIB_CACHE_DIR)/libgo/libgobegin.a; \
-	ln -sf $(BUILD_BASE_DIR)/noux-pkg/libgo/libgolibbegin.a $(LIB_CACHE_DIR)/libgo/libgolibbegin.a; \
+	ln -sf $(BUILD_BASE_DIR)/lib/libgo/.libs/libgo.a $(LIB_CACHE_DIR)/libgo/libgo.a; \
+	ln -sf $(BUILD_BASE_DIR)/lib/libgo/libgo.la $(LIB_CACHE_DIR)/libgo/libgo.la; \
+	ln -sf $(BUILD_BASE_DIR)/lib/libgo/libgobegin.a $(LIB_CACHE_DIR)/libgo/libgobegin.a; \
+	ln -sf $(BUILD_BASE_DIR)/lib/libgo/libgolibbegin.a $(LIB_CACHE_DIR)/libgo/libgolibbegin.a; \
 	fi
