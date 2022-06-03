@@ -207,7 +207,7 @@ set config {
 		<service name="PD"/>
 		<service name="RM"/>
 		<service name="CPU"/>
-		<service name="LOG"/>
+		<service name="LOG"/>}
 
 append_if $use_trace config {
 		<service name="TRACE"/>}
