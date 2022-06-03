@@ -5,6 +5,8 @@
 #
 
 #
+# check for non-tap (non-linux) version: curl http://127.0.0.1:5555/sdfsdf
+#
 # To execute this run script on your Linux host you have to do some
 # preparation:
 #
@@ -63,7 +65,7 @@ set lx_gw_addr "10.0.2.1"
 
 set use_nic_router 1
 set ld_nic "yes"
-if {[have_board linux]} { set ld_nic "no" }
+#if {[have_board linux]} { set ld_nic "no" }
 
 set use_nic  1
 set use_rtc  1
@@ -72,12 +74,6 @@ proc socket_fs_plugin {} {
 	global use_lxip
 	if { $use_lxip } { return lxip }
 	return lwip
-}
-
-proc binary_nic_drv { } {
-	if {[have_board linux]}     { return "linux_nic_drv" }
-	if {[have_board pc]}        { return "ipxe_nic_drv" }
-	return "unknown_nic_drv"
 }
 
 append_if $need_pipe modules { vfs_pipe.lib.so }
@@ -92,24 +88,36 @@ set build_components {
 	core init timer lib/ld
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-append build_components { server/nic_router }
 append build_components { lib/vfs/} [socket_fs_plugin] {}
 
-lappend_if $use_nic      build_components drivers/nic
-lappend_if $use_rtc      build_components drivers/rtc
+#lappend_if $use_nic      build_components drivers/nic
+#lappend_if $use_rtc      build_components drivers/rtc
 
 lappend build_components "$executable_place/$executable"
 
 append_if $need_pipe build_components { lib/vfs/pipe }
 
-build $build_components
-
 create_boot_directory
 
-import_from_depot [depot_user]/pkg/[drivers_nic_pkg]
+set depot_pkgs { }
+lappend depot_pkgs [depot_user]/src/[base_src]
+lappend depot_pkgs [depot_user]/pkg/[drivers_nic_pkg]
+lappend depot_pkgs [depot_user]/src/nic_router
+lappend depot_pkgs [depot_user]/src/init
+
+if [have_board linux] {
+        lappend depot_pkgs [depot_user]/src/linux_rtc_drv
+} else {
+        if [have_board pc] {
+                lappend depot_pkgs [depot_user]/src/rtc_drv
+        } else  {
+                lappend depot_pkgs [depot_user]/src/dummy_rtc_drv
+        }
+}
+
+import_from_depot $depot_pkgs
+
+build $build_components
 
 # assemble config for main
 
@@ -145,22 +153,24 @@ append config {
 append_if $use_nic config {
 	<start name="nic_drv" ld="} $ld_nic {" caps="1000" managing_system="yes" >
 		<resource name="RAM" quantum="32M"/>
-		<binary name="} [binary_nic_drv] {"/>
-		<provides> <service name="Nic"/> </provides>
+		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
 			<service name="Uplink"> <child name="nic_router"/> </service>
-			<service name="Platform"> <child name="platform_drv"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 }
 
-append_platform_drv_config
+append_if [expr [have_board linux] && $use_rtc] config {
+	<start name="linux_rtc_drv" caps="200" ld="no">}
+append_if [expr [have_board pc] && $use_rtc] config {
+	<start name="rtc_drv" caps="200">}
+append_if [expr ![have_board pc] && ![have_board linux] && $use_rtc] config {
+	<start name="dummy_rtc_drv" caps="200">}
 
 append_if $use_rtc  config {
-	<start name="rtc_drv" caps="200">
 		<resource name="RAM" quantum="6M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
@@ -287,15 +297,11 @@ install_config $config
 
 set boot_modules { }
 
-append_platform_drv_boot_modules
+#append boot_modules { core }
+#append boot_modules { init }
+#append boot_modules { timer }
 
-append boot_modules { core }
-append boot_modules { init }
-append boot_modules { timer }
-append_if $use_rtc  boot_modules { rtc_drv }
-
-lappend_if $use_nic  boot_modules [binary_nic_drv]
-lappend_if $use_nic_router boot_modules nic_router
+#lappend_if $use_nic_router boot_modules nic_router
 
 foreach lib $modules {
 	lappend boot_modules "$lib"
