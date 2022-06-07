@@ -156,8 +156,9 @@ class Iso::Root : public Iso::Root_component
 		{
 			size_t ram_quota =
 				Arg_string::find_arg(args, "ram_quota").ulong_value(0);
-			size_t session_size =  sizeof(Rom_component) + sizeof(File_info);
-			if (ram_quota < session_size)
+			/* account for opening a new file */
+			size_t md_size = sizeof(File) + sizeof(File_info);
+			if (md_size > ram_quota)
 				throw Insufficient_ram_quota();
 
 			Session_label const label = label_from_args(args);

@@ -77,12 +77,6 @@ class Regulator::Root :
 			size_t ram_quota =
 				Arg_string::find_arg(args, "ram_quota").ulong_value(0);
 
-			/* delete ram quota by the memory needed for the session */
-			size_t session_size = max((size_t)4096,
-			                          sizeof(Session_component));
-			if (ram_quota < session_size)
-				throw Insufficient_ram_quota();
-
 			if (!strlen(reg_name))
 				throw Service_denied();
 

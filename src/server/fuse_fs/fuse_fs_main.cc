@@ -491,7 +491,7 @@ class Fuse_fs::Root : public Root_component<Session_component>
 
 	protected:
 
-		Session_component *_create_session(const char *args)
+		Session_component *_create_session(const char *args) override
 		{
 			/*
 			 * Determine client-specific policy defined implicitly by
@@ -561,10 +561,9 @@ class Fuse_fs::Root : public Root_component<Session_component>
 			 * Check if donated ram quota suffices for session data,
 			 * and communication buffer.
 			 */
-			size_t session_size = sizeof(Session_component) + tx_buf_size;
-			if (max((size_t)4096, session_size) > ram_quota) {
+			if (tx_buf_size > ram_quota) {
 				Genode::error("insufficient 'ram_quota', got ", ram_quota, " , "
-				              "need ", session_size);
+				              "need ", tx_buf_size);
 				throw Insufficient_ram_quota();
 			}
 			return new (md_alloc())

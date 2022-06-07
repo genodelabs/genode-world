@@ -573,21 +573,11 @@ class Lwext4_fs::Root : public Root_component<Session_component>
 			if (!tx_buf_size)
 				throw Service_denied();
 
-			/*
-			 * Check if donated ram quota suffices for session data,
-			 * and communication buffer.
-			 */
-
-			size_t const session_size =
-				max((size_t)4096, sizeof(Session_component)) +
-				tx_buf_size;
-
-			if (session_size > ram_quota) {
+			if (tx_buf_size > ram_quota) {
 				Genode::error("insufficient 'ram_quota' from ", label.string(),
-				              " got ", ram_quota, "need ", session_size);
+				              " got ", ram_quota, "need ", tx_buf_size);
 				throw Insufficient_ram_quota();
 			}
-			ram_quota -= session_size;
 
 			Session_policy policy(label, _config_rom.xml());
 
