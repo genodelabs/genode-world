@@ -1,0 +1,75 @@
+#
+# Build
+#
+
+create_boot_directory
+
+set packages "
+	[depot_user]/src/[base_src]
+	[depot_user]/src/init
+	[depot_user]/src/gmp
+	[depot_user]/src/libc
+	[depot_user]/src/posix
+	[depot_user]/src/vfs
+"
+
+import_from_depot $packages
+
+build { test/nettle/random-prime }
+
+#
+# Generate config
+#
+
+install_config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="random-prime" caps="150">
+		<resource name="RAM" quantum="16M"/>
+		<config>
+			<vfs>
+				<dir name="dev"> <log/> <inline name="rtc">2018-01-01 00:01</inline> </dir>
+			</vfs>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+		</config>
+	</start>
+</config>}
+
+#
+# Boot image
+#
+
+build_boot_image {
+
+	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so gmp.lib.so 
+	nettle.lib.so random-prime
+}
+
+#	core init ld.lib.so
+#	timer vfs
+
+append qemu_args " -nographic "
+
+run_genode_until {.*child "random-prime" exited with exit value 0} 1000

@@ -1,0 +1,7 @@
+Port of the library "nettle"
+
+This port was initated to support nts in chrony on x86_64 systems.
+Therefore some shortcuts were taken:
+- only x86_64 is supported
+- libhogweed is not built
+- ecc-curve*-, ecc-ghost*- and ecc-secp*-files are not generated but included into repository
