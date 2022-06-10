@@ -1,0 +1,86 @@
+LICENSE        := LGPLv2.1
+VERSION_MAJOR  := 3
+VERSION_MINOR  := 6
+VERSION_PATCH  := 16
+NUMBER_VERSION := 0x030610
+VERSION        := $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
+DOWNLOADS      := gnutls.archive
+
+URL(gnutls) := https://www.gnupg.org/ftp/gcrypt/gnutls/v$(VERSION_MAJOR).$(VERSION_MINOR)/gnutls-$(VERSION).tar.xz
+SHA(gnutls) := 1b79b381ac283d8b054368b335c408fedcb9b7144e0c07f531e3537d4328f3b3
+DIR(gnutls) := src/lib/gnutls
+
+#PATCHES := src/lib/gnutls/XYZ.patch
+
+gen_files := src/lib/gnutls/lib/includes/gnutls/gnutls.h \
+             src/lib/gnutls/gl/byteswap.h \
+             src/lib/gnutls/src/gl/alloca.h \
+             src/lib/gnutls/gl/alloca.h \
+			 src/lib/gnutls/lib/unistring/unictype.h \
+			 src/lib/gnutls/lib/unistring/uninorm.h \
+			 src/lib/gnutls/lib/unistring/unistr.h \
+			 src/lib/gnutls/lib/unistring/unitypes.h
+#             src/lib/gnutls/src/gl/byteswap.h \
+
+default: $(gen_files)
+
+src/lib/gnutls/lib/includes/gnutls/gnutls.h: src/lib/gnutls/lib/includes/gnutls/gnutls.h.in
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		-e 's/@MAJOR_VERSION@/$(VERSION_MAJOR)/' \
+		-e 's/@MINOR_VERSION@/$(VERSION_MINOR)/' \
+		-e 's/@PATCH_VERSION@/$(VERSION_PATCH)/' \
+		-e 's/@VERSION@/$(VERSION)/' \
+		-e 's/@NUMBER_VERSION@/$(NUMBER_VERSION)/' \
+		-e 's/@DEFINE_IOVEC_T@/#include <sys\/uio.h>\ntypedef struct iovec giovec_t;/' \
+		$< > $@
+
+#src/lib/gnutls/src/gl/byteswap.h: src/lib/gnutls/src/gl/byteswap.in.h
+#	@$(MSG_GENERATE)$(notdir $@)
+#	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+#		$< > $@
+
+src/lib/gnutls/gl/byteswap.h: src/lib/gnutls/gl/byteswap.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		$< > $@
+
+src/lib/gnutls/src/gl/alloca.h: src/lib/gnutls/src/gl/alloca.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		-e 's/@HAVE_ALLOCA_H@/1/' \
+		$< > $@
+
+src/lib/gnutls/gl/alloca.h: src/lib/gnutls/gl/alloca.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		-e 's/@HAVE_ALLOCA_H@/1/' \
+		$< > $@
+
+src/lib/gnutls/lib/unistring/unictype.h: src/lib/gnutls/lib/unistring/unictype.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		$< > $@
+
+src/lib/gnutls/lib/unistring/uninorm.h: src/lib/gnutls/lib/unistring/uninorm.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		$< > $@
+
+src/lib/gnutls/lib/unistring/unistr.h: src/lib/gnutls/lib/unistring/unistr.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		$< > $@
+
+src/lib/gnutls/lib/unistring/unitypes.h: src/lib/gnutls/lib/unistring/unitypes.in.h
+	@$(MSG_GENERATE)$(notdir $@)
+	$(VERBOSE)sed -e '1i /* DO NOT EDIT! GENERATED AUTOMATICALLY! */' \
+		$< > $@
+
+src/lib/gnutls/lib/includes/gnutls/gnutls.h.in: $(DOWNLOADS)
+src/lib/gnutls/src/gl/byteswap.in.h: $(DOWNLOADS)
+src/lib/gnutls/gl/byteswap.in.h: $(DOWNLOADS)
+
+DIRS := include/gnutls
+DIR_CONTENT(include/gnutls) := \
+	src/lib/gnutls/lib/includes/
