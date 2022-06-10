@@ -1,0 +1,57 @@
+LICENSE   := LGPLv3
+VERSION   := 3.7
+DOWNLOADS := nettle.archive
+
+URL(nettle) := https://ftp.gnu.org/gnu/nettle/nettle-$(VERSION).tar.gz
+SHA(nettle) := f001f64eb444bf13dd91bceccbc20acbc60c4311d6e2b20878452eb9a9cec75a
+DIR(nettle) := src/lib/nettle
+
+PATCHES := src/lib/nettle/timing.patch
+
+DIRS := include/nettle
+DIR_CONTENT(include/nettle) := src/lib/nettle/aes.h \
+                               src/lib/nettle/arcfour.h \
+                               src/lib/nettle/arctwo.h \
+                               src/lib/nettle/base64.h \
+                               src/lib/nettle/bignum.h \
+                               src/lib/nettle/camellia.h \
+                               src/lib/nettle/cbc.h \
+                               src/lib/nettle/ccm.h \
+                               src/lib/nettle/cfb.h \
+                               src/lib/nettle/chacha.h \
+                               src/lib/nettle/chacha-poly1305.h \
+                               src/lib/nettle/cmac.h \
+                               src/lib/nettle/ctr.h \
+                               src/lib/nettle/curve25519.h \
+                               src/lib/nettle/curve448.h \
+                               src/lib/nettle/des.h \
+                               src/lib/nettle/dsa.h \
+                               src/lib/nettle/ecc.h \
+                               src/lib/nettle/ecc-curve.h \
+                               src/lib/nettle/ecdsa.h \
+                               src/lib/nettle/eddsa.h \
+                               src/lib/nettle/gcm.h \
+                               src/lib/nettle/gosthash94.h \
+                               src/lib/nettle/hkdf.h \
+                               src/lib/nettle/hmac.h \
+                               src/lib/nettle/macros.h \
+                               src/lib/nettle/md2.h \
+                               src/lib/nettle/md5.h \
+                               src/lib/nettle/memxor.h \
+                               src/lib/nettle/memops.h \
+                               src/lib/nettle/nettle-meta.h \
+                               src/lib/nettle/nettle-types.h \
+                               src/lib/nettle/pbkdf2.h \
+                               src/lib/nettle/poly1305.h \
+                               src/lib/nettle/ripemd160.h \
+                               src/lib/nettle/rsa.h \
+                               src/lib/nettle/salsa20.h \
+                               src/lib/nettle/sha.h \
+                               src/lib/nettle/sha1.h \
+                               src/lib/nettle/sha2.h \
+                               src/lib/nettle/sha3.h \
+                               src/lib/nettle/siv-cmac.h \
+                               src/lib/nettle/streebog.h \
+                               src/lib/nettle/umac.h \
+                               src/lib/nettle/xts.h \
+                               $(REP_DIR)/src/lib/nettle/version.h
