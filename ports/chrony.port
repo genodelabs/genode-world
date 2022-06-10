@@ -1,0 +1,9 @@
+LICENSE   := GPLv2
+VERSION   := 4.2
+DOWNLOADS := chrony.archive
+
+URL(chrony) := https://download.tuxfamily.org/chrony/chrony-$(VERSION).tar.gz
+DIR(chrony) := src/app/chronyd
+SHA(chrony) := 273f9fd15c328ed6f3a5f6ba6baec35a421a34a73bb725605329b1712048db9a
+
+PATCHES := src/app/chrony/sysincl.h.patch
