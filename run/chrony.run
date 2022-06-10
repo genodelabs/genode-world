@@ -1,0 +1,275 @@
+#
+# \brief  Test for using chrony
+# \author Roland Baer
+# \date   2021-12-29
+#
+
+set host_tool [installed_command host]
+#set ntp_ip    [exec $host_tool -t A pool.ntp.org | head -1 | cut -d " " -f 4]
+set ntp_ip    [exec $host_tool -t A ptbtime1.ptb.de | head -1 | cut -d " " -f 4]
+puts "Using NTP server $ntp_ip"
+
+create_boot_directory
+
+set packages "
+	[depot_user]/src/[base_src]
+	[depot_user]/pkg/[drivers_nic_pkg]
+	[depot_user]/src/gmp
+	[depot_user]/src/init
+	[depot_user]/src/nic_router
+	[depot_user]/src/posix
+	[depot_user]/src/vfs
+	[depot_user]/src/vfs_pipe
+	[depot_user]/src/vfs_jitterentropy
+	[depot_user]/pkg/system_rtc-[board]
+"
+
+# [depot_user]/src/libc
+
+append packages " [depot_user]/src/vfs_lxip          "
+
+proc rtc_drv { } {
+        switch [board] {
+                linux   { return "linux_rtc_drv" }
+                pc      { return "rtc_drv" }
+                default { return "dummy_rtc_drv" }
+        }
+}
+
+#append packages [depot_user]/src/[rtc_drv]
+
+import_from_depot $packages
+
+set build_components {
+	test/libc app/chrony drivers/rtc/spec/x86
+}
+
+build $build_components
+
+#
+# Generate config
+#
+
+set lx_ip_addr "10.0.2.55"
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+proc platform_drv_policy {} {
+	return {<policy label_prefix="nic_drv"> <pci class="USB"/> </policy>}
+}
+
+set config {
+<config verbose="yes" prio_levels="2">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start> 
+	<start name="nic_drv" caps="1000" managing_system="yes">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
+		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Uplink"> <child name="nic_router"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start> }
+append config {
+	<start name="report_rom">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Report"/> <service name="ROM"/> </provides>
+		<config verbose="yes">
+			<policy label_suffix="set_rtc" report="chrony_daemon -> set_rtc"/>
+		</config>
+	</start>
+	<start name="rtc_drv" ld="} [expr [have_board linux] ? "no" : "yes"] {">
+        <resource name="RAM" quantum="1M"/>
+        <binary name="} [rtc_drv] {"/>
+		<config verbose="yes" allow_setting_rtc="yes" />
+        <provides> <service name="Rtc"/> </provides>
+		<route>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="ROM" label="set_rtc"> <child name="report_rom"/> </service>
+			<any-service> <parent /> </any-service>
+		</route>
+    </start>}
+
+append config {
+	<start name="nic_router" caps="120">
+		<resource name="RAM" quantum="5M"/>
+		<provides>
+			<service name="Nic"/>
+			<service name="Uplink"/>
+		</provides>
+		<config verbose="yes" verbose_domain_state="yes" verbose_packets="yes"> 
+			<policy label_prefix="chrony_daemon" domain="server"/> 
+			<policy label_prefix="nic_drv"          domain="uplink"/>
+			<domain name="uplink" }
+append_if [have_spec linux] config "
+			        interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
+append config {
+			>
+				<nat domain="server"
+				     tcp-ports="16384"
+				     udp-ports="16384"
+				     icmp-ids="16384"/>
+					 <!--				<nat domain="server" tcp-ports="100" />
+				<tcp-forward port="5001" domain="server" to="10.0.3.2" />
+				<tcp-forward port="12865" domain="server" to="10.0.3.2" /> -->
+			</domain>
+			<domain name="server" interface="10.0.3.1/24" verbose_packets="yes">
+				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
+				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
+				<dhcp-server ip_first="10.0.3.2"
+				             ip_last="10.0.3.3"
+				             ip_lease_time_sec="600"
+							 dns_config_from="uplink"/>
+			</domain>
+		</config>
+	</start> 
+	<start name="system_rtc">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Rtc"/></provides>
+		<config verbose="yes" allow_setting_rtc="true"/>
+		<route>
+			<service name="ROM" label="set_rtc"> <child name="report_rom"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Rtc"> <child name="rtc_drv"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+}
+
+append config {
+	<start name="chrony_daemon" caps="320" priority="-1">
+		<binary name="chronyd"/>
+		<resource name="RAM" quantum="64M"/>
+		<config ld_verbose="yes" verbose="yes">
+			<env key="GNUTLS_DEBUG_LEVEL" value="10" />
+			<arg value="chronyd"/>
+			<arg value="-d"/>
+			<arg value="-d"/>
+			<arg value="-4"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" pipe="/pipe" rng="/dev/random" />
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<!--<inline name="rtc">2022-01-01 00:01</inline>-->
+					<jitterentropy name="random"/>
+                    <jitterentropy name="urandom"/>
+					<rtc/>
+					<null/>
+				</dir>
+				<dir name="socket">
+					<lxip dhcp="yes"/>
+				</dir>
+				<dir name="pipe"> <pipe/> </dir>
+				<dir name="etc">
+					<inline name="chrony.conf">
+#server } $ntp_ip { nts
+server ptbtime1.ptb.de nts
+ntstrustedcerts /etc/cert1.crt
+makestep 1.0 3
+rtcsync
+driftfile /var/run/chrony/drift
+logdir /var/log
+log tracking
+</inline>
+					<inline name="cert1.crt">
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----
+</inline>
+				</dir>
+				<dir name="var">
+					<dir name="run">
+						<dir name="chrony">
+							<inline name="chronyd.pid" />
+							<inline name="chronyd.sock" />
+							<inline name="drift" />
+						</dir>
+					</dir>
+					<dir name="log">
+						<inline name="tracking.log" />
+					</dir>
+				</dir>
+			</vfs>
+		</config>
+		<route>
+			<service name="Nic"> <child name="nic_router"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<service name="Rtc"> <child name="system_rtc"/> </service>
+<!--			<service name="Rtc"> <child name="rtc_drv"/> </service> -->
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>
+}
+
+install_config $config
+
+build_boot_image { chronyd stdcxx.lib.so gmp.lib.so nettle.lib.so gnutls.lib.so libc.lib.so libm.lib.so rtc_drv}
+
+#
+# Execute test case
+#
+
+# qemu config
+append qemu_args "  -nographic "
+
+
+append_qemu_nic_args "hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153"
+
+# if {[have_include "power_on/qemu"]} {
+# 	set ip_addr "localhost"
+# 	set force_ports "-p 49153"
+# } elseif [have_board linux] {
+# 	set ip_addr $lx_ip_addr
+# } else {
+# 	regexp $ip_match_string $output all ip_addr
+# 	puts ""
+# }
+
+run_genode_until "init -> rtc_drv] set time to" 900
