@@ -2,8 +2,8 @@ LICENSE   := Apache
 VERSION   := 2.2.0
 DOWNLOADS := mbedtls.archive
 
-URL(mbedtls) := https://tls.mbed.org/download/mbedtls-2.2.0-apache.tgz
-SHA(mbedtls) := 3c6d3487ab056da94450cf907afc84f026aff7880182baffe137c98e3d00fb55
+URL(mbedtls) := https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/mbedtls-$(VERSION).tar.gz
+SHA(mbedtls) := 75494361e412444b38ebb9c908b7e17a5fb582eb9c3fadb2fe9b21e96f1bf8cb
 DIR(mbedtls) := src/lib/mbedtls
 
 DIRS := include/mbedtls
