@@ -9,7 +9,16 @@ KEY(gcc)  := GNU
 DIR(gcc)  := src/lib/gcc
 
 TAR_OPT(gcc) := gcc-$(VERSION)/libgo \
-		gcc-$(VERSION)/libgcc/unwind-pe.h \
+                gcc-$(VERSION)/libgcc/unwind-pe.h \
+                gcc-$(VERSION)/libbacktrace \
+                gcc-$(VERSION)/gcc/BASE-VER \
+                gcc-$(VERSION)/include/dwarf2.h \
+                gcc-$(VERSION)/include/dwarf2.def \
+                gcc-$(VERSION)/include/filenames.h \
+                gcc-$(VERSION)/include/hashtab.h \
+                gcc-$(VERSION)/include/ansidecl.h \
+                gcc-$(VERSION)/libatomic \
+                gcc-$(VERSION)/libffi \
                 gcc-$(VERSION)/config-ml.in \
                 gcc-$(VERSION)/config.sub \
                 gcc-$(VERSION)/depcomp \
@@ -21,5 +30,8 @@ TAR_OPT(gcc) := gcc-$(VERSION)/libgo \
                 gcc-$(VERSION)/move-if-change \
                 --strip-components=1
 
-PATCHES   := src/lib/libgo/*.patch
+PATCHES   := src/lib/libgo/*.patch src/lib/libatomic/*.patch
 PATCH_OPT := -p1 -d src/lib/gcc
+
+DIRS := include
+DIR_CONTENT(include) := src/lib/gcc/libbacktrace/backtrace.h

@@ -56,7 +56,7 @@ export RANLIB=genode-$ARCH-ranlib
 1. prepare ports from genode for apropriate targets, e.g. by
 	./tool/ports/prepare_port libc nova stdcxx grub2
 2. prepare ports to build golang libgo from gcc distirbution
-	./tool/ports/prepare_port libatomic libbacktrace libffi libgo
+	./tool/ports/prepare_port libgo
 3. build native libraries (set your own flags if need, eg -O) for genode (libgo should be the last) by
 	make -C build/x86_64/ KERNEL=nova lib/libatomic
 	make -C build/x86_64/ KERNEL=nova lib/libbacktrace

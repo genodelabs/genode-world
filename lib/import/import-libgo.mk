@@ -1,5 +1,8 @@
 LIBGO_PORT_DIR := $(call select_from_ports,libgo)
 
+INC_DIR += $(BUILD_BASE_DIR)/lib/libgo
+INC_DIR += $(LIBBACKTRACE_PORT_DIR)/include
+
 # place for build go packages to be given for any compilation via -I
 LIBGO_PKG_BUILD := $(BUILD_BASE_DIR)/lib/libgo
 

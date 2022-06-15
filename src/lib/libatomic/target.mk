@@ -1,4 +1,4 @@
-PKG_DIR = $(call select_from_ports,libatomic)/src/lib/gcc/libatomic
+PKG_DIR = $(call select_from_ports,libgo)/src/lib/gcc/libatomic
 LD_OPT_NOSTDLIB := -nostdlib -Wl,-nostdlib
 MAKE_TARGET := all
 
@@ -30,17 +30,17 @@ installed_tar.tag: installed.tag
 	rm -f $(BUILD_BASE_DIR)/debug/libatomic.la; \
 	rm -rf $(BUILD_BASE_DIR)/var/libcache/libatomic; \
 	if test -e $(BUILD_BASE_DIR)/lib/libatomic/.libs/libatomic.a; then \
-	echo ".... remove built.tag and installed.tag ....."; \
-	rm $(BUILD_BASE_DIR)/lib/libatomic/built.tag; \
-	rm $(BUILD_BASE_DIR)/lib/libatomic/installed.tag; \
-	echo ".... remove install dir ....."; \
-	rm -rf $(BUILD_BASE_DIR)/lib/libatomic/install; \
-	echo ".... make symlink to ./var/libcache ....."; \
-	mkdir -p $(BUILD_BASE_DIR)/var/libcache/libatomic/include; \
-	ln -sf $(BUILD_BASE_DIR)/lib/libatomic/.libs/libatomic.a $(BUILD_BASE_DIR)/var/libcache/libatomic/libatomic.a; \
-	ln -sf $(BUILD_BASE_DIR)/lib/libatomic/libatomic.la $(BUILD_BASE_DIR)/var/libcache/libatomic/libatomic.la; \
-	echo ".... copy h-files for to var/libcache/libatomic/include ....."; \
-	find $(PKG_DIR)/ -name '*.h' -exec cp -fLp {} $(BUILD_BASE_DIR)/var/libcache/libatomic/include/ \; ; \
+		echo ".... remove built.tag and installed.tag ....."; \
+		rm $(BUILD_BASE_DIR)/lib/libatomic/built.tag; \
+		rm $(BUILD_BASE_DIR)/lib/libatomic/installed.tag; \
+		echo ".... remove install dir ....."; \
+		rm -rf $(BUILD_BASE_DIR)/lib/libatomic/install; \
+		echo ".... make symlink to ./var/libcache ....."; \
+		mkdir -p $(BUILD_BASE_DIR)/var/libcache/libatomic/include; \
+		ln -sf $(BUILD_BASE_DIR)/lib/libatomic/.libs/libatomic.a $(BUILD_BASE_DIR)/var/libcache/libatomic/libatomic.a; \
+		ln -sf $(BUILD_BASE_DIR)/lib/libatomic/libatomic.la $(BUILD_BASE_DIR)/var/libcache/libatomic/libatomic.la; \
+		echo ".... copy h-files for to var/libcache/libatomic/include ....."; \
+		find $(PKG_DIR)/ -name '*.h' -exec cp -fLp {} $(BUILD_BASE_DIR)/var/libcache/libatomic/include/ \; ; \
 	fi
 
 #

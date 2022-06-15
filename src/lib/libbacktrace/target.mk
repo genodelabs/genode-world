@@ -1,4 +1,4 @@
-PKG_DIR = $(call select_from_ports,libbacktrace)/src/lib/gcc/libbacktrace
+PKG_DIR = $(call select_from_ports,libgo)/src/lib/gcc/libbacktrace
 LD_OPT_NOSTDLIB := -nostdlib -Wl,-nostdlib
 EXT_OBJECTS += $(shell $(CC) $(CC_MARCH) -print-file-name=libgcc_eh.a)
 MAKE_TARGET := all
@@ -31,14 +31,14 @@ installed_tar.tag: installed.tag
 	rm -f $(BUILD_BASE_DIR)/debug/libbacktrace.la; \
 	rm -rf $(BUILD_BASE_DIR)/var/libcache/libbacktrace; \
 	if test -e $(BUILD_BASE_DIR)/lib/libbacktrace/.libs/libbacktrace.a; then \
-	echo ".... remove built.tag and installed.tag ....."; \
-	rm $(BUILD_BASE_DIR)/lib/libbacktrace/built.tag; \
-	rm $(BUILD_BASE_DIR)/lib/libbacktrace/installed.tag; \
-	echo ".... make symlink to ./var/libcache ....."; \
-	mkdir -p $(LIB_CACHE_DIR)/libbacktrace/include; \
-	ln -sf $(BUILD_BASE_DIR)/lib/libbacktrace/.libs/libbacktrace.a $(LIB_CACHE_DIR)/libbacktrace/libbacktrace.a; \
-	ln -sf $(BUILD_BASE_DIR)/lib/libbacktrace/libbacktrace.la $(LIB_CACHE_DIR)/libbacktrace/libbacktrace.la; \
-	echo ".... copy h-files for to var/libcache/libbacktrace/include ....."; \
-	cp $(BUILD_BASE_DIR)/lib/libbacktrace/gstdint.h $(LIB_CACHE_DIR)/libbacktrace/include/; \
-	find $(PKG_DIR)/ -name '*.h' -exec cp -fLp {} $(LIB_CACHE_DIR)/libbacktrace/include/ \; ; \
+		echo ".... remove built.tag and installed.tag ....."; \
+		rm $(BUILD_BASE_DIR)/lib/libbacktrace/built.tag; \
+		rm $(BUILD_BASE_DIR)/lib/libbacktrace/installed.tag; \
+		echo ".... make symlink to ./var/libcache ....."; \
+		mkdir -p $(LIB_CACHE_DIR)/libbacktrace/include; \
+		ln -sf $(BUILD_BASE_DIR)/lib/libbacktrace/.libs/libbacktrace.a $(LIB_CACHE_DIR)/libbacktrace/libbacktrace.a; \
+		ln -sf $(BUILD_BASE_DIR)/lib/libbacktrace/libbacktrace.la $(LIB_CACHE_DIR)/libbacktrace/libbacktrace.la; \
+		echo ".... copy h-files for to var/libcache/libbacktrace/include ....."; \
+		cp $(BUILD_BASE_DIR)/lib/libbacktrace/gstdint.h $(LIB_CACHE_DIR)/libbacktrace/include/; \
+		find $(PKG_DIR)/ -name '*.h' -exec cp -fLp {} $(LIB_CACHE_DIR)/libbacktrace/include/ \; ; \
 	fi
