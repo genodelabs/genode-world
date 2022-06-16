@@ -3,6 +3,7 @@
 	========================================
 This work is a side result of one of the research project made in Innopolis University.
 	(c) Alex Tormasov, tor@innopolis.ru - port itsels, Alexey Semenov aleks.semenov@innopolis.ru - build
+	covered mostly by BSD-like license (see appropriate files)
 
 It allow compilation and execution of simple go applications/packages (without unsupported OS/platform features).
 In this moment it supports linux, foc, nova and sel4 kernels on x86_64 platform, and foc, hw on arm64 (arm v8a) platform.

@@ -1,4 +1,10 @@
-#debug go application via gdb
+#
+# \brief  Example for running go application with gdb
+# \author Alexander Tormasov
+# \date   2021-12-27
+#
+
+# debug go application via gdb
 #
 
 set build_components {

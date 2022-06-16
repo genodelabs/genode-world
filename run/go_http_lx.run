@@ -1,7 +1,7 @@
 #
-# \brief  Example for running lighttpd
-# \author Norman Feske
-# \date   2012-08-16
+# \brief  Example for running go httpd (based on lighttpd port)
+# \author Alexander Tormasov
+# \date   2022-05-16
 #
 
 proc ip_stack { } { return lwip }
