@@ -1,0 +1,80 @@
+diff --git a/src/cmd/dist/build.go b/src/cmd/dist/build.go
+index bec17696f3..860e5c4946 100644
+--- a/src/cmd/dist/build.go
++++ b/src/cmd/dist/build.go
+@@ -1586,6 +1586,8 @@ var cgoEnabled = map[string]bool{
+ 	"android/arm64":   true,
+ 	"ios/arm64":       true,
+ 	"ios/amd64":       true,
++	"inno/amd64":      true,
++	"inno/arm64":      true,
+ 	"js/wasm":         false,
+ 	"netbsd/386":      true,
+ 	"netbsd/amd64":    true,
+diff --git a/src/cmd/go/internal/imports/build.go b/src/cmd/go/internal/imports/build.go
+index ff6bea6777..6d2a7f5ab7 100644
+--- a/src/cmd/go/internal/imports/build.go
++++ b/src/cmd/go/internal/imports/build.go
+@@ -298,6 +298,7 @@ var KnownOS = map[string]bool{
+ 	"freebsd":   true,
+ 	"hurd":      true,
+ 	"illumos":   true,
++	"inno":      true,
+ 	"ios":       true,
+ 	"js":        true,
+ 	"linux":     true,
+diff --git a/src/cmd/go/internal/work/exec.go b/src/cmd/go/internal/work/exec.go
+index 5a225fb9f1..1d50c3278e 100644
+--- a/src/cmd/go/internal/work/exec.go
++++ b/src/cmd/go/internal/work/exec.go
+@@ -851,7 +851,7 @@ OverlayLoop:
+ 	// This is read by readGccgoArchive in cmd/internal/buildid/buildid.go.
+ 	if a.buildID != "" && cfg.BuildToolchainName == "gccgo" {
+ 		switch cfg.Goos {
+-		case "aix", "android", "dragonfly", "freebsd", "illumos", "linux", "netbsd", "openbsd", "solaris":
++		case "aix", "android", "dragonfly", "freebsd", "illumos", "linux", "netbsd", "openbsd", "solaris", "inno":
+ 			asmfile, err := b.gccgoBuildIDFile(a)
+ 			if err != nil {
+ 				return err
+diff --git a/src/cmd/internal/objabi/head.go b/src/cmd/internal/objabi/head.go
+index 48ff292307..8af5a939b7 100644
+--- a/src/cmd/internal/objabi/head.go
++++ b/src/cmd/internal/objabi/head.go
+@@ -48,12 +48,15 @@ const (
+ 	Hsolaris
+ 	Hwindows
+ 	Haix
++	Hinno
+ )
+ 
+ func (h *HeadType) Set(s string) error {
+ 	switch s {
+ 	case "aix":
+ 		*h = Haix
++	case "inno":
++		*h = Hinno
+ 	case "darwin", "ios":
+ 		*h = Hdarwin
+ 	case "dragonfly":
+@@ -82,6 +85,8 @@ func (h *HeadType) Set(s string) error {
+ 
+ func (h *HeadType) String() string {
+ 	switch *h {
++	case Hinno:
++		return "inno"
+ 	case Haix:
+ 		return "aix"
+ 	case Hdarwin:
+diff --git a/src/net/http/cgi/host.go b/src/net/http/cgi/host.go
+index eff67caf4e..c72ac0b0eb 100644
+--- a/src/net/http/cgi/host.go
++++ b/src/net/http/cgi/host.go
+@@ -39,7 +39,7 @@ var osDefaultInheritEnv = func() []string {
+ 	switch runtime.GOOS {
+ 	case "darwin", "ios":
+ 		return []string{"DYLD_LIBRARY_PATH"}
+-	case "linux", "freebsd", "netbsd", "openbsd":
++	case "linux", "freebsd", "netbsd", "openbsd", "inno":
+ 		return []string{"LD_LIBRARY_PATH"}
+ 	case "hpux":
+ 		return []string{"LD_LIBRARY_PATH", "SHLIB_PATH"}
