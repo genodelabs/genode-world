@@ -1,6 +1,13 @@
-# to be defined in target.mk
+#
+# \brief build support file for go
+# \author Alexander Tormasov
+# \date 2022 - 05 - 27
+#
+
+#to be defined in target.mk
 # SRC_GO_PKG - list of go files to be compiled (e.g. "a.go b.go")
 #            - OR directory with go package like github.com/woojiahao/tower-of-hanoi-solver
+# GO_BUILD_LIB - if yes then force lib name for "-o", otherwise just a name of dir
 # optional
 # SRC_GO_PKG_MAIN - directory where go files with "package main" resides
 # by default equal to SRC_GO_PKG if it is directory (or CURDIR where "go build ..." will run)
@@ -12,7 +19,19 @@ ifeq ($(VERBOSE),)
 GOBUILD_VERBOSE ?= -v 
 endif
 
-ifneq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
+BUILDTAGS ?= seccomp
+
+GOBUILD_FLAGS = $(GOBUILD_VERBOSE) -v -compiler gccgo
+
+ifeq ($(GOBUILD_REBUILD_ALL),yes)
+GOBUILD_FLAGS += -a
+endif
+
+ifeq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
+GO_BUILD_LIB ?= yes
+endif
+
+ifneq (x$(GO_BUILD_LIB),xyes)
 # assume set of .go files to be compiled
 TARGET ?= $(lastword $(subst /, ,$(PRG_DIR)))
 PKG    ?= $(TARGET)
@@ -21,9 +40,22 @@ SRC_GO_PK := $(foreach s,$(SRC_GO_PKG),$(realpath $(PRG_DIR)/$s))
 SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
 SRC_GO_BUILD_DIR = .
 
+STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
+
+$(TARGET).stripped: $(TARGET)
+	$(VERBOSE)$(STRIP_TARGET_CMD)
+
+$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
+	$(VERBOSE)ln -sf $(CURDIR)/$< $@
+
+ifneq ($(DEBUG_DIR),)
+$(DEBUG_DIR)/$(TARGET): $(TARGET)
+	$(VERBOSE)ln -sf $(CURDIR)/$< $@
+endif
+
 else
 # assume package name wihout .go substng
-TARGET ?= $(lastword $(subst /, ,$(SRC_GO_PKG)))
+TARGET ?= lib$(lastword $(subst /, ,$(SRC_GO_PKG))).a
 PKG    ?= $(SRC_GO_PKG)
 
 SRC_GO_PK := $(SRC_GO_PKG)
@@ -31,11 +63,11 @@ SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
 SRC_GO_BUILD_DIR = src/$(SRC_GO_PKG_MAIN)
 
 $(PKG):
-	ifeq ($(VERBOSE),)
-		echo Building $@
-	endif
+ifeq ($(VERBOSE),)
+	echo Building $@
+endif
 	$(VERBOSE)mkdir -p src
-	$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) go get -d $(SRC_GO_PKG_MAIN)
+	$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) go get -x -v -d $(SRC_GO_PKG_MAIN)
 endif
 
 GOROOT:=$(BUILD_BASE_DIR)/app/goroot
@@ -86,6 +118,7 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export OBJCOPY='$(OBJCOPY)'" >> $@
 	$(VERBOSE)echo "export OBJDUMP='$(OBJDUMP)'" >> $@
 	$(VERBOSE)echo "export GDB='$(GDB)'" >> $@
+	$(VERBOSE)echo "unset GOPROXY" >> $@
 
 
 $(TARGET): env.sh $(SRC_GO_PK) $(SHARED_LIBS) $(GOROOT)/bin
@@ -99,19 +132,6 @@ $(TARGET): env.sh $(SRC_GO_PK) $(SHARED_LIBS) $(GOROOT)/bin
 	fi
 	$(VERBOSE)source ./env.sh && go mod tidy
 	$(VERBOSE)source ./env.sh && cd $(SRC_GO_BUILD_DIR) && \
-		go build $(GOBUILD_VERBOSE) -compiler gccgo -a -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
-
-STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
-
-$(TARGET).stripped: $(TARGET)
-	$(VERBOSE)$(STRIP_TARGET_CMD)
-
-$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
-	$(VERBOSE)ln -sf $(CURDIR)/$< $@
-
-ifneq ($(DEBUG_DIR),)
-$(DEBUG_DIR)/$(TARGET): $(TARGET)
-	$(VERBOSE)ln -sf $(CURDIR)/$< $@
-endif
+		go build $(GOBUILD_FLAGS) -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
 
 LIBS   = base libc libm libgo libgo_support stdcxx

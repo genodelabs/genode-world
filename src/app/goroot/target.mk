@@ -18,4 +18,4 @@ $(TARGET): prepare_goroot
 	$(VERBOSE)source ./env.sh && cd src && ./all.bash
 
 prepare_goroot: env.sh
-	$(VERBOSE)cp -aprs $(GOROOT_DIR)/* .
+	$(VERBOSE)cp -aprsf $(GOROOT_DIR)/* .
