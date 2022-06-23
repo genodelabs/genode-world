@@ -1,0 +1,100 @@
+#
+# \brief  Example for running go application with gdb
+# \author Alexander Tormasov
+# \date   2021-12-27
+#
+
+# debug go application via gdb
+#
+
+set build_components {
+core init timer lib/ld
+lib/vfs/pipe
+drivers/uart app/gdb_monitor
+test/go_app
+}
+
+lappend build_components "lib/gdbserver_platform-$::env(KERNEL)"
+
+build $build_components
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM" />
+		<service name="LOG" />
+		<service name="RM" />
+		<service name="CPU" />
+		<service name="PD" />
+		<service name="IRQ" />
+		<service name="IO_MEM" />
+		<service name="IO_PORT" />
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="250" />
+	<start name="timer" caps="200">
+		<resource name="RAM" quantum="2M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="pc_uart_drv" caps="200">
+		<resource name="RAM" quantum="2M" />
+		<provides>
+			<service name="Uart"/>
+			<service name="Terminal"/>
+		</provides>
+		<config>
+			<policy label_prefix="gdb_monitor" uart="1" />
+		</config>
+	</start>
+	<start name="gdb_monitor" caps="3500">
+		<resource name="RAM" quantum="150M" />
+		<provides> <service name="test-go" /> </provides>
+		<config  verbose="yes" ld_verbose="yes">
+			<target name="test-go" >
+				<config verbose="yes" ld_verbose="yes">
+				<vfs>
+					<dir name="dev"> <log/> </dir>
+					<rom name="ld.lib.so" label="ld.lib.so"/>
+					<rom name="libc.lib.so" label="libc.lib.so"/>
+					<rom name="vfs.lib.so" label="vfs.lib.so"/>
+					<rom name="libm.lib.so" label="libm.lib.so"/>
+					<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
+					<rom name="binary" label="test-go"/>
+					<dir name="proc">
+						<dir name="self">
+							<rom name="exe" label="test-go"/>
+						</dir>
+					</dir>
+				</vfs>
+				<libc stdout="/dev/log" stderr="/dev/log" />
+				</config>
+			</target>
+			<preserve name="RAM" quantum="180M" />
+			<vfs>
+				<dir name="dev"> <log/> <terminal/> </dir>
+				<dir name="pipe"> <pipe/> </dir>
+			</vfs>
+                <libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe">
+					<mmap local_area_default_size="1610612736" />
+				</libc>
+		</config>
+	</start>
+</config>
+}
+
+# evaluated by the run tool
+proc binary_name_gdbserver_platform_lib_so { } {
+return "gdbserver_platform-$::env(KERNEL).lib.so"
+}
+
+
+build_boot_image {
+	core init timer ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
+	vfs.lib.so test-go vfs_pipe.lib.so
+	pc_uart_drv gdb_monitor gdbserver_platform.lib.so
+}
+
