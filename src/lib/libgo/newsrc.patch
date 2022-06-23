@@ -1,0 +1,919 @@
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/defs_inno.go gcc/libgo/go/golang.org/x/net/route/defs_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/defs_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/golang.org/x/net/route/defs_inno.go	2021-04-12 17:01:41.684891564 +0300
+@@ -0,0 +1,112 @@
++// Copyright 2016 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++// +build ignore
++
++package route
++
++/*
++#include <sys/socket.h>
++#include <sys/sysctl.h>
++
++#include <net/if.h>
++#include <net/if_dl.h>
++#include <net/route.h>
++
++#include <netinet/in.h>
++*/
++import "C"
++
++const (
++	sysAF_UNSPEC = C.AF_UNSPEC
++	sysAF_INET   = C.AF_INET
++	sysAF_ROUTE  = C.AF_ROUTE
++	sysAF_LINK   = C.AF_LINK
++	sysAF_INET6  = C.AF_INET6
++
++	sysSOCK_RAW = C.SOCK_RAW
++
++	sysNET_RT_DUMP   = C.NET_RT_DUMP
++	sysNET_RT_FLAGS  = C.NET_RT_FLAGS
++	sysNET_RT_IFLIST = C.NET_RT_IFLIST
++	sysNET_RT_MAXID  = C.NET_RT_MAXID
++)
++
++const (
++	sysCTL_MAXNAME = C.CTL_MAXNAME
++
++	sysCTL_UNSPEC   = C.CTL_UNSPEC
++	sysCTL_KERN     = C.CTL_KERN
++	sysCTL_VM       = C.CTL_VM
++	sysCTL_VFS      = C.CTL_VFS
++	sysCTL_NET      = C.CTL_NET
++	sysCTL_DEBUG    = C.CTL_DEBUG
++	sysCTL_HW       = C.CTL_HW
++	sysCTL_MACHDEP  = C.CTL_MACHDEP
++	sysCTL_USER     = C.CTL_USER
++	sysCTL_DDB      = C.CTL_DDB
++	sysCTL_PROC     = C.CTL_PROC
++	sysCTL_VENDOR   = C.CTL_VENDOR
++	sysCTL_EMUL     = C.CTL_EMUL
++	sysCTL_SECURITY = C.CTL_SECURITY
++	sysCTL_MAXID    = C.CTL_MAXID
++)
++
++const (
++	sysRTM_VERSION = C.RTM_VERSION
++
++	sysRTM_ADD        = C.RTM_ADD
++	sysRTM_DELETE     = C.RTM_DELETE
++	sysRTM_CHANGE     = C.RTM_CHANGE
++	sysRTM_GET        = C.RTM_GET
++	sysRTM_LOSING     = C.RTM_LOSING
++	sysRTM_REDIRECT   = C.RTM_REDIRECT
++	sysRTM_MISS       = C.RTM_MISS
++	sysRTM_LOCK       = C.RTM_LOCK
++	sysRTM_OLDADD     = C.RTM_OLDADD
++	sysRTM_OLDDEL     = C.RTM_OLDDEL
++	sysRTM_RESOLVE    = C.RTM_RESOLVE
++	sysRTM_NEWADDR    = C.RTM_NEWADDR
++	sysRTM_DELADDR    = C.RTM_DELADDR
++	sysRTM_IFANNOUNCE = C.RTM_IFANNOUNCE
++	sysRTM_IEEE80211  = C.RTM_IEEE80211
++	sysRTM_SETGATE    = C.RTM_SETGATE
++	sysRTM_LLINFO_UPD = C.RTM_LLINFO_UPD
++	sysRTM_IFINFO     = C.RTM_IFINFO
++	sysRTM_CHGADDR    = C.RTM_CHGADDR
++
++	sysRTA_DST     = C.RTA_DST
++	sysRTA_GATEWAY = C.RTA_GATEWAY
++	sysRTA_NETMASK = C.RTA_NETMASK
++	sysRTA_GENMASK = C.RTA_GENMASK
++	sysRTA_IFP     = C.RTA_IFP
++	sysRTA_IFA     = C.RTA_IFA
++	sysRTA_AUTHOR  = C.RTA_AUTHOR
++	sysRTA_BRD     = C.RTA_BRD
++	sysRTA_TAG     = C.RTA_TAG
++
++	sysRTAX_DST     = C.RTAX_DST
++	sysRTAX_GATEWAY = C.RTAX_GATEWAY
++	sysRTAX_NETMASK = C.RTAX_NETMASK
++	sysRTAX_GENMASK = C.RTAX_GENMASK
++	sysRTAX_IFP     = C.RTAX_IFP
++	sysRTAX_IFA     = C.RTAX_IFA
++	sysRTAX_AUTHOR  = C.RTAX_AUTHOR
++	sysRTAX_BRD     = C.RTAX_BRD
++	sysRTAX_TAG     = C.RTAX_TAG
++	sysRTAX_MAX     = C.RTAX_MAX
++)
++
++const (
++	sizeofIfMsghdrNetBSD7         = C.sizeof_struct_if_msghdr
++	sizeofIfaMsghdrNetBSD7        = C.sizeof_struct_ifa_msghdr
++	sizeofIfAnnouncemsghdrNetBSD7 = C.sizeof_struct_if_announcemsghdr
++
++	sizeofRtMsghdrNetBSD7  = C.sizeof_struct_rt_msghdr
++	sizeofRtMetricsNetBSD7 = C.sizeof_struct_rt_metrics
++
++	sizeofSockaddrStorage = C.sizeof_struct_sockaddr_storage
++	sizeofSockaddrInet    = C.sizeof_struct_sockaddr_in
++	sizeofSockaddrInet6   = C.sizeof_struct_sockaddr_in6
++)
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/sys_inno.go gcc/libgo/go/golang.org/x/net/route/sys_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/sys_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/golang.org/x/net/route/sys_inno.go	2021-04-12 17:01:41.685891576 +0300
+@@ -0,0 +1,71 @@
++// Copyright 2016 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package route
++
++func (typ RIBType) parseable() bool { return true }
++
++// RouteMetrics represents route metrics.
++type RouteMetrics struct {
++	PathMTU int // path maximum transmission unit
++}
++
++// SysType implements the SysType method of Sys interface.
++func (rmx *RouteMetrics) SysType() SysType { return SysMetrics }
++
++// Sys implements the Sys method of Message interface.
++func (m *RouteMessage) Sys() []Sys {
++	return []Sys{
++		&RouteMetrics{
++			PathMTU: int(nativeEndian.Uint64(m.raw[m.extOff+8 : m.extOff+16])),
++		},
++	}
++}
++
++// RouteMetrics represents route metrics.
++type InterfaceMetrics struct {
++	Type int // interface type
++	MTU  int // maximum transmission unit
++}
++
++// SysType implements the SysType method of Sys interface.
++func (imx *InterfaceMetrics) SysType() SysType { return SysMetrics }
++
++// Sys implements the Sys method of Message interface.
++func (m *InterfaceMessage) Sys() []Sys {
++	return []Sys{
++		&InterfaceMetrics{
++			Type: int(m.raw[m.extOff]),
++			MTU:  int(nativeEndian.Uint32(m.raw[m.extOff+8 : m.extOff+12])),
++		},
++	}
++}
++
++func probeRoutingStack() (int, map[int]*wireFormat) {
++	rtm := &wireFormat{extOff: 40, bodyOff: sizeofRtMsghdrNetBSD7}
++	rtm.parse = rtm.parseRouteMessage
++	ifm := &wireFormat{extOff: 16, bodyOff: sizeofIfMsghdrNetBSD7}
++	ifm.parse = ifm.parseInterfaceMessage
++	ifam := &wireFormat{extOff: sizeofIfaMsghdrNetBSD7, bodyOff: sizeofIfaMsghdrNetBSD7}
++	ifam.parse = ifam.parseInterfaceAddrMessage
++	ifanm := &wireFormat{extOff: sizeofIfAnnouncemsghdrNetBSD7, bodyOff: sizeofIfAnnouncemsghdrNetBSD7}
++	ifanm.parse = ifanm.parseInterfaceAnnounceMessage
++	// NetBSD 6 and above kernels require 64-bit aligned access to
++	// routing facilities.
++	return 8, map[int]*wireFormat{
++		sysRTM_ADD:        rtm,
++		sysRTM_DELETE:     rtm,
++		sysRTM_CHANGE:     rtm,
++		sysRTM_GET:        rtm,
++		sysRTM_LOSING:     rtm,
++		sysRTM_REDIRECT:   rtm,
++		sysRTM_MISS:       rtm,
++		sysRTM_LOCK:       rtm,
++		sysRTM_RESOLVE:    rtm,
++		sysRTM_NEWADDR:    ifam,
++		sysRTM_DELADDR:    ifam,
++		sysRTM_IFANNOUNCE: ifanm,
++		sysRTM_IFINFO:     ifm,
++	}
++}
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/zsys_inno.go gcc/libgo/go/golang.org/x/net/route/zsys_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/zsys_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/golang.org/x/net/route/zsys_inno.go	2021-04-12 17:01:41.685891576 +0300
+@@ -0,0 +1,97 @@
++// Created by cgo -godefs - DO NOT EDIT
++// cgo -godefs defs_inno.go
++
++package route
++
++const (
++	sysAF_UNSPEC = 0x0
++	sysAF_INET   = 0x2
++	sysAF_ROUTE  = 0x22
++	sysAF_LINK   = 0x12
++	sysAF_INET6  = 0x18
++
++	sysSOCK_RAW = 0x3
++
++	sysNET_RT_DUMP   = 0x1
++	sysNET_RT_FLAGS  = 0x2
++	sysNET_RT_IFLIST = 0x5
++	sysNET_RT_MAXID  = 0x6
++)
++
++const (
++	sysCTL_MAXNAME = 0xc
++
++	sysCTL_UNSPEC   = 0x0
++	sysCTL_KERN     = 0x1
++	sysCTL_VM       = 0x2
++	sysCTL_VFS      = 0x3
++	sysCTL_NET      = 0x4
++	sysCTL_DEBUG    = 0x5
++	sysCTL_HW       = 0x6
++	sysCTL_MACHDEP  = 0x7
++	sysCTL_USER     = 0x8
++	sysCTL_DDB      = 0x9
++	sysCTL_PROC     = 0xa
++	sysCTL_VENDOR   = 0xb
++	sysCTL_EMUL     = 0xc
++	sysCTL_SECURITY = 0xd
++	sysCTL_MAXID    = 0xe
++)
++
++const (
++	sysRTM_VERSION = 0x4
++
++	sysRTM_ADD        = 0x1
++	sysRTM_DELETE     = 0x2
++	sysRTM_CHANGE     = 0x3
++	sysRTM_GET        = 0x4
++	sysRTM_LOSING     = 0x5
++	sysRTM_REDIRECT   = 0x6
++	sysRTM_MISS       = 0x7
++	sysRTM_LOCK       = 0x8
++	sysRTM_OLDADD     = 0x9
++	sysRTM_OLDDEL     = 0xa
++	sysRTM_RESOLVE    = 0xb
++	sysRTM_NEWADDR    = 0xc
++	sysRTM_DELADDR    = 0xd
++	sysRTM_IFANNOUNCE = 0x10
++	sysRTM_IEEE80211  = 0x11
++	sysRTM_SETGATE    = 0x12
++	sysRTM_LLINFO_UPD = 0x13
++	sysRTM_IFINFO     = 0x14
++	sysRTM_CHGADDR    = 0x15
++
++	sysRTA_DST     = 0x1
++	sysRTA_GATEWAY = 0x2
++	sysRTA_NETMASK = 0x4
++	sysRTA_GENMASK = 0x8
++	sysRTA_IFP     = 0x10
++	sysRTA_IFA     = 0x20
++	sysRTA_AUTHOR  = 0x40
++	sysRTA_BRD     = 0x80
++	sysRTA_TAG     = 0x100
++
++	sysRTAX_DST     = 0x0
++	sysRTAX_GATEWAY = 0x1
++	sysRTAX_NETMASK = 0x2
++	sysRTAX_GENMASK = 0x3
++	sysRTAX_IFP     = 0x4
++	sysRTAX_IFA     = 0x5
++	sysRTAX_AUTHOR  = 0x6
++	sysRTAX_BRD     = 0x7
++	sysRTAX_TAG     = 0x8
++	sysRTAX_MAX     = 0x9
++)
++
++const (
++	sizeofIfMsghdrNetBSD7         = 0x98
++	sizeofIfaMsghdrNetBSD7        = 0x18
++	sizeofIfAnnouncemsghdrNetBSD7 = 0x18
++
++	sizeofRtMsghdrNetBSD7  = 0x78
++	sizeofRtMetricsNetBSD7 = 0x50
++
++	sizeofSockaddrStorage = 0x80
++	sizeofSockaddrInet    = 0x10
++	sizeofSockaddrInet6   = 0x1c
++)
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/internal/poll/writev_inno.go gcc/libgo/go/internal/poll/writev_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/internal/poll/writev_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/internal/poll/writev_inno.go	2021-04-13 00:57:31.605698297 +0300
+@@ -0,0 +1,95 @@
++// Copyright 2016 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++// +build inno
++
++package poll
++
++import (
++	"io"
++	"syscall"
++)
++
++//extern writev
++func c_writev(fd int, buf *syscall.Iovec, count int) syscall.Ssize_t
++func _writev(fd int, buf *syscall.Iovec, count int) (r int, err syscall.Errno) {
++	_r := c_writev(fd, buf, count)
++	var errno syscall.Errno
++	setErrno := false
++	if _r < 0 {
++		errno = syscall.GetErrno()
++		setErrno = true
++	}
++	if setErrno {
++		err = errno
++	}
++	return int(_r), err
++}
++
++// Writev wraps the writev system call.
++func (fd *FD) Writev(v *[][]byte) (int64, error) {
++	if err := fd.writeLock(); err != nil {
++		return 0, err
++	}
++	defer fd.writeUnlock()
++	if err := fd.pd.prepareWrite(fd.isFile); err != nil {
++		return 0, err
++	}
++
++	var iovecs []syscall.Iovec
++	if fd.iovecs != nil {
++		iovecs = *fd.iovecs
++	}
++	// TODO: read from sysconf(_SC_IOV_MAX)? The Linux default is
++	// 1024 and this seems conservative enough for now. Darwin's
++	// UIO_MAXIOV also seems to be 1024.
++	maxVec := 1024
++
++	var n int64
++	var err error
++	for len(*v) > 0 {
++		iovecs = iovecs[:0]
++		for _, chunk := range *v {
++			if len(chunk) == 0 {
++				continue
++			}
++			iovecs = append(iovecs, syscall.Iovec{Base: &chunk[0]})
++			if fd.IsStream && len(chunk) > 1<<30 {
++				iovecs[len(iovecs)-1].SetLen(1 << 30)
++				break // continue chunk on next writev
++			}
++			iovecs[len(iovecs)-1].SetLen(len(chunk))
++			if len(iovecs) == maxVec {
++				break
++			}
++		}
++		if len(iovecs) == 0 {
++			break
++		}
++		fd.iovecs = &iovecs // cache
++
++		wrote,e0 := _writev(fd.Sysfd,&iovecs[0],len(iovecs))
++		if uintptr(wrote) == ^uintptr(0) {
++			wrote = 0
++		}
++		TestHookDidWritev(int(wrote))
++		n += int64(wrote)
++		consume(v, int64(wrote))
++		if e0 == syscall.EAGAIN {
++			if err = fd.pd.waitWrite(fd.isFile); err == nil {
++				continue
++			}
++		} else if e0 != 0 {
++			err = syscall.Errno(e0)
++		}
++		if err != nil {
++			break
++		}
++		if n == 0 {
++			err = io.ErrUnexpectedEOF
++			break
++		}
++	}
++	return n, err
++}
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/net/cgo_inno.go gcc/libgo/go/net/cgo_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/net/cgo_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/net/cgo_inno.go	2021-04-12 17:01:41.685891576 +0300
+@@ -0,0 +1,14 @@
++// Copyright 2011 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++// +build cgo,!netgo
++
++package net
++
++/*
++#include <netdb.h>
++*/
++import "syscall"
++
++const cgoAddrInfoFlags = syscall.AI_CANONNAME
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/os_inno.go gcc/libgo/go/runtime/os_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/os_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/runtime/os_inno.go	2021-04-12 17:01:41.685891576 +0300
+@@ -0,0 +1,171 @@
++// Copyright 2017 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package runtime
++
++import (
++       "runtime/internal/sys"
++       "unsafe"
++)
++
++type mOS struct {
++	waitsema uintptr // semaphore for parking on locks
++}
++
++//extern malloc
++func libc_malloc(uintptr) unsafe.Pointer
++
++//go:noescape
++//extern sem_init
++func sem_init(sem *semt, pshared int32, value uint32) int32
++
++//go:noescape
++//extern sem_wait
++func sem_wait(sem *semt) int32
++
++//go:noescape
++//extern sem_post
++func sem_post(sem *semt) int32
++
++//go:noescape
++//extern sem_timedwait
++func sem_timedwait(sem *semt, timeout *timespec) int32
++
++//go:noescape
++//extern clock_gettime
++func clock_gettime(clock_id int64, timeout *timespec) int32
++
++//go:nosplit
++func semacreate(mp *m) {
++	if mp.mOS.waitsema != 0 {
++		return
++	}
++
++	var sem *semt
++
++	// Call libc's malloc rather than malloc. This will
++	// allocate space on the C heap. We can't call malloc
++	// here because it could cause a deadlock.
++	sem = (*semt)(libc_malloc(unsafe.Sizeof(*sem)))
++	if sem_init(sem, 0, 0) != 0 {
++		throw("sem_init")
++	}
++	mp.mOS.waitsema = uintptr(unsafe.Pointer(sem))
++}
++
++//go:nosplit
++func semasleep(ns int64) int32 {
++	_m_ := getg().m
++	if ns >= 0 {
++		const CLOCK_REALTIME int64 = 9
++		var ts timespec
++
++		if clock_gettime(CLOCK_REALTIME, &ts) != 0 {
++			throw("clock_gettime")
++		}
++		ts.tv_sec += timespec_sec_t(ns / 1000000000)
++		ts.tv_nsec += timespec_nsec_t(ns % 1000000000)
++		if ts.tv_nsec >= 1000000000 {
++			ts.tv_sec += timespec_sec_t(1)
++			ts.tv_nsec -= timespec_nsec_t(1000000000)
++		}
++
++		if sem_timedwait((*semt)(unsafe.Pointer(_m_.mOS.waitsema)), &ts) != 0 {
++			err := errno()
++			if err == _ETIMEDOUT || err == _EAGAIN || err == _EINTR {
++				return -1
++			}
++			throw("sem_timedwait")
++		}
++		return 0
++	}
++	for {
++		r1 := sem_wait((*semt)(unsafe.Pointer(_m_.mOS.waitsema)))
++		if r1 == 0 {
++			break
++		}
++		if errno() == _EINTR {
++			continue
++		}
++		throw("sem_wait")
++	}
++	return 0
++}
++
++//go:nosplit
++func semawakeup(mp *m) {
++	if sem_post((*semt)(unsafe.Pointer(mp.mOS.waitsema))) != 0 {
++		throw("sem_post")
++	}
++}
++
++func osinit() {
++	ncpu = getncpu()
++	if physPageSize == 0 {
++		physPageSize = getPageSize()
++	}
++}
++
++func sysargs(argc int32, argv **byte) {
++	n := argc + 1
++
++	// skip over argv, envp to get to auxv
++	for argv_index(argv, n) != nil {
++		n++
++	}
++
++	// skip NULL separator
++	n++
++
++	// now argv+n is auxv
++	auxv := (*[1 << 28]uintptr)(add(unsafe.Pointer(argv), uintptr(n)*sys.PtrSize))
++	sysauxv(auxv[:])
++}
++
++const (
++	_AT_NULL   = 0 // Terminates the vector
++	_AT_PAGESZ = 6 // Page size in bytes
++)
++
++func sysauxv(auxv []uintptr) {
++	for i := 0; auxv[i] != _AT_NULL; i += 2 {
++		tag, val := auxv[i], auxv[i+1]
++		switch tag {
++		case _AT_PAGESZ:
++			physPageSize = val
++		}
++	}
++}
++
++//go:noescape
++//extern sysctl
++func sysctl(*uint32, uint32, *byte, *uintptr, *byte, uintptr) int32
++
++const (
++	_CTL_HW      = 6
++	_HW_NCPU     = 3
++	_HW_PAGESIZE = 7
++)
++
++func getncpu() int32 {
++	mib := [2]uint32{_CTL_HW, _HW_NCPU}
++	out := uint32(0)
++	nout := unsafe.Sizeof(out)
++	ret := sysctl(&mib[0], 2, (*byte)(unsafe.Pointer(&out)), &nout, nil, 0)
++	if ret >= 0 {
++		return int32(out)
++	}
++	return 1
++}
++
++func getPageSize() uintptr {
++	mib := [2]uint32{_CTL_HW, _HW_PAGESIZE}
++	out := uint32(0)
++	nout := unsafe.Sizeof(out)
++	ret := sysctl(&mib[0], 2, (*byte)(unsafe.Pointer(&out)), &nout, nil, 0)
++	if ret >= 0 {
++		return uintptr(out)
++	}
++	return 0
++}
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/libcall_inno.go gcc/libgo/go/syscall/libcall_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/libcall_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/libcall_inno.go	2021-04-12 19:33:14.922091264 +0300
+@@ -0,0 +1,33 @@
++// Copyright 2015 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++// +build inno
++
++// BSD library calls.
++
++package syscall
++
++import (
++	"errors"
++)
++
++func ReadDirent(fd int, buf []byte) (n int, err error) {
++	return Getdents(fd, buf)
++}
++
++func Getdents(fd int, buf []byte) (n int, err error) {
++	println("Getdents not implemented")
++	return 0, errors.New("not implemented")
++}
++
++//sys	sendfile(outfd int, infd int, offset *Offset_t, count int) (written int, err error)
++//sendfile(outfd _C_int, infd _C_int, offset *Offset_t, count Size_t) Ssize_t
++
++// Dummy function
++func raw_ptrace(request int, pid int, addr *byte, data *byte) Errno {
++	return ENOSYS
++}
++
++// For exec_unix.go.
++const SYS_EXECVE = 0
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno.go gcc/libgo/go/syscall/route_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/route_inno.go	2021-04-12 18:41:51.502204081 +0300
+@@ -0,0 +1,6 @@
++// Copyright 2011 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package syscall
++
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno_64bit.go gcc/libgo/go/syscall/route_inno_64bit.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno_64bit.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/route_inno_64bit.go	2021-04-12 18:42:50.981856879 +0300
+@@ -0,0 +1,7 @@
++// Copyright 2014 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++// +build inno,amd64
++
++package syscall
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/syscall_inno.go gcc/libgo/go/syscall/syscall_inno.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/syscall_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/syscall_inno.go	2021-04-12 17:01:41.686891586 +0300
+@@ -0,0 +1,19 @@
++// Copyright 2009,2010 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package syscall
++
++import "unsafe"
++
++func direntIno(buf []byte) (uint64, bool) {
++	return readInt(buf, unsafe.Offsetof(Dirent{}.d_fileno), unsafe.Sizeof(Dirent{}.d_fileno))
++}
++
++func direntReclen(buf []byte) (uint64, bool) {
++	return readInt(buf, unsafe.Offsetof(Dirent{}.Reclen), unsafe.Sizeof(Dirent{}.Reclen))
++}
++
++func direntNamlen(buf []byte) (uint64, bool) {
++	return readInt(buf, unsafe.Offsetof(Dirent{}.Namlen), unsafe.Sizeof(Dirent{}.Namlen))
++}
+diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/netpoll_inno.go contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22/src/lib/gcc/libgo/go/runtime/netpoll_inno.go
+--- contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/netpoll_inno.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/runtime/netpoll_inno.go	2021-12-07 02:07:31.546178564 +0300
+@@ -0,0 +1,250 @@
++// Copyright 2018 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package runtime
++
++import "unsafe"
++
++// This is based on the former libgo/runtime/netpoll_select.c implementation
++// except that it uses poll instead of select and is written in Go.
++// It's also based on Solaris implementation for the arming mechanisms
++
++//go:noescape
++//extern poll
++func libc_poll(pfds *pollfd, npfds uintptr, timeout uintptr) int32
++
++// pollfd represents the poll structure for Genode libc
++type pollfd struct {
++	fd      int32
++	events  int16
++	revents int16
++}
++
++/* taken from libc port <sys/poll.h> */
++const _POLLIN = 0x0001
++const _POLLPRI = 0x0002
++const _POLLOUT = 0x0004
++const _POLLRDNORM = 0x0040
++const _POLLWRNORM = _POLLOUT
++const _POLLRDBAND = 0x0080
++const _POLLWRBAND = 0x0100
++
++const _POLLHUP = 0x0010
++const _POLLERR = 0x0008
++const _POLLNVAL = 0x0020
++
++const _POLLIN_MASK = _POLLIN | _POLLRDNORM | _POLLRDBAND | _POLLPRI
++const _POLLOUT_MASK = _POLLOUT | _POLLWRNORM | _POLLWRBAND
++
++var (
++	pfds           []pollfd
++	pds            []*pollDesc
++	mtxpoll        mutex
++	mtxset         mutex
++	rdwake         int32
++	wrwake         int32
++	pendingUpdates int32
++)
++
++const pollVerbose = false
++
++func netpollinit() {
++	// Create the pipe we use to wakeup poll.
++	r, w, errno := nonblockingPipe()
++	if errno != 0 {
++		throw("netpollinit: failed to create pipe")
++	}
++	rdwake = r
++	wrwake = w
++
++	// Pre-allocate array of pollfd structures for poll.
++	if pollVerbose {
++		println("*** allocating")
++	}
++	pfds = make([]pollfd, 1, 128)
++	if pollVerbose {
++		println("*** allocating done", &pfds[0])
++	}
++
++	// Poll the read side of the pipe.
++	pfds[0].fd = rdwake
++	pfds[0].events = _POLLIN
++
++	pds = make([]*pollDesc, 1, 128)
++	pds[0] = nil
++}
++
++func netpollIsPollDescriptor(fd uintptr) bool {
++	return fd == uintptr(rdwake) || fd == uintptr(wrwake)
++}
++
++// netpollwakeup writes on wrwake to wakeup poll before any changes.
++func netpollwakeup() {
++	if pendingUpdates == 0 {
++		pendingUpdates = 1
++		if pollVerbose {
++			println("*** writing 1 byte")
++		}
++		b := [1]byte{0}
++		write(uintptr(wrwake), unsafe.Pointer(&b[0]), 1)
++	}
++}
++
++func netpollopen(fd uintptr, pd *pollDesc) int32 {
++	if pollVerbose {
++		println("*** netpollopen", fd)
++	}
++	lock(&mtxpoll)
++	netpollwakeup()
++
++	lock(&mtxset)
++	unlock(&mtxpoll)
++
++	pd.user = uint32(len(pfds))
++	pfds = append(pfds, pollfd{fd: int32(fd)})
++	pds = append(pds, pd)
++	unlock(&mtxset)
++	return 0
++}
++
++func netpollclose(fd uintptr) int32 {
++	if pollVerbose {
++		println("*** netpollclose", fd)
++	}
++	lock(&mtxpoll)
++	netpollwakeup()
++
++	lock(&mtxset)
++	unlock(&mtxpoll)
++
++	for i := 0; i < len(pfds); i++ {
++		if pfds[i].fd == int32(fd) {
++			pfds[i] = pfds[len(pfds)-1]
++			pfds = pfds[:len(pfds)-1]
++
++			pds[i] = pds[len(pds)-1]
++			pds[i].user = uint32(i)
++			pds = pds[:len(pds)-1]
++			break
++		}
++	}
++	unlock(&mtxset)
++	return 0
++}
++
++func netpollarm(pd *pollDesc, mode int) {
++	if pollVerbose {
++		println("*** netpollarm", pd.fd, mode)
++	}
++	lock(&mtxpoll)
++	netpollwakeup()
++
++	lock(&mtxset)
++	unlock(&mtxpoll)
++
++	switch mode {
++	case 'r':
++		pfds[pd.user].events |= _POLLIN
++	case 'w':
++		pfds[pd.user].events |= _POLLOUT
++	}
++	unlock(&mtxset)
++}
++
++// netpollBreak interrupts an epollwait.
++func netpollBreak() {
++	netpollwakeup()
++}
++
++// netpoll checks for ready network connections.
++// Returns list of goroutines that become runnable.
++// delay < 0: blocks indefinitely
++// delay == 0: does not block, just polls
++// delay > 0: block for up to that many nanoseconds
++//go:nowritebarrierrec
++func netpoll(delay int64) gList {
++	var timeout uintptr
++	if delay < 0 {
++		timeout = ^uintptr(0)
++	} else if delay == 0 {
++		// TODO: call poll with timeout == 0
++		return gList{}
++	} else if delay < 1e6 {
++		timeout = 1
++	} else if delay < 1e15 {
++		timeout = uintptr(delay / 1e6)
++	} else {
++		// An arbitrary cap on how long to wait for a timer.
++		// 1e9 ms == ~11.5 days.
++		timeout = 1e9
++	}
++retry:
++	lock(&mtxpoll)
++	lock(&mtxset)
++	pendingUpdates = 0
++	unlock(&mtxpoll)
++
++	if pollVerbose {
++		println("*** poll", len(pfds), timeout, "delay ",delay)
++	}
++	n := libc_poll(&pfds[0], uintptr(len(pfds)), timeout)
++	if pollVerbose {
++		println("*** poll done ", n, " events ", pfds[0].events, " revents ",pfds[0].revents)
++	}
++	if n < 0 {
++		e := errno()
++		if e != _EINTR {
++			println("errno=", e, " len(pfds)=", len(pfds))
++			throw("poll failed")
++		}
++		unlock(&mtxset)
++		// If a timed sleep was interrupted, just return to
++		// recalculate how long we should sleep now.
++		if timeout > 0 {
++			return gList{}
++		}
++		goto retry
++	}
++	// Check if some descriptors need to be changed
++	if n != 0 && pfds[0].revents&(_POLLIN|_POLLHUP|_POLLERR) != 0 {
++		if delay != 0 {
++			// A netpollwakeup could be picked up by a
++			// non-blocking poll. Only clear the wakeup
++			// if blocking.
++			var b [1]byte
++			if pollVerbose {
++				println("*** rdwake ", pfds[0].revents&(_POLLIN|_POLLHUP|_POLLERR))
++			}
++			for read(rdwake, unsafe.Pointer(&b[0]), 1) == 1 {
++			}
++		}
++		// Still look at the other fds even if the mode may have
++		// changed, as netpollBreak might have been called.
++		n--
++	}
++	var toRun gList
++	for i := 1; i < len(pfds) && n > 0; i++ {
++		pfd := &pfds[i]
++
++		var mode int32
++		if pfd.revents&(_POLLIN|_POLLHUP|_POLLERR) != 0 {
++			mode += 'r'
++			pfd.events &= ^_POLLIN
++		}
++		if pfd.revents&(_POLLOUT|_POLLHUP|_POLLERR) != 0 {
++			mode += 'w'
++			pfd.events &= ^_POLLOUT
++		}
++		if mode != 0 {
++			pds[i].everr = false
++			if pfd.revents == _POLLERR {
++				pds[i].everr = true
++			}
++			netpollready(&toRun, pds[i], mode)
++			n--
++		}
++	}
++	unlock(&mtxset)
++	return toRun
++}

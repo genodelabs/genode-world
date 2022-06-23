@@ -1,0 +1,168 @@
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/cmd/go/internal/bug/bug.go gcc/libgo/go/cmd/go/internal/bug/bug.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/cmd/go/internal/bug/bug.go	2017-09-14 20:11:35.000000000 +0300
++++ gcc/libgo/go/cmd/go/internal/bug/bug.go	2021-04-12 17:01:41.714891894 +0300
+@@ -96,7 +96,7 @@
+ 		printCmdOut(w, "uname -sr: ", "uname", "-sr")
+ 		printCmdOut(w, "", "lsb_release", "-a")
+ 		printGlibcVersion(w)
+-	case "openbsd", "netbsd", "freebsd", "dragonfly":
++	case "openbsd", "netbsd", "freebsd", "dragonfly", "inno":
+ 		printCmdOut(w, "uname -v: ", "uname", "-v")
+ 	case "solaris":
+ 		out, err := ioutil.ReadFile("/etc/release")
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/os/executable_procfs.go gcc/libgo/go/os/executable_procfs.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/os/executable_procfs.go	2017-09-14 20:11:35.000000000 +0300
++++ gcc/libgo/go/os/executable_procfs.go	2021-04-12 17:01:41.727892036 +0300
+@@ -2,7 +2,7 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+ 
+-// +build hurd linux netbsd dragonfly js,wasm
++// +build hurd linux netbsd dragonfly js,wasm inno
+ 
+ package os
+ 
+@@ -19,7 +19,7 @@
+ 	switch runtime.GOOS {
+ 	default:
+ 		return "", errors.New("Executable not implemented for " + runtime.GOOS)
+-	case "hurd", "linux", "android":
++	case "hurd", "linux", "android", "inno":
+ 		procfn = "/proc/self/exe"
+ 	case "netbsd":
+ 		procfn = "/proc/curproc/exe"
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/mem_gccgo.go gcc/libgo/go/runtime/mem_gccgo.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/mem_gccgo.go	2018-01-09 04:23:08.000000000 +0300
++++ gcc/libgo/go/runtime/mem_gccgo.go	2021-04-12 17:01:41.737892146 +0300
+@@ -15,10 +15,10 @@
+ //go:linkname sysAlloc runtime.sysAlloc
+ //go:linkname sysFree runtime.sysFree
+ 
+-//extern mmap
++//extern anon_mmap
+ func sysMmap(addr unsafe.Pointer, n uintptr, prot, flags, fd int32, off uintptr) unsafe.Pointer
+ 
+-//extern munmap
++//extern anon_munmap
+ func munmap(addr unsafe.Pointer, length uintptr) int32
+ 
+ //extern mincore
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/os_gccgo.go gcc/libgo/go/runtime/os_gccgo.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/os_gccgo.go	2017-09-14 20:11:35.000000000 +0300
++++ gcc/libgo/go/runtime/os_gccgo.go	2021-04-12 17:01:41.732892091 +0300
+@@ -45,8 +45,10 @@
+ 		extendRandom(r, n)
+ 		return
+ 	}
+-	fd := open(&urandom_dev[0], 0 /* O_RDONLY */, 0)
+-	n := read(fd, unsafe.Pointer(&r[0]), int32(len(r)))
+-	closefd(fd)
++	//fd := open(&urandom_dev[0], 0 /* O_RDONLY */, 0)
++	//n := read(fd, unsafe.Pointer(&r[0]), int32(len(r)))
++	//closefd(fd)
++	// FIXME there is no /dev/urandom in genode
++	n := uintptr(unsafe.Pointer(&r[0]))
+ 	extendRandom(r, int(n))
+ }
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/runtime/go-setenv.c gcc/libgo/runtime/go-setenv.c
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/runtime/go-setenv.c	2016-11-18 19:03:13.000000000 +0300
++++ gcc/libgo/runtime/go-setenv.c	2021-04-12 17:01:41.736892135 +0300
+@@ -59,8 +59,9 @@
+ 
+ #else /* !defined(HAVE_SETENV) */
+ 
+-  len = k.len + v.len + 2;
++  { int len = k.len + v.len + 2;
+   kn = malloc (len);
++  }
+   if (kn == NULL)
+     runtime_throw ("out of malloc memory");
+   __builtin_memcpy (kn, ks, k.len);
+diff -NaurwB gcc.libgobase/libgo/runtime/proc.c gcc.libgomod/libgo/runtime/proc.c
+--- gcc.libgobase/libgo/runtime/proc.c	2021-06-08 12:14:11.381349797 +0300
++++ gcc.libgomod/libgo/runtime/proc.c	2021-06-19 20:50:50.181777480 +0300
+@@ -19,6 +19,8 @@
+ #include "arch.h"
+ #include "defs.h"
+ 
++#include <alloc_secondary_stack.h>
++
+ #ifdef USING_SPLIT_STACK
+ 
+ /* FIXME: These are not declared anywhere.  */
+@@ -51,7 +51,7 @@
+ #if defined(USING_SPLIT_STACK) && defined(LINKER_SUPPORTS_SPLIT_STACK)
+ # define StackMin PTHREAD_STACK_MIN
+ #else
+-# define StackMin ((sizeof(char *) < 8) ? 2 * 1024 * 1024 : 4 * 1024 * 1024)
++# define StackMin ((sizeof(char *) < 8) ? 2 * 1024 * 1024 : 1 * 1024 * 1024 - 4096*3)
+ #endif
+ 
+ uintptr runtime_stacks_sys;
+@@ -64,7 +66,8 @@
+ #define __thread
+ #endif
+ 
+-__thread G *g __asm__(GOSYM_PREFIX "runtime.g");
++static __thread G *g;
++/*__thread G *g __asm__(GOSYM_PREFIX "runtime.g"); gcc 10.3 bug - this string generates wrong asm code */
+ 
+ #ifndef SETCONTEXT_CLOBBERS_TLS
+ 
+@@ -753,7 +754,8 @@
+                 // 32-bit mode, the Go allocation space is all of
+                 // memory anyhow.
+ 		if(sizeof(void*) == 8) {
+-			void *p = runtime_sysAlloc(stacksize, &getMemstats()->stacks_sys);
++			//void *p = runtime_sysAlloc(stacksize, &getMemstats()->stacks_sys);
++			void *p = alloc_secondary_stack("goapp", stacksize); // no stat!
+ 			if(p == nil)
+ 				runtime_throw("runtime: cannot allocate memory for goroutine stack");
+ 			*ret_stack = (byte*)p;
+@@ -770,6 +772,7 @@
+ 	return newg;
+ }
+ 
++void free_secondary_stack( void *);
+ void stackfree(G*)
+   __asm__(GOSYM_PREFIX "runtime.stackfree");
+ 
+@@ -786,7 +789,8 @@
+   // using garbage collected memory.
+   if (gp->gcstacksize != 0) {
+     if (sizeof(void*) == 8) {
+-      runtime_sysFree(gp->gcinitialsp, gp->gcstacksize, &getMemstats()->stacks_sys);
++      //runtime_sysFree(gp->gcinitialsp, gp->gcstacksize, &getMemstats()->stacks_sys);
++	  free_secondary_stack(gp->gcinitialsp);
+     }
+     gp->gcinitialsp = nil;
+     gp->gcstacksize = 0;
+diff -NaurwB gcc.libgobase/libgo/go/internal/poll/fd_poll_runtime.go gcc.libgomod/libgo/go/internal/poll/fd_poll_runtime.go
+--- gcc.libgobase/libgo/go/internal/poll/fd_poll_runtime.go	2021-06-08 12:14:11.516350478 +0300
++++ gcc.libgomod/libgo/go/internal/poll/fd_poll_runtime.go	2021-06-08 17:08:06.225937928 +0300
+@@ -42,7 +42,7 @@
+ 			runtime_pollUnblock(ctx)
+ 			runtime_pollClose(ctx)
+ 		}
+-		return errnoErr(syscall.Errno(errno))
++		return syscall.Errno(errno)
+ 	}
+ 	pd.runtimeCtx = ctx
+ 	return nil
+diff -NaurwB gcc.libgobase/libgo/runtime/runtime.h gcc.libgomod/libgo/runtime/runtime.h
+--- gcc.libgobase/libgo/runtime/runtime.h	2021-06-08 12:14:11.374349761 +0300
++++ gcc.libgomod/libgo/runtime/runtime.h	2021-06-19 20:51:46.959108269 +0300
+@@ -501,9 +501,11 @@
+ #else
+ #define __go_context_t	ucontext_t
+ #define __go_getcontext(c)	getcontext(c)
+-#define __go_setcontext(c)	setcontext(c)
++#define __go_setcontext(c) innosetcontext(c)
++int innosetcontext(__go_context_t *);
++void initucontext(ucontext_t *uc);
+ #define __go_makecontext(c, fn, sp, size) \
+-	((c)->uc_stack.ss_sp = sp, (c)->uc_stack.ss_size = size, makecontext(c, fn, 0))
++	((c)->uc_stack.ss_sp = sp, (c)->uc_stack.ss_size = size, initucontext(c), makecontext(c, fn, 0))
+ #endif
+ 
+ // Symbols defined by the linker.
