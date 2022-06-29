@@ -1,0 +1,8 @@
+LICENSE := LGPL
+VERSION := xenial-genode
+
+DOWNLOADS := ubuntu-ui-toolkit.git
+
+URL(ubuntu-ui-toolkit) := https://github.com/cproc/ubuntu-ui-toolkit.git
+REV(ubuntu-ui-toolkit) := $(VERSION)
+DIR(ubuntu-ui-toolkit) := src/lib/ubuntu-ui-toolkit
