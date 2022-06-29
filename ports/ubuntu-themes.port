@@ -1,0 +1,8 @@
+LICENSE := GPL3
+VERSION := xenial
+
+DOWNLOADS := ubuntu-themes.git
+
+URL(ubuntu-themes) := https://github.com/ubports/ubuntu-themes
+REV(ubuntu-themes) := $(VERSION)
+DIR(ubuntu-themes) := ubuntu-themes
