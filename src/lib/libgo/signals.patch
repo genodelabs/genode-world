@@ -6,7 +6,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package runtime
  
@@ -14,7 +14,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  func getsig(i uint32) uintptr {
  	var sa _sigaction
  	if sigaction(i, nil, &sa) < 0 {
-+		if GOOS == "inno" {
++		if GOOS == "genode" {
 +			return _SIG_DFL
 +		}
  		// On GNU/Linux glibc rejects attempts to call
@@ -28,7 +28,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package runtime
  

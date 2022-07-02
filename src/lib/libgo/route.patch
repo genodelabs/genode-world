@@ -6,7 +6,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly netbsd
-+// +build darwin dragonfly netbsd inno
++// +build darwin dragonfly netbsd genode
  
  package route
  
@@ -14,7 +14,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  	}
  	if runtime.GOOS == "netbsd" {
  		m.Index = int(nativeEndian.Uint16(b[16:18]))
-+	} else if runtime.GOOS == "inno" {
++	} else if runtime.GOOS == "genode" {
 +		m.Index = int(nativeEndian.Uint16(b[16:18]))
  	} else {
  		m.Index = int(nativeEndian.Uint16(b[12:14]))
@@ -27,7 +27,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  // Package route provides basic functions for the manipulation of
  // packet routing facilities on BSD variants.

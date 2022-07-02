@@ -6,8 +6,8 @@ index bec17696f3..860e5c4946 100644
  	"android/arm64":   true,
  	"ios/arm64":       true,
  	"ios/amd64":       true,
-+	"inno/amd64":      true,
-+	"inno/arm64":      true,
++	"genode/amd64":      true,
++	"genode/arm64":      true,
  	"js/wasm":         false,
  	"netbsd/386":      true,
  	"netbsd/amd64":    true,
@@ -19,7 +19,7 @@ index ff6bea6777..6d2a7f5ab7 100644
  	"freebsd":   true,
  	"hurd":      true,
  	"illumos":   true,
-+	"inno":      true,
++	"genode":      true,
  	"ios":       true,
  	"js":        true,
  	"linux":     true,
@@ -32,7 +32,7 @@ index 5a225fb9f1..1d50c3278e 100644
  	if a.buildID != "" && cfg.BuildToolchainName == "gccgo" {
  		switch cfg.Goos {
 -		case "aix", "android", "dragonfly", "freebsd", "illumos", "linux", "netbsd", "openbsd", "solaris":
-+		case "aix", "android", "dragonfly", "freebsd", "illumos", "linux", "netbsd", "openbsd", "solaris", "inno":
++		case "aix", "android", "dragonfly", "freebsd", "illumos", "linux", "netbsd", "openbsd", "solaris", "genode":
  			asmfile, err := b.gccgoBuildIDFile(a)
  			if err != nil {
  				return err
@@ -51,7 +51,7 @@ index 48ff292307..8af5a939b7 100644
  	switch s {
  	case "aix":
  		*h = Haix
-+	case "inno":
++	case "genode":
 +		*h = Hinno
  	case "darwin", "ios":
  		*h = Hdarwin
@@ -61,7 +61,7 @@ index 48ff292307..8af5a939b7 100644
  func (h *HeadType) String() string {
  	switch *h {
 +	case Hinno:
-+		return "inno"
++		return "genode"
  	case Haix:
  		return "aix"
  	case Hdarwin:
@@ -74,7 +74,7 @@ index eff67caf4e..c72ac0b0eb 100644
  	case "darwin", "ios":
  		return []string{"DYLD_LIBRARY_PATH"}
 -	case "linux", "freebsd", "netbsd", "openbsd":
-+	case "linux", "freebsd", "netbsd", "openbsd", "inno":
++	case "linux", "freebsd", "netbsd", "openbsd", "genode":
  		return []string{"LD_LIBRARY_PATH"}
  	case "hpux":
  		return []string{"LD_LIBRARY_PATH", "SHLIB_PATH"}

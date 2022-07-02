@@ -6,7 +6,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix hurd linux dragonfly openbsd solaris
-+// +build aix hurd linux dragonfly openbsd solaris inno
++// +build aix hurd linux dragonfly openbsd solaris genode
 +// FIXME
  
  package tar
@@ -19,7 +19,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js linux netbsd openbsd solaris genode
  
  package base
  
@@ -31,7 +31,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build dragonfly freebsd netbsd openbsd
-+// +build dragonfly freebsd netbsd openbsd inno
++// +build dragonfly freebsd netbsd openbsd genode
  
  package x509
  
@@ -43,7 +43,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package x509
  
@@ -55,7 +55,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  package route
  
@@ -67,7 +67,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  package route
  
@@ -79,7 +79,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  package route
  
@@ -91,7 +91,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build dragonfly freebsd netbsd
-+// +build dragonfly freebsd netbsd inno
++// +build dragonfly freebsd netbsd genode
  
  package route
  
@@ -103,7 +103,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  package route
  
@@ -115,7 +115,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd
-+// +build darwin dragonfly freebsd netbsd inno
++// +build darwin dragonfly freebsd netbsd genode
  
  package route
  
@@ -127,7 +127,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  package route
  
@@ -139,7 +139,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd windows solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd windows solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd windows solaris genode
  
  package poll
  
@@ -151,7 +151,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package poll
  
@@ -163,7 +163,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package poll
  
@@ -175,7 +175,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package poll
  
@@ -187,7 +187,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows genode
  
  package poll
  
@@ -199,7 +199,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package poll
  
@@ -211,7 +211,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows genode
  
  package poll
  
@@ -223,7 +223,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // provide a fast path for setting SetNonblock and CloseOnExec.
  
 -// +build aix darwin js,wasm solaris
-+// +build aix darwin js,wasm solaris inno
++// +build aix darwin js,wasm solaris genode
  
  package poll
  
@@ -235,7 +235,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  // Minimal RFC 6724 address selection.
  
@@ -247,7 +247,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  
  // +build cgo,!netgo
 -// +build aix darwin hurd linux,!android netbsd solaris
-+// +build aix darwin hurd linux,!android netbsd solaris inno
++// +build aix darwin hurd linux,!android netbsd solaris genode
  
  package net
  
@@ -259,7 +259,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  
  // +build cgo,!netgo
 -// +build aix darwin dragonfly freebsd hurd netbsd openbsd
-+// +build aix darwin dragonfly freebsd hurd netbsd openbsd inno
++// +build aix darwin dragonfly freebsd hurd netbsd openbsd genode
  
  package net
  
@@ -271,7 +271,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  
  // +build cgo,!netgo
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package net
  
@@ -283,7 +283,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package net
  
@@ -295,7 +295,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  // DNS client: see RFC 1035.
  // Has to be linked into package net for Dial.
@@ -307,7 +307,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  // Read system DNS config from /etc/resolv.conf
  
@@ -319,7 +319,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -331,7 +331,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package net
  
@@ -343,7 +343,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package net
  
@@ -355,7 +355,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package net
  
@@ -367,7 +367,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build hurd js,wasm
-+// +build hurd js,wasm inno
++// +build hurd js,wasm genode
 +//FIXME
  
  package net
@@ -380,7 +380,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -392,7 +392,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -404,7 +404,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package net
  
@@ -416,7 +416,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package net
  
@@ -428,7 +428,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  // Read system port mappings from /etc/services
  
@@ -440,7 +440,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin js,wasm netbsd openbsd
-+// +build aix darwin js,wasm netbsd openbsd inno
++// +build aix darwin js,wasm netbsd openbsd genode
  
  package net
  
@@ -452,7 +452,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -464,7 +464,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix hurd js,wasm solaris
-+// +build aix hurd js,wasm solaris inno
++// +build aix hurd js,wasm solaris genode
 +// FIXME
  
  package net
@@ -477,7 +477,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd inno
++// +build darwin dragonfly freebsd netbsd openbsd genode
  
  package net
  
@@ -489,7 +489,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -501,7 +501,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd netbsd openbsd solaris genode
  
  package net
  
@@ -513,7 +513,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -525,7 +525,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // provide a fast path for setting SetNonblock and CloseOnExec.
  
 -// +build aix darwin solaris
-+// +build aix darwin solaris inno
++// +build aix darwin solaris genode
  
  package net
  
@@ -537,7 +537,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -549,7 +549,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -561,7 +561,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix freebsd hurd linux netbsd
-+// +build aix freebsd hurd linux netbsd inno
++// +build aix freebsd hurd linux netbsd genode
  
  package net
  
@@ -573,7 +573,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -585,7 +585,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -597,7 +597,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd linux netbsd openbsd
-+// +build darwin dragonfly freebsd linux netbsd openbsd inno
++// +build darwin dragonfly freebsd linux netbsd openbsd genode
  
  package net
  
@@ -609,7 +609,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package os
  
@@ -621,7 +621,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package exec
  
@@ -633,7 +633,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package os
  
@@ -645,7 +645,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package os
  
@@ -657,7 +657,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package os
  
@@ -669,7 +669,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package os
  
@@ -681,7 +681,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package os
  
@@ -693,7 +693,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly js,wasm solaris
-+// +build aix darwin dragonfly js,wasm solaris inno
++// +build aix darwin dragonfly js,wasm solaris genode
  
  package os
  
@@ -705,7 +705,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux,!android netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux,!android netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux,!android netbsd openbsd solaris genode
  // +build cgo
  
  // Package pty is a simple pseudo-terminal package for Unix systems,
@@ -717,7 +717,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package signal
  
@@ -729,7 +729,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build hurd linux openbsd solaristag
-+// +build hurd linux openbsd solaristag inno
++// +build hurd linux openbsd solaristag genode
 +// FIXME!
  
  package os
@@ -742,7 +742,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package os
  
@@ -754,7 +754,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd js,wasm netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd js,wasm netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd js,wasm netbsd openbsd solaris genode
  
  package os
  
@@ -765,7 +765,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // +build !darwin
  // +build !dragonfly
  // +build !freebsd
-+// +build !inno
++// +build !genode
  // +build !js !wasm
  // +build !netbsd
  // +build !openbsd
@@ -777,7 +777,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // For systems which only store the hostname in uname (Solaris).
  
 -// +build aix hurd solaris irix rtems
-+// +build aix hurd solaris irix rtems inno
++// +build aix hurd solaris irix rtems genode
 +// FIXME
  
  package os
@@ -790,7 +790,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package os
  
@@ -802,7 +802,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd !android,linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd !android,linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd !android,linux netbsd openbsd solaris genode
  // +build cgo,!osusergo
  
  package user
@@ -814,7 +814,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd hurd linux netbsd openbsd
-+// +build darwin dragonfly freebsd hurd linux netbsd openbsd inno
++// +build darwin dragonfly freebsd hurd linux netbsd openbsd genode
  // +build cgo
  
  package user
@@ -826,7 +826,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build dragonfly darwin freebsd hurd !android,linux netbsd openbsd
-+// +build dragonfly darwin freebsd hurd !android,linux netbsd openbsd inno
++// +build dragonfly darwin freebsd hurd !android,linux netbsd openbsd genode
  // +build cgo,!osusergo
  
  package user
@@ -838,7 +838,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm !android,linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm !android,linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm !android,linux netbsd openbsd solaris genode
  // +build !cgo osusergo
  
  package user
@@ -850,7 +850,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly hurd js,wasm netbsd openbsd solaris
-+// +build aix darwin dragonfly hurd js,wasm netbsd openbsd solaris inno
++// +build aix darwin dragonfly hurd js,wasm netbsd openbsd solaris genode
  
  package os
  
@@ -862,7 +862,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package filepath
  
@@ -874,7 +874,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package runtime
  
@@ -886,7 +886,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin hurd netbsd openbsd plan9 solaris windows
-+// +build aix darwin hurd netbsd openbsd plan9 solaris windows inno
++// +build aix darwin hurd netbsd openbsd plan9 solaris windows genode
  
  package runtime
  
@@ -898,7 +898,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package runtime
  
@@ -910,7 +910,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package syscall
  
@@ -922,7 +922,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  // Unix environment variables.
  
@@ -934,7 +934,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd netbsd openbsd solaris
-+// +build darwin dragonfly freebsd netbsd openbsd solaris inno
++// +build darwin dragonfly freebsd netbsd openbsd solaris genode
  
  // BSD library calls.
  
@@ -946,7 +946,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd openbsd netbsd solaris
-+// +build aix darwin dragonfly freebsd hurd openbsd netbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd openbsd netbsd solaris genode
  
  // General POSIX version of UtimesNano.
  
@@ -958,7 +958,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  // Socket control messages
  
@@ -970,7 +970,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd hurd openbsd netbsd
-+// +build darwin dragonfly freebsd hurd openbsd netbsd inno
++// +build darwin dragonfly freebsd hurd openbsd netbsd genode
  
  package syscall
  
@@ -982,7 +982,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package syscall
  
@@ -994,7 +994,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package time
  
@@ -1006,7 +1006,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin,386 darwin,amd64 dragonfly freebsd hurd linux,!android netbsd openbsd solaris
-+// +build aix darwin,386 darwin,amd64 dragonfly freebsd hurd linux,!android netbsd openbsd solaris inno
++// +build aix darwin,386 darwin,amd64 dragonfly freebsd hurd linux,!android netbsd openbsd solaris genode
  
  // Parse "zoneinfo" time zone file.
  // This is a fairly standard file format used on OS X, Linux, BSD, Sun, and others.
@@ -1018,7 +1018,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package syscall
  
@@ -1030,7 +1030,7 @@ diff -NaurwB gcc.libgobase/libgo/go/cmd/go/internal/modload/stat_unix.go gcc.lib
  // license that can be found in the LICENSE file.
  
 -// +build darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  package modload
  
@@ -1042,7 +1042,7 @@ diff -NaurwB gcc.libgobase/libgo/go/internal/poll/fcntl_libc.go gcc.libgomod/lib
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin solaris
-+// +build aix darwin solaris inno
++// +build aix darwin solaris genode
  
  package poll
  
@@ -1054,7 +1054,7 @@ diff -NaurwB gcc.libgobase/libgo/go/internal/poll/fd_fsync_posix.go gcc.libgomod
  // license that can be found in the LICENSE file.
  
 -// +build aix dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris
-+// +build aix dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris inno
++// +build aix dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris genode
  
  package poll
  
@@ -1066,7 +1066,7 @@ diff -NaurwB gcc.libgobase/libgo/go/internal/syscall/unix/nonblocking_libc.go gc
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin solaris
-+// +build aix darwin solaris inno
++// +build aix darwin solaris genode
  
  package unix
  
@@ -1078,7 +1078,7 @@ diff -NaurwB gcc.libgobase/libgo/go/net/error_unix.go gcc.libgomod/libgo/go/net/
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd js linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd js linux netbsd openbsd solaris genode
  
  package net
  
@@ -1090,7 +1090,7 @@ diff -NaurwB gcc.libgobase/libgo/go/net/sockaddr_posix.go gcc.libgomod/libgo/go/
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows
-+// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows inno
++// +build aix darwin dragonfly freebsd hurd js,wasm linux netbsd openbsd solaris windows genode
  
  package net
  
@@ -1101,7 +1101,7 @@ diff -NaurwB gcc.libgobase/libgo/go/runtime/auxv_none.go gcc.libgomod/libgo/go/r
  // +build !netbsd
  // +build !openbsd !arm64
  // +build !solaris
-+// +build !inno
++// +build !genode
  
  package runtime
  
@@ -1113,7 +1113,7 @@ diff -NaurwB gcc.libgobase/libgo/go/syscall/forkpipe.go gcc.libgomod/libgo/go/sy
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly solaris
-+// +build aix darwin dragonfly solaris inno
++// +build aix darwin dragonfly solaris genode
  
  package syscall
  
@@ -1125,7 +1125,7 @@ diff -NaurwB gcc.libgobase/libgo/go/syscall/sockcmsg_unix_other.go gcc.libgomod/
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin freebsd hurd linux netbsd openbsd solaris genode
  
  package syscall
  
@@ -1137,7 +1137,7 @@ diff -NaurwB gcc.libgobase/libgo/go/syscall/syscall_funcs_stubs.go gcc.libgomod/
  // license that can be found in the LICENSE file.
  
 -// +build aix rtems
-+// +build aix rtems inno
++// +build aix rtems genode
  
  // These are stubs.
  
@@ -1149,7 +1149,7 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
  // license that can be found in the LICENSE file.
  
 -// +build freebsd hurd linux netbsd openbsd solaris
-+// +build freebsd hurd linux netbsd openbsd solaris inno
++// +build freebsd hurd linux netbsd openbsd solaris genode
  
  package runtime
  
@@ -1161,7 +1161,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd netbsd openbsd solaris genode
  
  package syscall
  

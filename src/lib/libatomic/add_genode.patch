@@ -1,6 +1,6 @@
-diff -ru contrib/libatomic-cb6e6b96c6eb2789f5ae26549443d3d58185e4ef/src/lib/gcc/libatomic/configure.tgt inno/libatomic/configure.tgt
+diff -ru contrib/libatomic-cb6e6b96c6eb2789f5ae26549443d3d58185e4ef/src/lib/gcc/libatomic/configure.tgt genode/libatomic/configure.tgt
 --- contrib/libatomic-cb6e6b96c6eb2789f5ae26549443d3d58185e4ef/src/lib/gcc/libatomic/configure.tgt	2018-03-09 15:32:22.000000000 +0300
-+++ inno/libatomic/configure.tgt	2020-06-22 16:24:54.000000000 +0300
++++ genode/libatomic/configure.tgt	2020-06-22 16:24:54.000000000 +0300
 @@ -137,7 +137,7 @@
    *-*-linux* | *-*-gnu* | *-*-k*bsd*-gnu \
    | *-*-netbsd* | *-*-freebsd* | *-*-openbsd* | *-*-dragonfly* \

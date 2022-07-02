@@ -1,6 +1,6 @@
-diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/configure inno/libgo/configure
+diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/configure genode/libgo/configure
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/configure	2018-06-22 17:25:34.000000000 +0300
-+++ inno/libgo/configure	2020-07-24 14:17:39.000000000 +0300
++++ genode/libgo/configure	2020-07-24 14:17:39.000000000 +0300
 @@ -694,6 +694,8 @@
  LIBGO_IS_FREEBSD_TRUE
  LIBGO_IS_DARWIN_FALSE
@@ -24,7 +24,7 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  # supported by the gofrontend and all operating systems supported by
  # the gc toolchain.
 -ALLGOOS="aix android darwin dragonfly freebsd hurd illumos irix js linux netbsd openbsd plan9 rtems solaris windows"
-+ALLGOOS="aix android darwin dragonfly freebsd hurd illumos irix js linux netbsd openbsd plan9 rtems solaris windows inno"
++ALLGOOS="aix android darwin dragonfly freebsd hurd illumos irix js linux netbsd openbsd plan9 rtems solaris windows genode"
  
  is_darwin=no
  is_freebsd=no
@@ -36,8 +36,8 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  GOOS=unknown
  case ${host} in
    *-*-darwin*)   is_darwin=yes;  GOOS=darwin ;;
-+  x86_64-pc-elf)  is_inno=yes; GOOS=inno ;;
-+  aarch64-none-elf)  is_inno=yes; GOOS=inno ;;
++  x86_64-pc-elf)  is_inno=yes; GOOS=genode ;;
++  aarch64-none-elf)  is_inno=yes; GOOS=genode ;;
    *-*-freebsd*)  is_freebsd=yes; GOOS=freebsd ;;
    *-*-irix6*)    is_irix=yes;    GOOS=irix ;;
    *-*-linux*)    is_linux=yes;   GOOS=linux ;;
@@ -67,9 +67,9 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  if test -z "${LIBGO_IS_FREEBSD_TRUE}" && test -z "${LIBGO_IS_FREEBSD_FALSE}"; then
    as_fn_error $? "conditional \"LIBGO_IS_FREEBSD\" was never defined.
  Usually this means the macro was only invoked conditionally." "$LINENO" 5
-diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/mkrsysinfo.sh inno/libgo/mkrsysinfo.sh
+diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/mkrsysinfo.sh genode/libgo/mkrsysinfo.sh
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/mkrsysinfo.sh	2017-11-14 17:26:04.000000000 +0300
-+++ inno/libgo/mkrsysinfo.sh	2020-06-23 01:18:02.000000000 +0300
++++ genode/libgo/mkrsysinfo.sh	2020-06-23 01:18:02.000000000 +0300
 @@ -16,7 +16,15 @@
  # represented in Go and ones which we need to rewrite.  We also skip
  # function declarations, as we don't need them here.  All the symbols
@@ -107,9 +107,9 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
 +grep '^type ___gnuc_va_list \[0+1\]___va_list_tag' gen-sysinfo.go | \
 +    sed -e 's/type ___gnuc_va_list \[0+1\]___va_list_tag/type ___gnuc_va_list [0+1]struct { gp_offset uint32; fp_offset uint32; overflow_arg_area *byte; reg_save_area *byte; }/' \
 +    >> ${OUT}
-diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/mksysinfo.sh inno/libgo/mksysinfo.sh
+diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/mksysinfo.sh genode/libgo/mksysinfo.sh
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/mksysinfo.sh	2018-11-09 18:29:52.000000000 +0300
-+++ inno/libgo/mksysinfo.sh	2020-06-23 01:18:02.000000000 +0300
++++ genode/libgo/mksysinfo.sh	2020-06-23 01:18:02.000000000 +0300
 @@ -28,6 +28,11 @@
  # function declarations, as we don't need them here.  All the symbols
  # will all have a leading underscore.
@@ -156,9 +156,9 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
 +    >> ${OUT}
 +
  exit $?
-diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.in inno/libgo/Makefile.in
+diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.in genode/libgo/Makefile.in
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.in	2018-06-01 01:46:52.000000000 +0300
-+++ inno/libgo/Makefile.in	2020-07-24 15:34:59.000000000 +0300
++++ genode/libgo/Makefile.in	2020-07-24 15:34:59.000000000 +0300
 @@ -870,11 +870,12 @@
  # Some packages are only needed for tests, so unlike the other
  # internal packages nothing will explicitly depend on them.
@@ -177,9 +177,9 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  @LIBGO_IS_RTEMS_FALSE@rtems_task_variable_add_file = 
  @LIBGO_IS_RTEMS_TRUE@rtems_task_variable_add_file = runtime/rtems-task-variable-add.c
  runtime_context_asm_file = $(am__append_3)
-diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.am inno/libgo/Makefile.am
+diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.am genode/libgo/Makefile.am
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.am	2018-06-01 01:46:52.000000000 +0300
-+++ inno/libgo/Makefile.am	2020-07-24 14:10:22.000000000 +0300
++++ genode/libgo/Makefile.am	2020-07-24 14:10:22.000000000 +0300
 @@ -405,15 +405,16 @@
  # Some packages are only needed for tests, so unlike the other
  # internal packages nothing will explicitly depend on them.

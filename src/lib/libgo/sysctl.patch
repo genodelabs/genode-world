@@ -6,7 +6,7 @@ diff -NaurwB contrib/libgo-3f77e6c05b8059120ffaff0d989dc9a8436d94e3/src/lib/gcc/
  // license that can be found in the LICENSE file.
  
 -// +build dragonfly freebsd netbsd openbsd
-+// +build dragonfly freebsd netbsd openbsd inno
++// +build dragonfly freebsd netbsd openbsd genode
  
  package route
  

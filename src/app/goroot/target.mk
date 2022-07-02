@@ -1,6 +1,6 @@
 TARGET = goroot
 
-GOOS:=inno
+GOOS:=genode
 GOARCH:=arm64
 
 GOROOT_PORT_DIR := $(call select_from_ports,goroot)

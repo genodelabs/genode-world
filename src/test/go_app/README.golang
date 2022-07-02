@@ -15,7 +15,7 @@ Other limitations see below.
 
 It build a set of libraries, from world repo, as static ones.
 Also it build a set of standard golang packages (namely fmt, os, syscall, runtime/etc) as files for gccgo compilation.
-Note: Go runtinme support around 11 systems as backend. I use netbsd as simplest one as the prototype for new system - "inno".
+Note: Go runtinme support around 11 systems as backend. I use netbsd as simplest one as the prototype for new system - "genode".
 
 To implement context switching I have to port it from the glibc (but use makecontext from genode FreeBSD port, so, to use
 you need to fill mc_len field before call to makecontext() on x86_64); for arm64 I have to combine libc and glibc code;

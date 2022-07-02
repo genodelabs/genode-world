@@ -6,7 +6,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  		printCmdOut(w, "", "lsb_release", "-a")
  		printGlibcVersion(w)
 -	case "openbsd", "netbsd", "freebsd", "dragonfly":
-+	case "openbsd", "netbsd", "freebsd", "dragonfly", "inno":
++	case "openbsd", "netbsd", "freebsd", "dragonfly", "genode":
  		printCmdOut(w, "uname -v: ", "uname", "-v")
  	case "solaris":
  		out, err := ioutil.ReadFile("/etc/release")
@@ -18,7 +18,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build hurd linux netbsd dragonfly js,wasm
-+// +build hurd linux netbsd dragonfly js,wasm inno
++// +build hurd linux netbsd dragonfly js,wasm genode
  
  package os
  
@@ -27,7 +27,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  	default:
  		return "", errors.New("Executable not implemented for " + runtime.GOOS)
 -	case "hurd", "linux", "android":
-+	case "hurd", "linux", "android", "inno":
++	case "hurd", "linux", "android", "genode":
  		procfn = "/proc/self/exe"
  	case "netbsd":
  		procfn = "/proc/curproc/exe"

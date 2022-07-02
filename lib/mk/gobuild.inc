@@ -24,62 +24,62 @@ BUILDTAGS ?= seccomp
 GOBUILD_FLAGS = $(GOBUILD_VERBOSE) -v -compiler gccgo
 
 ifeq ($(GOBUILD_REBUILD_ALL),yes)
-GOBUILD_FLAGS += -a
+	GOBUILD_FLAGS += -a
 endif
 
-ifeq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
-GO_BUILD_LIB ?= yes
-endif
+# ifeq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
+# 	GO_BUILD_LIB ?= yes
+# endif
 
 ifneq (x$(GO_BUILD_LIB),xyes)
-# assume set of .go files to be compiled
-TARGET ?= $(lastword $(subst /, ,$(PRG_DIR)))
-PKG    ?= $(TARGET)
+	# assume set of .go files to be compiled
+	TARGET ?= $(lastword $(subst /, ,$(PRG_DIR)))
+	PKG    ?= $(TARGET)
 
-SRC_GO_PK := $(foreach s,$(SRC_GO_PKG),$(realpath $(PRG_DIR)/$s))
-SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
-SRC_GO_BUILD_DIR = .
+	SRC_GO_PK := $(foreach s,$(SRC_GO_PKG),$(realpath $(PRG_DIR)/$s))
+	SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
+	SRC_GO_BUILD_DIR = .
 
-STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
+	STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
 
-$(TARGET).stripped: $(TARGET)
-	$(VERBOSE)$(STRIP_TARGET_CMD)
+	$(TARGET).stripped: $(TARGET)
+		$(VERBOSE)$(STRIP_TARGET_CMD)
 
-$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
-	$(VERBOSE)ln -sf $(CURDIR)/$< $@
+	$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
+		$(VERBOSE)ln -sf $(CURDIR)/$< $@
 
-ifneq ($(DEBUG_DIR),)
-$(DEBUG_DIR)/$(TARGET): $(TARGET)
-	$(VERBOSE)ln -sf $(CURDIR)/$< $@
-endif
+	ifneq ($(DEBUG_DIR),)
+	$(DEBUG_DIR)/$(TARGET): $(TARGET)
+		$(VERBOSE)ln -sf $(CURDIR)/$< $@
+	endif
 
 else
-# assume package name wihout .go substng
-TARGET ?= lib$(lastword $(subst /, ,$(SRC_GO_PKG))).a
-PKG    ?= $(SRC_GO_PKG)
+	# assume package name wihout .go substng
+	TARGET ?= lib$(lastword $(subst /, ,$(SRC_GO_PKG))).a
+	PKG    ?= $(SRC_GO_PKG)
 
-SRC_GO_PK := $(SRC_GO_PKG)
-SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
-SRC_GO_BUILD_DIR = src/$(SRC_GO_PKG_MAIN)
+	SRC_GO_PK := $(SRC_GO_PKG)
+	SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
+	SRC_GO_BUILD_DIR = src/$(SRC_GO_PKG_MAIN)
 
-$(PKG):
-ifeq ($(VERBOSE),)
-	echo Building $@
-endif
-	$(VERBOSE)mkdir -p src
-	$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) go get -x -v -d $(SRC_GO_PKG_MAIN)
+	$(PKG):
+	ifeq ($(VERBOSE),)
+		echo Building $@
+	endif
+		$(VERBOSE)mkdir -p src
+		$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) go get -x -v -d $(SRC_GO_PKG_MAIN)
 endif
 
 GOROOT:=$(BUILD_BASE_DIR)/app/goroot
 
-GOOS:=inno
+GOOS:=genode
 
 ifeq ($(findstring x86_64,$(SPECS)),x86_64)
-GOARCH:=amd64
+	GOARCH:=amd64
 else ifeq ($(findstring arm_64,$(SPECS)),arm_64)
-GOARCH:=arm64
+	GOARCH:=arm64
 else
-$(error unsipported arch SPECS $(SPECS))
+	$(error unsipported arch SPECS $(SPECS))
 endif
 
 # substitute $libs variable in generated LD_CMD and remove call to gcc++

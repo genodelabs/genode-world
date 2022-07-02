@@ -6,7 +6,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  // license that can be found in the LICENSE file.
  
 -// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris inno
++// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
  
  // Fork, exec, wait, etc.
  
@@ -16,7 +16,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  
 -func CloseOnExec(fd int) { fcntl(fd, F_SETFD, FD_CLOEXEC) }
 +func CloseOnExec(fd int) {
-+	if runtime.GOOS == "inno" {
++	if runtime.GOOS == "genode" {
 +		/* FIXME: on genode F_SETFD and FD_CLOEXEC does not supported in 21.11 */
 +		return
 +	}
@@ -30,7 +30,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  
  	var err1 error
 -	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" {
-+	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" || runtime.GOOS == "inno" {
++	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" || runtime.GOOS == "genode" {
  		// RawSyscall should never be used on Solaris or AIX.
  		err1 = raw_execve(argv0p, &argvp[0], &envvp[0])
  	} else if runtime.GOOS == "darwin" {
@@ -74,7 +74,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +}
 +
  func SetsockoptByte(fd, level, opt int, value byte) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	var n = byte(value)
@@ -82,7 +82,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  }
  
  func SetsockoptInt(fd, level, opt int, value int) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	var n = int32(value)
@@ -90,21 +90,21 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  }
  
  func SetsockoptInet4Addr(fd, level, opt int, value [4]byte) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(&value[0]), 4)
  }
  
  func SetsockoptTimeval(fd, level, opt int, tv *Timeval) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(tv), Socklen_t(unsafe.Sizeof(*tv)))
  }
  
  func SetsockoptICMPv6Filter(fd, level, opt int, filter *ICMPv6Filter) error {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(filter), SizeofICMPv6Filter)
@@ -114,35 +114,35 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  }
  
  func SetsockoptLinger(fd, level, opt int, l *Linger) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(l), Socklen_t(unsafe.Sizeof(*l)))
  }
  
  func SetsockoptIPMreq(fd, level, opt int, mreq *IPMreq) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(mreq), Socklen_t(unsafe.Sizeof(*mreq)))
  }
  
  func SetsockoptIPMreqn(fd, level, opt int, mreq *IPMreqn) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(mreq), Socklen_t(unsafe.Sizeof(*mreq)))
  }
  
  func SetsockoptIPv6Mreq(fd, level, opt int, mreq *IPv6Mreq) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	return setsockopt(fd, level, opt, unsafe.Pointer(mreq), Socklen_t(unsafe.Sizeof(*mreq)))
  }
  
  func SetsockoptString(fd, level, opt int, s string) (err error) {
-+	if runtime.GOOS == "inno" && setsockoptGenode(level, opt) == nil {
++	if runtime.GOOS == "genode" && setsockoptGenode(level, opt) == nil {
 +		return nil
 +	}
  	var p unsafe.Pointer
@@ -156,7 +156,7 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
  		{laddr: TCPAddr{IP: IPv4(127, 0, 0, 1)}, value: 0},
  	}
  	switch runtime.GOOS {
-+	case "inno":
++	case "genode":
 +		// genode does not support ipv6
 +		return
  	case "dragonfly", "openbsd":
@@ -170,7 +170,7 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
  	}
  	// As for now only Solaris, illumos, and AIX use level-triggered IO.
 -	if GOOS == "solaris" || GOOS == "illumos" || GOOS == "aix" || GOOS == "hurd" {
-+	if GOOS == "solaris" || GOOS == "illumos" || GOOS == "aix" || GOOS == "hurd" || GOOS == "inno" {
++	if GOOS == "solaris" || GOOS == "illumos" || GOOS == "aix" || GOOS == "hurd" || GOOS == "genode" {
  		netpollarm(pd, mode)
  	}
  	for !netpollblock(pd, int32(mode), false) {
