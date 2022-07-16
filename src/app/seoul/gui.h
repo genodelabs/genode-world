@@ -22,14 +22,17 @@
 
 struct Backend_gui : Genode::List<Backend_gui>::Element
 {
+	typedef Gui::Session::View_handle View_handle;
+	typedef Gui::Session::Command     Command;
+
 	Gui::Connection              gui;
 	unsigned               const id;
-	size_t                       fb_size { 0 };
 	Framebuffer::Mode            fb_mode { };
 	Genode::Dataspace_capability fb_ds   { };
 	Genode::addr_t               pixels  { 0 };
+	View_handle                  view    { };
 
-	Input::Session_client &input;
+	Input::Session_client       &input;
 
 	Report::Connection         shape_report;
 	Genode::Attached_dataspace shape_attached;
@@ -54,22 +57,44 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		fb_ds   = gui.framebuffer()->dataspace();
 		fb_mode = gui.framebuffer()->mode();
 
-		fb_size = Genode::align_addr(fb_mode.area.count() *
-		                             fb_mode.bytes_per_pixel(), 12);
-
 		pixels = env.rm().attach(fb_ds);
 
 		input.sigh(input_signal);
 		guis.insert(this);
 	}
 
+	size_t fb_size()
+	{
+		return Genode::align_addr(fb_mode.area.count() *
+		                          fb_mode.bytes_per_pixel(), 12);
+	}
+
+	void resize(Genode::Env &env, Framebuffer::Mode const &mode)
+	{
+		fb_mode = mode;
+
+		if (!visible)
+			refresh(0, 0, 1, 1);
+
+		if (pixels)
+			env.rm().detach(pixels);
+
+		gui.buffer(fb_mode, false);
+
+		fb_ds = gui.framebuffer()->dataspace();
+
+		Gui::Rect rect(Gui::Point(0, 0), fb_mode.area);
+
+		gui.enqueue<Command::Geometry>(view, rect);
+		gui.execute();
+
+		pixels = env.rm().attach(fb_ds);
+	}
+
 	void refresh(unsigned x, unsigned y, unsigned width, unsigned height)
 	{
 		if (!visible) {
-			typedef Gui::Session::View_handle View_handle;
-			typedef Gui::Session::Command Command;
-
-			View_handle view = gui.create_view();
+			view = gui.create_view();
 			Gui::Rect rect(Gui::Point(0, 0), fb_mode.area);
 
 			gui.enqueue<Command::Geometry>(view, rect);
@@ -79,8 +104,16 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 			visible = true;
 		}
 
-		// XXX check max x, y, width, height ? 0, 0, fb_mode.area.w(), fb_mode.area.h() */
 		gui.framebuffer()->refresh(x, y, width, height);
+	}
+
+	void hide()
+	{
+		if (!visible)
+			return;
+
+		gui.destroy_view(view);
+		visible = false;
 	}
 
 	void mouse_shape(bool visible, unsigned x, unsigned y,

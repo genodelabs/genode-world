@@ -83,7 +83,7 @@ MODEL_INFO(pcihostbridge, "bus_num", "bus_count", "io_base", "mem_base")
 MODEL_INFO(intel82576vf, "promisc", "mem_mmio", "mem_msix", "txpoll_us", "rx_map", "verbose")
 MODEL_INFO(rtl8029, "bdf", "irq", "port")
 
-MODEL_INFO(virtio_input, "bdf", "irq")
+MODEL_INFO(virtio_input, "bdf", "irq", "resolution_x", "resolution_y")
 MODEL_INFO(virtio_gpu,   "bdf", "irq")
 MODEL_INFO(virtio_sound, "bdf", "irq")
 

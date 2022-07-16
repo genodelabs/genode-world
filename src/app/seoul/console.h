@@ -61,11 +61,17 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		Genode::Signal_handler<Console> _signal_input
 			= { _env.ep(), *this, &Console::_handle_input };
 
+		Genode::Signal_handler<Console> _signal_gui
+			= { _env.ep(), *this, &Console::_handle_gui_change };
+
 		Genode::List<Backend_gui>     _guis { };
 		Genode::Allocator            &_alloc;
 
 		Seoul::Guest_memory          &_memory;
-		Gui::Area                     _gui_area;
+		Gui::Area  const              _gui_vesa;
+		Gui::Area                     _gui_non_vesa;
+		Gui::Area                     _gui_non_vesa_ack;
+		Gui::Area                     _input_absolute;
 		unsigned                      _timer    { 0 };
 		Keyboard                      _vkeyb    { _motherboard };
 		bool                          _left     { false };
@@ -82,6 +88,7 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		void     _input_to_ps2(Input::Event const &);
 
 		void         _handle_input();
+		void         _handle_gui_change();
 		Milliseconds _handle_fb();
 		unsigned     _handle_fb_gui(bool, Backend_gui &, bool);
 
@@ -119,6 +126,13 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 				}
 			}
 			return false;
+		}
+
+		template <typename FUNC>
+		void for_each_gui(FUNC const& fn) {
+			for (auto *gui = _guis.first(); gui; gui = gui->next()) {
+				fn(*gui);
+			}
 		}
 };
 
