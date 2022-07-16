@@ -33,9 +33,11 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 	int           cursor_x    = 0;
 	int           cursor_y    = 0;
 
-	if (skip_update || !cpus_active) return Milliseconds(0ULL);
-
-	//memset(gui.pixels, 0x0, gui.fb_size);
+	if (skip_update || !cpus_active) {
+		_fb_state.idle ++;
+		return Milliseconds(0ULL);
+	} else
+		_fb_state.idle = 0;
 
 	/* calculate cursor position, get color during loop below */
 	if (_regs->cursor_pos > _regs->offset) {
@@ -209,9 +211,12 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vesa_mode(Backend_gui &gui,
 	}
 
 	if (!cpus_active) {
+		_fb_state.idle++;
 		_fb_state.unchanged = 0;
 		return Milliseconds(0ULL);
 	}
+
+	_fb_state.idle = 0;
 
 	gui.refresh(0, 0, gui.fb_mode.area.w(), gui.fb_mode.area.h());
 

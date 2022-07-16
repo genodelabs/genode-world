@@ -168,9 +168,21 @@ void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 	} else {
 		ev.handle_absolute_motion([&] (int x, int y) {
 			unsigned const mask = (0xfu << 28) - 1;
-			MessageInput msg(0x10002, x & mask, y & mask);
-			if (_motherboard()->bus_input.send(msg) && !_absolute)
+			unsigned tx = _input_absolute.w() * x / _gui_non_vesa_ack.w();
+			unsigned ty = _input_absolute.h() * y / _gui_non_vesa_ack.h();
+
+			if (x < 0 || y < 0)
+				return;
+
+			if (tx > _input_absolute.w()) tx = _input_absolute.w();
+			if (ty > _input_absolute.h()) ty = _input_absolute.h();
+
+			MessageInput msg(0x10002, tx & mask, ty & mask);
+			if (_motherboard()->bus_input.send(msg) && !_absolute) {
 				_absolute = true;
+				/* store absolute dimension of virtio input device */
+				_input_absolute = Gui::Area(msg.data, msg.data2);
+			}
 		});
 		ev.handle_wheel([&](int, int z) {
 			MessageInput msg(0x10002, 1u << 28, z);
@@ -181,8 +193,7 @@ void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 	}
 
 	MessageInput msg(0x10002, data, data2);
-	if (_motherboard()->bus_input.send(msg) && !_absolute)
-		_absolute = true;
+	_motherboard()->bus_input.send(msg);
 }
 
 
@@ -200,13 +211,36 @@ bool Seoul::Console::receive(MessageConsole &msg)
 	switch (msg.type) {
 	case MessageConsole::TYPE_ALLOC_CLIENT:
 	{
-		Genode::String<12> name((msg.id == ID_VGA_VESA) ?
-		                        "vga/vesa" : "fb", msg.id, ".", msg.view);
-		auto &gui = *new (_alloc) Backend_gui(_env, _guis, msg.id, _gui_area,
-		                                      _signal_input, name.string());
+		bool create_new = true;
 
-		msg.ptr  = (char *)gui.pixels;
-		msg.size = gui.fb_size;
+		apply_msg(msg.id, [&](auto &gui) {
+			create_new = false;
+			return true;
+		});
+
+		if (create_new) {
+			auto const gui_area = (msg.id == ID_VGA_VESA)
+			                    ? _gui_vesa : _gui_non_vesa;
+			Genode::String<12> name((msg.id == ID_VGA_VESA) ?
+			                        "vga/vesa" : "fb", msg.id, ".", msg.view);
+			auto &gui = *new (_alloc) Backend_gui(_env, _guis, msg.id, gui_area,
+			                                      _signal_input, name.string());
+
+			if (msg.id != ID_VGA_VESA)
+				gui.gui.mode_sigh(_signal_gui);
+		}
+
+		apply_msg(msg.id, [&](auto &gui) {
+			/* vga_vesa re-creation is not supported */
+			if (!create_new && msg.id != ID_VGA_VESA) {
+				gui.resize(_env, gui.gui.mode());
+				_gui_non_vesa = gui.gui.mode().area;
+			}
+
+			msg.ptr  = (char *)gui.pixels;
+			msg.size = gui.fb_size();
+			return true;
+		});
 
 		return true;
 	}
@@ -218,7 +252,7 @@ bool Seoul::Console::receive(MessageConsole &msg)
 
 				_vga_vesa.init(msg.regs, msg.ptr, vm_phys_addr_framebuffer);
 				_memory.add_region(_alloc, vm_phys_addr_framebuffer,
-				                   gui.pixels, gui.fb_ds, gui.fb_size);
+				                   gui.pixels, gui.fb_ds, gui.fb_size());
 
 				return true;
 			});
@@ -269,6 +303,17 @@ bool Seoul::Console::receive(MessageConsole &msg)
 
 			return true;
 		});
+	case MessageConsole::TYPE_RESOLUTION_CHANGE:
+		/* not supported by now */
+		if (msg.id == ID_VGA_VESA)
+			return false;
+
+		return apply_msg(msg.id, [&](auto &gui) {
+			/* XXX adjust gui if _gui_non_vesa_ack is not very same as msg.width/msg.height ? */
+			_gui_non_vesa_ack = Gui::Area(msg.width, msg.height);
+			_gui_non_vesa_ack = _gui_non_vesa;
+			return true;
+		});
 	case MessageConsole::TYPE_SWITCH_VIEW:
 		/* XXX: For now, we only have one view. */
 		return true;
@@ -281,8 +326,29 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		cpu_state.active = false;
 		return true;
 	case MessageConsole::TYPE_RESUME: /* first of all sleeping CPUs woke up */
-		_reactivate_periodic_timer();
+	{
+		unsigned gui_count = 0;
+		bool vga_vesa_visible = false;
+
+		for_each_gui([&](auto &gui) {
+			gui_count ++;
+			if (gui.id == ID_VGA_VESA && gui.visible)
+				vga_vesa_visible = true;
+		});
+
+		if (gui_count > 1 && vga_vesa_visible && _vga_vesa.idle()) {
+			apply_msg(ID_VGA_VESA, [&](auto &gui) {
+				Genode::log("hide vga_vesa window due to inactivity");
+				gui.hide();
+				return true;
+			});
+		}
+
+		if (vga_vesa_visible)
+			_reactivate_periodic_timer();
+
 		return true;
+	}
 	case MessageConsole::TYPE_CONTENT_UPDATE:
 	{
 		bool const found = apply_msg(msg.id, [&](auto &gui) {
@@ -342,6 +408,37 @@ bool Seoul::Console::receive(MessageMemRegion &msg)
 }
 
 
+void Seoul::Console::_handle_gui_change()
+{
+	for_each_gui([&](auto &gui) {
+		Framebuffer::Mode const gui_mode = gui.gui.mode();
+
+		if (gui.id == ID_VGA_VESA)
+			return;
+
+		if (gui_mode.area == gui.fb_mode.area)
+			return;
+
+		int64 const pixdiff = gui_mode.area.count() - gui.fb_mode.area.count();
+
+		if (pixdiff > 0 && (Genode::align_addr(uint64(pixdiff) * 4, 12) >
+		                    _env.pd().avail_ram().value + 8192)) {
+			warning(gui.fb_mode.area, " -> ", gui_mode.area, " denied,"
+			        " requires ", Genode::align_addr(pixdiff * 4, 12),
+			        ", availalble ", _env.pd().avail_ram().value, " + 8k");
+			return;
+		}
+
+		/* send notification about new mode */
+		MessageConsole msg(MessageConsole::TYPE_MODEINFO_UPDATE, gui.id);
+		msg.x = msg.y = 0;
+		msg.width  = gui_mode.area.w();
+		msg.height = gui_mode.area.h();
+		_motherboard()->bus_console.send(msg);
+	});
+}
+
+
 Genode::Milliseconds Seoul::Console::_handle_fb()
 {
 	Milliseconds reprogram_timer(0ULL);
@@ -357,8 +454,8 @@ Genode::Milliseconds Seoul::Console::_handle_fb()
 
 void Seoul::Console::_handle_input()
 {
-	for (auto *gui = _guis.first(); gui; gui = gui->next()) {
-		gui->input.for_each_event([&] (Input::Event const &ev) {
+	for_each_gui([&](auto &gui) {
+		gui.input.for_each_event([&] (Input::Event const &ev) {
 
 			if (!cpu_state.active) {
 				cpu_state.active = true;
@@ -368,7 +465,7 @@ void Seoul::Console::_handle_input()
 
 			if (mouse_event(ev)) {
 				ev.handle_absolute_motion([&] (int x, int y) {
-					gui->last_host_pos = Genode::Point<unsigned>(x, y);
+					gui.last_host_pos = Genode::Point<unsigned>(x, y);
 				});
 
 				/* update PS2 mouse model */
@@ -386,7 +483,7 @@ void Seoul::Console::_handle_input()
 				if (key <= 0xee)
 					_vkeyb.handle_keycode_release(key); });
 		});
-	}
+	});
 }
 
 
@@ -431,6 +528,7 @@ Seoul::Console::Console(Genode::Env &env, Genode::Allocator &alloc,
 	_motherboard(mb),
 	_alloc(alloc),
 	_memory(guest_memory),
-	_gui_area(area),
+	_gui_vesa(area), _gui_non_vesa(area), _gui_non_vesa_ack(area),
+	_input_absolute(area),
 	_vga_vesa(_memory, _binary_mono_tff_start)
 { }

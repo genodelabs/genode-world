@@ -65,12 +65,14 @@ class Seoul::Vga_vesa
 			uint64   checksum1;
 			uint64   checksum2;
 			unsigned unchanged;
+			unsigned idle;
 			bool     cmp_even;
 			bool     vga_off;
 		} _fb_state {
 			.checksum1 = 0,
 			.checksum2 = 0,
 			.unchanged = 0,
+			.idle      = 0,
 			.cmp_even  = true,
 			.vga_off   = false
 		};
@@ -180,6 +182,11 @@ class Seoul::Vga_vesa
 				return true;
 			}
 			return false;
+		}
+
+		bool idle()
+		{
+			return _fb_state.idle > 500;
 		}
 };
 
