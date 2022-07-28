@@ -81,7 +81,7 @@ if {[have_include power_on/qemu]} {
 }
 
 set match_guest_log "\[init -\> seoul\].*VMM: #"
-set match_guest_down "\[init -\> seoul\].*VMM: STANDBY IMMEDIATE"
+set match_guest_down "\[init -\> seoul\].*VMM: ahci: STANDBY IMMEDIATE"
 set match_boot_string "--- Seoul VMM starting ---"
 set vmm_name "seoul"
 

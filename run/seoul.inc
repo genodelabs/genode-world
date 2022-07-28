@@ -32,6 +32,10 @@ if {$use_part_block} {
 	import_from_depot [depot_user]/src/part_block
 }
 
+if {![info exists use_usb]} {
+	set use_usb 1
+}
+
 #
 # Build
 #
@@ -231,8 +235,9 @@ append config {
 			<service name="Event"> <child name="nitpicker"/> </service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
-	</start>
+	</start>}
 
+append_if $use_usb config {
 	<start name="usb_drv" priority="-1" caps="120">
 		<binary name="pc_usb_host_drv"/>
 		<resource name="RAM" quantum="12M"/>
