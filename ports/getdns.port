@@ -2,7 +2,7 @@ LICENSE   = BSD3
 DOWNLOADS = getdns.archive
 VERSION  = 1.4.0
 
-URL(getdns) := https://getdnsapi.net/releases/getdns-1-4-0/getdns-1.4.0.tar.gz
+URL(getdns) := https://github.com/getdnsapi/getdns/releases/download/v1.4.0/getdns-1.4.0.tar.gz
 SHA(getdns) := de360cd554fdec4bae3f5afbb36145872b8ff7306ded5deb0905442c4909f7b3
 DIR(getdns) := src/lib/getdns
 
