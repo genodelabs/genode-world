@@ -1,0 +1,265 @@
+#
+# This script can be used to run the ported PKCS#11 tool (see
+# https://github.com/m-stein/goa_projects/tree/master/pkcs11_tool) on Genode
+# within Qemu. The script configures Qemu to pass-through the USB token
+# device from the Linux host into the Qemu VM. In order to run the script,
+# you have to determine the USB bus address and device address of the
+# token first:
+#
+# $ lsusb
+# ...
+# Bus 001 Device 004: ID 20a0:4108 Clay Logic Nitrokey Pro
+#
+# Then, you may have to make the USB device accessible to the user of the run
+# script. A temporary way would be as follows:
+#
+# $ sudo chmod u+rw /dev/bus/usb/001/004
+#
+# The run script finally can be invoked by:
+#
+# $ make run/pkcs11_tool KERNEL=nova BOARD=pc USB_BUS_ADDR=1 USB_DEV_ADDR=4
+#
+# The device is then driven by the Genode USB driver which, in turn, provides
+# it through a USB session to the PKCS#11 tool. The PKCS#11 tool can be
+# equipped with individual command line options inside the run script. Some
+# typical commands can be easily selected through the test_id parameter in
+# the script.
+#
+
+if {[expr ![have_include power_on/qemu]]} {
+	puts "Run script is not supported on this platform."
+	exit 0
+}
+
+if {![info exists ::env(USB_BUS_ADDR)]} {
+	puts "\nPlease define the USB_BUS_ADDR environment variable\n"
+	exit 0
+}
+set usb_bus_addr $::env(USB_BUS_ADDR)
+
+if {![info exists ::env(USB_DEV_ADDR)]} {
+	puts "\nPlease define the USB_DEV_ADDR environment variable\n"
+	exit 0
+}
+set usb_dev_addr $::env(USB_DEV_ADDR)
+
+#
+# 0 show help
+# 1 show info
+# 2 list objects
+# 3 delete object
+# 4 generate key pair
+#
+set test_id 2
+
+#
+# Build
+#
+set build_components {
+	core
+	init
+	timer
+	drivers/usb_host
+	server/report_rom
+	lib/vfs/pipe
+}
+
+source ${genode_dir}/repos/base/run/platform_drv.inc
+
+append_platform_drv_build_components
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot [depot_user]/src/pkcs11_tool/2022-06-21 \
+                  [depot_user]/src/openssl \
+                  [depot_user]/src/stdcxx \
+                  [depot_user]/src/opensc_pkcs11 \
+                  [depot_user]/src/posix \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/pcsc-lite \
+                  [depot_user]/src/libusb \
+                  [depot_user]/src/vfs_libusb
+
+append config {
+
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>}
+
+append_platform_drv_config
+
+append config {
+
+	<start name="timer">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+		<config verbose="yes"/>
+	</start>
+
+	<start name="usb_drv" caps="120">
+		<binary name="} [usb_host_drv_binary] {"/>
+		<resource name="RAM" quantum="32M"/>
+		<provides><service name="Usb"/></provides>
+		<config>
+			<report devices="yes" />
+			<policy label="pkcs11-tool -> usb_device" vendor_id="0x4e6" product_id="0x5816"/> <!-- SmartCard-HSM 4K USB-Token -->
+		</config>
+		<route>
+			<service name="Report"><child name="report_rom"/></service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="pkcs11-tool" caps="500">
+		<resource name="RAM" quantum="10M"/>
+
+		<config ld_verbose="yes">
+
+			<libc stdout="/dev/log" stderr="/dev/log" pipe="/dev/pipe" rtc="/dev/rtc"/>
+
+			<vfs>
+				<dir name="dev">
+					<log/>
+					<libusb/>
+					<inline name="rtc">2022-07-12 00:01</inline>
+					<dir name="pipe"> <pipe/> </dir>
+				</dir>
+				<dir name="ifd-ccid.bundle">
+					<dir name="Contents">
+						<rom name="Info.plist"/>
+					</dir>
+				</dir>
+			</vfs>
+
+			<arg value="pkcs11-tool" />
+			<arg value="--module" />
+			<arg value="opensc_pkcs11.lib.so" />
+			<arg value="--login" />
+			<arg value="--pin" />
+			<arg value="123456" /> }
+
+
+append_if [expr $test_id == 1] config {
+
+			<arg value="--show-info" />
+			<arg value="-v" /> }
+
+# Cryptoki version 3.0
+# Manufacturer     OpenSC Project
+# Library          OpenSC smartcard framework (ver 0.22)
+# Using slot 0 with a present token (0x0)
+
+
+append_if [expr $test_id == 2] config {
+
+			<arg value="--list-objects" /> }
+
+# Using slot 0 with a present token (0x0)
+# Public Key Object; RSA 2048 bits
+#   label:      Private Key
+#   ID:         01
+#   Usage:      encrypt, verify, wrap
+#   Access:     none
+# Public Key Object; EC  EC_POINT 256 bits
+#   EC_POINT:   04410490e8ce931459dbd7f6ee63a051ca20d2556c69a56ab0b036d740c988d389033660bf31c66da2f3e9dca4b4ff78643ad8dc531881db0817eea3a07e22af5842a9
+#   EC_PARAMS:  06082a8648ce3d030107
+#   label:      defaultkey
+#   ID:         12
+#   Usage:      verify
+#   Access:     none
+# Profile object 707413456
+#   profile_id:          CKP_PUBLIC_CERTIFICATES_TOKEN (4)
+
+
+append_if [expr $test_id == 3] config {
+
+			<arg value="--delete-object" />
+			<arg value="--id" />
+			<arg value="12" />
+			<arg value="--type privkey" /> }
+
+# Using slot 0 with a present token (0x0)
+
+
+append_if [expr $test_id == 4] config {
+
+			<arg value="--keypairgen" />
+			<arg value="--key-type" />
+			<arg value="EC:prime256v1" />
+			<arg value="--id" />
+			<arg value="12" />
+			<arg value="--label" />
+			<arg value="defaultkey" /> }
+
+# Using slot 0 with a present token (0x0)
+# Key pair generated:
+# Private Key Object; EC
+#   label:      defaultkey
+#   ID:         12
+#   Usage:      sign, derive
+#   Access:     none
+# Public Key Object; EC  EC_POINT 256 bits
+#   EC_POINT:   04410489a00b0b994115a89257c531ccd26b70da62ade89d63e0838f8ffd3f8dbb46d4152c436c3148318518faaed817af1b29f4f37ff97e5ac0887f6ba02393d232e1
+#   EC_PARAMS:  06082a8648ce3d030107
+#   label:      defaultkey
+#   ID:         12
+#   Usage:      verify, derive
+#   Access:     none
+
+
+append config {
+
+			<env key="LIBUSB_DEBUG" value="1"/>
+
+		</config>
+		<route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+</config> }
+
+install_config $config
+
+append boot_modules {
+	core
+	ld.lib.so
+	init
+	timer
+	} [usb_host_drv_binary] {
+	report_rom
+	vfs_pipe.lib.so
+}
+
+append_platform_drv_boot_modules
+
+build_boot_image $boot_modules
+
+append qemu_args " -nographic "
+append qemu_args " -device nec-usb-xhci,id=xhci "
+append qemu_args " -device usb-host,hostbus=$usb_bus_addr,hostaddr=$usb_dev_addr,bus=xhci.0 "
+
+run_genode_until forever
