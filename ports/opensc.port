@@ -1,0 +1,7 @@
+LICENSE   := LGPL-2.1
+VERSION   := 0.22.0-rc2
+DOWNLOADS := opensc.git
+
+URL(opensc) := https://github.com/OpenSC/OpenSC.git
+REV(opensc) := 0.22.0-rc2
+DIR(opensc) := src/opensc
