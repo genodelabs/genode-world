@@ -37,6 +37,7 @@
 		<rom label="libQt5Network.lib.so"/>
 		<rom label="libQt5PrintSupport.lib.so"/>
 		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5QmlModels.lib.so"/>
 		<rom label="libQt5Quick.lib.so"/>
 		<rom label="libQt5QuickWidgets.lib.so"/>
 		<rom label="libQt5Sql.lib.so"/>

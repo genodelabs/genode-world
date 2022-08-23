@@ -5,7 +5,7 @@ GENODE_QMAKE_CFLAGS += -march=armv8-a+crc+crypto
 endif
 
 QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network libQt5Widgets
-QT5_PORT_LIBS += libQt5Qml libQt5Quick libQt5QuickWidgets
+QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick libQt5QuickWidgets
 QT5_PORT_LIBS += libQt5WebChannel
 
 LIBS = egl expat libc libm mesa nss3 qt5_component stdcxx $(QT5_PORT_LIBS)
@@ -23,6 +23,7 @@ built.tag: qmake_prepared.tag
 		-qtconf qmake_root/mkspecs/$(QMAKE_PLATFORM)/qt.conf \
 		$(QT_DIR)/qtwebengine/qtwebengine.pro \
 		-- \
+		-no-feature-webengine-system-ninja \
 		-no-webengine-alsa \
 		-no-webengine-embedded-build \
 		-qt-webengine-icu \

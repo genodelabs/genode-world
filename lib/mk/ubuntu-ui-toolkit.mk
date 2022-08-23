@@ -3,7 +3,7 @@ include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
 PORT_DIR := $(call select_from_ports,ubuntu-ui-toolkit)/src/lib/ubuntu-ui-toolkit
 
 QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network libQt5Test libQt5Widgets
-QT5_PORT_LIBS += libQt5Qml libQt5Quick
+QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick
 QT5_PORT_LIBS += libQt5Svg
 
 GENODE_QMAKE_CFLAGS += -Wno-deprecated -Wno-deprecated-declarations -Wno-deprecated-copy

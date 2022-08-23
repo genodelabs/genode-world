@@ -1,23 +1,5 @@
 genode.patch
 
-From: Christian Prochaska <christian.prochaska@genode-labs.com>
-
-
----
- falkon.pro                          |   22 +++---
- src/config.h                        |   11 +++
- src/defines.pri                     |   23 ++++--
- src/lib/app/commandlineoptions.cpp  |    4 +
- src/lib/app/mainapplication.cpp     |   10 ++-
- src/lib/app/qzcommon.h              |    2 -
- src/lib/lib.pro                     |  129 ++++++++++++++++++++++++++++++-----
- src/lib/preferences/preferences.cpp |    2 -
- src/lib/tools/qztools.cpp           |    4 +
- src/main/main.cpp                   |    4 +
- src/main/main.pro                   |    7 +-
- 11 files changed, 170 insertions(+), 48 deletions(-)
- create mode 100644 src/config.h
-
 diff --git a/falkon.pro b/falkon.pro
 index fc6ab748..c4ef882c 100644
 --- a/falkon.pro
@@ -620,3 +602,15 @@ index ee9ae20b..53bb11aa 100644
  
  INCLUDEPATH += ../lib/3rdparty \
                 ../lib/app \
+diff --git a/src/lib/tools/qztools.cpp b/src/lib/tools/qztools.cpp
+index 746e3e2fb..abd981507 100644
+--- a/src/lib/tools/qztools.cpp
++++ b/src/lib/tools/qztools.cpp
+@@ -25,6 +25,7 @@
+ #include <QByteArray>
+ #include <QPixmap>
+ #include <QPainter>
++#include <QPainterPath>
+ #include <QBuffer>
+ #include <QFile>
+ #include <QDir>

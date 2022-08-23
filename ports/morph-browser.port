@@ -1,5 +1,5 @@
 LICENSE := GPL3
-VERSION := xenial-genode
+VERSION := issue301
 
 DOWNLOADS := morph-browser.git
 

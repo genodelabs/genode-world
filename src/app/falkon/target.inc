@@ -5,7 +5,7 @@ QMAKE_PROJECT_FILE = $(FALKON_DIR)/falkon.pro
 QMAKE_TARGET_BINARIES = falkon libFalkon.lib.so
 
 QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network libQt5PrintSupport libQt5Sql libQt5Widgets
-QT5_PORT_LIBS += libQt5Qml libQt5Quick libQt5QuickWidgets
+QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick libQt5QuickWidgets
 QT5_PORT_LIBS += libQt5Svg
 QT5_PORT_LIBS += libQt5WebChannel
 QT5_PORT_LIBS += libQt5WebEngine libQt5WebEngineCore libQt5WebEngineWidgets

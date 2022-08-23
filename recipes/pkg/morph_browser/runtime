@@ -37,6 +37,8 @@
 		<rom label="libQt5Network.lib.so"/>
 		<rom label="libQt5PrintSupport.lib.so"/>
 		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5QmlModels.lib.so"/>
+		<rom label="libQt5QmlWorkerScript.lib.so"/>
 		<rom label="libQt5Quick.lib.so"/>
 		<rom label="libQt5QuickControls2.lib.so"/>
 		<rom label="libQt5QuickTemplates2.lib.so"/>
@@ -63,6 +65,7 @@
 		<rom label="libmorph-web-plugin.lib.so"/>
 		<rom label="libqgenode.lib.so"/>
 		<rom label="libqjpeg.lib.so"/>
+		<rom label="libqmlplugin.lib.so"/>
 		<rom label="libqmlfolderlistmodelplugin.lib.so"/>
 		<rom label="libqmlsettingsplugin.lib.so"/>
 		<rom label="libqquicklayoutsplugin.lib.so"/>
