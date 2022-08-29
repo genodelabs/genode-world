@@ -23,6 +23,7 @@ built.tag: qmake_prepared.tag
 		-qtconf qmake_root/mkspecs/$(QMAKE_PLATFORM)/qt.conf \
 		$(QT_DIR)/qtwebengine/qtwebengine.pro \
 		-- \
+		-no-feature-webengine-jumbo-build \
 		-no-feature-webengine-system-ninja \
 		-no-webengine-alsa \
 		-no-webengine-embedded-build \
