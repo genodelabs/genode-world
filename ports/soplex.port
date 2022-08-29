@@ -1,9 +1,9 @@
 LICENSE     := ZIB Academic License
-VERSION     := 2.0.0
+VERSION     := 200
 DOWNLOADS   := soplex.archive
 
-URL(soplex) := http://soplex.zib.de/download/release/soplex-$(VERSION).tgz
-SHA(soplex) := 49a5a7d5d068226e9c733421f483bfdbd5718f610bbc3b43de66af89de376a97
+URL(soplex) := https://github.com/scipopt/soplex/archive/refs/tags/release-$(VERSION).tar.gz
+SHA(soplex) := c15148560215296c66b5e533a85f2f1b10b1daa5ca39d048441c1d4faae206c8
 DIR(soplex) := src/lib/soplex
 
 PATCHES := src/lib/soplex/timer.patch

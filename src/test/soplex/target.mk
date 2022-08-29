@@ -1,5 +1,5 @@
 TARGET   = test-soplex
-LIBS     = soplex stdcxx posix
+LIBS     = soplex stdcxx posix zlib gmp
 SOPLEX   = $(call select_from_ports,soplex)/src/lib/soplex/src/
 SRC_CC   = example.cpp
 

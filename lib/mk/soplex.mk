@@ -1,6 +1,7 @@
 SOPLEX_DIR = $(call select_from_ports,soplex)/src/lib/soplex/src/
 LIBS    += libc zlib gmp stdcxx libm
 INC_DIR += $(SOPLEX_DIR)
+INC_DIR += $(REP_DIR)/src/lib/soplex
 SRC_CC   = 	changesoplex.cpp \
 			clufactor.cpp \
 			didxset.cpp \
