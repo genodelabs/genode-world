@@ -1,9 +1,9 @@
 LICENSE   := ZIB Academic License
-VERSION   := 3.1.0
+VERSION   := 310
 DOWNLOADS := scip.archive
 
-URL(scip) := http://scip.zib.de/download/release/scip-$(VERSION).tgz
-SHA(scip) := ac23f5c7bf4d2cb9c1943d942334c567d0b7a44e2c9a98d35b18d489f7d3fe05
+URL(scip) := https://github.com/scipopt/scip/archive/refs/tags/v$(VERSION).tar.gz
+SHA(scip) := 598be9c5748ca32d8ee590ac0466d22d39f523117ad669f6c53c8cb4feb71480
 DIR(scip) := src/lib/scip
 
 PATCHES := src/lib/scip/clock.patch
