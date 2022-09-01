@@ -61,7 +61,7 @@ set build_components {
 	timer
 	drivers/usb_host
 	server/report_rom
-	lib/vfs/pipe
+	lib/vfs_pipe
 }
 
 source ${genode_dir}/repos/base/run/platform_drv.inc

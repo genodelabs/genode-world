@@ -19,12 +19,12 @@ set build_components {
 	server/liquid_framebuffer
 	server/nitpicker
 	server/input_event_bridge
-	lib/mesa/softpipe
+	lib/mesa_softpipe
 	app/launchpad
 	app/pointer
 }
 
-lappend_if $use_i965 build_components lib/mesa/iris
+lappend_if $use_i965 build_components lib/mesa_iris
 
 lappend build_components $demo_component
 

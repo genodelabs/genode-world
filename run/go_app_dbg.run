@@ -9,7 +9,7 @@
 
 set build_components {
 core init timer lib/ld
-lib/vfs/pipe
+lib/vfs_pipe
 drivers/uart app/gdb_monitor
 test/go_app
 }

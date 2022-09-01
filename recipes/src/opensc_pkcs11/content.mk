@@ -21,12 +21,6 @@ content: $(MIRROR_FROM_REP_DIR)
 $(MIRROR_FROM_REP_DIR):
 	$(mirror_from_rep_dir)
 
-content: src/lib/opensc_pkcs11/target.mk
-
-src/lib/opensc_pkcs11/target.mk:
-	mkdir -p $(dir $@)
-	echo "LIBS = opensc_pkcs11" > $@
-
 content: LICENSE
 
 LICENSE:

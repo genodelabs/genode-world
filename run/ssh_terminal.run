@@ -20,9 +20,9 @@ set build_components {
 	server/fs_rom
 	server/report_rom
 	server/vfs
-	lib/vfs/jitterentropy
-	lib/vfs/lxip
-	lib/vfs/pipe
+	lib/vfs_jitterentropy
+	lib/vfs_lxip
+	lib/vfs_pipe
 	test/libports/ncurses
 	test/terminal_echo
 	noux-pkg/bash

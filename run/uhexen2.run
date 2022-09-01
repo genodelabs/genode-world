@@ -1,6 +1,6 @@
 set build_components {
 	app/uhexen2
-	lib/vfs/lwip
+	lib/vfs_lwip
 	server/nic_loopback
 }
 

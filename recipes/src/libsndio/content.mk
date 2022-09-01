@@ -18,12 +18,7 @@ $(MIRROR_FROM_PORT_DIR):
 	mkdir -p $(dir $@)
 	cp -r $(PORT_DIR)/$@ $(dir $@)
 
-content: src/lib/sndio/target.mk \
-         LICENSE
-
-src/lib/sndio/target.mk:
-	mkdir -p $(dir $@)
-	echo "LIBS = libsndio" > $@
+content: LICENSE
 
 LICENSE:
 	echo "sndio is subject to the license specified in the source files" > $@

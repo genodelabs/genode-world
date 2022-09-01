@@ -16,7 +16,6 @@ include:
 src/lib/fdk-aac:
 	mkdir -p $@
 	cp -r $(PORT_DIR)/src/lib/fdk-aac/* $@
-	echo "LIBS = fdk-aac" > $@/target.mk
 
 lib/mk/%:
 	$(mirror_from_rep_dir)

@@ -15,12 +15,6 @@ $(MIRROR_FROM_PORT_DIR):
 	mkdir -p $(dir $@)
 	cp -r $(PORT_DIR)/$@ $(dir $@)
 
-content: src/lib/ubuntu-ui-extras/target.mk
-
-src/lib/ubuntu-ui-extras/target.mk: $(MIRROR_FROM_PORT_DIR)
-	mkdir -p $(dir $@)
-	echo "LIBS = ubuntu-ui-extras" > $@
-
 content: LICENSE
 
 LICENSE:

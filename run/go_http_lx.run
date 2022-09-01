@@ -22,7 +22,7 @@ proc socket_fs_plugin { } {
 
 build {
 	core init timer lib/ld
-	lib/vfs/lwip
+	lib/vfs_lwip
 	drivers/rtc
 	test/go_http
 

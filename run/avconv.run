@@ -16,11 +16,11 @@ set build_components {
 	core init timer
 	app/avconv
 	drivers/ahci server/vfs
-	lib/vfs/rump
+	lib/vfs_rump
 	drivers/framebuffer drivers/input
 	server/nitpicker server/gui_fb
 	app/launchpad app/pointer
-	lib/mesa/softpipe
+	lib/mesa_softpipe
 	test/mesa_demo/gears
 	server/fb_splitter
 }

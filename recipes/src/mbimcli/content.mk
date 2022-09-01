@@ -6,7 +6,6 @@ src/app/mbimcli:
 	mkdir -p $@
 	cp -r $(REP_DIR)/$@/* $@/.
 	cp $(PORT_DIR)/src/lib/libmbim/src/mbimcli/*.c $@/.
-	echo "LIBS += base" >> $@/target.mk
 
 src/lib/libmbim:
 	mkdir -p $@/src/

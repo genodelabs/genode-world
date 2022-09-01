@@ -1,4 +1,4 @@
-content: src/lib/vnc/target.mk lib/import lib/mk LICENSE
+content: src/lib/vnc lib/import lib/mk LICENSE
 
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/libvnc)
 
@@ -13,9 +13,6 @@ lib/import:
 lib/mk:
 	mkdir -p $@
 	cp $(addprefix $(REP_DIR)/$@/,vncserver.mk) $@
-
-src/lib/vnc/target.mk: src/lib/vnc
-	echo "LIBS += vncserver" > $@
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/vnc/README LICENSE

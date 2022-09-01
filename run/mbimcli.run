@@ -71,7 +71,7 @@ proc platform_drv_binary_non_x86 {} {
 }
 
 set build_components {
-	lib/vfs/pipe
+	lib/vfs_pipe
 	app/mbimcli
 	app/ping
 	drivers/usb_host

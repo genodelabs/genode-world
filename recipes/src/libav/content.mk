@@ -1,4 +1,4 @@
-content: src/lib/libav/target.mk lib/import lib/mk LICENSE
+content: src/lib/libav lib/import lib/mk LICENSE
 
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/libav)
 
@@ -6,9 +6,6 @@ src/lib/libav:
 	mkdir -p $@
 	cp -r $(PORT_DIR)/src/lib/libav/* $@
 	cp -r $(REP_DIR)/src/lib/libav/* $@
-
-src/lib/libav/target.mk: src/lib/libav
-	echo "LIBS += avfilter avformat avcodec avutil avresample swscale avdevice" > $@
 
 lib/import:
 	mkdir -p $@

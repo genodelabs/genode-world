@@ -15,12 +15,6 @@ $(MIRROR_FROM_PORT_DIR):
 	mkdir -p $(dir $@)
 	cp -r $(PORT_DIR)/$@ $(dir $@)
 
-content: src/lib/ubuntu-ui-toolkit/target.mk
-
-src/lib/ubuntu-ui-toolkit/target.mk: $(MIRROR_FROM_PORT_DIR)
-	mkdir -p $(dir $@)
-	echo "LIBS = ubuntu-ui-toolkit" > $@
-
 content: LICENSE
 
 LICENSE:

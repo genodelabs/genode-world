@@ -14,11 +14,7 @@ $(MIRROR_FROM_PORT_DIR):
 	mkdir -p $(dir $@)
 	cp -r $(PORT_DIR)/$@ $@
 
-content: src/lib/getdns/target.mk LICENSE
-
-src/lib/getdns/target.mk:
-	mkdir -p $(dir $@)
-	echo 'LIBS=libgetdns' > $@
+content: LICENSE
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/getdns/$@ $@

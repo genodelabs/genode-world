@@ -11,7 +11,6 @@ src/lib/protobuf-c/target.mk:
 	mkdir -p src/lib/protobuf-c/protobuf-c
 	cp -r $(PORT_DIR)/src/lib/protobuf-c/protobuf-c/*.c \
 		src/lib/protobuf-c/protobuf-c/
-	echo "LIBS := protobuf-c" > $@
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/protobuf-c/LICENSE $@

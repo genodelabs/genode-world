@@ -9,7 +9,7 @@ if { ![have_board pbxa9] && ![have_board pc] } {
 }
 
 create_boot_directory
-build { app/tox_dht_bootstrap lib/vfs/import }
+build { app/tox_dht_bootstrap lib/vfs_import }
 import_from_depot \
 	[depot_user]/src/[base_src] \
 	[depot_user]/pkg/[drivers_nic_pkg] \

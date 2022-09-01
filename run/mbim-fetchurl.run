@@ -113,7 +113,7 @@ proc socket_fs_plugin { } {
 }
 
 set build_components {
-	lib/vfs/pipe
+	lib/vfs_pipe
 	app/mbimcli
 	drivers/usb_host
 	drivers/usb_modem

@@ -27,7 +27,7 @@ lappend_if $use_ahci_drv    build_components drivers/ahci
 lappend_if $use_sd_card_drv build_components drivers/platform
 lappend_if $use_sd_card_drv build_components drivers/sd_card/pl180
 lappend_if $use_vfs_block   build_components server/vfs_block
-lappend_if $use_vfs_block   build_components lib/vfs/import
+lappend_if $use_vfs_block   build_components lib/vfs_import
 
 source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components

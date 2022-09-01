@@ -11,7 +11,6 @@ src/lib/libconfig/target.mk:
 	mkdir -p src/lib/libconfig/lib
 	cp -r $(PORT_DIR)/src/lib/libconfig/lib/*.c \
 	      $(PORT_DIR)/src/lib/libconfig/lib/*.h src/lib/libconfig/lib
-	echo "LIBS := libconfig" > $@
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/libconfig/LICENSE $@

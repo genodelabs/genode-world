@@ -97,7 +97,7 @@ source ${genode_dir}/repos/base/run/platform_drv.inc
 append_platform_drv_build_components
 
 append build_components { server/nic_router }
-append build_components { lib/vfs/} [socket_fs_plugin] {}
+append build_components { lib/vfs_} [socket_fs_plugin] {}
 
 lappend_if $use_nic      build_components drivers/nic
 lappend_if $use_rtc      build_components drivers/rtc

@@ -36,7 +36,7 @@ set build_components {
 
 lappend build_components "$executable_place/$executable"
 
-append_if $need_pipe build_components { lib/vfs/pipe }
+append_if $need_pipe build_components { lib/vfs_pipe }
 
 build $build_components
 

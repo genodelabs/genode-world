@@ -10,7 +10,6 @@ PORT_DIR := $(call port_dir,$(REP_DIR)/ports/flac)
 src/lib/flac/target.mk:
 	mkdir -p src/lib/flac
 	cp -r $(PORT_DIR)/src/lib/flac/* src/lib/flac
-	echo "LIBS = libFLAC" > $@
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/flac/COPYING.Xiph $@

@@ -84,18 +84,18 @@ append modules { vfs_} [socket_fs_plugin] {.lib.so }
 append_if $use_lxip modules { lxip.lib.so }
 
 # build section
-set build_components { 
+set build_components {
 	core init timer lib/ld
 }
 
-append build_components { lib/vfs/} [socket_fs_plugin] {}
+append build_components { lib/vfs_} [socket_fs_plugin] {}
 
 #lappend_if $use_nic      build_components drivers/nic
 #lappend_if $use_rtc      build_components drivers/rtc
 
 lappend build_components "$executable_place/$executable"
 
-append_if $need_pipe build_components { lib/vfs/pipe }
+append_if $need_pipe build_components { lib/vfs_pipe }
 
 create_boot_directory
 

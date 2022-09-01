@@ -14,8 +14,8 @@ set build_components {
 	core init timer
 	drivers/nic
 	drivers/rtc
-	lib/vfs/jitterentropy
-	lib/vfs/lxip
+	lib/vfs_jitterentropy
+	lib/vfs_lxip
 	server/nic_router
 	server/vfs
 	test/libc_getaddrinfo
