@@ -15,7 +15,7 @@ INC_DIR := $(LIBMBIM_DIR)/src/mbimcli
 INC_DIR += $(LIBMBIM_DIR)/src/common
 INC_DIR += $(REP_DIR)/src/lib/libmbim
 
-LIBS = libc glib libmbim net
+LIBS = libc glib libmbim net base
 
 vpath %.c $(LIBMBIM_DIR)/src/mbimcli
 vpath %.cc $(REP_DIR)/src/app/mbimcli
