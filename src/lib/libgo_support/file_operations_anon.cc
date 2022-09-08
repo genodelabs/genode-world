@@ -66,7 +66,7 @@ void Libc::anon_init_file_operations(Genode::Env &env,
 	/* by default 15 Mb for anon mmap allocator without predefined address */
 	enum { DEFAULT_SIZE = 15ul * 1024 * 1024 };
 	size_t default_size = DEFAULT_SIZE;
-	config_accessor.with_sub_node("mmap", [&] (Xml_node mmap) {
+	config_accessor.with_optional_sub_node("mmap", [&] (Xml_node mmap) {
 			_mmap_align_log2 = mmap.attribute_value("align_log2",
 			                                        _mmap_align_log2);
 			default_size = mmap.attribute_value("local_area_default_size",

@@ -47,26 +47,25 @@ struct Python::Main
 
 		Xml_node const config = _config.xml();
 
-		if (!config.has_sub_node("file"))
-			warning("config lacks <file> sub node");
+		config.with_sub_node("file",
+			[&] (Xml_node const &script) {
 
-		config.with_sub_node("file", [&] (Xml_node const &script) {
+				if (!script.has_attribute("name")) {
+					warning("<file> node lacks 'name' attribute");
+					return;
+				}
 
-			if (!script.has_attribute("name")) {
-				warning("<file> node lacks 'name' attribute");
-				return;
-			}
+				File_name const file_name = script.attribute_value("name", File_name());
 
-			File_name const file_name = script.attribute_value("name", File_name());
+				FILE * fp = fopen(file_name.string(), "r");
 
-			FILE * fp = fopen(file_name.string(), "r");
+				log("Starting python ...");
+				res = PyRun_SimpleFile(fp, file_name.string());
+				log("Executed '", file_name, "'");
 
-			log("Starting python ...");
-			res = PyRun_SimpleFile(fp, file_name.string());
-			log("Executed '", file_name, "'");
-
-			fclose(fp);
-		});
+				fclose(fp);
+			},
+			[&] () { warning("config lacks <file> sub node"); });
 
 		return res;
 	}
@@ -80,7 +79,7 @@ struct Python::Main
 		enum { MAX_NAME_LEN = 128 };
 		wchar_t wbuf[MAX_NAME_LEN];
 
-		config.with_sub_node("pythonpath", [&] (Xml_node const &pythonpath) {
+		config.with_optional_sub_node("pythonpath", [&] (Xml_node const &pythonpath) {
 
 			typedef String<MAX_NAME_LEN> Path;
 			Path const path = pythonpath.attribute_value("name", Path());
@@ -112,29 +111,27 @@ struct Python::Main
 		_config.update();
 		Genode::Xml_node const config = _config.xml();
 
-		if (!config.has_sub_node("file"))
-			Genode::error("Need <file name=\"filename\"> as argument!");
+		config.with_sub_node("file",
+			[&] (Genode::Xml_node const &file) {
 
-		config.with_sub_node("file", [&] (Genode::Xml_node const &file) {
+				if (file.has_attribute("on-rom-update")) {
 
-			if (file.has_attribute("on-rom-update")) {
+					typedef Genode::String<128> Rom_name;
 
-				typedef Genode::String<128> Rom_name;
+					Rom_name const rom_name =
+						file.attribute_value("on-rom-update", Rom_name());
 
-				Rom_name const rom_name =
-					file.attribute_value("on-rom-update", Rom_name());
+					_update.construct(_env, rom_name.string());
+					_update->sigh(_trigger_handler);
 
-				_update.construct(_env, rom_name.string());
-				_update->sigh(_trigger_handler);
+					if (_update->dataspace().valid())
+						_execute();
 
-				if (_update->dataspace().valid())
+				} else {
 					_execute();
-
-			} else {
-				_execute();
-				_finalize();
-			}
-		});
+					_finalize();
+				}},
+			[&] () { Genode::error("Need <file name=\"filename\"> as argument!"); });
 	}
 
 	void _handle_trigger()

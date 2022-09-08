@@ -59,7 +59,7 @@ class Main_window : public Compound_widget<QWidget, QVBoxLayout>
 					        "using \"mediafile\"");
 
 				Name result { "mediafile" };
-				config.with_sub_node(node_type, [&] (Xml_node const &mediafile) {
+				config.with_optional_sub_node(node_type, [&] (Xml_node const &mediafile) {
 					result = mediafile.attribute_value("name", result); });
 
 				return result;
