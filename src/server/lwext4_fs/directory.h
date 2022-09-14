@@ -122,6 +122,12 @@ class Lwext4_fs::Directory : public Node
 			return sizeof(Directory_entry);
 		}
 
+		unsigned num_entries() override
+		{
+			warning("Directory::num_entries not implemented, returning 0");
+			return 0;
+		}
+
 		size_t write(char const *src, size_t len, seek_off_t) { return 0; }
 };
 

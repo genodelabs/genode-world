@@ -90,7 +90,7 @@ class Lwext4_fs::Node : public Node_base
 			status.modification_time = { mtime };
 
 			unsigned int const mode = ext4_inode_get_mode(sb, &_inode);
-		 	unsigned int const type = mode & 0xf000;
+			unsigned int const type = mode & 0xf000;
 			switch (type) {
 			case EXT4_INODE_MODE_DIRECTORY: status.type = Node_type::DIRECTORY; break;
 			case EXT4_INODE_MODE_SOFTLINK:  status.type = Node_type::SYMLINK;   break;
@@ -105,6 +105,8 @@ class Lwext4_fs::Node : public Node_base
 
 			return status;
 		}
+
+		virtual unsigned num_entries() { return 0; }
 
 		char const *name() { return _name.base(); }
 

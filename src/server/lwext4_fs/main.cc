@@ -383,6 +383,19 @@ class Lwext4_fs::Session_component : public File_system::Session_rpc_object
 			}
 		}
 
+		unsigned num_entries(Dir_handle dir_handle) override
+		{
+			auto fn = [&] (Open_node &dir_node) {
+				return dir_node.node().num_entries();
+			};
+
+			try {
+				return _open_node_registry.apply<Open_node>(dir_handle, fn);
+			} catch (Id_space<File_system::Node>::Unknown_id const &) {
+				throw Invalid_handle();
+			}
+		}
+
 		void control(Node_handle, Control) override { }
 
 		void unlink(Dir_handle dir_handle, Name const &name)
