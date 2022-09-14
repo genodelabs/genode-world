@@ -98,9 +98,9 @@ class Lwext4_fs::Node : public Node_base
 			default:                        status.type = Node_type::CONTINUOUS_FILE; break;
 			}
 
-			status.rwx = { .readable   = mode & 0x100,
-			               .writeable  = mode & 0x080,
-			               .executable = mode & 0x040,
+			status.rwx = { .readable   = (mode & 0x100) != 0,
+			               .writeable  = (mode & 0x080) != 0,
+			               .executable = (mode & 0x040) != 0,
 			};
 
 			return status;
