@@ -9,29 +9,18 @@ if {[have_spec linux]} {
 	exit 0
 }
 
-# Build
-#
-
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-
-lappend build_components test/exec_terminal
-
-build $build_components
-
+build { test/exec_terminal }
 create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
                   [depot_user]/src/bash \
                   [depot_user]/src/coreutils-minimal \
                   [depot_user]/src/exec_terminal \
                   [depot_user]/src/init \
-                  [depot_user]/src/ipxe_nic_drv \
                   [depot_user]/src/libc \
                   [depot_user]/src/openssl \
                   [depot_user]/src/libssh \
-                  [depot_user]/src/platform_drv \
                   [depot_user]/src/posix \
                   [depot_user]/src/fs_rom \
                   [depot_user]/src/nic_router \
@@ -44,11 +33,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/vim-minimal \
                   [depot_user]/src/zlib
 
-#
-# Generate config
-#
-
-set config {
+install_config {
 <config verbose="no">
 	<parent-provides>
 		<service name="CPU"/>
@@ -71,12 +56,14 @@ set config {
 		</route>
 	</start>
 
-	<start name="nic_drv" caps="120">
-		<binary name="ipxe_nic_drv"/>
-		<resource name="RAM" quantum="8M"/>
+	<start name="drivers" caps="1000" managing_system="yes">
+		<resource name="RAM" quantum="32M"/>
+		<binary name="init"/>
 		<route>
+			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
 			<service name="Uplink"> <child name="nic_router"/> </service>
-			<any-service> <parent/> <any-child/> </any-service>
+			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 
@@ -89,7 +76,7 @@ set config {
 		<config verbose_domain_state="yes">
 
 			<policy label_prefix="ssh_server" domain="downlink"/>
-			<policy label_prefix="nic_drv"    domain="uplink"/>
+			<policy label_prefix="drivers"    domain="uplink"/>
 
 			<domain name="uplink">
 
@@ -237,14 +224,7 @@ set config {
 			<service name="ROM"> <parent/> </service>
 		</route>
 	</start>
-}
-
-append_platform_drv_config
-
-append config {
 </config>}
-
-install_config $config
 
 #
 # Generate a new host key
@@ -253,20 +233,7 @@ if {![file exists bin/ed25519_key]} {
 	exec ssh-keygen -t ed25519 -f bin/ed25519_key -q -N ""
 }
 
-#
-# Boot modules
-#
-
-# generic modules
-set boot_modules {
-	ed25519_key
-	exec_terminal
-}
-
-# platform-specific modules
-append_platform_drv_boot_modules
-
-build_boot_image $boot_modules
+build_boot_image { ed25519_key exec_terminal }
 
 #
 # Execute test
