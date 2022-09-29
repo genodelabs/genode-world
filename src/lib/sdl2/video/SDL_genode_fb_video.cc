@@ -31,6 +31,7 @@
 
 /* Genode includes */
 #include <base/attached_ram_dataspace.h>
+#include <base/attached_rom_dataspace.h>
 #include <base/env.h>
 #include <base/log.h>
 #include <gui_session/connection.h>
@@ -84,6 +85,8 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		Gui::Connection          &_gui;
 		Gui::Session::View_handle _view { _gui.create_view() };
 
+		Genode::Attached_rom_dataspace _config_rom { _env, "config" };
+
 		void _handle_mode_change()
 		{
 			Genode::Mutex::Guard guard(event_mutex);
@@ -95,7 +98,10 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			video_events.height = mode.area.h();
 		}
 
-		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
+		/* XXX not being an Io_signal_handler prevents receiving of the
+		 *    signal...
+		 */
+		Genode::Io_signal_handler<Sdl_framebuffer> _mode_handler {
 			_env.ep(), *this, &Sdl_framebuffer::_handle_mode_change };
 
 		Sdl_framebuffer(Genode::Env &env, Gui::Connection &gui)
@@ -115,6 +121,21 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			_gui.mode_sigh(Genode::Signal_context_capability());
 			dataspace(0, 0);
 			_gui.destroy_view(_view);
+		}
+
+		Gui::Area initial_mode_area()
+		{
+			_config_rom.update();
+			if (!_config_rom.valid())
+				return Gui::Area();
+
+			Gui::Area area { };
+
+			_config_rom.xml().with_optional_sub_node("initial",
+				[&] (Genode::Xml_node const &initial) {
+					area = Gui::Area::from_xml(initial); });
+
+			return area;
 		}
 
 		/************************************
@@ -221,6 +242,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		/* get dimensions */
 		int w, h;
 		SDL_GetWindowSize(window, &w, &h);
+		SDL_SetWindowResizable(window, (SDL_bool)true);
 
 		/* allocate and attach memory for framebuffer */
 		if (drv.fb_mem.constructed())
@@ -318,6 +340,10 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		/* Get the framebuffer size and mode infos */
 		drv.scr_mode = drv.framebuffer->mode();
 
+		Gui::Area const initial = drv.framebuffer->initial_mode_area();
+		if (initial.valid())
+			drv.scr_mode.area = initial;
+
 		/* set mode specific values */
 		device->displays = (SDL_VideoDisplay *)(SDL_calloc(1, sizeof(*device->displays)));
 		if (!device->displays)
@@ -382,6 +408,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		/* set name and user data */
 		SDL_SetWindowData(window, surface_name, surface);
+		SDL_SetWindowResizable(window, (SDL_bool)true);
 
 #if defined(SDL_VIDEO_OPENGL_EGL)
 		if (window->flags & SDL_WINDOW_OPENGL) {

@@ -105,34 +105,36 @@ extern "C" {
 
 		Genode::Mutex::Guard guard(event_mutex);
 
+		SDL_Window * const window   = SDL_GetMouseFocus();
+
 		if (video_events.resize_pending) {
 			video_events.resize_pending = false;
 
 			int const width  = video_events.width;
 			int const height = video_events.height;
 
-#if 0
 			bool const quit = width == 0 && height == 0;
 
-			if (!quit)
-				SDL_PrivateResize(width, height);
+			if (!quit) {
+				/* might force clients to call SDL_GetWindowSurface that,
+				 * according to the documentation, may not be done when using
+				 * 3D or render APIs. So see how that goes...
+				 */
+				SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESIZED, width, height);
+			}
 			else {
 				/* at least try to quit w/o other event handling */
-				if (SDL_PrivateQuit())
+				if (SDL_SendQuit())
 					return;
 				else
 					Genode::warning("could not deliver requested SDL_QUIT event");
 			}
-#else
-			printf("XXX resize pending XXX\n");
-#endif
 		}
 
 		if (!input->pending())
 			return;
 
 		SDL_MouseID  const mouse_id = 0;
-		SDL_Window * const window   = SDL_GetMouseFocus();
 
 		input->for_each_event([&] (Input::Event const &curr) {
 
