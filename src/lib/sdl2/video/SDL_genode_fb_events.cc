@@ -82,6 +82,49 @@ extern "C" {
 #include "SDL_sysevents.h"
 #include "SDL_genode_fb_events.h"
 
+	static bool skipkey(Input::Keycode const keycode)
+	{
+		using namespace Input;
+
+		/* just filter some keys that might wreck havoc */
+		switch (keycode) {
+		case KEY_CAPSLOCK:   return true;
+		case KEY_LEFTALT:    return true;
+		case KEY_LEFTCTRL:   return true;
+		case KEY_LEFTSHIFT:  return true;
+		case KEY_RIGHTALT:   return true;
+		case KEY_RIGHTCTRL:  return true;
+		case KEY_RIGHTSHIFT: return true;
+		default: return false;
+		}
+	}
+
+	/* "borrowed" from SDL_windowsevents.c */
+	static int ConvertUTF32toUTF8(unsigned int codepoint, char *text)
+	{
+		if (codepoint <= 0x7F) {
+			text[0] = (char) codepoint;
+			text[1] = '\0';
+		} else if (codepoint <= 0x7FF) {
+			text[0] = 0xC0 | (char) ((codepoint >> 6) & 0x1F);
+			text[1] = 0x80 | (char) (codepoint & 0x3F);
+			text[2] = '\0';
+		} else if (codepoint <= 0xFFFF) {
+			text[0] = 0xE0 | (char) ((codepoint >> 12) & 0x0F);
+			text[1] = 0x80 | (char) ((codepoint >> 6) & 0x3F);
+			text[2] = 0x80 | (char) (codepoint & 0x3F);
+			text[3] = '\0';
+		} else if (codepoint <= 0x10FFFF) {
+			text[0] = 0xF0 | (char) ((codepoint >> 18) & 0x0F);
+			text[1] = 0x80 | (char) ((codepoint >> 12) & 0x3F);
+			text[2] = 0x80 | (char) ((codepoint >> 6) & 0x3F);
+			text[3] = 0x80 | (char) (codepoint & 0x3F);
+			text[4] = '\0';
+		} else {
+			return SDL_FALSE;
+		}
+		return SDL_TRUE;
+	}
 
 	static Genode::Constructible<Input::Session_client> input;
 	static SDL_Scancode scancodes[SDL_NUM_SCANCODES];
@@ -155,6 +198,14 @@ extern "C" {
 					SDL_SendMouseButton(window, mouse_id, SDL_PRESSED, buttonmap[key]);
 				else
 					SDL_SendKeyboardKey(SDL_PRESSED, getscancode(key));
+
+				if (SDL_EventState(SDL_TEXTINPUT, SDL_QUERY) && !skipkey(key)) {
+					char text[SDL_TEXTINPUTEVENT_TEXT_SIZE];
+					SDL_zeroa(text);
+					if (ConvertUTF32toUTF8(codepoint.value, text)) {
+						SDL_SendKeyboardText(text);
+					}
+				}
 			});
 
 			curr.handle_wheel([&] (int const x, int const y) {
