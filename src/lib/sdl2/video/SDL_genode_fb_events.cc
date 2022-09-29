@@ -82,6 +82,21 @@ extern "C" {
 #include "SDL_sysevents.h"
 #include "SDL_genode_fb_events.h"
 
+	static bool skipcode(Genode::Codepoint const code)
+	{
+		if (!code.valid())
+			return true;
+
+		/* non-printable ascii */
+		if (code.value <= 31 || code.value == 127)
+			return true;
+
+		/* function-key unicodes */
+		if (code.value >= 0xf000 && code.value <= 0xf72d)
+			return true;
+
+		return false;
+	}
 
 	static Genode::Constructible<Input::Session_client> input;
 	static SDL_Scancode scancodes[SDL_NUM_SCANCODES];
@@ -153,8 +168,13 @@ extern "C" {
 			curr.handle_press([&] (Input::Keycode key, Genode::Codepoint codepoint) {
 				if (mouse_button(key))
 					SDL_SendMouseButton(window, mouse_id, SDL_PRESSED, buttonmap[key]);
-				else
+				else if (skipcode(codepoint) || !SDL_IsTextInputActive())
 					SDL_SendKeyboardKey(SDL_PRESSED, getscancode(key));
+				else {
+					Genode::String<5> text(codepoint);
+					if (text.valid())
+						SDL_SendKeyboardText(text.string());
+				}
 			});
 
 			curr.handle_wheel([&] (int const x, int const y) {
