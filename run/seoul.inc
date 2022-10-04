@@ -22,7 +22,11 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/ps2_drv \
                   [depot_user]/raw/drivers_interactive-pc \
                   [depot_user]/pkg/themed_wm \
-                  [depot_user]/src/report_rom
+                  [depot_user]/src/report_rom \
+                  [depot_user]/src/platform_drv \
+                  [depot_user]/src/acpi_drv \
+                  [depot_user]/src/pci_decode \
+                  [depot_user]/src/rom_filter
 
 if {$use_fs_rump} {
 	import_from_depot [depot_user]/src/rump
@@ -34,6 +38,10 @@ if {$use_part_block} {
 
 if {![info exists use_usb]} {
 	set use_usb 1
+}
+
+if {![info exists use_virtio]} {
+	set use_virtio 0
 }
 
 #
@@ -68,28 +76,19 @@ if {[have_spec foc]} {
 	}
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
-# override defaults of platform_drv.inc
-proc platform_drv_priority {} { return { priority="-1"} }
-
 set build_components {
+	drivers/framebuffer
 	drivers/rtc
 	app/seoul
 }
-
-if {$use_fancy_stuff} { set use_framebuffer 1 }
 
 lappend_if $use_block_vdi       build_components server/vdi_block
 lappend_if $use_vfs_block       build_components server/vfs_block
 lappend_if $use_drv_ahci        build_components drivers/ahci
 lappend_if $use_nic_session     build_components drivers/nic
 lappend_if $use_nic_session     build_components server/nic_router
-lappend_if $use_framebuffer     build_components drivers/framebuffer
-lappend_if $use_fancy_stuff     build_components app/launchpad
 lappend_if $use_genode_iso      build_components server/iso9660
 lappend_if $use_top             build_components app/top
-
-append_platform_drv_build_components
 
 build $build_components
 
@@ -164,6 +163,11 @@ if {$use_nic_session} {
 	puts $vm_cfg_fd {
 		<!-- <rtl8029 irq="9" port="0x300"/> -->
 		<intel82576vf/>
+	}
+}
+
+if {$use_virtio} {
+	puts $vm_cfg_fd {
 		<virtio_input irq="11"/>
 		<virtio_gpu   irq="13"/>
 	}
@@ -197,12 +201,8 @@ set config {
 		<service name="RM"/>
 		<service name="CPU"/>
 		<service name="VM"/>
-		<service name="LOG"/>}
-
-append_if $use_top config {
-		<service name="TRACE"/>}
-
-append config {
+		<service name="LOG"/>
+		<service name="TRACE"/>
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
@@ -212,6 +212,77 @@ append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="platform_reports" priority="-1">
+		<binary name="report_rom"/>
+		<resource name="RAM" quantum="1M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+		<config>
+			<policy label="pci_decode -> system" report="acpi_drv -> acpi"/>
+			<policy label="rom_filter -> pci_devices" report="pci_decode -> devices"/>
+			<policy label="usb_hid_drv -> report" report="usb_drv -> devices"/>
+		</config>
+	</start>
+
+	<start name="acpi_drv" caps="350" priority="-1">
+		<resource name="RAM" quantum="4M"/>
+		<route>
+			<service name="Report"> <child name="platform_reports"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="pci_decode" caps="350">
+		<resource name="RAM" quantum="1M"/>
+		<route>
+			<service name="ROM" label="system"> <child name="platform_reports"/> </service>
+			<service name="Report"> <child name="platform_reports"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="platform_drv" caps="400" managing_system="yes" priority="-1">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Platform"/>
+		</provides>
+		<config>
+			<policy label_prefix="ps2_drv">  <device name="ps2"/>    </policy>
+			<policy label_prefix="ahci_drv"> <pci class="AHCI"/>     </policy>
+			<policy label_prefix="nic_drv">  <pci class="ETHERNET"/> </policy>
+			<policy label_prefix="audio_drv">
+				<pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>
+			<policy label_prefix="fb_drv"  info="yes"> <pci class="VGA"/> </policy>
+			<policy label_prefix="usb_drv" info="yes"> <pci class="USB"/> </policy>
+		</config>
+		<route>
+			<service name="ROM" label="devices"> <child name="rom_filter"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="rom_filter" caps="70">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="ROM"/> </provides>
+		<config buffer="32K">
+			<input name="devices"/>
+			<input name="pci_devices"/>
+			<output node="devices">
+				<input name="devices"     skip_toplevel="yes"/>
+				<input name="pci_devices" skip_toplevel="yes"/>
+			</output>
+		</config>
+		<route>
+			<service name="ROM" label="pci_devices"> <child name="platform_reports"/> </service>
+			<service name="LOG"> <parent/> </service>
+			<service name="PD">  <parent/> </service>
+			<service name="CPU"> <parent/> </service>
+			<service name="ROM"> <parent/> </service>
+		</route>
 	</start>
 
 	<start name="rtc_drv" priority="-1">
@@ -375,8 +446,6 @@ append_if $use_genode_iso config {
 		</route>
 	</start>}
 
-append_platform_drv_config
-
 append_if $use_nic_session config {
 
 	<start name="nic_drv" priority="-2">
@@ -397,7 +466,6 @@ append_if $use_nic_session config {
 		<config verbose_domain_state="yes">
 
 			<policy label_prefix="seoul"      domain="downlink"/>
-			<policy label_prefix="launchpad"  domain="downlink"/>
 			<policy label_prefix="nic_drv"    domain="uplink"/>
 
 			<domain name="uplink">
@@ -423,7 +491,7 @@ append_if $use_nic_session config {
 	</start>
 }
 
-append_if $use_framebuffer config {
+append config {
 	<start name="fb_drv" priority="-1" caps="130">
 		<binary name="vesa_fb_drv"/>
 		<resource name="RAM" quantum="16M"/>
@@ -433,26 +501,21 @@ append_if $use_framebuffer config {
 			<service name="Platform"> <any-child/></service>
 			<any-service> <parent/> </any-service>
 		</route>}
-append_if [expr $use_framebuffer &&  [have_include "power_on/qemu"]] config {
+append_if [have_include "power_on/qemu"] config {
 		<config width="1280" height="960"/>}
-append_if [expr $use_framebuffer && ![have_include "power_on/qemu"]] config {
+append_if [expr ![have_include "power_on/qemu"]] config {
 		<config/>}
-append_if $use_framebuffer config {
-	</start> }
+append config {
+	</start>
 
-if {!$use_fancy_stuff} {
-append config {
 	<start name="seoul" priority="-2" caps="1200">
-		<binary name="seoul"/>}
-append config "
-		<resource name=\"RAM\" quantum=\"$memory_vmm_vm\"/>"
-append config {
+		<binary name="seoul"/>
+		<resource name="RAM" quantum="} $memory_vmm_vm {"/>
 		<route>
 			<service name="Timer"><child name="timer"/></service>
 			<service name="ROM" label="config">
 				<parent label="vm_seoul.cfg"/> </service>}
-append_if [expr $use_nic_session] config {
-			<service name="Nic"> <child name="nic_router"/> </service>}
+
 append_if $use_genode_iso config {
 			<service name="ROM" unscoped_label="seoul"> <parent/> </service>
 			<service name="ROM" unscoped_label="ld.lib.so"> <parent/> </service>
@@ -469,10 +532,8 @@ append config {
 			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
-	</start> }
-}
+	</start>
 
-append config {
 	<start name="nitpicker" priority="-1" caps="120">
 		<resource name="RAM" quantum="8M"/>
 		<provides>
@@ -538,67 +599,8 @@ append_if $use_top config {
 		<config period_ms="10000"/>
 	</start>}
 
-append_if $use_fancy_stuff config {
-	<start name="launchpad" priority="-2" caps="8000">
-		<resource name="RAM" quantum="64000M"/>
-		<route>
-			<service name="ROM" label="config">
-				<parent label="launchpad-config"/> </service>
-			<service name="Report" label_last="shape"> <child name="wm"/> </service>
-			<service name="Gui"> <child name="wm"/> </service>
-			<service name="Nic"> <child name="nic_router"/> </service>
-			<any-service><parent/><any-child/></any-service>
-		</route>
-	</start>}
-
 append config {
 </config>}
-
-#
-# Generate Launchpad config file
-#
-if {$use_fancy_stuff} {
-	set launchpad_cfg_fd [open "bin/launchpad-config" w]
-
-	puts $launchpad_cfg_fd "<config>
-	<launcher ram_quota=\"$memory_init\" name=\"init\" caps=\"1000\" >"
-
-	puts $launchpad_cfg_fd {
-		<config>
-			<parent-provides>
-				<service name="ROM"/>
-				<service name="IRQ"/>
-				<service name="IO_MEM"/>
-				<service name="IO_PORT"/>
-				<service name="PD"/>
-				<service name="RM"/>
-				<service name="CPU"/>
-				<service name="LOG"/>
-				<service name="Gui"/>
-				<service name="Timer"/>
-				<service name="Nic"/>
-				<service name="Block"/>
-				<service name="Rtc"/>
-				<service name="VM"/>
-				<service name="Report"/>
-			</parent-provides>
-
-			<start name="seoul" caps="800">
-				<binary name="seoul"/>
-				<resource name="RAM" quantum="256M"/>
-				<route>
-					<service name="Timer"><parent/></service>
-					<service name="Nic"><parent/></service>
-					<service name="ROM" label="config">
-						<parent label="vm_seoul.cfg"/> </service>
-					<any-service><parent/></any-service>
-				</route>
-			</start>
-		</config>
-	</launcher>}
-	puts $launchpad_cfg_fd {</config>}
-	close $launchpad_cfg_fd
-}
 
 install_config $config
 
@@ -606,9 +608,12 @@ install_config $config
 # Boot modules
 #
 
+# non PCI devices for platform_drv, e.g. ps2 and pit
+file copy [select_from_repositories board/[board]/devices] [run_dir]/genode/devices
+
 # generic modules
 set boot_modules {
-	rtc_drv
+	rtc_drv vesa_fb_drv
 	seoul
 	vm_seoul.cfg
 }
@@ -618,10 +623,6 @@ lappend_if $use_vfs_block     boot_modules vfs_block
 lappend_if $use_drv_ahci      boot_modules ahci_drv
 lappend_if $use_nic_session   boot_modules ipxe_nic_drv
 lappend_if $use_nic_session   boot_modules nic_router
-lappend_if $use_framebuffer   boot_modules vesa_fb_drv
-
-lappend_if $use_fancy_stuff   boot_modules launchpad
-lappend_if $use_fancy_stuff   boot_modules launchpad-config
 
 lappend_if $use_genode_iso    boot_modules iso9660
 lappend_if $use_genode_iso    boot_modules genode.iso
@@ -659,8 +660,6 @@ if {$use_multiboot} {
 
 	append boot_modules $guest_os_binaries
 }
-
-append_platform_drv_boot_modules
 
 build_boot_image $boot_modules
 

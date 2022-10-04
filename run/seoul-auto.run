@@ -39,11 +39,9 @@ set use_part_block    0
 
 set use_nic_session   1
 
-set use_framebuffer   1
-set use_fancy_stuff   0
 set use_top           0
 
-set memory_vmm_vm     "128M"
+set memory_vmm_vm     "512M"
 
 set vcpus_to_be_used  2
 
@@ -77,6 +75,7 @@ foreach binary $guest_os_binaries {
 
 source ${genode_dir}/repos/world/run/seoul.inc
 
+append qemu_args " -m 1536 "
 append qemu_args " -cpu phenom "
 append qemu_args " -nographic "
 append_qemu_nic_args
