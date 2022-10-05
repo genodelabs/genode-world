@@ -20,13 +20,13 @@ if {[have_spec foc] || [have_spec sel4] || [have_spec nova]} {
 	exit 0
 }
 
-set use_multiboot     1
+set use_multiboot     0
 set use_genode_iso    0
-set use_model_ahci    0
+set use_model_ahci    1
 set use_model_ide     0
 
 set use_block_vdi     0
-set use_block_ram     0
+set use_block_ram     1
 set use_block_sata    0
 
 #
@@ -50,42 +50,36 @@ if {[have_spec sel4]} {
 	set vcpus_to_be_used  1
 }
 
-set multiboot_files {
-		<rom name="munich"/>
-		<rom name="bzImage-3.1" cmdline="root=/dev/ram0 earlyprintk=ttyS0 console=ttyS0 text"/>
-		<rom name="seoul-auto.gz"/>
-}
-
-set guest_os_binaries { munich bzImage-3.1 seoul-auto.gz}
-set sha1_os_binaries  { 7ecb4ba634a0ecfa6429418ea73490d6f65afead 6b2ef2c5bf16db3ebcbe33ce134e4e0a96944f82 bb6384fe58ab0c945b231f6cc107bcdff1bdacbe}
-
 #
-# Download demo kernel, image and
-# munich (part of Oslo framework http://os.inf.tu-dresden.de/~kauer/oslo)
+# Download demo image
 #
-set uri "http://genode.org/files/seoul"
+set uri "http://depot.genode.org/alex-ab/images"
+set image "seoul-auto.img.gz"
+set sha1sum "677908d2f62bc2ece7882e74ef7dd2e7c425e38d"
 
-foreach binary $guest_os_binaries {
-	if {![file exists bin/$binary]} {
-		exec mkdir -p bin
-		puts "Download file bin/$binary"
-		exec >& /dev/null wget -c -O bin/$binary $uri/$binary
+if {![file exists bin/seoul-disc.raw]} {
+	exec mkdir -p bin
+	puts "Download file $image from $uri"
+	exec >& /dev/null wget -c -O bin/seoul-disc.raw.gz $uri/$image
+	set sha1 [exec sha1sum bin/seoul-disc.raw.gz]
+	set sha1 [regexp -inline {[0-9a-h]+} $sha1]
+	if {[string compare $sha1 $sha1sum]} {
+		puts "SHA1 sum of binary does not match with expected one - abort"
+		rm bin/seoul-disc.raw.gz
+		exit 1
 	}
+	exec gunzip bin/seoul-disc.raw.gz
 }
 
 source ${genode_dir}/repos/world/run/seoul.inc
 
 append qemu_args " -m 1536 "
 append qemu_args " -cpu phenom "
-append qemu_args " -nographic "
 append_qemu_nic_args
 
 if { [get_cmd_switch --autopilot] } {
+	append qemu_args " -nographic "
 	run_genode_until {\[init -\> seoul\] VMM: #   Hello Genode world!} 300
 } else {
 	run_genode_until forever
-}
-
-foreach binary $guest_os_binaries {
-	exec rm -f bin/$binary
 }
