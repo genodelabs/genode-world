@@ -13,6 +13,12 @@ LIBS = egl expat libc libm mesa nss3 qt5_component stdcxx $(QT5_PORT_LIBS)
 QT5_GENODE_LIBS_SHLIB += nss3.lib.so
 qmake_prepared.tag: qmake_root/lib/nss3.lib.so
 
+#
+# Limit the number of parallel ninja jobs to 16 by default to keep RAM
+# demand below 32 GiB.
+#
+NINJAJOBS ?= -j$(shell echo -e "$(shell nproc)\n16" | sort -g | head -n1)
+
 built.tag: qmake_prepared.tag
 
 	@#
@@ -23,7 +29,6 @@ built.tag: qmake_prepared.tag
 		-qtconf qmake_root/mkspecs/$(QMAKE_PLATFORM)/qt.conf \
 		$(QT_DIR)/qtwebengine/qtwebengine.pro \
 		-- \
-		-no-feature-webengine-jumbo-build \
 		-no-feature-webengine-system-ninja \
 		-no-webengine-alsa \
 		-no-webengine-embedded-build \
@@ -50,7 +55,7 @@ built.tag: qmake_prepared.tag
 	@# build
 	@#
 
-	$(VERBOSE)source env.sh && $(MAKE) sub-src $(QT5_OUTPUT_FILTER)
+	$(VERBOSE)source env.sh && $(MAKE) sub-src NINJAJOBS=$(NINJAJOBS) $(QT5_OUTPUT_FILTER)
 
 	@#
 	@# install into local 'install' directory
