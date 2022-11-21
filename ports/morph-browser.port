@@ -1,5 +1,5 @@
 LICENSE := GPL3
-VERSION := issue301
+VERSION := issue308
 
 DOWNLOADS := morph-browser.git
 
