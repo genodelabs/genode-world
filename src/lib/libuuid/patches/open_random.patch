@@ -1,0 +1,16 @@
+diff --git a/lib/randutils.c b/lib/randutils.c
+index 2ffe9b4f0..c57b7abcb 100644
+--- a/lib/randutils.c
++++ b/lib/randutils.c
+@@ -82,9 +82,9 @@ int random_get_fd(void)
+ {
+ 	int i, fd;
+ 
+-	fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
++	fd = open("/dev/urandom", O_RDONLY);
+ 	if (fd == -1)
+-		fd = open("/dev/random", O_RDONLY | O_NONBLOCK | O_CLOEXEC);
++		fd = open("/dev/random", O_RDONLY);
+ 	if (fd >= 0) {
+ 		i = fcntl(fd, F_GETFD);
+ 		if (i >= 0)
