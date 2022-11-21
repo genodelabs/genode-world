@@ -6,4 +6,8 @@ URL(util-linux) := https://git.kernel.org/pub/scm/utils/util-linux/util-linux.gi
 REV(util-linux) := v$(VERSION)
 DIR(util-linux) := src/lib/util-linux
 
-PATCHES := src/lib/libuuid/patches/*.patch
+PATCH_OPT := -p1 -d src/lib/util-linux/
+PATCHES   := src/lib/libuuid/patches/*.patch
+
+DIRS                         := include/libuuid
+DIR_CONTENT(include/libuuid) := src/lib/util-linux/libuuid/src/*.h

@@ -1,6 +1,8 @@
---- src/lib/util-linux/include/c.h	2019-05-10 11:50:31.659841756 +0200
-+++ src/lib/util-linux/include/c.h	2019-05-10 11:22:31.466975561 +0200
-@@ -308,6 +308,7 @@
+diff --git a/include/c.h b/include/c.h
+index cbc99669f..32fbb1bc3 100644
+--- a/include/c.h
++++ b/include/c.h
+@@ -390,6 +390,7 @@ fail:
  
  static inline int xusleep(useconds_t usec)
  {
@@ -8,7 +10,7 @@
  #ifdef HAVE_NANOSLEEP
  	struct timespec waittime = {
  		.tv_sec   =  usec / 1000000L,
-@@ -315,10 +316,13 @@
+@@ -397,10 +398,13 @@ static inline int xusleep(useconds_t usec)
  	};
  	return nanosleep(&waittime, NULL);
  #elif defined(HAVE_USLEEP)
