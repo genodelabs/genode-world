@@ -1,5 +1,6 @@
 JSONC_DIR := $(call select_from_ports,jsonc)/src/lib/jsonc
 
+SHARED_LIB := yes
 include $(REP_DIR)/lib/import/import-jsonc.mk
 
 SRC_C = arraylist.c \
