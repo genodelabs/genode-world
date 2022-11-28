@@ -25,8 +25,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/report_rom \
                   [depot_user]/src/platform_drv \
                   [depot_user]/src/acpi_drv \
-                  [depot_user]/src/pci_decode \
-                  [depot_user]/src/rom_filter
+                  [depot_user]/src/pci_decode
 
 if {$use_fs_rump} {
 	import_from_depot [depot_user]/src/rump
@@ -237,7 +236,7 @@ set config {
 		</provides>
 		<config>
 			<policy label="pci_decode -> system" report="acpi_drv -> acpi"/>
-			<policy label="rom_filter -> pci_devices" report="pci_decode -> devices"/>
+			<policy label="platform_drv -> devices" report="pci_decode -> devices"/>
 			<policy label="usb_hid_drv -> report" report="usb_drv -> devices"/>
 		</config>
 	</start>
@@ -274,28 +273,8 @@ set config {
 			<policy label_prefix="usb_drv" info="yes"> <pci class="USB"/> </policy>
 		</config>
 		<route>
-			<service name="ROM" label="devices"> <child name="rom_filter"/> </service>
+			<service name="ROM" label="devices"> <child name="platform_reports"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
-
-	<start name="rom_filter" caps="70">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="ROM"/> </provides>
-		<config buffer="32K">
-			<input name="devices"/>
-			<input name="pci_devices"/>
-			<output node="devices">
-				<input name="devices"     skip_toplevel="yes"/>
-				<input name="pci_devices" skip_toplevel="yes"/>
-			</output>
-		</config>
-		<route>
-			<service name="ROM" label="pci_devices"> <child name="platform_reports"/> </service>
-			<service name="LOG"> <parent/> </service>
-			<service name="PD">  <parent/> </service>
-			<service name="CPU"> <parent/> </service>
-			<service name="ROM"> <parent/> </service>
 		</route>
 	</start>
 
@@ -631,9 +610,6 @@ install_config $config
 #
 # Boot modules
 #
-
-# non PCI devices for platform_drv, e.g. ps2 and pit
-file copy [select_from_repositories board/[board]/devices] [run_dir]/genode/devices
 
 # generic modules
 set boot_modules {
