@@ -4,11 +4,6 @@
 # \date   2021-12-29
 #
 
-set host_tool [installed_command host]
-#set ntp_ip    [exec $host_tool -t A pool.ntp.org | head -1 | cut -d " " -f 4]
-set ntp_ip    [exec $host_tool -t A ptbtime1.ptb.de | head -1 | cut -d " " -f 4]
-puts "Using NTP server $ntp_ip"
-
 create_boot_directory
 
 set packages "
@@ -52,7 +47,6 @@ build $build_components
 
 set lx_ip_addr "10.0.2.55"
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
 proc platform_drv_policy {} {
 	return {<policy label_prefix="nic_drv"> <pci class="USB"/> </policy>}
 }
@@ -180,7 +174,6 @@ append config {
 				<dir name="pipe"> <pipe/> </dir>
 				<dir name="etc">
 					<inline name="chrony.conf">
-#server } $ntp_ip { nts
 server ptbtime1.ptb.de nts
 ntstrustedcerts /etc/cert1.crt
 makestep 1.0 3
