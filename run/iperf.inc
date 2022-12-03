@@ -72,7 +72,7 @@ set packages "
 	[depot_user]/src/vfs
 	[depot_user]/src/nic_router
 "
-#append packages " [depot_user]/src/vfs_lxip          "
+
 append_if [expr !$use_lxip] packages " [depot_user]/src/vfs_lwip          "
 append_if $use_lxip         packages " [depot_user]/src/vfs_lxip          "
 append_if $use_nic_bridge   packages " [depot_user]/src/nic_bridge        "
@@ -96,7 +96,6 @@ build { app/iperf }
 
 set lx_ip_addr "10.0.2.55"
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
 proc platform_drv_policy {} {
 	global use_wifi_driver
 	if { $use_wifi_driver } {
