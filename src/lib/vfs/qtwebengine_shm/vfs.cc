@@ -374,6 +374,8 @@ class Dataspace_file_system : public Vfs::File_system
 
 		bool read_ready(Vfs_handle *) override { return false; }
 
+		bool write_ready(Vfs_handle const &) const override { return false; }
+
 		Ftruncate_result ftruncate(Vfs_handle *vfs_handle, file_size len) override
 		{
 			Dataspace_vfs_file_handle *handle =
