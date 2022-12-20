@@ -26,7 +26,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	typedef Gui::Session::Command     Command;
 
 	Gui::Connection              gui;
-	unsigned               const id;
+	unsigned short         const id;
 	Framebuffer::Mode            fb_mode { };
 	Genode::Dataspace_capability fb_ds   { };
 	Genode::addr_t               pixels  { 0 };
@@ -43,7 +43,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 
 	Backend_gui(Genode::Env &env,
 	            Genode::List<Backend_gui> &guis,
-	            unsigned id, Gui::Area area,
+	            unsigned short id, Gui::Area area,
 	            Genode::Signal_context_capability const input_signal,
 	            char const *name)
 	:

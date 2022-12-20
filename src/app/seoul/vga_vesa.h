@@ -27,6 +27,7 @@
 #include <nitpicker_gfx/box_painter.h>
 
 #include <nul/message.h> /* VgaRegs */
+#include <service/logging.h>
 
 #include "gui.h"
 #include "guest_memory.h"
@@ -155,30 +156,43 @@ class Seoul::Vga_vesa
 			} else if (msg.index == 1) {
 
 				Genode::memset(msg.info, 0, sizeof(*msg.info));
+
+				auto const bytes = gui.fb_mode.bytes_per_pixel();
+
+				if (_fb_phys_base >= 1ull << 32)
+					Logging::panic("vesa phys address too large");
+
+				if ((gui.fb_mode.area.w()         >= (1u << 16)) ||
+				    (gui.fb_mode.area.h()         >= (1u << 16)) ||
+				    (gui.fb_mode.area.w() * bytes >= (1u << 16)) ||
+				    (bytes * 8                    >= (1u << 8)))
+					Logging::panic("resolution too large for vesa");
+
 				/*
 				 * It's important to set the _vesa_mode field, otherwise the
 				 * device model is going to ignore this mode.
 				 */
-				unsigned const bytes = gui.fb_mode.bytes_per_pixel();
-				msg.info->_vesa_mode = 0x138;
-				msg.info->attr = 0x39f;
-				msg.info->resolution[0]      = gui.fb_mode.area.w();
-				msg.info->resolution[1]      = gui.fb_mode.area.h();
-				msg.info->bytes_per_scanline = gui.fb_mode.area.w()*bytes;
-				msg.info->bytes_scanline     = gui.fb_mode.area.w()*bytes;
-				msg.info->bpp = bytes * 8;
-				msg.info->memory_model = MEMORY_MODEL_DIRECT_COLOR;
-				msg.info->vbe1[0] =  0x8; /* red mask size */
-				msg.info->vbe1[1] = 0x10; /* red field position */
-				msg.info->vbe1[2] =  0x8; /* green mask size */
-				msg.info->vbe1[3] =  0x8; /* green field position */
-				msg.info->vbe1[4] =  0x8; /* blue mask size */
-				msg.info->vbe1[5] =  0x0; /* blue field position */
-				msg.info->vbe1[6] =  0x0; /* reserved mask size */
-				msg.info->vbe1[7] =  0x0; /* reserved field position */
-				msg.info->colormode = 0x0; /* direct color mode info */
-				msg.info->phys_base = _fb_phys_base;
-				msg.info->_phys_size = gui.fb_mode.area.count()*bytes;
+				auto &info = *msg.info;
+
+				info._vesa_mode         = 0x138;
+				info.attr               = 0x39f;
+				info.resolution[0]      = uint16(gui.fb_mode.area.w());
+				info.resolution[1]      = uint16(gui.fb_mode.area.h());
+				info.bytes_per_scanline = uint16(gui.fb_mode.area.w()*bytes);
+				info.bytes_scanline     = uint16(gui.fb_mode.area.w()*bytes);
+				info.bpp                = uint8 (bytes * 8);
+				info.memory_model       = MEMORY_MODEL_DIRECT_COLOR;
+				info.vbe1[0]            =  0x8; /* red mask size */
+				info.vbe1[1]            = 0x10; /* red field position */
+				info.vbe1[2]            =  0x8; /* green mask size */
+				info.vbe1[3]            =  0x8; /* green field position */
+				info.vbe1[4]            =  0x8; /* blue mask size */
+				info.vbe1[5]            =  0x0; /* blue field position */
+				info.vbe1[6]            =  0x0; /* reserved mask size */
+				info.vbe1[7]            =  0x0; /* reserved field position */
+				info.colormode          =  0x0; /* direct color mode info */
+				info.phys_base          = unsigned(_fb_phys_base);
+				info._phys_size         = unsigned(gui.fb_mode.area.count()*bytes);
 				return true;
 			}
 			return false;

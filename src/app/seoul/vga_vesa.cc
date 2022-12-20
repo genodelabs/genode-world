@@ -41,7 +41,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 
 	/* calculate cursor position, get color during loop below */
 	if (_regs->cursor_pos > _regs->offset) {
-		unsigned pos = _regs->cursor_pos - _regs->offset;
+		int pos = int(_regs->cursor_pos - _regs->offset);
 		cursor_x = pos % 80;
 		cursor_y = pos / 80;
 

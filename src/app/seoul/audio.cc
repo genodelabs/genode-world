@@ -106,9 +106,9 @@ bool Seoul::Audio::receive(MessageAudio &msg)
 		#define USE_FLOAT
 
 #ifdef USE_FLOAT
-		auto const guest_sample_size = sizeof(float);
+		unsigned const guest_sample_size = sizeof(float);
 #else
-		auto const guest_sample_size = sizeof(Genode::int16_t);
+		unsigned const guest_sample_size = sizeof(Genode::int16_t);
 #endif
 
 		enum { CHANNELS = 2 };

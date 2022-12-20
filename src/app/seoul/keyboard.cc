@@ -79,7 +79,7 @@ bool Seoul::Keyboard::_map_keycode(unsigned &keycode, bool press)
 	/* up to 0x53, the Genode key codes correspond to scan code set 1 */
 	default:
 		if (keycode <= 0x53) {
-			keycode = GenericKeyboard::translate_sc1_to_sc2(keycode);
+			keycode = GenericKeyboard::translate_sc1_to_sc2(static_cast<unsigned char>(keycode));
 			break;
 		} else return false;
 	}

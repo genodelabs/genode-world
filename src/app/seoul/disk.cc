@@ -192,10 +192,14 @@ bool Seoul::Disk::receive(MessageDisk &msg)
 	{
 		Genode::String<16> label("disk", msg.disknr);
 
+		if (disk.info.block_count >= 1ull << 32 ||
+		    disk.info.block_size  >= 1ull << 32)
+			Logging::panic("disk: too many blocks");
+
 		msg.params->flags           = DiskParameter::FLAG_HARDDISK;
 		msg.params->sectors         = disk.info.block_count;
-		msg.params->sectorsize      = disk.info.block_size;
-		msg.params->maxrequestcount = disk.info.block_count;
+		msg.params->sectorsize      = unsigned(disk.info.block_size);
+		msg.params->maxrequestcount = unsigned(disk.info.block_count);
 		memcpy(msg.params->name, label.string(), label.length());
 
 		return true;

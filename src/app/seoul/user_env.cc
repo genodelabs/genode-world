@@ -34,7 +34,7 @@ void vprintf(const char *format, va_list &args)
 	String_console sc(buf, sizeof(buf));
 	sc.vprintf(format, args);
 
-	int n = sc.len();
+	auto n = sc.len();
 	if (0 < n && buf[n-1] == '\n') n--;
 
 	log("VMM: ", Cstring(buf, n));
