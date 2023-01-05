@@ -4365,7 +4365,7 @@ class Genode::Vm_region_map
 						[&] () { _rm_connection.upgrade_caps(2); },
 						~0u);
 				},
-				[&] () { _env.upgrade(Parent::Env::pd(), "ram_quota=8K"); });
+				[&] () { _rm_connection.upgrade_ram(8*1024); });
 		}
 
 		Local_addr attach_executable(Dataspace_capability ds, addr_t local_addr)
@@ -4377,7 +4377,7 @@ class Genode::Vm_region_map
 						[&] () { _rm_connection.upgrade_caps(2); },
 						~0u);
 				},
-				[&] () { _env.upgrade(Parent::Env::pd(), "ram_quota=8K"); });
+				[&] () { _rm_connection.upgrade_ram(8*1024); });
 		}
 
 		void detach(Local_addr local_addr) { _rm.detach((addr_t)local_addr - _base); }
