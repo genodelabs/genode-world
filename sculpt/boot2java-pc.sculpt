@@ -2,7 +2,7 @@ system:  pc
 drivers: two_nics-qemu_pc
 runtime: boot2java
 
-import: src/ipxe_nic_drv src/acpi_drv src/platform_drv
+import: src/ipxe_nic_drv src/acpi_drv src/platform_drv src/pci_decode
 import: src/ahci_drv pkg/boot2java
 
 

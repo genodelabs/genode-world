@@ -65,7 +65,7 @@
 			</domain>
 
 			<domain name="default" interface="10.0.1.1/24">
-				<dhcp-server ip_first="10.0.1.2" ip_last="10.0.1.2" dns_server_from="uplink_inner"/>
+				<dhcp-server ip_first="10.0.1.2" ip_last="10.0.1.2" dns_config_from="uplink_inner"/>
 				<tcp dst="0.0.0.0/0">
 					<permit-any domain="uplink_inner"/>
 				</tcp>

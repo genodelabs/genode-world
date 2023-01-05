@@ -35,7 +35,8 @@
 			<service name="Report" />
 		</provides>
 		<config>
-			<policy label="platform_drv -> acpi" report="acpi_drv -> acpi"/>
+			<policy label="pci_decode -> system"    report="acpi_drv -> acpi"/>
+			<policy label="platform_drv -> devices" report="pci_decode -> devices"/>
 		</config>
 		<route>
 			<service name="LOG"> <parent/> </service>
@@ -45,16 +46,29 @@
 		</route>
 	</start>
 
+	<start name="pci_decode">
+		<resource name="RAM" quantum="2M"/>
+		<route>
+			<service name="Report">             <child name="report_rom"/> </service>
+			<service name="ROM" label="system"> <child name="report_rom"/> </service>
+			<service name="IO_MEM"> <parent/> </service>
+			<service name="LOG">    <parent/> </service>
+			<service name="PD">     <parent/> </service>
+			<service name="RM">     <parent/> </service>
+			<service name="CPU">    <parent/> </service>
+			<service name="ROM">    <parent/> </service>
+		</route>
+	</start>
+
 	<start name="platform_drv" caps="210" managing_system="yes">
-		<binary name="legacy_pc_platform_drv"/>
+		<binary name="platform_drv"/>
 		<resource name="RAM" quantum="3M"/>
 		<provides>
 			<service name="Platform"/>
 			<service name="Acpi"/>
 		</provides>
 		<route>
-			<service name="ROM" label="system"> <child name="report_rom"/> </service>
-			<service name="ROM" label="acpi">   <child name="report_rom"/> </service>
+			<service name="ROM" label="devices"> <child name="report_rom"/> </service>
 			<service name="IRQ">     <parent/> </service>
 			<service name="IO_MEM">  <parent/> </service>
 			<service name="IO_PORT"> <parent/> </service>
@@ -66,10 +80,10 @@
 		</route>
 		<config>
 			<policy label_prefix="runtime -> nic_outer">
-				<pci bus="0" device="2" function="0"/>
+				<device name="00:02.0"/>
 			</policy>
 			<policy label_prefix="runtime -> nic_inner">
-				<pci bus="0" device="3" function="0"/>
+				<device name="00:03.0"/>
 			</policy>
 			<policy label_prefix="runtime -> ahci_drv"> <pci class="AHCI"/> </policy>
 		</config>

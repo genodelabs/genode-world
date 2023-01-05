@@ -35,7 +35,7 @@ append qemu_args " -drive id=hdd,file=$disk_image,format=raw,if=none -device ide
 append_qemu_nic_args "hostfwd=tcp::8080-:8080"
 append qemu_args " -nographic -net nic,model=e1000,netdev=net1 -netdev user,id=net1,hostfwd=tcp::8081-:8081 "
 
-run_genode_until {.*Server started.*\n} 60
+run_genode_until {.*Server started.*\n} 80
 
 #
 # Download and check website from server
