@@ -47,6 +47,10 @@ if {![info exists use_audio]} {
 	set use_audio 0
 }
 
+if {![info exists cpuid_native]} {
+	set cpuid_native "no"
+}
+
 if {$use_audio} {
 	import_from_depot [depot_user]/src/bsd_audio_drv
 }
@@ -76,12 +80,6 @@ if {[have_spec foc]} {
 	# The performance is considerable bad when
 	# vmm and vcpu is not on same physical CPU
 	set vmm_vcpu_same_cpu  "yes"
-
-	# Qemu SVM has no EPT support
-	if {[have_include "power_on/qemu"]} {
-		puts "\n Run script is not supported on this platform. \n";
-		exit 0
-	}
 }
 
 set build_components {
@@ -102,7 +100,7 @@ build $build_components
 
 # write Seoul config file
 set vm_cfg_fd [open "bin/vm_seoul.cfg" w]
-puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\">"
+puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\" cpuid_native=\"$cpuid_native\">"
 puts $vm_cfg_fd {	 <machine verbose="no">
 		<mem start="0x0" end="0x9a000"/>
 		<mem start="0x100000" end="0xfffff000"/>
