@@ -183,12 +183,19 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 	public:
 
-		Vcpu(Genode::Entrypoint &ep,
-		     Genode::Vm_connection &vm_con,
-		     Genode::Allocator &alloc, Genode::Env &env,
-		     Genode::Mutex &vcpu_mutex, VCpu *unsynchronized_vcpu,
-		     Seoul::Guest_memory &guest_memory, Synced_motherboard &motherboard,
-		     bool vmx, bool svm, bool map_small, bool rdtsc)
+		Vcpu(Genode::Entrypoint    & ep,
+		     Genode::Vm_connection & vm_con,
+		     Genode::Allocator     & alloc,
+		     Genode::Env           & env,
+		     Genode::Mutex         & vcpu_mutex,
+		     VCpu                  * unsynchronized_vcpu,
+		     Seoul::Guest_memory   & guest_memory,
+		     Synced_motherboard    & motherboard,
+		     unsigned const          vcpu_id,
+		     bool     const          vmx,
+		     bool     const          svm,
+		     bool     const          map_small,
+		     bool     const          rdtsc)
 		:
 			_vm_con(vm_con),
 			_handler(ep, *this, &Vcpu::_handle_vm_exception),
@@ -204,6 +211,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 				Logging::panic("no SVM/VMX available, sorry");
 
 			_seoul_state.clear();
+			_seoul_state.head.cpuid = vcpu_id;
 
 			/* handle cpuid overrides */
 			unsynchronized_vcpu->executor.add(this, receive_static<CpuMessage>);
@@ -309,7 +317,10 @@ class Vcpu : public StaticReceiver<Vcpu>
 				break;
 			case 0x1f: /* _vmx_msr_read */
 			case 0x20: /* _vmx_msr_write */
-				mtd = MTD_RIP_LEN | MTD_GPR_ACDB | MTD_TSC | MTD_SYSENTER | MTD_STATE;
+				mtd  = MTD_RIP_LEN | MTD_GPR_ACDB | MTD_TSC | MTD_SYSENTER | MTD_STATE;
+				/* 64bit guests */
+				mtd |= MTD_FS_GS | MTD_EFER | MTD_SYSCALL_SWAPGS;
+				mtd |= MTD_INJ | MTD_RFLAGS;
 				break;
 			case 0x21: /* _vmx_invalid */
 			case 0x30: /* _vmx_ept */
@@ -377,15 +388,15 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		static void _skip_instruction(CpuMessage &msg)
 		{
-			/* advance EIP */
+			/* advance RIP */
 			assert(msg.mtr_in & MTD_RIP_LEN);
-			msg.cpu->ripx += msg.cpu->inst_len;
+			msg.cpu->rip += msg.cpu->inst_len;
 			msg.mtr_out |= MTD_RIP_LEN;
 
 			/* cancel sti and mov-ss blocking as we emulated an instruction */
 			assert(msg.mtr_in & MTD_STATE);
 			if (msg.cpu->intr_state & 3) {
-				msg.cpu->intr_state &= ~3;
+				msg.cpu->intr_state &= ~3u;
 				msg.mtr_out |= MTD_STATE;
 			}
 		}
@@ -858,8 +869,8 @@ class Machine : public StaticReceiver<Machine>
 					Vcpu * vcpu = new Vcpu(*ep, _vm_con, _heap, _env,
 					                       _motherboard_mutex, msg.vcpu,
 					                       _guest_memory, _motherboard,
-					                       has_vmx, has_svm, _map_small,
-					                       _rdtsc_exit);
+					                       _vcpus_up, has_vmx, has_svm,
+					                       _map_small, _rdtsc_exit);
 
 					_vcpus[_vcpus_up] = vcpu;
 					msg.value = _vcpus_up;
@@ -1247,37 +1258,80 @@ class Machine : public StaticReceiver<Machine>
 		/**
 		 * Reset the machine and unblock the VCPUs
 		 */
-		void boot()
+		void boot(bool cpuid_native)
 		{
 			Genode::log("VM is starting with ", _vcpus_up, " vCPU",
 			            _vcpus_up > 1 ? "s" : "");
 
 			unsigned apic_id = _vcpus_up - 1;
 
-			/* init VCPUs */
+			/* init vCPUs */
 			for (VCpu *vcpu = _unsynchronized_motherboard.last_vcpu; vcpu; vcpu = vcpu->get_last()) {
 
+				enum { EAX = 0, EBX = 1, ECX = 2, EDX = 3 };
+				unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+				bool ok = false;
+
 				/* init CPU strings */
-				const char *short_name = "NOVA microHV";
-				vcpu->set_cpuid(0, 1, reinterpret_cast<const unsigned *>(short_name)[0]);
-				vcpu->set_cpuid(0, 3, reinterpret_cast<const unsigned *>(short_name)[1]);
-				vcpu->set_cpuid(0, 2, reinterpret_cast<const unsigned *>(short_name)[2]);
-				const char *long_name = "Seoul VMM proudly presents this VirtualCPU. ";
-				for (unsigned i=0; i<12; i++)
-					vcpu->set_cpuid(0x80000002 + (i / 4), i % 4, reinterpret_cast<const unsigned *>(long_name)[i]);
+				if (!cpuid_native) {
+					char const * const short_name_char = "NOVA microHV";
+					auto short_name = reinterpret_cast<unsigned const *>(short_name_char);
+
+					ok = vcpu->set_cpuid(0, EBX, short_name[0]); assert(ok);
+					ok = vcpu->set_cpuid(0, EDX, short_name[1]); assert(ok);
+					ok = vcpu->set_cpuid(0, ECX, short_name[2]); assert(ok);
+
+					Cpu::cpuid(0, ebx, ecx, edx);
+
+					const char *long_name = "Seoul VMM proudly presents this VirtualCPU. ";
+					for (unsigned i=0; i<12; i++) {
+						ok = vcpu->set_cpuid(0x80000002 + (i / 4), i % 4, reinterpret_cast<const unsigned *>(long_name)[i]);
+						assert(ok);
+					}
+				} else {
+
+					eax = Cpu::cpuid(0, ebx, ecx, edx);
+
+					/* eax specifies max CPUID - let it to default of 2 */
+					// ok = vcpu->set_cpuid(0, EAX, eax); assert(ok);
+					ok = vcpu->set_cpuid(0, EBX, ebx); assert(ok);
+					ok = vcpu->set_cpuid(0, EDX, edx); assert(ok);
+					ok = vcpu->set_cpuid(0, ECX, ecx); assert(ok);
+
+					for (unsigned id = 0x80000002u; id < 0x80000000u + 3; id++) {
+						eax = Cpu::cpuid(id, ebx, ecx, edx);
+
+						ok = vcpu->set_cpuid(id, EAX, eax); assert(ok);
+						ok = vcpu->set_cpuid(id, EBX, ebx); assert(ok);
+						ok = vcpu->set_cpuid(id, EDX, edx); assert(ok);
+						ok = vcpu->set_cpuid(id, ECX, ecx); assert(ok);
+					}
+				}
 
 				/* propagate feature flags from the host */
-				unsigned ebx_1=0, ecx_1=0, edx_1=0;
-				Cpu::cpuid(1, ebx_1, ecx_1, edx_1);
+				Cpu::cpuid(1, ebx, ecx, edx);
 
 				/* clflush size, apic_id */
-				vcpu->set_cpuid(1, 1, (apic_id << 24) | (ebx_1 & 0xff00), 0xff00ff00u);
+				ok = vcpu->set_cpuid(1, EBX, (apic_id << 24) | (ebx & 0xff00), 0xff00ff00u);
+				assert(ok);
 
 				/* +SSE3,+SSSE3 */
-				vcpu->set_cpuid(1, 2, ecx_1, 0x00000201);
+				ok = vcpu->set_cpuid(1, ECX, ecx, 0x00000201);
+				assert(ok);
 
-				/* -PAE,-PSE36, -MTRR,+MMX,+SSE,+SSE2,+CLFLUSH,+SEP */
-				vcpu->set_cpuid(1, 3, edx_1, 0x0f88a9bf | (1 << 28));
+				/* -PSE36, -MTRR,+MMX,+SSE,+SSE2,+CLFLUSH,+SEP */
+				ok = vcpu->set_cpuid(1, EDX, edx, 0x0f88a9bf |
+				                                  (1u << 28) |
+				                                  (1u <<  6) /* PAE */);
+				assert(ok);
+
+				/* +NX */
+				Cpu::cpuid(0x80000001, ebx, ecx, edx);
+				ok = vcpu->set_cpuid(0x80000001, EDX, edx,
+				                     (1u << 20) | /* NX */
+				                     (1u << 29)   /* Long Mode */ );
+				assert(ok);
 
 				apic_id = apic_id ? apic_id - 1 : _vcpus_up - 1;
 			}
@@ -1320,6 +1374,7 @@ void Component::construct(Genode::Env &env)
 	bool const rdtsc_exit        = node.attribute_value("exit_on_rdtsc", false);
 	bool const vmm_vcpu_same_cpu = node.attribute_value("vmm_vcpu_same_cpu",
 	                                                    false);
+	bool const cpuid_native      = node.attribute_value("cpuid_native", false);
 
 	/* request max available memory */
 	auto vm_size = env.pd().avail_ram().value;
@@ -1398,5 +1453,5 @@ void Component::construct(Genode::Env &env)
 
 	Genode::log("\n--- Booting VM ---");
 
-	machine.boot();
+	machine.boot(cpuid_native);
 }

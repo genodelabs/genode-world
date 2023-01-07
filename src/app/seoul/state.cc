@@ -9,7 +9,7 @@
  * Copyright (C) 2018-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
- * under the terms of the GNU Affero General Public License version 3.
+ * under the terms of the GNU General Public License version 2.
  */
 
 #include <base/log.h>
@@ -29,25 +29,25 @@ void Seoul::write_vcpu_state(CpuState &seoul, unsigned mtr, Genode::Vcpu_state &
 	}
 
 	if (mtr & MTD_GPR_BSD) {
-		state.di.charge(seoul.rdix);
-		state.si.charge(seoul.rsix);
-		state.bp.charge(seoul.rbpx);
+		state.di.charge(seoul.rdi);
+		state.si.charge(seoul.rsi);
+		state.bp.charge(seoul.rbp);
 		mtr &= ~MTD_GPR_BSD;
 	}
 
 	if (mtr & MTD_RIP_LEN) {
-		state.ip.charge(seoul.ripx);
+		state.ip.charge(seoul.rip);
 		state.ip_len.charge(seoul.inst_len);
 		mtr &= ~MTD_RIP_LEN;
 	}
 
 	if (mtr & MTD_RSP) {
-		state.sp.charge(seoul.rspx);
+		state.sp.charge(seoul.rsp);
 		mtr &= ~MTD_RSP;
 	}
 
 	if (mtr & MTD_RFLAGS) {
-		state.flags.charge(seoul.rflx);
+		state.flags.charge(seoul.rfl);
 		mtr &= ~MTD_RFLAGS;
 	}
 
@@ -169,6 +169,42 @@ void Seoul::write_vcpu_state(CpuState &seoul, unsigned mtr, Genode::Vcpu_state &
 		mtr &= ~MTD_TSC;
 	}
 
+#ifdef __x86_64__
+	if (mtr & MTD_EFER) {
+		state.efer.charge(seoul.efer);
+		mtr &= ~MTD_EFER;
+	}
+
+	if (mtr & MTD_R8_R15) {
+		state. r8.charge(seoul.gpr[ 8]);
+		state. r9.charge(seoul.gpr[ 9]);
+		state.r10.charge(seoul.gpr[10]);
+		state.r11.charge(seoul.gpr[11]);
+		state.r12.charge(seoul.gpr[12]);
+		state.r13.charge(seoul.gpr[13]);
+		state.r14.charge(seoul.gpr[14]);
+		state.r15.charge(seoul.gpr[15]);
+		mtr &= ~MTD_R8_R15;
+	}
+
+	if (mtr & MTD_SYSCALL_SWAPGS) {
+		state. star.charge(seoul.star);
+		state.cstar.charge(seoul.cstar);
+		state.lstar.charge(seoul.lstar);
+		state.fmask.charge(seoul.fmask);
+		state.kernel_gs_base.charge(seoul.kernel_gs);
+		mtr &= ~MTD_SYSCALL_SWAPGS;
+	}
+
+	if (mtr & MTD_PDPTE) {
+		state.pdpte_0.charge(0);
+		state.pdpte_1.charge(0);
+		state.pdpte_2.charge(0);
+		state.pdpte_3.charge(0);
+		mtr &= ~MTD_PDPTE;
+	}
+#endif
+
 	if (mtr)
 		Genode::error("state transfer incomplete ", Genode::Hex(mtr));
 }
@@ -198,19 +234,19 @@ unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 			Genode::warning("missing state ", __LINE__);
 
 		mtr |= MTD_GPR_BSD;
-		seoul.rdix = state.di.value();
-		seoul.rsix = state.si.value();
-		seoul.rbpx = state.bp.value();
+		seoul.rdi = state.di.value();
+		seoul.rsi = state.si.value();
+		seoul.rbp = state.bp.value();
 	}
 
 	if (state.flags.charged()) {
 		mtr |= MTD_RFLAGS;
-		seoul.rflx = state.flags.value();
+		seoul.rfl = state.flags.value();
 	}
 
 	if (state.sp.charged()) {
 		mtr |= MTD_RSP;
-		seoul.rspx = state.sp.value();
+		seoul.rsp = state.sp.value();
 	}
 
 	if (state.ip.charged() || state.ip_len.charged()) {
@@ -218,7 +254,7 @@ unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 			Genode::warning("missing state ", __LINE__);
 
 		mtr |= MTD_RIP_LEN;
-		seoul.ripx = state.ip.value();
+		seoul.rip      = state.ip.value();
 		seoul.inst_len = state.ip_len.value();
 	}
 
@@ -226,15 +262,6 @@ unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 		mtr |= MTD_DR;
 		seoul.dr7 = state.dr7.value();
 	}
-#if 0
-	if (state.r8.charged()  || state.r9.charged() ||
-	    state.r10.charged() || state.r11.charged() ||
-	    state.r12.charged() || state.r13.charged() ||
-	    state.r14.charged() || state.r15.charged()) {
-
-		Genode::warning("r8-r15 not supported");
-	}
-#endif
 
 	if (state.cr0.charged() || state.cr2.charged() ||
 	    state.cr3.charged() || state.cr4.charged()) {
@@ -389,26 +416,53 @@ unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 		seoul.qual[0] = state.qual_primary.value();
 		seoul.qual[1] = state.qual_secondary.value();
 	}
-#if 0
+
+#ifdef __x86_64__
 	if (state.efer.charged()) {
-		Genode::warning("efer not supported by Seoul");
+		mtr |= MTD_EFER;
+		seoul.efer = state.efer.value();
 	}
 
-	if (state.pdpte_0.charged() || state.pdpte_1.charged() ||
-	    state.pdpte_2.charged() || state.pdpte_3.charged()) {
-
-		Genode::warning("pdpte not supported by Seoul");
+	if (state.r8.charged()) {
+		mtr |= MTD_R8_R15;
+		seoul.gpr[ 8] = state. r8.value();
+		seoul.gpr[ 9] = state. r9.value();
+		seoul.gpr[10] = state.r10.value();
+		seoul.gpr[11] = state.r11.value();
+		seoul.gpr[12] = state.r12.value();
+		seoul.gpr[13] = state.r13.value();
+		seoul.gpr[14] = state.r14.value();
+		seoul.gpr[15] = state.r15.value();
 	}
 
 	if (state.star.charged() || state.lstar.charged() || state.cstar.charged() ||
 	    state.fmask.charged() || state.kernel_gs_base.charged()) {
 
-		Genode::warning("star, lstar, cstar, fmask, kernel_gs not supported by Seoul");
+		mtr |= MTD_SYSCALL_SWAPGS;
+
+		seoul.star  = state. star.value();
+		seoul.cstar = state.cstar.value();
+		seoul.lstar = state.lstar.value();
+		seoul.fmask = state.fmask.value();
+		seoul.kernel_gs = state.kernel_gs_base.value();
+	}
+#endif
+
+#if 0
+	if (state.pdpte_0.charged() || state.pdpte_1.charged() ||
+	    state.pdpte_2.charged() || state.pdpte_3.charged()) {
+
+		Genode::warning("pdpte not supported by Seoul ",
+		                Genode::Hex(state.pdpte_0.value()), " ",
+		                Genode::Hex(state.pdpte_1.value()), " ",
+		                Genode::Hex(state.pdpte_2.value()), " ",
+		                Genode::Hex(state.pdpte_3.value()));
 	}
 
 	if (state.tpr.charged() || state.tpr_threshold.charged()) {
 		Genode::warning("tpr not supported by Seoul");
 	}
 #endif
+
 	return mtr;
 }
