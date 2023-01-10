@@ -7,7 +7,7 @@ This work is a side result of one of the research project made in Innopolis Univ
 
 It allow compilation and execution of simple go applications/packages (without unsupported OS/platform features).
 In this moment it supports linux, foc, nova and sel4 kernels on x86_64 platform, and foc, hw on arm64 (arm v8a) platform.
-(Checked with linux/linux, foc/pc, nova/pc as x86_64; hw/virt_qemu, foc/rpi3  as arm64 as for now on 22.05)
+(Checked with linux/linux, foc/pc, nova/pc as x86_64; hw/virt_qemu_arm_v8a, foc/rpi3  as arm64 as for now on 22.11)
 
 I use only gccgo version of golang compiler (gcc 10.3). Things like "go build" in cross mode not supported yet (while we make
 some techology to produce makefiles from "go build" to compile go code, not attached yet).
@@ -71,7 +71,7 @@ target.mk for test app:
 TARGET = go_app
 SRC_GO = main.go
 
-LIBS   = base libc libm libatomic libbacktrace libffi libgo libgo_support stdcxx net
+LIBS   = base libc libm libgo libgo_support stdcxx net
 
 CC_CXX_WARN_STRICT =
 	
@@ -84,7 +84,7 @@ ${BUILD_BASE_DIR}/lib/libgo/.libs/libgo.a. Everything included into import-libgo
 
 	Debugging
 	=========
-On most systems (like seL4) you can use only debug print, and sometimes print locking (and output) is tricky.
+On most systems (like seL4) you can use mostly debug print, and sometimes print locking (and output) is tricky.
 You can use gdb to debug your application on nova using qemu stub (-s) or internal gdbserver (while gdb 
 support in genode somehow limited, I found a lot of problems with improper breaks/etc); 
 I use Parallels VM or qemu on Mac. To compile code for gdb please, take a look at
@@ -100,7 +100,7 @@ For convenience I add my VSCode launch.json (to run debugger using VSCode as fro
             "executable": "build/x86_64/var/libcache/ld-nova/ld-nova.lib.so",
             "target": ":5555",
             "remote": true,
-            "cwd": "/var/services/homes/admin/gen/21.11",
+            "cwd": "/var/services/homes/admin/gen/22.11",
             "autorun": [
                 "set output-radix 16",
                 "set solib-search-path build/x86_64/debug",
@@ -133,13 +133,12 @@ Addresses like -o 0x10dfe000 you should take from log of program after first sta
 	IMPORTANT:
 run file should contain ALL libs and binaries from above and "/proc/exe", otherwise stack unwind performed 
 by golang will fail (it will say something about "deadlock ahead" inside nested exceptions).
-References included into run file, as well as parameters like arena size (virtual-only memory), this is 
+References included into run file, as well as parameters like 'arena size' (virtual-only memory), this is 
 virtual address space used, not always necessary correspond to physical RAM size (probably not significantly
 less).
 
 For network and tcp setup please take a look for go_http.run exapmple file.
 In this moment it support lwip and lxip (need different setup for linux vs others, see run file).
-Seems that for combination foc/rpi3 I dont know how to compile drivers, others works ok for x86/arm 64 bit.
 
 	Current limitations
 	===================
@@ -166,7 +165,7 @@ Seems that for combination foc/rpi3 I dont know how to compile drivers, others w
 	NB: Potentially new genode releases will contain something which can replace or fix these and other patched functions
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
   -	mmap area do not call free() during exit() - otherwise we will free memory while some theads continue running on it
-  -	networking: works for at least net/http package, see go_http example of http server and run file configuration
+  -	networking: works for at least net/http package lwip/lxip, see go_http example of http server and run file configuration
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
 Origin in https://github.com/tor-m6/genode-world.git
