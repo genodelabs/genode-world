@@ -52,7 +52,7 @@ set executable_port "80"
 
 # config section
 # any libraries for executable above should be listed here
-set modules "ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so vfs.lib.so"
+set modules "ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so vfs.lib.so posix.lib.so"
 
 set conf_verbose "yes"
 set conf_ld_verbose "yes"
