@@ -28,6 +28,8 @@ set executable_net "24"
 set executable_gateway "10.0.3.1"
 set executable_port "80"
 
+set arguments ""
+
 set use_lxip 1
 
 set use_nic_router 1

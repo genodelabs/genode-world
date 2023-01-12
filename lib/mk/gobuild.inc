@@ -40,22 +40,10 @@ ifneq (x$(GO_BUILD_LIB),xyes)
 	SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
 	SRC_GO_BUILD_DIR = .
 
-	STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
-
-$(TARGET).stripped: $(TARGET)
-		$(VERBOSE)$(STRIP_TARGET_CMD)
-
-$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
-		$(VERBOSE)ln -sf $(CURDIR)/$< $@
-
-ifneq ($(DEBUG_DIR),)
-$(DEBUG_DIR)/$(TARGET): $(TARGET)
-		$(VERBOSE)ln -sf $(CURDIR)/$< $@
-endif
-
 else
 	# assume package name wihout .go substng
-	TARGET ?= lib$(lastword $(subst /, ,$(SRC_GO_PKG))).a
+	# TARGET ?= lib$(lastword $(subst /, ,$(SRC_GO_PKG))).a
+	TARGET ?= $(lastword $(subst /, ,$(PRG_DIR)))
 	PKG    ?= $(SRC_GO_PKG)
 
 	SRC_GO_PK := $(SRC_GO_PKG)
@@ -68,6 +56,19 @@ ifeq ($(VERBOSE),)
 endif
 		$(VERBOSE)mkdir -p src
 		$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) genode-go get -x -v -d $(SRC_GO_PKG_MAIN)
+endif
+
+STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
+
+$(TARGET).stripped: $(TARGET)
+		$(VERBOSE)$(STRIP_TARGET_CMD)
+
+$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
+		$(VERBOSE)ln -sf $(CURDIR)/$< $@
+
+ifneq ($(DEBUG_DIR),)
+$(DEBUG_DIR)/$(TARGET): $(TARGET)
+		$(VERBOSE)ln -sf $(CURDIR)/$< $@
 endif
 
 GOROOT:=$(BUILD_BASE_DIR)/app/goroot

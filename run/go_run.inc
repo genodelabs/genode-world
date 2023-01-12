@@ -208,6 +208,7 @@ append config {
 		<resource name="RAM" quantum="} $executable_mem {" />
 		<config verbose="} $conf_verbose {"  ld_verbose="} $conf_ld_verbose {">
 			<arg value="} $executable {" />
+			} $arguments {
 			<vfs>
 				<dir name="dev">
 					<log/> <null/> <inline name="rtc">2020-01-01 00:00</inline>
