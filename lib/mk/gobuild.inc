@@ -21,15 +21,15 @@ endif
 
 BUILDTAGS ?= seccomp
 
-GOBUILD_FLAGS = $(GOBUILD_VERBOSE) -v -compiler gccgo
+GOBUILD_FLAGS = $(GOBUILD_VERBOSE) -compiler gccgo
 
 ifeq ($(GOBUILD_REBUILD_ALL),yes)
 	GOBUILD_FLAGS += -a
 endif
 
-# ifeq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
-# 	GO_BUILD_LIB ?= yes
-# endif
+ifeq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
+	GO_BUILD_LIB ?= yes
+endif
 
 ifneq (x$(GO_BUILD_LIB),xyes)
 	# assume set of .go files to be compiled
@@ -42,16 +42,16 @@ ifneq (x$(GO_BUILD_LIB),xyes)
 
 	STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
 
-	$(TARGET).stripped: $(TARGET)
+$(TARGET).stripped: $(TARGET)
 		$(VERBOSE)$(STRIP_TARGET_CMD)
 
-	$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
+$(INSTALL_DIR)/$(TARGET): $(TARGET).stripped
 		$(VERBOSE)ln -sf $(CURDIR)/$< $@
 
-	ifneq ($(DEBUG_DIR),)
-	$(DEBUG_DIR)/$(TARGET): $(TARGET)
+ifneq ($(DEBUG_DIR),)
+$(DEBUG_DIR)/$(TARGET): $(TARGET)
 		$(VERBOSE)ln -sf $(CURDIR)/$< $@
-	endif
+endif
 
 else
 	# assume package name wihout .go substng
@@ -62,12 +62,12 @@ else
 	SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
 	SRC_GO_BUILD_DIR = src/$(SRC_GO_PKG_MAIN)
 
-	$(PKG):
-	ifeq ($(VERBOSE),)
+$(PKG):
+ifeq ($(VERBOSE),)
 		echo Building $@
-	endif
+endif
 		$(VERBOSE)mkdir -p src
-		$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) go get -x -v -d $(SRC_GO_PKG_MAIN)
+		$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) genode-go get -x -v -d $(SRC_GO_PKG_MAIN)
 endif
 
 GOROOT:=$(BUILD_BASE_DIR)/app/goroot
@@ -88,6 +88,8 @@ CGO_LDFLAGS1 = $(subst =ld.lib.so,=ld_lib_so,$(CGO_LDFLAGS0))
 CGO_LDFLAGS2 = $(patsubst %.lib.so, -l:%.lib.so,$(CGO_LDFLAGS1))
 CGO_LDFLAGS  = $(subst =ld_lib_so,=ld.lib.so,$(CGO_LDFLAGS2))
 
+MY_CUSTOM_GO = $(notdir $(CUSTOM_GO))
+
 env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)rm -f $@
 	$(VERBOSE)echo "export CC='$(CC)'" >> $@
@@ -103,10 +105,9 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export LDFLAGS='$(LDFLAGS)'" >> $@
 	$(VERBOSE)echo "export LIBS='$(LDLIBS)'" >> $@
 	$(VERBOSE)echo "export LIBTOOLFLAGS='$(LIBTOOLFLAGS)'" >> $@
-	$(VERBOSE)echo "export PS1='<go_build>'" >> $@
 	$(VERBOSE)echo "export GOOS='$(GOOS)'" >> $@
 	$(VERBOSE)echo "export GOARCH='$(GOARCH)'" >> $@
-	$(VERBOSE)echo "export GCCGO='$(CUSTOM_GO)'" >> $@
+	$(VERBOSE)echo "export GCCGO='$(MY_CUSTOM_GO)'" >> $@
 	$(VERBOSE)echo "export CGO_LDFLAGS='$(CGO_LDFLAGS) -L$(realpath .)'" >> $@
 	$(VERBOSE)echo "export GOROOT='$(GOROOT)'" >> $@
 	$(VERBOSE)echo "export GOPATH='$(LIBGO_PKG_BUILD):$(CURDIR)'" >> $@
@@ -118,6 +119,7 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export OBJCOPY='$(OBJCOPY)'" >> $@
 	$(VERBOSE)echo "export OBJDUMP='$(OBJDUMP)'" >> $@
 	$(VERBOSE)echo "export GDB='$(GDB)'" >> $@
+	$(VERBOSE)echo "export GCC_EXEC_PREFIX='$(GOROOT)/toolchain/gcc/libgo/'" >> $@
 	$(VERBOSE)echo "unset GOPROXY" >> $@
 
 
@@ -128,10 +130,10 @@ $(TARGET): env.sh $(SRC_GO_PK) $(SHARED_LIBS) $(GOROOT)/bin
 		fi \
 	done
 	$(VERBOSE)if [ ! -f go.mod ]; then \
-		source ./env.sh && go mod init $(PKG); \
+		source ./env.sh && genode-go mod init $(PKG); \
 	fi
-	$(VERBOSE)source ./env.sh && go mod tidy
+	$(VERBOSE)source ./env.sh && genode-go mod tidy -e
 	$(VERBOSE)source ./env.sh && cd $(SRC_GO_BUILD_DIR) && \
-		go build $(GOBUILD_FLAGS) -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
+		genode-go build $(GOBUILD_FLAGS) -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
 
 LIBS   = base libc libm libgo libgo_support stdcxx

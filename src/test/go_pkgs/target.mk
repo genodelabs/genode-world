@@ -1,6 +1,8 @@
-SRC_GO_PKG := im.go
+SRC_GO_PKG := greet.go srv.go
+# im.go
 # greet.go srv.go
 #
+# should prepare goroot port before!
 
 GOBUILD_VERBOSE := -x
 
