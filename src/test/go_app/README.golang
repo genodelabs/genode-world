@@ -9,9 +9,7 @@ It allow compilation and execution of simple go applications/packages (without u
 In this moment it supports linux, foc, nova and sel4 kernels on x86_64 platform, and foc, hw on arm64 (arm v8a) platform.
 (Checked with linux/linux, foc/pc, nova/pc as x86_64; hw/virt_qemu_arm_v8a, foc/rpi3  as arm64 as for now on 22.11)
 
-I use only gccgo version of golang compiler (gcc 10.3). Things like "go build" in cross mode not supported yet (while we make
-some techology to produce makefiles from "go build" to compile go code, not attached yet).
-Other limitations see below.
+I use only gccgo version of golang compiler (gcc 10.3). Other limitations see below.
 
 It build a set of libraries, from world repo, as static ones.
 Also it build a set of standard golang packages (namely fmt, os, syscall, runtime/etc) as files for gccgo compilation.
@@ -166,6 +164,28 @@ In this moment it support lwip and lxip (need different setup for linux vs other
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
   -	mmap area do not call free() during exit() - otherwise we will free memory while some theads continue running on it
   -	networking: works for at least net/http package lwip/lxip, see go_http example of http server and run file configuration
+
+	go frontend in cross mode
+	=========================
+Standard way of golang usage is a "go" driver/frontend utilizaton, see "go build" and other instruction. Problem that it by default
+support own compiler as well as gccgo. In genode we do have gccgo only, and standard frontend in theory can support it.
+In practice, I have to build own version of frontend (call it genode-go) and force creation of own tricky combination of genode tools
+references and build libgo objects (packages) where I point standard variable GCC_EXEC_PREFIX. It stored inside build goroot in /toolchain.
+Current version is 1.17
+
+To use genode-go host frontend you need
+0. build libgo (see above)
+1. prepare port goroot
+2. update src/app/goroot/target.mk of it for appropriate GOARCH and build it in usual way like "make app/goroot"
+   (this step will generate host application genode-go, not genode one!)
+3. add goroot/bin into PATH (eg like /var/services/homes/admin/gen/22.11/build/arm_v8a/app/goroot/bin)
+
+Then you can use package build targets of genode (it will utilize genode-go as a toolchain part), see test/go_pkgs as a sample.
+In src/test/go_pkgs/target.mk you can turn on executed commands print if need GOBUILD_VERBOSE := -x. 
+go_pkgs example supports 2 mode - just a set of .go files as a single programm and a directory with .go files as a package.
+In first case you need to define SRC_GO_PKG with a list of files, in the second to the name of package like github.com/blabla/bla.
+
+I do not test genode-go host frontend for anything outside of this example, and still not all package/module staff clear for me.
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
 Origin in https://github.com/tor-m6/genode-world.git
