@@ -184,6 +184,7 @@ Then you can use package build targets of genode (it will utilize genode-go as a
 In src/test/go_pkgs/target.mk you can turn on executed commands print if need GOBUILD_VERBOSE := -x. 
 go_pkgs example supports 2 mode - just a set of .go files as a single programm and a directory with .go files as a package.
 In first case you need to define SRC_GO_PKG with a list of files, in the second to the name of package like github.com/blabla/bla.
+It downloads packages via "genode-go get" and work with modules.
 
 I do not test genode-go host frontend for anything outside of this example, and still not all package/module staff clear for me.
 
