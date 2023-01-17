@@ -1,0 +1,10 @@
+
+LICENSE             := Apache
+VERSION             := stable-1.1
+
+DOWNLOADS           := cmocka.git
+
+URL(cmocka)        := https://git.cryptomilk.org/projects/cmocka.git
+DIR(cmocka)        := src/lib/cmocka
+REV(cmocka)        := $(VERSION)
+
