@@ -1,0 +1,46 @@
+#
+# \brief  Example for running go package with network (based on scrcpy port)
+# \author Alexander Tormasov
+# \date   2023-01-16
+#
+
+# check network configuration detailes/settings from source file below
+# especially for linux TAP drivers
+#
+
+# general config section
+set num_cpu 4
+set mem_size "512M"
+# in bytes - 1610612736 == 1.5Gb
+set arena_mem_size "1610612736"
+
+# TARGET= from target.mk
+set executable "runc"
+
+# could be like test to refer make target "test/go_http"
+set executable_place "test"
+
+set executable_mem "164M"
+set executable_caps "1000"
+
+set executable_ip  "10.0.3.2"
+set executable_net "24"
+set executable_gateway "10.0.3.1"
+set executable_port "8080"
+
+set arguments ""
+set arguments "<arg value=\"features\"/>"
+
+set use_lxip 1
+
+set use_nic_router 1
+
+set use_nic  1
+set use_rtc  1
+
+source ${genode_dir}/repos/world/run/go_run.inc
+
+append qemu_args " -m $mem_size -nographic -smp $num_cpu"
+append_qemu_nic_args "hostfwd=tcp::5555-:$executable_port"
+
+run_genode_until forever
