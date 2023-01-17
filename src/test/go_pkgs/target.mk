@@ -1,4 +1,6 @@
-SRC_GO_PKG := greet.go srv.go
+SRC_GO_PKG := im.go
+# github.com/woojiahao/tower-of-hanoi-solver/cmd
+# github.com/tatsushid/go-fastping/cmd/ping
 # im.go
 # greet.go srv.go
 #

@@ -95,7 +95,7 @@ install_config {
 		        verbose_domain_state="yes"
 		        verbose_packet_drop="yes">
 
-			<policy label_prefix="main_http" domain="downlink" />
+			<policy label_prefix="go_http" domain="downlink" />
 			<policy label_prefix="linux_nic_drv"     domain="uplink" />
 			<!-- <policy label_prefix="nic_drv"  domain="uplink"/> -->
 
@@ -127,10 +127,10 @@ install_config {
 		</config>
 	</start>
 
-	<start name="main_http" caps="1000">
+	<start name="go_http" caps="1000">
 		<resource name="RAM" quantum="1400M" />
 		<config  verbose="yes" ld_verbose="yes" >
-			<arg value="main_http" />
+			<arg value="go_http" />
 			<arg value="PathString" />
 			<vfs>
 				<dir name="dev">
@@ -148,10 +148,10 @@ install_config {
 				<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
 				<rom name="vfs_lwip.lib.so" label="vfs_lwip.lib.so"/>
 				<rom name="vfs_pipe.lib.so" label="vfs_pipe.lib.so"/>
-				<rom name="binary" label="main_http"/>
+				<rom name="binary" label="go_http"/>
 				<dir name="proc">
 					<dir name="self">
-						<rom name="exe" label="main_http"/>
+						<rom name="exe" label="go_http"/>
 					</dir>
 				</dir>
 				<dir name="pipe"> <pipe/>
@@ -173,7 +173,7 @@ install_config {
 
 build_boot_image {
 	core init timer ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
-	rtc_drv vfs_lwip.lib.so vfs_pipe.lib.so vfs.lib.so main_http
+	rtc_drv vfs_lwip.lib.so vfs_pipe.lib.so vfs.lib.so go_http
 
 	linux_nic_drv
 	nic_router report_rom

@@ -24,6 +24,7 @@
 #    ! make run/lwip_lx KERNEL=linux BOARD=linux
 #    ! lynx -dump http://10.0.2.55
 #
+#    do not forget to make chmod a+rw /dev/net/tun
 # 3) Clean up your Linux when done testing:
 #    ! sudo ip tuntap delete $TAP_DEV mode tap
 #
@@ -44,7 +45,7 @@ set lx_gw_addr "10.0.2.1"
 
 set use_nic_router 1
 set ld_nic "yes"
-if {[have_board linux]} { set ld_nic "no" }
+#if {[have_board linux]} { set ld_nic "no" }
 
 set use_nic  1
 set use_rtc  1
@@ -128,7 +129,7 @@ append config {
 
 append_if $use_nic config {
 	<start name="nic_drv" ld="} $ld_nic {" caps="1000" managing_system="yes" >
-		<resource name="RAM" quantum="32M"/>
+		<resource name="RAM" quantum="8M"/>
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
