@@ -33,8 +33,6 @@ set arguments ""
 set use_lxip 1
 
 set use_nic_router 1
-set ld_nic "yes"
-if {[have_board linux]} { set ld_nic "no" }
 
 set use_nic  1
 set use_rtc  1

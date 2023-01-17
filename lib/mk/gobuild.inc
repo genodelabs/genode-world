@@ -21,7 +21,7 @@ endif
 
 BUILDTAGS ?= seccomp
 
-GOBUILD_FLAGS = $(GOBUILD_VERBOSE) -compiler gccgo
+GOBUILD_FLAGS += $(GOBUILD_VERBOSE) -compiler gccgo
 
 ifeq ($(GOBUILD_REBUILD_ALL),yes)
 	GOBUILD_FLAGS += -a
