@@ -8,7 +8,7 @@ $(MIRROR_FROM_REP_DIR):
 	$(mirror_from_rep_dir)
 
 include:
-	mkdir -p "$(dir $@)"
+	mkdir -p $@
 	cp -R $(PORT_DIR)/include/* $@
 
 LICENSE:
