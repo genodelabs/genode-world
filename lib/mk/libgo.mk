@@ -26,11 +26,6 @@ $(LIB_CACHE_DIR)/libatomic/finished.tag \
 
 finished.tag:: $(MY_TARGET)
 	@$(MSG_INST)$*
-	echo ".... strip *gcc.a files from generated static library"
-	@$(AR) d $(MY_TARGET) base.lib.a libatomic.lib.a libbacktrace.lib.a \
-		libffi.lib.a libgo_support.lib.a libgcc.a lt1-base.lib.a \
-		lt2-libatomic.lib.a lt3-libbacktrace.lib.a lt4-libffi.lib.a \
-		lt5-libgo_support.lib.a lt6-libgcc.a lt2-libgo_support.lib.a lt3-libgcc.a
 	@ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libgo.lib.a
 	@ln -sf $(MY_BUILD_DIR)/libgobegin.a $(MY_BUILD_DIR)/libgobegin.lib.a
 	@ln -sf $(MY_BUILD_DIR)/libgolibbegin.a $(MY_BUILD_DIR)/libgolibbegin.lib.a

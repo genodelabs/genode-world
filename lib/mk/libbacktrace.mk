@@ -16,8 +16,6 @@ $(MY_TARGET): built.tag
 finished.tag: $(MY_TARGET)
 	@$(MSG_INST)$* ; \
 	ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libbacktrace.lib.a; \
-	echo ".... strip *gcc.a files from generated static library"; \
-	$(AR) d $(MY_TARGET) libgcc_eh.a libgcc.a lt1-libgcc_eh.a lt2-libgcc.a ; \
 	echo ".... copy h-files for to $(MY_BUILD_DIR)/include ....."; \
 	mkdir -p $(MY_BUILD_DIR)/include; \
 	cp $(MY_BUILD_DIR)/gstdint.h $(MY_BUILD_DIR)/include/; \

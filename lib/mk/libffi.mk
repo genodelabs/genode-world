@@ -13,8 +13,6 @@ $(MY_TARGET): built.tag
 
 finished.tag: $(MY_TARGET)
 	@$(MSG_INST)$* ; \
-	echo ".... strip *gcc.a files from generated static library"; \
-	$(AR) d $(MY_TARGET) libgcc.a lt1-libgcc.a ; \
 	ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libffi.lib.a
 	@touch $@
 
