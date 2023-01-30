@@ -13,7 +13,7 @@ $(MY_TARGET): built.tag
 
 finished.tag: $(MY_TARGET)
 	@$(MSG_INST)$* ; \
-	ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libatomic.lib.a; \
+	#ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libatomic.lib.a; \
 	echo ".... copy h-files for to $(MY_BUILD_DIR)/include ....."; \
 	mkdir -p $(MY_BUILD_DIR)/include; \
 	find $(PKG_DIR)/ -name '*.h' -exec cp -fLp {} $(MY_BUILD_DIR)/include/ \;

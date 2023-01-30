@@ -12,8 +12,8 @@ CUSTOM_TARGET_DEPS := finished.tag
 $(MY_TARGET): built.tag
 
 finished.tag: $(MY_TARGET)
-	@$(MSG_INST)$* ; \
-	ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libffi.lib.a
+#	@$(MSG_INST)$* ; \
+#	ln -sf $(MY_TARGET) $(MY_BUILD_DIR)/libffi.lib.a
 	@touch $@
 
 # add libc include to INC_DIR
