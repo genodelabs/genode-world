@@ -18,7 +18,7 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export GOTESTONLY='!'" >> $@
 
 $(TARGET): prepare_goroot
-	$(VERBOSE)source ./env.sh && cd src && ./all.bash && mv bin/go bin/genode-go
+	$(VERBOSE)source ./env.sh && cd src && ./all.bash && mv ../bin/go ../bin/genode-go
 
 prepare_goroot: env.sh $(CURDIR)/toolchain/gcc/libgo/
 	$(VERBOSE)cp -aprsf $(GOROOT_DIR)/* .
