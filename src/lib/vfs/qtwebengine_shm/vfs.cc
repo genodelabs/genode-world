@@ -360,14 +360,12 @@ class Dataspace_file_system : public Vfs::File_system
 		 ** File I/O interface **
 		 ************************/
 
-		Write_result write(Vfs_handle *, char const *, file_size,
-		                   Vfs::file_size &) override
+		Write_result write(Vfs_handle *, Const_byte_range_ptr const &, size_t &) override
 		{
 			return WRITE_ERR_INVALID;
 		}
 
-		Read_result complete_read(Vfs_handle *, char *, file_size,
-		                          file_size &) override
+		Read_result complete_read(Vfs_handle *, Byte_range_ptr const &, size_t &) override
 		{
 			return READ_ERR_INVALID;
 		}
