@@ -244,6 +244,8 @@ append_qemu_nic_args "hostfwd=tcp::5555-:22"
 
 set nic_router_match_string ".uplink. dynamic IP config. interface (\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+).*\n"
 
+proc sshpass { } { return [installed_command sshpass] }
+
 if {[get_cmd_switch --autopilot]} {
 	run_genode_until $nic_router_match_string 60
 	set serial_id [output_spawn_id]
@@ -260,7 +262,7 @@ if {[get_cmd_switch --autopilot]} {
 
 	for {set index 0} {$index < 3} {incr index} {
 		puts "test interactive channel"
-		spawn sshpass -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port
+		spawn [sshpass] -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port
 		set ssh_id $spawn_id
 		run_genode_until {/bin/bash] Hello from Genode!.*\n} 15 $serial_id
 		send -i $ssh_id "ls\r"
@@ -270,19 +272,19 @@ if {[get_cmd_switch --autopilot]} {
 
 		puts "test exec channel echo"
 		set echo_text "The quick brown fox jumps over the lazy dog"
-		spawn sshpass -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port echo "$echo_text"
+		spawn [sshpass] -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port echo "$echo_text"
 		set ssh_id $spawn_id
 		run_genode_until ".*$echo_text.*\n" 15 $ssh_id
 		run_genode_until "child \"init\" exited with exit value 0.*\n" 15 $serial_id
 
 		puts "test exec channel ls"
-		spawn sshpass -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port "ls"
+		spawn [sshpass] -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port "ls"
 		set ssh_id $spawn_id
 		run_genode_until "bin" 15 $ssh_id
 		run_genode_until "child \"init\" exited with exit value 0.*\n" 15 $serial_id
 
 		puts "test exec channel with empty command will not hang"
-		spawn sshpass -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port " "
+		spawn [sshpass] -p xuon ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l noux $host -p $port " "
 		set ssh_id $spawn_id
 		run_genode_until "child \"init\" exited with exit value.*\n" 15 $serial_id
 	}
