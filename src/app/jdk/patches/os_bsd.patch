@@ -18,7 +18,7 @@ index 9261440..2348f1a 100644
 +#include <region_map/client.h>
 +#include <rm_session/connection.h>
 +#include <util/retry.h>
-+#include <base/debug.h>
++
 +
 +#ifdef ZERO_ENABLE
 +#define ZERO
@@ -53,7 +53,7 @@ index 9261440..2348f1a 100644
 -  #include <objc/objc-auto.h>
 +#if 0
 +#define NOT_IMPL ({ \
-+ PDBG("called not implmemented\n"); \
++ Genode::warning(__PRETTY_FUNCTION__, " called, not implemented"); \
 +})
 +#else
 +#define NOT_IMPL

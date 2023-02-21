@@ -35,7 +35,6 @@
 #include <region_map/client.h>
 #include <rm_session/connection.h>
 #include <util/retry.h>
-#include <base/debug.h>
 #include <base/log.h>
 #include <libc/allocator.h>
 

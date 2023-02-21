@@ -27,7 +27,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <base/debug.h>
+#include <base/log.h>
 #include <errno.h>
 
 extern "C"
@@ -37,7 +37,7 @@ extern "C"
 #include <sys/socket.h>
 
 #define NOT_IMPL ({                  \
-	PDBG("called not implmemented"); \
+	Genode::warning(__PRETTY_FUNCTION__, " called, not implemented"); \
 })
 
 #include <sys/uio.h>

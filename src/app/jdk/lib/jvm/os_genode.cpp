@@ -28,7 +28,6 @@
 #include <region_map/client.h>
 #include <rm_session/connection.h>
 #include <util/retry.h>
-#include <base/debug.h>
 
 /* libc includes */
 #include <stdlib.h> /* 'malloc'/ 'exit' */
@@ -123,7 +122,7 @@
 
 #if 0
 #define NOT_IMPL ({ \
- PDBG("called not implmemented"); \
+ Genode::warning(__PRETTY_FUNCTION__, " called, not implemented"); \
 })
 #else
 #define NOT_IMPL
