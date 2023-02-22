@@ -16,6 +16,7 @@
 
 #include <base/stdint.h>
 #include <base/log.h>
+#include <base/exception.h>
 
 namespace Genode { namespace Rdrand {
 
