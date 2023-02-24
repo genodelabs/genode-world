@@ -447,6 +447,9 @@ class Vcpu : public StaticReceiver<Vcpu>
 			if (verbose_npt)
 				Genode::log("--> request mapping at", Genode::Hex(vm_fault_addr));
 
+			if (need_unmap)
+				Genode::error("_handle_map_memory: need_unmap not handled, yet");
+
 			if (sizeof(uintptr_t) == 4 && vm_fault_addr >= (1ull << (32 + 12)))
 				Logging::panic("unsupported guest fault on 32bit");
 
@@ -464,24 +467,6 @@ class Vcpu : public StaticReceiver<Vcpu>
 				                (Genode::addr_t)mem_region.ptr >> PAGE_SIZE_LOG2,
 				                ((Genode::addr_t)mem_region.ptr >> PAGE_SIZE_LOG2)
 				                + mem_region.count);
-
-			Genode::addr_t vmm_memory_base =
-			        reinterpret_cast<Genode::addr_t>(mem_region.ptr);
-			auto vmm_memory_fault = vmm_memory_base +
-			        (vm_fault_addr - (mem_region.start_page << PAGE_SIZE_LOG2));
-
-			/* XXX: Not yet supported by Seoul/Vancouver.
-
-			bool read=true, write=true, execute=true;
-			if (mem_region.attr == (DESC_TYPE_MEM | DESC_RIGHT_R)) {
-				if (verbose_npt)
-					Logging::printf("Mapping readonly to %p (err:%x, attr:%x)\n",
-						vm_fault_addr, utcb->qual[0], mem_region.attr);
-				write = execute = false;
-			}*/
-
-			if (need_unmap)
-				Logging::panic("_handle_map_memory: need_unmap not handled, yet\n");
 
 			assert(_state.inj_info.charged());
 
@@ -786,6 +771,7 @@ class Machine : public StaticReceiver<Machine>
 			switch (msg.type) {
 
 			case MessageHostOp::OP_ALLOC_IOMEM:
+			case MessageHostOp::OP_ALLOC_IOMEM_SMALL:
 			{
 				if (msg.len & 0xfff)
 					return false;
@@ -794,7 +780,9 @@ class Machine : public StaticReceiver<Machine>
 				try {
 					Genode::Dataspace_capability ds = _env.ram().alloc(msg.len);
 					Genode::addr_t local_addr = _env.rm().attach(ds);
-					_guest_memory.add_region(_heap, guest_addr, local_addr, ds, msg.len);
+					_guest_memory.add_region(_heap, guest_addr, local_addr, ds,
+					                         msg.type == MessageHostOp::OP_ALLOC_IOMEM_SMALL ?
+					                         msg.len_short : msg.len);
 					msg.ptr = reinterpret_cast<char *>(local_addr);
 					return true;
 				} catch (...) {

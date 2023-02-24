@@ -250,7 +250,7 @@ set config {
 	</start>
 
 	<start name="pci_decode" caps="350">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<route>
 			<service name="ROM" label="system"> <child name="platform_reports"/> </service>
 			<service name="Report"> <child name="platform_reports"/> </service>
@@ -302,7 +302,7 @@ set config {
 	</start>}
 
 append_if $use_usb config {
-	<start name="usb_drv" priority="-1" caps="120">
+	<start name="usb_drv" priority="-1" caps="200">
 		<binary name="pc_usb_host_drv"/>
 		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Usb"/> </provides>
@@ -376,7 +376,7 @@ append_if $use_part_block config {
 
 append_if $use_block_ram config {
 	<start name="vfs_block" priority="-1" caps="300">
-		<resource name="RAM" quantum="266M" />
+		<resource name="RAM" quantum="300M" />
 		<provides><service name="Block"/></provides>
 		<config>
 			<vfs>
@@ -451,7 +451,7 @@ append_if $use_genode_iso config {
 
 append_if $use_nic_session config {
 
-	<start name="nic_drv" priority="-2">
+	<start name="nic_drv" caps="150" priority="-2">
 		<binary name="ipxe_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<route>
@@ -495,9 +495,9 @@ append_if $use_nic_session config {
 }
 
 append config {
-	<start name="fb_drv" priority="-1" caps="130">
+	<start name="fb_drv" priority="-1" caps="200">
 		<binary name="vesa_fb_drv"/>
-		<resource name="RAM" quantum="16M"/>
+		<resource name="RAM" quantum="20M"/>
 		<route>
 			<service name="Timer">    <child name="timer"/></service>
 			<service name="Capture">  <child name="nitpicker"/></service>
@@ -537,8 +537,8 @@ append config {
 		</route>
 	</start>
 
-	<start name="nitpicker" priority="-1" caps="120">
-		<resource name="RAM" quantum="8M"/>
+	<start name="nitpicker" priority="-1" caps="200">
+		<resource name="RAM" quantum="12M"/>
 		<provides>
 			<service name="Gui"/> <service name="Capture"/> <service name="Event"/>
 		</provides>
