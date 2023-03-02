@@ -54,8 +54,8 @@ if {[have_spec sel4]} {
 # Download demo image
 #
 set uri "http://depot.genode.org/alex-ab/images"
-set image "seoul-auto.img.gz"
-set sha1sum "677908d2f62bc2ece7882e74ef7dd2e7c425e38d"
+set image "seoul-auto-serial.img.gz"
+set sha1sum "d8e63259c61a9d4ec6027e9a2982378236268acd"
 
 if {![file exists bin/seoul-disc.raw]} {
 	exec mkdir -p bin
