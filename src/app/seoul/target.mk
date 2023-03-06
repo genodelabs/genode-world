@@ -4,7 +4,7 @@ REQUIRES = x86
 SEOUL_CONTRIB_DIR = $(call select_from_ports,seoul)/src/app/seoul
 SEOUL_GENODE_DIR  = $(SEOUL_CONTRIB_DIR)/genode
 
-LIBS   += base blit seoul_libc_support
+LIBS   += base blit seoul_libc_support format
 SRC_CC  = component.cc user_env.cc device_model_registry.cc state.cc
 SRC_CC += console.cc keyboard.cc network.cc disk.cc vga_vesa.cc audio.cc
 SRC_BIN = mono.tff

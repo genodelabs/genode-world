@@ -2,6 +2,7 @@ base
 libc
 os
 blit
+format
 nitpicker_gfx
 gui_session
 framebuffer_session

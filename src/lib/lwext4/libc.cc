@@ -14,9 +14,11 @@
 /* Genode includes */
 #include <base/allocator.h>
 #include <base/log.h>
-#include <base/snprintf.h>
 #include <log_session/log_session.h>
 #include <util/string.h>
+
+/* format-string includes */
+#include <format/snprintf.h>
 
 /* library includes */
 #include <lwext4/init.h>
@@ -62,7 +64,7 @@ int printf(char const *fmt, ...)
 
 	va_list list;
 	va_start(list, fmt);
-	Genode::String_console sc(buffer, sizeof (buffer));
+	Format::String_console sc(buffer, sizeof (buffer));
 	sc.vprintf(fmt, list);
 	va_end(list);
 

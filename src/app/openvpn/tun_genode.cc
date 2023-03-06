@@ -13,7 +13,6 @@
 
 /* Genode includes */
 #include <base/log.h>
-#include <base/snprintf.h>
 #include <nic_session/rpc_object.h>
 #include <root/component.h>
 #include <util/string.h>
@@ -53,8 +52,7 @@ extern "C" void open_tun(char const *dev, char const *dev_type,
 		return;
 	}
 
-	char name[256];
-	Genode::snprintf(name, sizeof (name), "/dev/%s", dev);
+	snprintf(name, sizeof (name), "/dev/%s", dev);
 
 	tt->actual_name = string_alloc(name, NULL);
 	tt->fd = tuntap_dev()->fd();

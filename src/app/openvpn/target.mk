@@ -1,6 +1,6 @@
 TARGET = openvpn
 
-LIBS += libc libc_pipe libcrypto libssl
+LIBS += libc libcrypto libssl
 
 OPENVPN_PORT_DIR := $(call select_from_ports,openvpn)
 OPENVPN_DIR      := $(OPENVPN_PORT_DIR)/src/app/openvpn
