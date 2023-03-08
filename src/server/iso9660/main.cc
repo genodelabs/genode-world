@@ -18,7 +18,7 @@
 #include <base/rpc_server.h>
 #include <dataspace/client.h>
 #include <root/component.h>
-#include <util/avl_string.h>
+#include <util/dictionary.h>
 #include <base/attached_ram_dataspace.h>
 #include <base/session_label.h>
 #include <block_session/connection.h>
@@ -36,14 +36,13 @@ using namespace Genode;
 
 namespace Iso {
 
-	typedef Avl_string<PATH_LENGTH> File_base;
-	typedef Avl_tree<Avl_string_base> File_cache;
-
 	class File;
+
+	using File_name  = String<PATH_LENGTH>;
+	using File_cache = Dictionary<File, File_name>;
+
 	class Rom_component;
-
 	typedef Genode::Root_component<Rom_component> Root_component;
-
 
 	class Root;
 }
@@ -52,7 +51,7 @@ namespace Iso {
 /**
  * File abstraction
  */
-class Iso::File : public File_base
+class Iso::File : public File_cache::Element
 {
 	private:
 
@@ -69,10 +68,10 @@ class Iso::File : public File_base
 
 	public:
 
-		File(Genode::Env &env, Genode::Allocator &alloc,
+		File(Genode::Env &env, Genode::Allocator &alloc, File_cache &file_cache,
 		     Block::Connection<> &block, char const *path)
 		:
-			File_base(path), _alloc(alloc),
+			File_cache::Element(file_cache, path), _alloc(alloc),
 			_info(Iso::file_info(_alloc, block, path, env.ep())),
 			_ds(env.ram(), env.rm(), align_addr(_info->page_sized(), 12))
 		{
@@ -95,35 +94,30 @@ class Iso::Rom_component : public Genode::Rpc_object<Rom_session>
 		Rom_component(Rom_component const &);
 		Rom_component &operator = (Rom_component const &);
 
-		File *_file = nullptr;
-
-		File *_lookup(File_cache &cache, char const *path)
-		{
-			return static_cast<File *>(cache.first() ?
-			                           cache.first()->find_by_name(path) :
-			                           0);
-		}
+		File *_file_ptr = nullptr;
 
 	public:
 
 		Rom_dataspace_capability dataspace() override {
-			return static_cap_cast<Rom_dataspace>(_file->dataspace()); }
+			return static_cap_cast<Rom_dataspace>(_file_ptr->dataspace()); }
 
 		void sigh(Signal_context_capability) override { }
 
 		Rom_component(Genode::Env &env, Genode::Allocator &alloc,
-		              File_cache &cache, Block::Connection<> &block,
+		              File_cache &file_cache, Block::Connection<> &block,
 		              char const *path)
 		{
-			if ((_file = _lookup(cache, path))) {
-				Genode::log("cache hit for file ", Genode::Cstring(path));
-				return;
-			}
+			file_cache.with_element(path,
 
-			_file = new (alloc) File(env, alloc, block, path);
-			Genode::log("request for file ", Genode::Cstring(path));
+				[&] (File &file) {
+					log("cache hit for file ", path);
+					_file_ptr = &file;
+				},
 
-			cache.insert(_file);
+				[&] {
+					log("request for file ", path);
+					_file_ptr = new (alloc) File(env, alloc, file_cache, block, path);
+				});
 		}
 };
 
