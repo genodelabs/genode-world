@@ -2,5 +2,6 @@ expat
 libc
 mesa
 qt5_component
+qt5_qml
 so
 stdcxx

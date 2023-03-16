@@ -3,4 +3,6 @@ mesa
 nss3
 qt5
 qt5_component
+qt5_qml
+qt5_webengine
 stdcxx
