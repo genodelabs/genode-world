@@ -40,6 +40,11 @@ class Mbim
 
 	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT, READY };
 
+	enum Backoff {
+	    BACKOFF_START = 1000,
+	    BACKOFF_LIMIT = 64000
+	};
+
 	using String  = Genode::String<32>;
 	using Cstring = Genode::Cstring;
 
@@ -77,12 +82,13 @@ class Mbim
 		Genode::Reporter  _config_reporter { _env, "config", "nic_router.config" };
 		Genode::Reporter  _state_reporter  { _env, "state",  "state" };
 
-		State       _state      { NONE };
-		GMainLoop  *_loop       { nullptr };
-		MbimDevice *_device     { nullptr };
-		unsigned    _retry      { 0 };
-		guint32     _session_id { 0 };
-		Connection  _connection { };
+		State           _state          { NONE };
+		GMainLoop      *_loop           { nullptr };
+		MbimDevice     *_device         { nullptr };
+		unsigned        _retry          { 0 };
+		unsigned        _backoff        { Mbim::BACKOFF_START };
+		guint32         _session_id     { 0 };
+		Connection      _connection     { };
 
 		Genode::Attached_rom_dataspace _config_rom   { _env, "config" };
 		Network                        _network      { };
@@ -440,14 +446,14 @@ class Mbim
 				mbim->_state = Mbim::PIN;
 			}
 
-			if (mbim->_retry++ >= 100) {
-				Genode::error("Device not registered after ", mbim->_retry, " tries");
-				mbim->_shutdown(FALSE);
-				return;
+			if ((++mbim->_retry) % 10 == 0) {
+				Genode::warning("Device not registered after ", mbim->_retry, " tries");
 			}
 
 			/* delay re-request to leave device time for network registration */
-			g_timeout_add(500, _handle_timeout, mbim); /* 500ms */
+			/* delay is based on exponential backoff with upper bound */
+			g_timeout_add((mbim->_backoff < Mbim::BACKOFF_LIMIT ? mbim->_backoff *=2 : Mbim::BACKOFF_LIMIT), _handle_timeout, mbim);
+			
 		}
 
 		static gboolean _handle_timeout(gpointer user_data)
@@ -465,6 +471,9 @@ class Mbim
 			Mbim *mbim = _mbim(user_data);
 			GError *error                   = nullptr;
 			g_autoptr(MbimMessage) response = mbim->_command_response(res);
+
+			/* clear backoff upon successfull connection */
+			mbim->_backoff = Mbim::BACKOFF_START;
 
 			if (!response) return;
 
