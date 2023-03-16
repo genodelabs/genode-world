@@ -1,0 +1,77 @@
+<runtime>
+	<content>
+		<rom label="egl.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libdrm.lib.so"/>
+		<rom label="libQt5Core.lib.so"/>
+		<rom label="libQt5Gui.lib.so"/>
+		<rom label="libQt5Network.lib.so"/>
+		<rom label="libQt5Qml.lib.so"/>
+		<rom label="libQt5QmlModels.lib.so"/>
+		<rom label="libQt5QmlWorkerScript.lib.so"/>
+		<rom label="libQt5Quick.lib.so"/>
+		<rom label="libQt5PrintSupport.lib.so"/>
+		<rom label="libQt5Sql.lib.so"/>
+		<rom label="libQt5Xml.lib.so"/>
+		<rom label="libQt5VirtualKeyboard.lib.so"/>
+		<rom label="libQt5QuickControls2.lib.so"/>
+		<rom label="libQt5QuickTemplates2.lib.so"/>
+		<rom label="libQt5QuickWidgets.lib.so"/>
+		<rom label="libQt5Svg.lib.so"/>
+		<rom label="libQt5Test.lib.so"/>
+		<rom label="libQt5Widgets.lib.so"/>
+		<rom label="libqgenode.lib.so"/>
+		<rom label="qt5_quickcontrols.lib.so"/>
+		<rom label="qt5_component.lib.so"/>
+
+		<rom label="liblabsanimationplugin.lib.so"/>
+		<rom label="liblabsmodelsplugin.lib.so"/>
+		<rom label="libmodelsplugin.lib.so"/>
+		<rom label="libparticlesplugin.lib.so"/>
+		<rom label="libqmlfolderlistmodelplugin.lib.so"/>
+		<rom label="libqmllocalstorageplugin.lib.so"/>
+		<rom label="libqmlplugin.lib.so"/>
+		<rom label="libqmlsettingsplugin.lib.so"/>
+		<rom label="libqmlshapesplugin.lib.so"/>
+		<rom label="libqmltestplugin.lib.so"/>
+		<rom label="libqmlwavefrontmeshplugin.lib.so"/>
+		<rom label="libqquicklayoutsplugin.lib.so"/>
+		<rom label="libqtqmlstatemachine.lib.so"/>
+		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="libwindowplugin.lib.so"/>
+		<rom label="libworkerscriptplugin.lib.so"/>
+
+		<rom label="libqtgraphicaleffectsplugin.lib.so"/>
+		<rom label="libqtgraphicaleffectsprivate.lib.so"/>
+		<rom label="libqjpeg.lib.so"/>
+		<rom label="libqsvg.lib.so"/>
+
+		<rom label="mesa.lib.so"/>
+		<rom label="qt5_dejavusans.tar"/>
+		<rom label="qt5_graphicaleffects_qml.tar"/>
+		<rom label="qt5_libqgenode.tar"/>
+		<rom label="qt5_declarative_qml.tar"/>
+		<rom label="qt5_libqjpeg.tar"/>
+		<rom label="qt5_libqsvg.tar"/>
+
+		<rom label="ubuntu-ui-toolkit_qml.tar"/>
+		<rom label="ubuntu-themes.tar"/>
+		<rom label="ubuntu-ui-toolkit-launcher"/>
+		<rom label="libUbuntuComponents.lib.so"/>
+		<rom label="libUbuntuComponentsLabs.lib.so"/>
+		<rom label="libUbuntuComponentsStyles.lib.so"/>
+		<rom label="libUbuntuGestures.lib.so"/>
+		<rom label="libUbuntuMetrics.lib.so"/>
+		<rom label="libUbuntuPerformanceMetrics.lib.so"/>
+		<rom label="libUbuntuToolkit.lib.so"/>
+
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="vfs_gpu.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+</runtime>
