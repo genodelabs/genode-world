@@ -30,7 +30,8 @@ lappend import [depot_user]/src/glmark2 \
                [depot_user]/src/jpeg \
                [depot_user]/src/libpng \
                [depot_user]/src/zlib \
-               [depot_user]/src/stdcxx
+               [depot_user]/src/stdcxx \
+               [depot_user]/src/vfs_gpu
 
 set app_config {
 <start name="glmark2" caps="500">
