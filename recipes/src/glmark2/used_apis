@@ -1,5 +1,6 @@
 base
 os
+format
 framebuffer_session
 gui_session
 input_session
