@@ -41,8 +41,9 @@ class Mbim
 	enum State { NONE, UNLOCK, PIN, QUERY, ATTACH, CONNECT, READY };
 
 	enum Backoff {
-		BACKOFF_START = 1000,    /* start retires with one secuod */
+	    BACKOFF_START = 1000,
 		BACKOFF_LIMIT = 64000,   /* increase retry timeout up to 64 seconds */
+		RSSI_DISCONNECT = 31,
 	};
 
 	using String  = Genode::String<32>;
@@ -54,6 +55,7 @@ class Mbim
 		Genode::uint32_t  mask;
 		Net::Ipv4_address gateway;
 		Net::Ipv4_address dns[2];
+		bool              connected;
 	};
 
 	struct Network
@@ -616,11 +618,12 @@ class Mbim
 				Genode::log("dns", i, "   : ", dns[i]);
 			}
 
-			mbim->_connection.ip      = address;
-			mbim->_connection.mask    = ipv4address[0]->on_link_prefix_length;
-			mbim->_connection.gateway = gateway;
-			mbim->_connection.dns[0]  = dns[0];
-			mbim->_connection.dns[1]  = dns[1];
+			mbim->_connection.ip         = address;
+			mbim->_connection.mask       = ipv4address[0]->on_link_prefix_length;
+			mbim->_connection.gateway    = gateway;
+			mbim->_connection.dns[0]     = dns[0];
+			mbim->_connection.dns[1]     = dns[1];
+			mbim->_connection.connected  = true;
 			mbim->_state = Mbim::READY;
 			mbim->_report_config();
 		}
@@ -752,6 +755,21 @@ class Mbim
 							              (char const *)error->message);
 							return;
 						}
+
+						if (mbim->_state_report.rssi > RSSI_DISCONNECT) {
+							if (mbim->_connection.connected) {
+								mbim->_connection.connected  = false;
+								mbim->_report_config();
+								mbim->_state = NONE;
+							}
+						} else {
+							if (!mbim->_connection.connected) {
+								mbim->_connection.connected  = true;
+								mbim->_report_config();
+								mbim->_send_request();
+							}
+						}
+
 						mbim->_report_state();
 						break;
 
@@ -882,7 +900,7 @@ class Mbim
 					});
 
 					xml.node("signal", [&] () {
-						if (_state_report.rssi > 31)
+						if (_state_report.rssi > RSSI_DISCONNECT)
 							xml.attribute("rssi_dbm", "unknown");
 						else
 							xml.attribute("rssi_dbm", String("-", 113-2*_state_report.rssi));
@@ -899,6 +917,16 @@ class Mbim
 		{
 			if (_state != Mbim::READY)
 				return;
+
+			if (!_connection.connected) {
+				_config_reporter.enabled(true);
+				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
+					xml.attribute("verbose", "no");
+					xml.attribute("verbose_packets", "no");
+					xml.attribute("verbose_domain_state", "yes");
+				});
+				return;
+			}
 
 			String interface = "10.0.1.1/24";
 			String ip_first  = "10.0.1.2";
