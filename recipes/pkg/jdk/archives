@@ -3,4 +3,5 @@ _/src/jdk
 _/src/libc
 _/src/stdcxx
 _/src/vfs
+_/src/vfs_pipe
 _/src/zlib

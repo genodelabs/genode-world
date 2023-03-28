@@ -23,6 +23,7 @@
 		<rom label="stdcxx.lib.so"/>
 		<rom label="vfs.lib.so"/>
 		<rom label="tzdb.dat"/>
+		<rom label="verify.lib.so"/>
 		<rom label="zlib.lib.so"/>
 	</content>
 
@@ -53,6 +54,7 @@
 			</route>
 			<config ld_verbose="no">
 				<arg value="/bin/java" />
+				<arg value="-XX:+NeverActAsServerClassMachine"/>
 				<arg value="-jar" />
 				<arg value="hello.jar" />
 				<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
