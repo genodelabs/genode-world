@@ -1,155 +1,154 @@
-proc platform_drv_config_non_x86 {} {
-	if {[have_board imx8q_evk]} {
-		return {
-			<device name="usb_host_2">
-				<io_mem       address="0x38200000" size="0x10000"/>
-				<irq          number="73"/>
-				<power-domain name="usb_otg_2"/>
-				<clock        name="usb_phy_ref_clk_root"
-				              driver_name="usb_phy_root_clk"
-				              parent="system_pll1_div8"
-				              rate="100000000"/>
-				<clock        name="usb_core_ref_clk_root"
-				              parent="system_pll1_div8"
-				              rate="100000000"/>
-				<clock        name="usb_bus_clk_root"
-				              parent="system_pll2_div2"
-				              rate="500000000"/>
-				<clock        name="usb_ctrl2_gate"/>
-				<clock        name="usb_phy2_gate"/>
-				<property     name="compatible" value="snps,dwc3"/>
-				<property     name="dr_mode"    value="host"/>
-			</device>
-			<policy label="usb_drv -> "> <device name="usb_host_2"/> </policy>
-		}
-	}
-	if {[have_board imx6q_sabrelite]} {
-		return {
-			<device name="mxs_phy">
-				<io_mem address="0x020ca000" size="0xfff"/>
-				<irq    number="77"/>
-				<property name="compatible" value="fsl,imx6q-usbphy"/>
-				<property name="fsl,anatop" value="0xdeaddead"/>
-			</device>
-			<device name="usbmisc_imx">
-				<io_mem address="0x02184800" size="0x1ff"/>
-				<property name="compatible" value="fsl,imx6q-usbmisc"/>
-			</device>
-			<device name="imx_usb">
-				<io_mem address="0x02184200" size="0x1ff"/>
-				<irq    number="72"/>
-				<property  name="compatible"  value="fsl,imx6q-usb"/>
-				<property  name="fsl,usbmisc" value="usbmisc_imx"/>
-				<property  name="dr_mode"     value="host"/>
-			</device>
-			<policy label="usb_drv -> ">
-				<device name="mxs_phy"/>
-				<device name="usbmisc_imx"/>
-				<device name="imx_usb"/>
-			</policy>
-		}
+
+set     depot_archives { }
+lappend depot_archives [depot_user]/src/[base_src]
+lappend depot_archives [depot_user]/src/glib
+lappend depot_archives [depot_user]/src/init
+lappend depot_archives [depot_user]/src/libc
+lappend depot_archives [depot_user]/src/libiconv
+lappend depot_archives [depot_user]/src/nic_router
+lappend depot_archives [depot_user]/src/posix
+lappend depot_archives [depot_user]/src/report_rom
+lappend depot_archives [depot_user]/src/usb_modem_drv
+lappend depot_archives [depot_user]/src/vfs
+lappend depot_archives [depot_user]/src/vfs_pipe
+lappend depot_archives [depot_user]/src/ffi
+lappend depot_archives [depot_user]/src/zlib
+
+if {[have_board imx8q_evk] } {
+	lappend depot_archives [depot_user]/src/imx8mq_platform_drv
+	lappend depot_archives [depot_user]/src/imx8mq_usb_host_drv
+	lappend depot_archives [depot_user]/raw/imx8q_evk-devices
+	set platform_drv_binary imx8mq_platform_drv
+	set usb_host_drv_binary imx8mq_usb_host_drv
+}
+
+if {[have_board imx6q_sabrelite]} {
+	lappend depot_archives [depot_user]/src/imx6q_platform_drv
+	lappend depot_archives [depot_user]/src/legacy_usb_host_drv
+	lappend depot_archives [depot_user]/raw/imx6q_sabrelite-devices
+	set platform_drv_binary platform_drv
+	set usb_host_drv_binary legacy_imx6q_sabrelite_usb_host_drv
+}
+
+if {[have_board rpi]} {
+	lappend depot_archives [depot_user]/src/rpi_platform_drv
+	lappend depot_archives [depot_user]/src/legacy_usb_host_drv
+	lappend depot_archives [depot_user]/raw/rpi-devices
+	set platform_drv_binary rpi_platform_drv
+	set usb_host_drv_binary rpi_usb_host_drv
+}
+
+if {[have_board pc]} {
+	lappend depot_archives [depot_user]/src/pc_platform_drv
+	lappend depot_archives [depot_user]/src/pc_usb_host_drv
+	lappend depot_archives [depot_user]/raw/pbxa9-devices
+	set platform_drv_binary pc_platform_drv
+	set usb_host_drv_binary pc_usb_host_drv
+}
+
+set     build_components { }
+lappend build_components app/mbimcli
+lappend build_components app/ping
+
+set     boot_modules { }
+lappend boot_modules libmbim.lib.so
+lappend boot_modules mbimcli
+lappend boot_modules ping
+
+proc usb_policy { } {
+	return {<policy label="usb_modem_drv -> " vendor_id="0x12d1" product_id="0x15c1"/>}
+}
+
+proc platform_usb_devices { } {
+	if {[have_spec x86]} {
+		return {<pci class="USB"/>}
 	}
 	if {[have_board rpi]} {
-		return {
-			<device name="dwc_otg">
-				<io_mem       address="0x20980000" size="0x10000"/>
-				<irq          number="9"/>
-				<power-domain name="usb"/>
-				<property     name="compatible" value="brcm,bcm2835-usb"/>
-			</device>
-			<policy label="usb_drv -> "> <device name="dwc_otg"/> </policy>
-		}
+		return {<device name="dwc_otg"/>}
 	}
-	return ""
+	if {[have_board imx8q_evk]} {
+		return {<device name="usb_host_2"/>}
+	}
+	if {[have_board imx6q_sabrelite]} {
+		return {<device name="mxs_phy"/> <device name="usbmisc_imx"/> <device name="imx_usb"/>}
+	}
 }
-
-proc platform_drv_binary_non_x86 {} {
-	if {[have_board imx8q_evk]}       { return imx8mq_platform_drv  }
-	if {[have_board imx6q_sabrelite]} { return platform_drv         }
-	if {[have_board rpi]}             { return rpi_new_platform_drv }
-	return no_platform_drv_available
-}
-
-set build_components {
-	lib/vfs_pipe
-	app/mbimcli
-	app/ping
-	drivers/usb_host
-	drivers/usb_modem
-	server/nic_router
-	server/report_rom
-}
-
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
-if { [have_spec x86] } { append_platform_drv_build_components
-} else                 { append build_components  { drivers/platform }
-}
-
-build $build_components
 
 create_boot_directory
 
-import_from_depot \
-	[depot_user]/src/[base_src] \
-	[depot_user]/src/init
+build $build_components
+
+import_from_depot $depot_archives
 
 append config {
 <config>
 	<parent-provides>
-		<service name="ROM"/>
-		<service name="IRQ"/>
+		<service name="CPU"/>
 		<service name="IO_MEM"/>
 		<service name="IO_PORT"/>
+		<service name="IRQ"/>
+		<service name="LOG"/>
 		<service name="PD"/>
 		<service name="RM"/>
-		<service name="CPU"/>
-		<service name="LOG"/>
+		<service name="ROM"/>
 	</parent-provides>
-	<default-route>
-		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>
 	<default caps="200"/>
-}
 
-if { [have_spec x86] } { append_platform_drv_config
-} else {
-append config "<start name=\"[platform_drv_binary_non_x86]\">"
-append config {
-		<resource name="RAM" quantum="1M"/>
-		<provides><service name="Platform"/></provides>
-		<config>
-}
-
-append config "[platform_drv_config_non_x86]"
-append config {
-		</config>
-		<route> <any-service> <parent/> </any-service> </route>
-	</start>
-}
-}
-
-append config {
 	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
+		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Timer"/> </provides>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
 	</start>
-}
 
-append config "<start name=\"usb_drv\" caps=\"120\">"
-append config "<binary name=\"[usb_host_drv_binary]\"/>"
+	<start name="report_rom">
+		<resource name="RAM" quantum="2M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+		<config verbose="no">
+			<policy label="nic_router -> config" report="mbimcli -> nic_router.config"/>
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="platform_drv" caps="800" managing_system="yes">
+		<binary name="}
+append config $platform_drv_binary
+append config {"/>
+		<resource name="RAM" quantum="8M"/>
+		<provides>
+			<service name="Platform"/>
+			<service name="Regulator"/>
+		</provides>
+		<config>
+			<policy label="usb_drv -> " info="yes">}
+append config [platform_usb_devices]
 append config {
-		<resource name="RAM" quantum="12M"/>
+			</policy>
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="usb_drv" caps="180">
+		<binary name="}
+append config $usb_host_drv_binary
+append config {"/>
+		<resource name="RAM" quantum="64M"/>
 		<provides> <service name="Usb"/> </provides>
-		<config bios_handoff="yes">}
-append_if [have_spec x86] config {
-			<policy label_prefix="usb_modem_drv" vendor_id="0x12d1" product_id="0x15c1"/> }
-append_if [have_spec arm_v8] config {
-			<policy label_prefix="usb_modem_drv" vendor_id="0x12d1" product_id="0x15c1"/> }
+		<config bios_handoff="yes">
+			<report devices="no"/>
+			}
+append config [usb_policy]
 append config {
 		</config>
 		<route>
-			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -159,25 +158,20 @@ append config {
 		<provides>
 			<service name="Terminal"/>
 		</provides>
-		<config mac="02:00:00:00:01:01" mode="uplink_client" />
-	</start>
-
-	<start name="report_rom">
-		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Report"/> <service name="ROM"/> </provides>
-		<config verbose="no">
-			<policy label="nic_router -> config" report="mbimcli -> nic_router.config"/>
-		</config>
+		<config mac="02:00:00:00:01:01"/>
+		<route>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>
 
 	<start name="nic_router" caps="500">
 		<resource name="RAM" quantum="16M"/>
 		<provides>
-			<service  name="Nic" />
-			<service  name="Uplink"/>
+			<service name="Nic"/>
+			<service name="Uplink"/>
 		</provides>
 		<route>
-			<service name="ROM" label="config"> <child name="report_rom"/></service>
+			<service name="ROM" label="config"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -198,7 +192,6 @@ append config {
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/dev/pipe"/>
 		</config>
 		<route>
-			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -210,48 +203,32 @@ append config {
 		        count="5"
 		        dst_ip="94.130.141.202" />
 		<route>
-			<service name="Nic"> <child name="nic_router"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
+
 </config>
 }
 
 install_config $config
 
-set boot_modules {
-	libc.lib.so vfs.lib.so
-	glib.lib.so libiconv.lib.so zlib.lib.so ffi.lib.so
-	libmbim.lib.so
-	mbimcli ping
-
-	usb_modem_drv
-	report_rom nic_router
-
-	vfs_pipe.lib.so
-}
-
-append boot_modules [usb_host_drv_binary]
-lappend_if [have_board linux] boot_modules lx_file_terminal
-
-if {[have_spec x86]} { append_platform_drv_boot_modules
-} else { append boot_modules " [platform_drv_binary_non_x86] " }
-
 build_boot_image $boot_modules
 
-set USB_PORT 0
-
 if {[have_include "power_on/qemu"]} {
+	set USB_PORT 0
 	if [catch { set USB_PORT $env(USB_PORT)}] {
 		puts "No 'USB_PORT=<port>' environment variable set"
 		exit 0
 	}
 	puts "Using USB_PORT=$USB_PORT"
+
+	append qemu_args " -nographic  "
+	append qemu_args " -usb -device nec-usb-xhci,id=xhci "
+	append qemu_args " -device usb-host,hostbus=1,hostaddr=$USB_PORT,bus=xhci.0 "
 }
 
-append qemu_args " -nographic  "
-append qemu_args "-usb -device nec-usb-xhci,id=xhci "
-append qemu_args "-device usb-host,hostbus=1,hostaddr=$USB_PORT,bus=xhci.0"
-
-run_genode_until "child .* exited with exit value 0.*\n" 60
-
+if {[expr ![get_cmd_switch --autopilot]]} {
+	run_genode_until forever
+} else {
+	run_genode_until {child "ping" exited with exit value 0} 60
+}
