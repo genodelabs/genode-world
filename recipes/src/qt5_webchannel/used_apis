@@ -1,7 +1,7 @@
 expat
 libc
 mesa
-qt5_component
-qt5_qml
+qt5_base
+qt5_declarative
 so
 stdcxx

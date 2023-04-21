@@ -8,7 +8,7 @@ QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network libQt5Widgets
 QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick libQt5QuickWidgets
 QT5_PORT_LIBS += libQt5WebChannel
 
-LIBS = egl expat libc libm mesa nss3 qt5_component stdcxx $(QT5_PORT_LIBS)
+LIBS = egl expat libc libm mesa nss3 stdcxx $(QT5_PORT_LIBS)
 
 QT5_GENODE_LIBS_SHLIB += nss3.lib.so
 qmake_prepared.tag: qmake_root/lib/nss3.lib.so

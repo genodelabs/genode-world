@@ -1,7 +1,8 @@
 libc
 mesa
-qt5
+qt5_base
 qt5_component
-qt5_qml
+qt5_declarative
+qt5_svg
 stdcxx
 ubuntu_ui_toolkit

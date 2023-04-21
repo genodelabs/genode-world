@@ -2,8 +2,8 @@ expat
 libc
 mesa
 nss3
-qt5_component
-qt5_qml
-qt5_webengine
+qt5_base
+qt5_declarative
+qt5_webchannel
 so
 stdcxx
