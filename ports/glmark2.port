@@ -3,7 +3,7 @@ VERSION   := git
 DOWNLOADS := glmark2.git
 
 URL(glmark2) := https://github.com/glmark2/glmark2
-REV(glmark2) := 3b1a2d9cd2293d12d89f7619e9af9e768e6fb122
+REV(glmark2) := 42e3d8fe3aa88743ef90348138f643f7b04a9237
 DIR(glmark2) := src/app/glmark2
 PATCHES      := src/app/glmark2/glmark2.patch \
                 src/app/glmark2/dlopen.patch \

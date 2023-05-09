@@ -33,6 +33,7 @@ SRC_CC = a.cc \
          overlay-renderer.cpp \
          program.cc \
          renderer-chain.cpp \
+         results-file.cpp \
          s.cc \
          scene-buffer.cpp \
          scene-build.cpp \
@@ -68,7 +69,8 @@ SRC_CC = a.cc \
 
 SRC_CC += native-state-genode.cc
 
-SRC_C = egl.c \
+SRC_C = dummies.c \
+        egl.c \
         gles2.c
 
 GLMARK2_DIR := $(call select_from_ports,glmark2)/src/app/glmark2
@@ -81,8 +83,9 @@ INC_DIR = $(REP_DIR)/src/app/glmark2 \
           $(GLMARK2_DIR)/src/scene-terrain
 
 CC_OPT = -DUSE_EXCEPTIONS -DGLMARK2_USE_GLESv2 -DGLMARK2_USE_EGL \
-         -DGLMARK_VERSION='"2021.02"' -DGLMARK_DATA_PATH='"/data"' \
-         -D__GENODE__ -D GLMARK2_USE_GENODE
+         -DGLMARK_VERSION='"2023.01"' -DGLMARK_DATA_PATH='"/data"' \
+         -D__GENODE__ -D GLMARK2_USE_GENODE \
+         -DGLMARK2_EXECUTABLE='"glmark2"'
 
 LD_OPT    = --export-dynamic
 
