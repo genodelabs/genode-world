@@ -23,6 +23,7 @@ append qemu_args " -m 1024 "
 
 # attach small SATA disk to Qemu to experiment with file-system access
 set disk_image "bin/boot2java-ahci.raw"
+exec mkdir -p bin
 if {![file exists bin/boot2java-ahci.raw]} {
 	puts stderr "creating toy disk image $disk_image for use in Qemu"
 	catch { exec dd if=/dev/zero of=$disk_image bs=1M count=16 }

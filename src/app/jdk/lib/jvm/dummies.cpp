@@ -8,9 +8,8 @@ extern "C" {
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <fcntl.h>
 }
-
-#include <libc-plugin/fd_alloc.h>
 
 #if 0
 #define WARN_NOT_IMPL Genode::warning(__func__, " not implemented (jvm) from ", __builtin_return_address(0));
@@ -106,8 +105,8 @@ int socketpair(int domain, int type, int protocol, int sv[2])
 	 * only used as destination FD in dup2(). So it is safe to just reserve
 	 * those descriptors here.
 	 */
-	sv[0] = Libc::file_descriptor_allocator()->alloc(nullptr, nullptr)->libc_fd;
-	sv[1] = Libc::file_descriptor_allocator()->alloc(nullptr, nullptr)->libc_fd;
+	sv[0] = open("/dev/null", O_RDONLY);
+	sv[1] = open("/dev/null", O_RDONLY);
 
 	return 0;
 }
