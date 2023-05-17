@@ -59,8 +59,8 @@ class Iso::Sector {
 				_p = Block::Packet_descriptor(
 					block.alloc_packet(blk_size() * count),
 					Block::Packet_descriptor::READ,
-					blk_nr * ((float)blk_size() / BLOCK_SIZE),
-					count * ((float)blk_size() / BLOCK_SIZE));
+					blk_nr * ((float)blk_size() / (float) BLOCK_SIZE),
+					count * ((float)blk_size() / (float) BLOCK_SIZE));
 
 				while (!_source.ready_to_submit())
 					ep.wait_and_dispatch_one_io_signal();
