@@ -52,7 +52,7 @@ foreach binary $guest_os_binaries {
 source ${genode_dir}/repos/world/run/seoul.inc
 
 append qemu_args " -m 1536 "
-append qemu_args " -cpu phenom "
+append qemu_args " -cpu EPYC "
 append_qemu_nic_args
 
 run_genode_until forever

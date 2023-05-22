@@ -89,6 +89,6 @@ foreach line $vm {
 source ${genode_dir}/repos/world/run/seoul.inc
 
 append qemu_args " -m 1024 "
-append qemu_args " -cpu phenom "
+append qemu_args " -cpu EPYC "
 
 run_genode_until forever

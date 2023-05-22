@@ -69,7 +69,7 @@ if {[have_include power_on/qemu]} {
 	}
 
 	append qemu_args " -m 2536 "
-	append qemu_args " -cpu phenom"
+	append qemu_args " -cpu EPYC"
 
 	append qemu_args " -drive id=disk,file=bin/seoul-disc.raw,format=raw,if=none"
 	append qemu_args " -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0"
