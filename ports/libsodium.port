@@ -1,7 +1,7 @@
 LICENSE        := ISC
 VERSION        := 1.0.16
 DOWNLOADS      := libsodium.archive
-URL(libsodium) := https://download.libsodium.org/libsodium/releases/old/libsodium-$(VERSION).tar.gz
+URL(libsodium) := https://download.libsodium.org/libsodium/releases/old/unsupported/libsodium-$(VERSION).tar.gz
 SHA(libsodium) := eeadc7e1e1bcef09680fb4837d448fbdf57224978f865ac1c16745868fbd0533
 DIR(libsodium) := src/lib/libsodium
 
