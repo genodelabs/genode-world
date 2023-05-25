@@ -71,6 +71,7 @@ if {[have_spec sel4]} {
 	}
 }
 
+
 if {[have_spec foc]} {
 	# The performance is considerable bad when
 	# vmm and vcpu is not on same physical CPU
