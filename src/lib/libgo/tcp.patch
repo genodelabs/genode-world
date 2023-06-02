@@ -1,39 +1,24 @@
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/exec_unix.go gcc/libgo/go/syscall/exec_unix.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/exec_unix.go	2017-09-14 20:11:35.000000000 +0300
-+++ gcc/libgo/go/syscall/exec_unix.go	2021-04-12 17:01:41.733892102 +0300
+diff -NaurwB contrib/gcc.libgo_etalon/libgo/go/syscall/exec_unix.go contrib/libgo-263ef8ff7b07e22b6c5459a220956fdda014ddd9/src/lib/gcc/libgo/go/syscall/exec_unix.go
+--- contrib/gcc.libgo_etalon/libgo/go/syscall/exec_unix.go	2023-06-01 13:13:31.122416003 +0300
++++ gcc/libgo/go/syscall/exec_unix.go	2023-06-01 14:10:22.748565182 +0300
 @@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
  
--// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
+-//go:build aix || darwin || dragonfly || freebsd || hurd || linux || netbsd || openbsd || solaris
++//go:build aix || darwin || dragonfly || freebsd || hurd || linux || netbsd || openbsd || solaris || genode
  
  // Fork, exec, wait, etc.
  
-@@ -154,7 +154,13 @@
- 	return bb, nil
- }
- 
--func CloseOnExec(fd int) { fcntl(fd, F_SETFD, FD_CLOEXEC) }
-+func CloseOnExec(fd int) {
-+	if runtime.GOOS == "genode" {
-+		/* FIXME: on genode F_SETFD and FD_CLOEXEC does not supported in 21.11 */
-+		return
-+	}
-+	fcntl(fd, F_SETFD, FD_CLOEXEC) 
-+}
- 
- func SetNonblock(fd int, nonblocking bool) (err error) {
- 	flag, err := fcntl(fd, F_GETFL, 0)
-@@ -328,7 +334,7 @@
+@@ -339,7 +339,7 @@
  	runtime_BeforeExec()
  
  	var err1 error
 -	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" {
 +	if runtime.GOOS == "solaris" || runtime.GOOS == "illumos" || runtime.GOOS == "aix" || runtime.GOOS == "hurd" || runtime.GOOS == "genode" {
- 		// RawSyscall should never be used on Solaris or AIX.
+ 		// RawSyscall should never be used on Solaris, illumos, or AIX.
  		err1 = raw_execve(argv0p, &argvp[0], &envvp[0])
- 	} else if runtime.GOOS == "darwin" {
+ 	} else if runtime.GOOS == "darwin" || runtime.GOOS == "ios" {
 diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/socket.go gcc/libgo/go/syscall/socket.go
 --- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/socket.go	2017-09-14 20:11:35.000000000 +0300
 +++ gcc/libgo/go/syscall/socket.go	2021-12-16 22:38:06.172153860 +0300

@@ -1,6 +1,6 @@
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/defs_inno.go gcc/libgo/go/golang.org/x/net/route/defs_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/defs_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/golang.org/x/net/route/defs_inno.go	2021-04-12 17:01:41.684891564 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/defs_genode.go gcc/libgo/go/golang.org/x/net/route/defs_genode.go
+--- gcc/libgo/go/golang.org/x/net/route/defs_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/golang.org/x/net/route/defs_genode.go	2021-04-12 17:01:41.684891564 +0300
 @@ -0,0 +1,112 @@
 +// Copyright 2016 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -114,9 +114,9 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +	sizeofSockaddrInet    = C.sizeof_struct_sockaddr_in
 +	sizeofSockaddrInet6   = C.sizeof_struct_sockaddr_in6
 +)
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/sys_inno.go gcc/libgo/go/golang.org/x/net/route/sys_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/sys_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/golang.org/x/net/route/sys_inno.go	2021-04-12 17:01:41.685891576 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/sys_genode.go gcc/libgo/go/golang.org/x/net/route/sys_genode.go
+--- gcc/libgo/go/golang.org/x/net/route/sys_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/golang.org/x/net/route/sys_genode.go	2021-04-12 17:01:41.685891576 +0300
 @@ -0,0 +1,71 @@
 +// Copyright 2016 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -189,12 +189,12 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +		sysRTM_IFINFO:     ifm,
 +	}
 +}
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/zsys_inno.go gcc/libgo/go/golang.org/x/net/route/zsys_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/zsys_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/golang.org/x/net/route/zsys_inno.go	2021-04-12 17:01:41.685891576 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/zsys_genode.go gcc/libgo/go/golang.org/x/net/route/zsys_genode.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/zsys_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/golang.org/x/net/route/zsys_genode.go	2021-04-12 17:01:41.685891576 +0300
 @@ -0,0 +1,97 @@
 +// Created by cgo -godefs - DO NOT EDIT
-+// cgo -godefs defs_inno.go
++// cgo -godefs defs_genode.go
 +
 +package route
 +
@@ -290,9 +290,9 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +	sizeofSockaddrInet    = 0x10
 +	sizeofSockaddrInet6   = 0x1c
 +)
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/internal/poll/writev_inno.go gcc/libgo/go/internal/poll/writev_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/internal/poll/writev_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/internal/poll/writev_inno.go	2021-04-13 00:57:31.605698297 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/internal/poll/writev_genode.go gcc/libgo/go/internal/poll/writev_genode.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/internal/poll/writev_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/internal/poll/writev_genode.go	2021-04-13 00:57:31.605698297 +0300
 @@ -0,0 +1,95 @@
 +// Copyright 2016 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -389,9 +389,9 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +	}
 +	return n, err
 +}
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/net/cgo_inno.go gcc/libgo/go/net/cgo_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/net/cgo_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/net/cgo_inno.go	2021-04-12 17:01:41.685891576 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/net/cgo_genode.go gcc/libgo/go/net/cgo_genode.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/net/cgo_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/net/cgo_genode.go	2021-04-12 17:01:41.685891576 +0300
 @@ -0,0 +1,14 @@
 +// Copyright 2011 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -407,10 +407,10 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +import "syscall"
 +
 +const cgoAddrInfoFlags = syscall.AI_CANONNAME
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/os_inno.go gcc/libgo/go/runtime/os_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/os_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/runtime/os_inno.go	2021-04-12 17:01:41.685891576 +0300
-@@ -0,0 +1,171 @@
+diff -uwBrN gcc.libgo_etalon/libgo/go/runtime/os_genode.go libgo-27ecc7632f6a6013fc730a299f98e8d219ac459e/src/lib/gcc/libgo/go/runtime/os_genode.go
+--- gcc.libgo_etalon/libgo/go/runtime/os_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/runtime/os_genode.go	2023-06-01 21:43:32.109126319 +0300
+@@ -0,0 +1,182 @@
 +// Copyright 2017 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
 +// license that can be found in the LICENSE file.
@@ -418,12 +418,16 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +package runtime
 +
 +import (
-+       "runtime/internal/sys"
++       "internal/goarch"
 +       "unsafe"
 +)
 +
 +type mOS struct {
 +	waitsema uintptr // semaphore for parking on locks
++}
++
++func getProcID() uint64 {
++	return uint64(gettid())
 +}
 +
 +//extern malloc
@@ -532,7 +536,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +	n++
 +
 +	// now argv+n is auxv
-+	auxv := (*[1 << 28]uintptr)(add(unsafe.Pointer(argv), uintptr(n)*sys.PtrSize))
++	auxv := (*[1 << 28]uintptr)(add(unsafe.Pointer(argv), uintptr(n)*goarch.PtrSize))
 +	sysauxv(auxv[:])
 +}
 +
@@ -555,12 +559,6 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +//extern sysctl
 +func sysctl(*uint32, uint32, *byte, *uintptr, *byte, uintptr) int32
 +
-+const (
-+	_CTL_HW      = 6
-+	_HW_NCPU     = 3
-+	_HW_PAGESIZE = 7
-+)
-+
 +func getncpu() int32 {
 +	mib := [2]uint32{_CTL_HW, _HW_NCPU}
 +	out := uint32(0)
@@ -582,9 +580,22 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +	}
 +	return 0
 +}
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/libcall_inno.go gcc/libgo/go/syscall/libcall_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/libcall_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/syscall/libcall_inno.go	2021-04-12 19:33:14.922091264 +0300
++
++//go:nosplit
++func validSIGPROF(mp *m, c *sigctxt) bool {
++	return true
++}
++
++func setProcessCPUProfiler(hz int32) {
++	setProcessCPUProfilerTimer(hz)
++}
++
++func setThreadCPUProfiler(hz int32) {
++	setThreadCPUProfilerHz(hz)
++}
+diff -uwBrN gcc.libgo_etalon/libgo/go/syscall/libcall_genode.go libgo-27ecc7632f6a6013fc730a299f98e8d219ac459e/src/lib/gcc/libgo/go/syscall/libcall_genode.go
+--- gcc.libgo_etalon/libgo/go/syscall/libcall_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/libcall_genode.go	2023-06-01 23:06:20.092375607 +0300
 @@ -0,0 +1,33 @@
 +// Copyright 2015 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -613,15 +624,15 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +//sendfile(outfd _C_int, infd _C_int, offset *Offset_t, count Size_t) Ssize_t
 +
 +// Dummy function
-+func raw_ptrace(request int, pid int, addr *byte, data *byte) Errno {
++func raw_ptrace(request int, pid int, addr uintptr, data uintptr) Errno {
 +	return ENOSYS
 +}
 +
 +// For exec_unix.go.
 +const SYS_EXECVE = 0
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno.go gcc/libgo/go/syscall/route_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/syscall/route_inno.go	2021-04-12 18:41:51.502204081 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_genode.go gcc/libgo/go/syscall/route_genode.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/route_genode.go	2021-04-12 18:41:51.502204081 +0300
 @@ -0,0 +1,6 @@
 +// Copyright 2011 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -629,9 +640,9 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +
 +package syscall
 +
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno_64bit.go gcc/libgo/go/syscall/route_inno_64bit.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_inno_64bit.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/syscall/route_inno_64bit.go	2021-04-12 18:42:50.981856879 +0300
+diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_genode_64bit.go gcc/libgo/go/syscall/route_genode_64bit.go
+--- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/route_genode_64bit.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/route_genode_64bit.go	2021-04-12 18:42:50.981856879 +0300
 @@ -0,0 +1,7 @@
 +// Copyright 2014 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -640,9 +651,9 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +// +build genode,amd64
 +
 +package syscall
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/syscall_inno.go gcc/libgo/go/syscall/syscall_inno.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/syscall/syscall_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/syscall/syscall_inno.go	2021-04-12 17:01:41.686891586 +0300
+diff -uwBrN gcc.libgo_etalon/libgo/go/syscall/syscall_genode.go libgo-27ecc7632f6a6013fc730a299f98e8d219ac459e/src/lib/gcc/libgo/go/syscall/syscall_genode.go
+--- gcc.libgo_etalon/libgo/go/syscall/syscall_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/syscall_genode.go	2023-06-01 22:09:02.552896282 +0300
 @@ -0,0 +1,19 @@
 +// Copyright 2009,2010 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
@@ -653,7 +664,7 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +import "unsafe"
 +
 +func direntIno(buf []byte) (uint64, bool) {
-+	return readInt(buf, unsafe.Offsetof(Dirent{}.d_fileno), unsafe.Sizeof(Dirent{}.d_fileno))
++	return readInt(buf, unsafe.Offsetof(Dirent{}.Fileno), unsafe.Sizeof(Dirent{}.Fileno))
 +}
 +
 +func direntReclen(buf []byte) (uint64, bool) {
@@ -663,17 +674,20 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
 +func direntNamlen(buf []byte) (uint64, bool) {
 +	return readInt(buf, unsafe.Offsetof(Dirent{}.Namlen), unsafe.Sizeof(Dirent{}.Namlen))
 +}
-diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/netpoll_inno.go contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22/src/lib/gcc/libgo/go/runtime/netpoll_inno.go
---- contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/netpoll_inno.go	1970-01-01 03:00:00.000000000 +0300
-+++ gcc/libgo/go/runtime/netpoll_inno.go	2021-12-07 02:07:31.546178564 +0300
-@@ -0,0 +1,250 @@
-+// Copyright 2018 The Go Authors. All rights reserved.
+diff -uwBrN gcc.libgo_etalon/libgo/go/runtime/netpoll_genode.go libgo-27ecc7632f6a6013fc730a299f98e8d219ac459e/src/lib/gcc/libgo/go/runtime/netpoll_genode.go
+--- gcc.libgo_etalon/libgo/go/runtime/netpoll_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/runtime/netpoll_genode.go	2023-06-01 21:42:27.383243239 +0300
+@@ -0,0 +1,255 @@
++// Copyright 2019 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
 +// license that can be found in the LICENSE file.
 +
 +package runtime
 +
-+import "unsafe"
++import (
++	"runtime/internal/atomic"
++	"unsafe"
++)
 +
 +// This is based on the former libgo/runtime/netpoll_select.c implementation
 +// except that it uses poll instead of select and is written in Go.
@@ -714,6 +728,7 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
 +	rdwake         int32
 +	wrwake         int32
 +	pendingUpdates int32
++	netpollWakeSig uint32 // used to avoid duplicate calls of netpollBreak
 +)
 +
 +const pollVerbose = false
@@ -823,7 +838,10 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
 +
 +// netpollBreak interrupts an epollwait.
 +func netpollBreak() {
-+	netpollwakeup()
++	if atomic.Cas(&netpollWakeSig, 0, 1) {
++		b := [1]byte{0}
++		write(uintptr(wrwake), unsafe.Pointer(&b[0]), 1)
++	}
 +}
 +
 +// netpoll checks for ready network connections.
@@ -887,6 +905,7 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
 +			}
 +			for read(rdwake, unsafe.Pointer(&b[0]), 1) == 1 {
 +			}
++			atomic.Store(&netpollWakeSig, 0)
 +		}
 +		// Still look at the other fds even if the mode may have
 +		// changed, as netpollBreak might have been called.
@@ -906,14 +925,309 @@ diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/
 +			pfd.events &= ^_POLLOUT
 +		}
 +		if mode != 0 {
-+			pds[i].everr = false
-+			if pfd.revents == _POLLERR {
-+				pds[i].everr = true
-+			}
++			pds[i].setEventErr(pfd.revents == _POLLERR)
 +			netpollready(&toRun, pds[i], mode)
 +			n--
 +		}
 +	}
 +	unlock(&mtxset)
 +	return toRun
++}
+diff -uwBrN gcc.libgo_etalon/libgo/go/syscall/exec_genode.go libgo-27ecc7632f6a6013fc730a299f98e8d219ac459e/src/lib/gcc/libgo/go/syscall/exec_genode.go
+--- gcc.libgo_etalon/libgo/go/syscall/exec_genode.go	1970-01-01 03:00:00.000000000 +0300
++++ gcc/libgo/go/syscall/exec_genode.go	2023-06-01 23:37:00.457500962 +0300
+@@ -0,0 +1,294 @@
++// Copyright 2021 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package syscall
++
++import (
++	// "runtime"
++	"unsafe"
++)
++
++//sysnb	raw_procctl(idtype int, id int64, cmd int, data unsafe.Pointer) (ret int, err Errno)
++//procctl(idtype _C_int, id int64, cmd int, data unsafe.Pointer) _C_int
++
++type SysProcAttr struct {
++	Chroot     string      // Chroot.
++	Credential *Credential // Credential.
++	Ptrace     bool        // Enable tracing.
++	Setsid     bool        // Create session.
++	// Setpgid sets the process group ID of the child to Pgid,
++	// or, if Pgid == 0, to the new child's process ID.
++	Setpgid bool
++	// Setctty sets the controlling terminal of the child to
++	// file descriptor Ctty. Ctty must be a descriptor number
++	// in the child process: an index into ProcAttr.Files.
++	// This is only meaningful if Setsid is true.
++	Setctty bool
++	Noctty  bool // Detach fd 0 from controlling terminal
++	Ctty    int  // Controlling TTY fd
++	// Foreground places the child process group in the foreground.
++	// This implies Setpgid. The Ctty field must be set to
++	// the descriptor of the controlling TTY.
++	// Unlike Setctty, in this case Ctty must be a descriptor
++	// number in the parent process.
++	Foreground bool
++	Pgid       int    // Child's process group ID if Setpgid.
++	Pdeathsig  Signal // Signal that the process will get when its parent dies (Linux and FreeBSD only)
++}
++
++const (
++	// _P_PID = 0
++
++	_PROC_PDEATHSIG_CTL = 11
++)
++
++// Implemented in runtime package.
++func runtime_BeforeFork()
++func runtime_AfterFork()
++func runtime_AfterForkInChild()
++
++// Fork, dup fd onto 0..len(fd), and exec(argv0, argvv, envv) in child.
++// If a dup or exec fails, write the errno error to pipe.
++// (Pipe is close-on-exec so if exec succeeds, it will be closed.)
++// In the child, this function must not acquire any locks, because
++// they might have been locked at the time of the fork. This means
++// no rescheduling, no malloc calls, and no new stack segments.
++// For the same reason compiler does not race instrument it.
++// The calls to RawSyscall are okay because they are assembly
++// functions that do not grow the stack.
++//go:norace
++func forkAndExecInChild(argv0 *byte, argv, envv []*byte, chroot, dir *byte, attr *ProcAttr, sys *SysProcAttr, pipe int) (pid int, err Errno) {
++	// Declare all variables at top in case any
++	// declarations require heap allocation (e.g., err1).
++	var (
++		r1     Pid_t
++		err1   Errno
++		nextfd int
++		i      int
++	)
++
++	// Record parent PID so child can test if it has died.
++	ppid := raw_getpid()
++
++	// guard against side effects of shuffling fds below.
++	// Make sure that nextfd is beyond any currently open files so
++	// that we can't run the risk of overwriting any of them.
++	fd := make([]int, len(attr.Files))
++	nextfd = len(attr.Files)
++	for i, ufd := range attr.Files {
++		if nextfd < int(ufd) {
++			nextfd = int(ufd)
++		}
++		fd[i] = int(ufd)
++	}
++	nextfd++
++
++	// About to call fork.
++	// No more allocation or calls of non-assembly functions.
++	runtime_BeforeFork()
++	r1, err1 = raw_fork()
++	if err1 != 0 {
++		runtime_AfterFork()
++		return 0, err1
++	}
++
++	if r1 != 0 {
++		// parent; return PID
++		runtime_AfterFork()
++		return int(r1), 0
++	}
++
++	// Fork succeeded, now in child.
++
++	// Enable tracing if requested.
++	if sys.Ptrace {
++		err1 = raw_ptrace(_PTRACE_TRACEME, 0, 0, 0)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// Session ID
++	if sys.Setsid {
++		err1 = raw_setsid()
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// Set process group
++	if sys.Setpgid || sys.Foreground {
++		// Place child in process group.
++		err1 = raw_setpgid(0, sys.Pgid)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	if sys.Foreground {
++		pgrp := Pid_t(sys.Pgid)
++		if pgrp == 0 {
++			pgrp = raw_getpid()
++		}
++
++		// Place process group in foreground.
++		_, err1 = raw_ioctl(sys.Ctty, TIOCSPGRP, int(uintptr(unsafe.Pointer(&pgrp))))
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// Restore the signal mask. We do this after TIOCSPGRP to avoid
++	// having the kernel send a SIGTTOU signal to the process group.
++	runtime_AfterForkInChild()
++
++	// Chroot
++	if chroot != nil {
++		err1 = raw_chroot(chroot)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// User and groups
++	if cred := sys.Credential; cred != nil {
++		ngroups := len(cred.Groups)
++		var groups *Gid_t
++		if ngroups > 0 {
++			gids := make([]Gid_t, ngroups)
++			for i, v := range cred.Groups {
++				gids[i] = Gid_t(v)
++			}
++			groups = &gids[0]
++		}
++
++		if !cred.NoSetGroups {
++			err1 = raw_setgroups(ngroups, unsafe.Pointer(groups))
++			if err1 != 0 {
++				goto childerror
++			}
++		}
++		err2 := Setgid(int(cred.Gid))
++		if err2 != nil {
++			err1 = err2.(Errno)
++			goto childerror
++		}
++		err2 = Setuid(int(cred.Uid))
++		if err2 != nil {
++			err1 = err2.(Errno)
++			goto childerror
++		}
++
++	}
++
++	// Chdir
++	if dir != nil {
++		err1 = raw_chdir(dir)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// Parent death signal
++	if sys.Pdeathsig != 0 {
++		_, err1 = raw_procctl(_P_PID, 0, _PROC_PDEATHSIG_CTL, unsafe.Pointer(&sys.Pdeathsig))
++
++		if err1 != 0 {
++			goto childerror
++		}
++
++		// Signal self if parent is already dead. This might cause a
++		// duplicate signal in rare cases, but it won't matter when
++		// using SIGKILL.
++		r1 = raw_getppid()
++		if r1 != ppid {
++			pid := raw_getpid()
++			err1 = raw_kill(pid, sys.Pdeathsig)
++			if err1 != 0 {
++				goto childerror
++			}
++		}
++	}
++
++	// Pass 1: look for fd[i] < i and move those up above len(fd)
++	// so that pass 2 won't stomp on an fd it needs later.
++	if pipe < nextfd {
++		_, err1 = raw_fcntl(pipe, _F_DUP2FD_CLOEXEC, nextfd)
++		if err1 != 0 {
++			goto childerror
++		}
++		pipe = nextfd
++		nextfd++
++	}
++	for i = 0; i < len(fd); i++ {
++		if fd[i] >= 0 && fd[i] < int(i) {
++			if nextfd == pipe { // don't stomp on pipe
++				nextfd++
++			}
++			_, err1 = raw_fcntl(fd[i], _F_DUP2FD_CLOEXEC, nextfd)
++			if err1 != 0 {
++				goto childerror
++			}
++			fd[i] = nextfd
++			nextfd++
++		}
++	}
++
++	// Pass 2: dup fd[i] down onto i.
++	for i = 0; i < len(fd); i++ {
++		if fd[i] == -1 {
++			raw_close(i)
++			continue
++		}
++		if fd[i] == int(i) {
++			// dup2(i, i) won't clear close-on-exec flag on Linux,
++			// probably not elsewhere either.
++			_, err1 = raw_fcntl(fd[i], _F_SETFD, 0)
++			if err1 != 0 {
++				goto childerror
++			}
++			continue
++		}
++		// The new fd is created NOT close-on-exec,
++		// which is exactly what we want.
++		err1 = raw_dup2(fd[i], i)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// By convention, we don't close-on-exec the fds we are
++	// started with, so if len(fd) < 3, close 0, 1, 2 as needed.
++	// Programs that know they inherit fds >= 3 will need
++	// to set them close-on-exec.
++	for i = len(fd); i < 3; i++ {
++		raw_close(i)
++	}
++
++	// Detach fd 0 from tty
++	if sys.Noctty {
++		_, err = raw_ioctl(0, TIOCNOTTY, 0)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// Set the controlling TTY to Ctty
++	if sys.Setctty {
++		_, err1 = raw_ioctl(sys.Ctty, TIOCSCTTY, 0)
++		if err1 != 0 {
++			goto childerror
++		}
++	}
++
++	// Time to exec.
++	err1 = raw_execve(argv0, &argv[0], &envv[0])
++
++childerror:
++	// send error code on pipe
++	raw_write(pipe, (*byte)(unsafe.Pointer(&err1)), int(unsafe.Sizeof(err1)))
++	for {
++		raw_exit(253)
++	}
 +}

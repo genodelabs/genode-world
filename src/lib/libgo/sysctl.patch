@@ -1,48 +1,12 @@
-diff -NaurwB contrib/libgo-3f77e6c05b8059120ffaff0d989dc9a8436d94e3/src/lib/gcc/libgo/go/golang.org/x/net/route/syscall.go gcc/libgo/go/golang.org/x/net/route/syscall.go
---- contrib/libgo-3f77e6c05b8059120ffaff0d989dc9a8436d94e3/src/lib/gcc/libgo/go/golang.org/x/net/route/syscall.go	2021-06-06 23:28:06.755810490 +0300
-+++ gcc/libgo/go/golang.org/x/net/route/syscall.go	2021-06-06 23:48:45.636213942 +0300
-@@ -2,27 +2,37 @@
+diff -NaurwB contrib/gcc.libgo_etalon/libgo/go/golang.org/x/net/route/syscall.go contrib/libgo-263ef8ff7b07e22b6c5459a220956fdda014ddd9/src/lib/gcc/libgo/go/golang.org/x/net/route/syscall.go
+--- contrib/gcc.libgo_etalon/libgo/go/golang.org/x/net/route/syscall.go	2023-06-01 13:13:31.202417073 +0300
++++ gcc/libgo/go/golang.org/x/net/route/syscall.go	2023-06-01 13:33:09.276996563 +0300
+@@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
  
--// +build dragonfly freebsd netbsd openbsd
-+// +build dragonfly freebsd netbsd openbsd genode
+-//go:build darwin || dragonfly || freebsd || netbsd || openbsd
++//go:build darwin || dragonfly || freebsd || netbsd || openbsd || genode
+ // +build darwin dragonfly freebsd netbsd openbsd
  
  package route
- 
- import (
--	"syscall"
-+	"errors"
- 	"unsafe"
- )
- 
- var zero uintptr
- 
--func sysctl(mib []int32, old *byte, oldlen *uintptr, new *byte, newlen uintptr) error {
-+//extern sysctl
-+func c_sysctl(name *byte, namelen _C_uint, oldp *byte, oldlenp *Size_t, newp *byte, newlen Size_t) _C_int
-+func sysctl(mib []int32, old *byte, oldlen *uintptr, new *byte, newlen uintptr) err error {
- 	var p unsafe.Pointer
- 	if len(mib) > 0 {
- 		p = unsafe.Pointer(&mib[0])
- 	} else {
- 		p = unsafe.Pointer(&zero)
- 	}
--	_, _, errno := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(p), uintptr(len(mib)), uintptr(unsafe.Pointer(old)), uintptr(unsafe.Pointer(oldlen)), uintptr(unsafe.Pointer(new)), newlen)
--	if errno != 0 {
--		return error(errno)
-+	Entersyscall()
-+	_r := c_sysctl(p, namelen, oldp, oldlenp, newp, newlen)
-+	var errno Errno
-+	setErrno := false
-+	if _r < 0 {
-+		errno = GetErrno()
-+		setErrno = true
- 	}
--	return nil
-+	Exitsyscall()
-+	if setErrno {
-+		err = error(errno)
-+	}
-+	return
- }

@@ -10,15 +10,15 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  		printCmdOut(w, "uname -v: ", "uname", "-v")
  	case "solaris":
  		out, err := ioutil.ReadFile("/etc/release")
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/os/executable_procfs.go gcc/libgo/go/os/executable_procfs.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/os/executable_procfs.go	2017-09-14 20:11:35.000000000 +0300
-+++ gcc/libgo/go/os/executable_procfs.go	2021-04-12 17:01:41.727892036 +0300
+diff -NaurwB contrib/gcc.libgo_etalon/libgo/go/os/executable_procfs.go contrib/libgo-263ef8ff7b07e22b6c5459a220956fdda014ddd9/src/lib/gcc/libgo/go/os/executable_procfs.go
+--- contrib/gcc.libgo_etalon/libgo/go/os/executable_procfs.go	2023-06-01 13:13:31.259417835 +0300
++++ gcc/libgo/go/os/executable_procfs.go	2023-06-01 13:51:50.623803054 +0300
 @@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
  
--// +build hurd linux netbsd dragonfly js,wasm
-+// +build hurd linux netbsd dragonfly js,wasm genode
+-//go:build hurd || linux || netbsd || (js && wasm)
++//go:build hurd || linux || netbsd || (js && wasm) || genode
  
  package os
  
@@ -140,10 +140,19 @@ diff -NaurwB gcc.libgobase/libgo/runtime/proc.c gcc.libgomod/libgo/runtime/proc.
 diff -NaurwB gcc.libgobase/libgo/go/internal/poll/fd_poll_runtime.go gcc.libgomod/libgo/go/internal/poll/fd_poll_runtime.go
 --- gcc.libgobase/libgo/go/internal/poll/fd_poll_runtime.go	2021-06-08 12:14:11.516350478 +0300
 +++ gcc.libgomod/libgo/go/internal/poll/fd_poll_runtime.go	2021-06-08 17:08:06.225937928 +0300
+@@ -2,7 +2,7 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+ 
+-//go:build aix || darwin || dragonfly || freebsd || hurd || linux || netbsd || openbsd || windows || solaris
++//go:build aix || darwin || dragonfly || freebsd || hurd || linux || netbsd || openbsd || windows || solaris || genode
+ 
+ package poll
+ 
 @@ -42,7 +42,7 @@
- 			runtime_pollUnblock(ctx)
- 			runtime_pollClose(ctx)
- 		}
+ 	serverInit.Do(runtime_pollServerInit)
+ 	ctx, errno := runtime_pollOpen(uintptr(fd.Sysfd))
+ 	if errno != 0 {
 -		return errnoErr(syscall.Errno(errno))
 +		return syscall.Errno(errno)
  	}
