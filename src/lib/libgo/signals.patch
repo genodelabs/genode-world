@@ -20,19 +20,19 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  		// On GNU/Linux glibc rejects attempts to call
  		// sigaction with signal 32 (SIGCANCEL) or 33 (SIGSETXID).
  		if GOOS == "linux" && (i == 32 || i == 33) {
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/signal_unix.go gcc/libgo/go/runtime/signal_unix.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/runtime/signal_unix.go	2018-02-08 01:04:55.000000000 +0300
-+++ gcc/libgo/go/runtime/signal_unix.go	2021-04-12 17:01:41.733892102 +0300
+diff -NaurwB contrib/gcc.libgo_etalon/libgo/go/runtime/signal_unix.go contrib/libgo-263ef8ff7b07e22b6c5459a220956fdda014ddd9/src/lib/gcc/libgo/go/runtime/signal_unix.go
+--- contrib/gcc.libgo_etalon/libgo/go/runtime/signal_unix.go	2023-06-01 13:13:31.152416404 +0300
++++ gcc/libgo/go/runtime/signal_unix.go	2023-06-01 14:05:19.231534544 +0300
 @@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
  
--// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris
-+// +build aix darwin dragonfly freebsd hurd linux netbsd openbsd solaris genode
+-//go:build aix || darwin || dragonfly || freebsd || hurd || linux || netbsd || openbsd || solaris
++//go:build aix || darwin || dragonfly || freebsd || hurd || linux || netbsd || openbsd || solaris || genode
  
  package runtime
  
-@@ -101,8 +101,8 @@
+@@ -103,8 +103,8 @@
  	// _NSIG is the number of signals on this operating system.
  	// sigtable should describe what to do for all the possible signals.
  	if len(sigtable) != _NSIG {

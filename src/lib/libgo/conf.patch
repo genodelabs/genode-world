@@ -19,12 +19,12 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
  
  
  # Check whether --enable-werror was given.
-@@ -13916,7 +13918,7 @@
+@@ -13970,7 +13970,7 @@
  # All known GOOS values.  This is the union of all operating systems
  # supported by the gofrontend and all operating systems supported by
  # the gc toolchain.
--ALLGOOS="aix android darwin dragonfly freebsd hurd illumos irix js linux netbsd openbsd plan9 rtems solaris windows"
-+ALLGOOS="aix android darwin dragonfly freebsd hurd illumos irix js linux netbsd openbsd plan9 rtems solaris windows genode"
+-ALLGOOS="aix android darwin dragonfly freebsd hurd illumos ios irix js linux netbsd openbsd plan9 rtems solaris windows zos"
++ALLGOOS="aix android darwin dragonfly freebsd hurd illumos ios irix js linux netbsd openbsd plan9 rtems solaris windows zos genode"
  
  is_darwin=no
  is_freebsd=no
@@ -159,20 +159,22 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
 diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.in genode/libgo/Makefile.in
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.in	2018-06-01 01:46:52.000000000 +0300
 +++ genode/libgo/Makefile.in	2020-07-24 15:34:59.000000000 +0300
-@@ -870,11 +870,12 @@
+@@ -892,12 +892,13 @@
  # Some packages are only needed for tests, so unlike the other
  # internal packages nothing will explicitly depend on them.
  # Force them to be built.
 -noinst_DATA = golang.org/x/net/nettest.gox internal/cfg.gox \
--	internal/obscuretestdata.gox internal/testenv.gox \
--	internal/trace.gox net/internal/socktest.gox \
--	os/signal/internal/pty.gox runtime/pprof/internal/profile.gox \
--	zdefaultcc.go
-+#noinst_DATA = golang.org/x/net/nettest.gox internal/cfg.gox \
-+#	internal/obscuretestdata.gox internal/testenv.gox \
-+#	internal/trace.gox net/internal/socktest.gox \
-+#	os/signal/internal/pty.gox runtime/pprof/internal/profile.gox \
-+#	zdefaultcc.go
+-	internal/obscuretestdata.gox internal/profile.gox \
+-	internal/testenv.gox internal/trace.gox \
+-	net/internal/socktest.gox os/exec/internal/fdtest.gox \
+-	os/signal/internal/pty.gox reflect/internal/example1.gox \
+-	reflect/internal/example2.gox zdefaultcc.go
++noinst_DATA = golang.org/x/net/nettest.gox internal/cfg.gox \
++	internal/obscuretestdata.gox internal/profile.gox \
++	internal/testenv.gox internal/trace.gox \
++	net/internal/socktest.gox os/exec/internal/fdtest.gox \
++	os/signal/internal/pty.gox reflect/internal/example1.gox \
++	reflect/internal/example2.gox zdefaultcc.go
 +noinst_DATA =
  @LIBGO_IS_RTEMS_FALSE@rtems_task_variable_add_file = 
  @LIBGO_IS_RTEMS_TRUE@rtems_task_variable_add_file = runtime/rtems-task-variable-add.c
@@ -180,7 +182,7 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
 diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.am genode/libgo/Makefile.am
 --- contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libgo/Makefile.am	2018-06-01 01:46:52.000000000 +0300
 +++ genode/libgo/Makefile.am	2020-07-24 14:10:22.000000000 +0300
-@@ -405,15 +405,16 @@
+@@ -423,18 +423,19 @@
  # Some packages are only needed for tests, so unlike the other
  # internal packages nothing will explicitly depend on them.
  # Force them to be built.
@@ -188,20 +190,26 @@ diff -ru contrib/libgo-10be92754f6dbbd51b390bfdc9250f2b4370d9cb/src/lib/gcc/libg
 -	golang.org/x/net/nettest.gox \
 -	internal/cfg.gox \
 -	internal/obscuretestdata.gox \
+-	internal/profile.gox \
 -	internal/testenv.gox \
 -	internal/trace.gox \
 -	net/internal/socktest.gox \
+-	os/exec/internal/fdtest.gox \
 -	os/signal/internal/pty.gox \
--	runtime/pprof/internal/profile.gox
+-	reflect/internal/example1.gox \
+-	reflect/internal/example2.gox
 +#noinst_DATA = \
 +#	golang.org/x/net/nettest.gox \
 +#	internal/cfg.gox \
 +#	internal/obscuretestdata.gox \
++#	internal/profile.gox \
 +#	internal/testenv.gox \
 +#	internal/trace.gox \
 +#	net/internal/socktest.gox \
++#	os/exec/internal/fdtest.gox \
 +#	os/signal/internal/pty.gox \
-+#	runtime/pprof/internal/profile.gox
++#	reflect/internal/example1.gox \
++#	reflect/internal/example2.gox
 +noinst_DATA =
  
  if LIBGO_IS_RTEMS
@@ -233,14 +241,14 @@ diff -NaurwB gcc.libgobase/libgo/libgo-packages.txt gcc.libgomod/libgo/libgo-pac
  golang.org/x/sys/cpu
  golang.org/x/text/secure/bidirule
  golang.org/x/text/transform
-@@ -125,7 +124,6 @@
- internal/singleflight
+@@ -145,7 +144,6 @@
  internal/syscall/execenv
  internal/syscall/unix
+ internal/sysinfo
 -internal/testenv
  internal/testlog
  internal/trace
- internal/xcoff
+ internal/unsafeheader
 @@ -151,7 +149,6 @@
  net/http/httputil
  net/http/internal

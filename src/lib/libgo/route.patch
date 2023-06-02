@@ -1,15 +1,15 @@
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/interface_classic.go gcc/libgo/go/golang.org/x/net/route/interface_classic.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/interface_classic.go	2016-07-22 21:15:38.000000000 +0300
-+++ gcc/libgo/go/golang.org/x/net/route/interface_classic.go	2021-04-12 17:01:41.716891915 +0300
+diff -NaurwB contrib/gcc.libgo_etalon/libgo/go/golang.org/x/net/route/interface_classic.go contrib/libgo-263ef8ff7b07e22b6c5459a220956fdda014ddd9/src/lib/gcc/libgo/go/golang.org/x/net/route/interface_classic.go
+--- contrib/gcc.libgo_etalon/libgo/go/golang.org/x/net/route/interface_classic.go	2023-06-01 13:13:31.202417073 +0300
++++ gcc/libgo/go/golang.org/x/net/route/interface_classic.go	2023-06-01 13:31:19.752552073 +0300
 @@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
  
--// +build darwin dragonfly netbsd
-+// +build darwin dragonfly netbsd genode
+-//go:build darwin || dragonfly || netbsd
++//go:build darwin || dragonfly || netbsd || genode
+ // +build darwin dragonfly netbsd
  
  package route
- 
 @@ -54,6 +54,8 @@
  	}
  	if runtime.GOOS == "netbsd" {
@@ -19,18 +19,18 @@ diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/g
  	} else {
  		m.Index = int(nativeEndian.Uint16(b[12:14]))
  	}
-diff -NaurwB contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/route.go gcc/libgo/go/golang.org/x/net/route/route.go
---- contrib/gcc-3cade18cf9defeefa714aa91de3b157fbad4aa18/src/noux-pkg/gcc/libgo/go/golang.org/x/net/route/route.go	2017-09-14 20:11:35.000000000 +0300
-+++ gcc/libgo/go/golang.org/x/net/route/route.go	2021-04-12 17:01:41.717891927 +0300
+diff -NaurwB contrib/gcc.libgo_etalon/libgo/go/golang.org/x/net/route/route.go contrib/libgo-263ef8ff7b07e22b6c5459a220956fdda014ddd9/src/lib/gcc/libgo/go/golang.org/x/net/route/route.go
+--- contrib/gcc.libgo_etalon/libgo/go/golang.org/x/net/route/route.go	2023-06-01 13:13:31.203417086 +0300
++++ gcc/libgo/go/golang.org/x/net/route/route.go	2023-06-01 13:32:24.700409223 +0300
 @@ -2,7 +2,7 @@
  // Use of this source code is governed by a BSD-style
  // license that can be found in the LICENSE file.
  
--// +build darwin dragonfly freebsd netbsd openbsd
-+// +build darwin dragonfly freebsd netbsd openbsd genode
+-//go:build darwin || dragonfly || freebsd || netbsd || openbsd
++//go:build darwin || dragonfly || freebsd || netbsd || openbsd || genode
+ // +build darwin dragonfly freebsd netbsd openbsd
  
  // Package route provides basic functions for the manipulation of
- // packet routing facilities on BSD variants.
 @@ -92,8 +92,8 @@
  type RIBType int
  

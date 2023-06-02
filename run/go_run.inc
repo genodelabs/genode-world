@@ -129,7 +129,7 @@ append config {
 
 append_if $use_nic config {
 	<start name="nic_drv" ld="} $ld_nic {" caps="1000" managing_system="yes" >
-		<resource name="RAM" quantum="8M"/>
+		<resource name="RAM" quantum="20M"/>
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
