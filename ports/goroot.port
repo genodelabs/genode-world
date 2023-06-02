@@ -1,9 +1,9 @@
 LICENSE   := BSD
-VERSION   := 1.17
+VERSION   := git
 DOWNLOADS := goroot.git
 
-URL(goroot) := https://go.googlesource.com/go
-REV(goroot) := 9de1ac6ac2cad3871760d0aa288f5ca713afd0a6
+URL(goroot) := https://github.com/golang/go.git
+REV(goroot) := release-branch.go1.18
 DIR(goroot) := src/app/goroot
 
 PATCHES      := src/app/goroot/dist.patch

@@ -1,7 +1,7 @@
 TARGET = goroot
 
 GOOS:=genode
-GOARCH:=arm64
+GOARCH:=$(ARCH)
 
 GOROOT_PORT_DIR := $(call select_from_ports,goroot)
 GOROOT_DIR      := $(GOROOT_PORT_DIR)/src/app/goroot
@@ -18,7 +18,14 @@ env.sh: $(PRG_DIR)/target.mk
 	$(VERBOSE)echo "export GOTESTONLY='!'" >> $@
 
 $(TARGET): prepare_goroot
-	$(VERBOSE)source ./env.sh && cd src && ./all.bash && mv bin/go bin/genode-go
+	# FIX some files not allowed to be links during compilation
+	$(VERBOSE)rm ./src/crypto/elliptic/p256_asm_table.bin
+	$(VERBOSE)cp $(GOROOT_DIR)/src/crypto/elliptic/p256_asm_table.bin \
+		./src/crypto/elliptic/p256_asm_table.bin
+	$(VERBOSE)rm -rf ./src/cmd/vendor/github.com/google/pprof/internal/driver/html/
+	$(VERBOSE)cp -r $(GOROOT_DIR)/src/cmd/vendor/github.com/google/pprof/internal/driver/html \
+		./src/cmd/vendor/github.com/google/pprof/internal/driver/
+	$(VERBOSE)source ./env.sh && cd src && ./all.bash && mv ../bin/go ../bin/genode-go
 
 prepare_goroot: env.sh $(CURDIR)/toolchain/gcc/libgo/
 	$(VERBOSE)cp -aprsf $(GOROOT_DIR)/* .
