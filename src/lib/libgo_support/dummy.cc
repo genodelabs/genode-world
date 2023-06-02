@@ -104,4 +104,11 @@ int sigaltstack(const stack_t *ss, stack_t *oss) {
 	return 0;
 }
 
+#include <../../src/lib/libc/sys/sys/procctl.h>
+int procctl(idtype_t, id_t, int, void *)
+{
+	NOT_IMPL;
+	errno = EOPNOTSUPP;
+	return -1;
+}
 }
