@@ -7,13 +7,15 @@ This work is a side result of one of the research project made in Innopolis Univ
 
 It allow compilation and execution of simple go applications/packages (without unsupported OS/platform features).
 In this moment it supports linux, foc, nova and sel4 kernels on x86_64 platform, and foc, hw on arm64 (arm v8a) platform.
-(Checked with linux/linux, foc/pc, nova/pc as x86_64; hw/virt_qemu_arm_v8a, foc/rpi3  as arm64 as for now on 22.11)
+(Checked with linux/linux, foc/pc, nova/pc as x86_64; hw/virt_qemu_arm_v8a, foc/rpi3 (without nic drivers) 
+as arm64 as for now on 23.05)
 
-I use only gccgo version of golang compiler (gcc 10.3). Other limitations see below.
+I use only gccgo version of golang compiler (gcc 12.3). Other limitations see below.
 
 It build a set of libraries, from world repo, as static ones.
 Also it build a set of standard golang packages (namely fmt, os, syscall, runtime/etc) as files for gccgo compilation.
-Note: Go runtinme support around 11 systems as backend. I use netbsd as simplest one as the prototype for new system - "genode".
+Note: Go runtinme support around 13 systems as backend. I use netbsd as simplest one as the prototype for
+new system - "genode", while borrow some code for freebsd/linux as well.
 
 To implement context switching I have to port it from the glibc (but use makecontext from genode FreeBSD port, so, to use
 you need to fill mc_len field before call to makecontext() on x86_64); for arm64 I have to combine libc and glibc code;
@@ -57,12 +59,12 @@ export RANLIB=genode-$ARCH-ranlib
 2. prepare ports to build golang libgo from gcc distirbution
 	./tool/ports/prepare_port libgo
 3. build native libraries (set your own flags if need, eg -O) for genode (libgo should be the last) by
-	make -C build/x86_64/ KERNEL=nova lib/libatomic
-	make -C build/x86_64/ KERNEL=nova lib/libbacktrace
-	make -C build/x86_64/ KERNEL=nova lib/libffi
+	make -C build/x86_64/ KERNEL=nova lib/libatomic lib/libbacktrace lib/libffi
 	make -C build/x86_64/ KERNEL=nova lib/libgo
 4. build and run test go application by
 	make -C build/x86_64/ KERNEL=nova run/go_app
+   or for golang network applications (not all platform supported by genode itself)
+	make -C build/x86_64/ KERNEL=nova run/go_http
 
 target.mk for test app:
 
@@ -98,7 +100,7 @@ For convenience I add my VSCode launch.json (to run debugger using VSCode as fro
             "executable": "build/x86_64/var/libcache/ld-nova/ld-nova.lib.so",
             "target": ":5555",
             "remote": true,
-            "cwd": "/var/services/homes/admin/gen/22.11",
+            "cwd": "/var/services/homes/admin/gen/23.05",
             "autorun": [
                 "set output-radix 16",
                 "set solib-search-path build/x86_64/debug",
@@ -118,7 +120,7 @@ For convenience I add my VSCode launch.json (to run debugger using VSCode as fro
             "valuesFormatting": "parseText"
         }
 
-Addresses like -o 0x10dfe000 you should take from log of program after first start, e.g.
+Addresses above like "... -o 0x10dfe000" you should take from log of program after first start, e.g.
 
 [init -> gdb_monitor -> test-go]   0x1000000 .. 0x10ffffff: linker area
 [init -> gdb_monitor -> test-go]   0x40000000 .. 0x4fffffff: stack area
@@ -141,9 +143,9 @@ In this moment it support lwip and lxip (need different setup for linux vs other
 	Current limitations
 	===================
   -	tested nominally up to 4 CPU (you could setup it in go_app.run/go_http.run parameters)
-  -	it works on x86_64, tested on nova, foc, linux, sel4 kernels (sel4 support for Jun 22 seems to be broken);
+  -	it works on x86_64, tested on nova, foc, linux, sel4 kernels (sel4 support for Jun 23 seems to be broken);
 	genode do not have makecontex/setcontext/gencontext family while it is crucial to support because of goroutine model;
-	I have to port it from FreeBSD libc. It is machine and platform-dependent;
+	I have to port it from FreeBSD libc (can be done for RISCV if need). It is machine and platform-dependent;
   -	it works on ARM V8A (64 bit), tested on foc and hw kernels, probably work for others.
   -	Genode thread model closer to traditional processes than to threads; in particular, capabilities and their permisions
 	allocated in one thread could became unaccessible in another while posix thread model assume that if you open something
@@ -171,14 +173,14 @@ Standard way of golang usage is a "go" driver/frontend utilizaton, see "go build
 support own compiler as well as gccgo. In genode we do have gccgo only, and standard frontend in theory can support it.
 In practice, I have to build own version of frontend (call it genode-go) and force creation of own tricky combination of genode tools
 references and build libgo objects (packages) where I point standard variable GCC_EXEC_PREFIX. It stored inside build goroot in /toolchain.
-Current version is 1.17
+Current version is 1.18 as a part of gcc 12.3.0
 
 To use genode-go host frontend you need
 0. build libgo (see above)
 1. prepare port goroot
 2. update src/app/goroot/target.mk of it for appropriate GOARCH and build it in usual way like "make app/goroot"
    (this step will generate host application genode-go, not genode one!)
-3. add goroot/bin into PATH (eg like /var/services/homes/admin/gen/22.11/build/arm_v8a/app/goroot/bin)
+3. add goroot/bin into PATH (eg like /var/services/homes/admin/gen/23.05/build/arm_v8a/app/goroot/bin)
 
 Then you can use package build targets of genode (it will utilize genode-go as a toolchain part), see test/go_pkgs as a sample.
 In src/test/go_pkgs/target.mk you can turn on executed commands print if need GOBUILD_VERBOSE := -x. 
