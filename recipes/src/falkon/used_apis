@@ -4,5 +4,9 @@ nss3
 openssl
 qt5_base
 qt5_component
+qt5_declarative
+qt5_svg
+qt5_webchannel
+qt5_webengine
 so
 stdcxx
