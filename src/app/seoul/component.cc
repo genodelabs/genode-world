@@ -170,7 +170,6 @@ class Vcpu : public StaticReceiver<Vcpu>
 		bool const                          _rdtsc_exit;
 		Genode::Vm_connection::Exit_config  _exit_config { };
 		Genode::Vm_connection::Vcpu         _vm_vcpu;
-		Genode::Vcpu_state                 &_state;
 
 		Seoul::Guest_memory                &_guest_memory;
 		Synced_motherboard                 &_motherboard;
@@ -179,6 +178,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 		CpuState                            _seoul_state { };
 
 		Genode::Semaphore                   _block { 0 };
+		Genode::Semaphore                   _started { 0 };
 
 	public:
 
@@ -195,7 +195,6 @@ class Vcpu : public StaticReceiver<Vcpu>
 //			         svm ? &Vcpu::exit_config_amd : nullptr),
 			_vmx(vmx), _svm(svm), _map_small(map_small), _rdtsc_exit(rdtsc),
 			_vm_vcpu(_vm_con, alloc, _handler, _exit_config),
-			_state(_vm_vcpu.state()),
 			_guest_memory(guest_memory),
 			_motherboard(motherboard),
 			_vcpu(vcpu_mutex, unsynchronized_vcpu)
@@ -207,68 +206,66 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 			/* handle cpuid overrides */
 			unsynchronized_vcpu->executor.add(this, receive_static<CpuMessage>);
-
-			/* let vCPU run */
-			_vm_vcpu.run();
+			_started.up();
 		}
 
 		void block() { _block.down(); }
 		void unblock() { _block.up(); }
 
-		void recall() { _vm_vcpu.pause(); }
+		void recall() { _handler.local_submit(); }
 
 		void _handle_vm_exception()
 		{
-			unsigned const exit = _state.exit_reason;
+			_vm_vcpu.with_state([this](Genode::Vcpu_state &state) -> bool {
+				unsigned const exit = state.exit_reason;
 
-			if (_svm) {
-				switch (exit) {
-				case 0x00 ... 0x1f: _svm_cr(); break;
-				case 0x62: _irqwin(); break;
-				case 0x64: _irqwin(); break;
-				case 0x6e: _svm_rdtsc(); break;
-				case 0x72: _svm_cpuid(); break;
-				case 0x78: _svm_hlt(); break;
-				case 0x7b: _svm_ioio(); break;
-				case 0x7c: _svm_msr(); break;
-				case 0x7f: _triple(); break;
-				case 0xfd: _svm_invalid(); break;
-				case 0xfc: _svm_npt(); break;
-				case 0xfe: _svm_startup(); break;
-				case 0xff: _recall(); break;
-				default:
-					Genode::error(__func__, " exit=", Genode::Hex(exit));
-					/* no resume */
-					return;
+				if (_svm) {
+					switch (exit) {
+					case 0x00 ... 0x1f: _svm_cr(state); break;
+					case 0x62: _irqwin(state); break;
+					case 0x64: _irqwin(state); break;
+					case 0x6e: _svm_rdtsc(state); break;
+					case 0x72: _svm_cpuid(state); break;
+					case 0x78: _svm_hlt(state); break;
+					case 0x7b: _svm_ioio(state); break;
+					case 0x7c: _svm_msr(state); break;
+					case 0x7f: _triple(state); break;
+					case 0xfd: _svm_invalid(state); break;
+					case 0xfc: _svm_npt(state); break;
+					case 0xfe: _svm_startup(state); break;
+					case 0xff: _recall(state); break;
+					default:
+						Genode::error(__func__, " exit=", Genode::Hex(exit));
+						/* no resume */
+						return false;
+					}
 				}
-			}
-			if (_vmx) {
-				switch (exit) {
-				case 0x02: _triple(); break;
-				case 0x03: _vmx_init(); break;
-				case 0x07: _irqwin(); break;
-				case 0x0a: _vmx_cpuid(); break;
-				case 0x0c: _vmx_hlt(); break;
-				case 0x10: _vmx_rdtsc(); break;
-				case 0x12: _vmx_vmcall(); break;
-				case 0x1c: _vmx_mov_crx(); break;
-				case 0x1e: _vmx_ioio(); break;
-				case 0x1f: _vmx_msr_read(); break;
-				case 0x20: _vmx_msr_write(); break;
-				case 0x21: _vmx_invalid(); break;
-				case 0x28: _vmx_pause(); break;
-				case 0x30: _vmx_ept(); break;
-				case 0xfe: _vmx_startup(); break;
-				case 0xff: _recall(); break;
-				default:
-					Genode::error(__func__, " exit=", Genode::Hex(exit));
-					/* no resume */
-					return;
+				if (_vmx) {
+					switch (exit) {
+					case 0x02: _triple(state); break;
+					case 0x03: _vmx_init(state); break;
+					case 0x07: _irqwin(state); break;
+					case 0x0a: _vmx_cpuid(state); break;
+					case 0x0c: _vmx_hlt(state); break;
+					case 0x10: _vmx_rdtsc(state); break;
+					case 0x12: _vmx_vmcall(state); break;
+					case 0x1c: _vmx_mov_crx(state); break;
+					case 0x1e: _vmx_ioio(state); break;
+					case 0x1f: _vmx_msr_read(state); break;
+					case 0x20: _vmx_msr_write(state); break;
+					case 0x21: _vmx_invalid(state); break;
+					case 0x28: _vmx_pause(state); break;
+					case 0x30: _vmx_ept(state); break;
+					case 0xfe: _vmx_startup(state); break;
+					case 0xff: _recall(state); break;
+					default:
+						Genode::error(__func__, " exit=", Genode::Hex(exit));
+						/* no resume */
+						return false;
+					}
 				}
-			}
-
-			/* resume */
-			_vm_vcpu.run();
+				return true;
+			});
 		}
 
 		void exit_config_intel(Genode::Vcpu_state &state, unsigned exit)
@@ -394,10 +391,10 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		enum Skip { SKIP = true, NO_SKIP = false };
 
-		void _handle_vcpu(Skip skip, CpuMessage::Type type)
+		void handle_vcpu(Genode::Vcpu_state & state, Skip skip, CpuMessage::Type type)
 		{
 			/* convert Genode VM state to Seoul state */
-			unsigned mtd = Seoul::read_vm_state(_state, _seoul_state);
+			unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
 
 			CpuMessage msg(type, &_seoul_state, mtd);
 
@@ -432,17 +429,17 @@ class Vcpu : public StaticReceiver<Vcpu>
 			}
 
 			if (~mtd & msg.mtr_out)
-				Genode::error("mtd issue !? exit=", Genode::Hex(_state.exit_reason),
+				Genode::error("mtd issue !? exit=", Genode::Hex(state.exit_reason),
 				              " ", Genode::Hex(mtd), "->", Genode::Hex(msg.mtr_out),
 				              " ", Genode::Hex(~mtd & msg.mtr_out));
 
 			/* convert Seoul state to Genode VM state */
-			Seoul::write_vm_state(_seoul_state, msg.mtr_out, _state);
+			Seoul::write_vm_state(_seoul_state, msg.mtr_out, state);
 		}
 
-		bool _handle_map_memory(bool need_unmap)
+		bool _handle_map_memory(Genode::Vcpu_state & state, bool need_unmap)
 		{
-			auto const vm_fault_addr = _state.qual_secondary.value();
+			auto const vm_fault_addr = state.qual_secondary.value();
 
 			if (verbose_npt)
 				Genode::log("--> request mapping at", Genode::Hex(vm_fault_addr));
@@ -468,12 +465,12 @@ class Vcpu : public StaticReceiver<Vcpu>
 				                ((Genode::addr_t)mem_region.ptr >> PAGE_SIZE_LOG2)
 				                + mem_region.count);
 
-			assert(_state.inj_info.charged());
+			assert(state.inj_info.charged());
 
 			/* EPT violation during IDT vectoring? */
-			if (_state.inj_info.value() & 0x80000000U) {
+			if (state.inj_info.value() & 0x80000000U) {
 				/* convert Genode VM state to Seoul state */
-				unsigned mtd = Seoul::read_vm_state(_state, _seoul_state);
+				unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
 				assert(mtd & MTD_INJ);
 
 				Logging::printf("EPT violation during IDT vectoring.\n");
@@ -485,10 +482,10 @@ class Vcpu : public StaticReceiver<Vcpu>
 					               __func__, _seoul_state.cs.sel, _seoul_state.eip);
 
 				/* convert Seoul state to Genode VM state */
-				Seoul::write_vm_state(_seoul_state, _win.mtr_out, _state);
-//				_state.inj_info.charge(_state.inj_info.value() & ~0x80000000U);
+				Seoul::write_vm_state(_seoul_state, _win.mtr_out, state);
+//				state.inj_info.charge(state.inj_info.value() & ~0x80000000U);
 			} else
-				_state.discharge(); /* reset */
+				state.discharge(); /* reset */
 
 			_vm_con.with_upgrade([&]() {
 				if (_map_small)
@@ -504,16 +501,16 @@ class Vcpu : public StaticReceiver<Vcpu>
 			return true;
 		}
 
-		void _handle_io(bool is_in, unsigned io_order, unsigned port)
+		void _handle_io(Genode::Vcpu_state & state, bool is_in, unsigned io_order, unsigned port)
 		{
 			if (verbose_io)
 				Logging::printf("--> I/O is_in=%d, io_order=%d, port=%x\n",
 				                is_in, io_order, port);
 
 			/* convert Genode VM state to Seoul state */
-			unsigned mtd = Seoul::read_vm_state(_state, _seoul_state);
+			unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
 
-			Genode::addr_t ax = _state.ax.value();
+			Genode::addr_t ax = state.ax.value();
 
 			CpuMessage msg(is_in, &_seoul_state, io_order,
 			               port, &ax, mtd);
@@ -528,180 +525,181 @@ class Vcpu : public StaticReceiver<Vcpu>
 				_seoul_state.rax = ax;
 
 			/* convert Seoul state to Genode VM state */
-			Seoul::write_vm_state(_seoul_state, msg.mtr_out, _state);
+			Seoul::write_vm_state(_seoul_state, msg.mtr_out, state);
 		}
 
 		/* SVM portal functions */
-		void _svm_startup()
+		void _svm_startup(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
-			_state.ctrl_primary.charge(_rdtsc_exit ? (1U << 14) : 0);
+			_started.down();
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
+			state.ctrl_primary.charge(_rdtsc_exit ? (1U << 14) : 0);
 		}
 
-		void _svm_npt()
+		void _svm_npt(Genode::Vcpu_state & state)
 		{
-			if (!_handle_map_memory(_state.qual_primary.value() & 1))
-				_svm_invalid();
+			if (!_handle_map_memory(state, state.qual_primary.value() & 1))
+				_svm_invalid(state);
 		}
 
-		void _svm_cr()
+		void _svm_cr(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
 		}
 
-		void _svm_invalid()
+		void _svm_invalid(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
-			_state.ctrl_primary.charge(1 << 18 /* cpuid */ | (_rdtsc_exit ? (1U << 14) : 0));
-			_state.ctrl_secondary.charge(1 << 0  /* vmrun */);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
+			state.ctrl_primary.charge(1 << 18 /* cpuid */ | (_rdtsc_exit ? (1U << 14) : 0));
+			state.ctrl_secondary.charge(1 << 0  /* vmrun */);
 		}
 
-		void _svm_ioio()
+		void _svm_ioio(Genode::Vcpu_state & state)
 		{
-			if (_state.qual_primary.value() & 0x4) {
+			if (state.qual_primary.value() & 0x4) {
 				Genode::log("invalid gueststate");
-				_state.discharge(); /* reset */
-				_state.ctrl_secondary.charge(0);
+				state.discharge(); /* reset */
+				state.ctrl_secondary.charge(0);
 			} else {
-				unsigned order = unsigned(((_state.qual_primary.value() >> 4) & 7) - 1);
+				unsigned order = unsigned(((state.qual_primary.value() >> 4) & 7) - 1);
 
 				if (order > 2)
 					order = 2;
 
-				_state.ip_len.charge(Genode::addr_t(_state.qual_secondary.value() - _state.ip.value()));
+				state.ip_len.charge(Genode::addr_t(state.qual_secondary.value() - state.ip.value()));
 
-				_handle_io(_state.qual_primary.value() & 1, order,
-				           unsigned(_state.qual_primary.value() >> 16));
+				_handle_io(state, state.qual_primary.value() & 1, order,
+				           unsigned(state.qual_primary.value() >> 16));
 			}
 		}
 
-		void _svm_cpuid()
+		void _svm_cpuid(Genode::Vcpu_state & state)
 		{
-			_state.ip_len.charge(2);
-			_handle_vcpu(SKIP, CpuMessage::TYPE_CPUID);
+			state.ip_len.charge(2);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_CPUID);
 		}
 
-		void _svm_hlt()
+		void _svm_hlt(Genode::Vcpu_state & state)
 		{
-			_state.ip_len.charge(1);
-			_vmx_hlt();
+			state.ip_len.charge(1);
+			_vmx_hlt(state);
 		}
 
-		void _svm_rdtsc()
+		void _svm_rdtsc(Genode::Vcpu_state & state)
 		{
-			_state.ip_len.charge(2);
-			_handle_vcpu(SKIP, CpuMessage::TYPE_RDTSC);
+			state.ip_len.charge(2);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_RDTSC);
 		}
 
-		void _svm_msr()
+		void _svm_msr(Genode::Vcpu_state & state)
 		{
-			_svm_invalid();
+			_svm_invalid(state);
 		}
 
-		void _recall()
+		void _recall(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
 		}
 
-		void _irqwin()
+		void _irqwin(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
 		}
 
-		void _triple()
+		void _triple(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_TRIPLE);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_TRIPLE);
 		}
 
-		void _vmx_init()
+		void _vmx_init(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_INIT);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_INIT);
 		}
 
-		void _vmx_hlt()
+		void _vmx_hlt(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(SKIP, CpuMessage::TYPE_HLT);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_HLT);
 		}
 
-		void _vmx_rdtsc()
+		void _vmx_rdtsc(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(SKIP, CpuMessage::TYPE_RDTSC);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_RDTSC);
 		}
 
-		void _vmx_vmcall()
+		void _vmx_vmcall(Genode::Vcpu_state & state)
 		{
-			_state.discharge(); /* reset */
-			_state.ip.charge(_state.ip.value() + _state.ip_len.value());
+			state.discharge(); /* reset */
+			state.ip.charge(state.ip.value() + state.ip_len.value());
 		}
 
-		void _vmx_pause()
+		void _vmx_pause(Genode::Vcpu_state & state)
 		{
 			/* convert Genode VM state to Seoul state */
-			unsigned mtd = Seoul::read_vm_state(_state, _seoul_state);
+			unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
 
 			CpuMessage msg(CpuMessage::TYPE_SINGLE_STEP, &_seoul_state, mtd);
 
 			_skip_instruction(msg);
 
 			/* convert Seoul state to Genode VM state */
-			Seoul::write_vm_state(_seoul_state, msg.mtr_out, _state);
+			Seoul::write_vm_state(_seoul_state, msg.mtr_out, state);
 		}
 
-		void _vmx_invalid()
+		void _vmx_invalid(Genode::Vcpu_state & state)
 		{
-			_state.flags.charge(_state.flags.value() | 2);
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
+			state.flags.charge(state.flags.value() | 2);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
 		}
 
-		void _vmx_startup()
+		void _vmx_startup(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_HLT);
-			_state.ctrl_primary.charge(_rdtsc_exit ? (1U << 12) : 0);
-			_state.ctrl_secondary.charge(0);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_HLT);
+			state.ctrl_primary.charge(_rdtsc_exit ? (1U << 12) : 0);
+			state.ctrl_secondary.charge(0);
 		}
 
-		void _vmx_ioio()
+		void _vmx_ioio(Genode::Vcpu_state & state)
 		{
 			unsigned order = 0U;
-			if (_state.qual_primary.value() & 0x10) {
+			if (state.qual_primary.value() & 0x10) {
 				Logging::printf("invalid gueststate\n");
-				assert(_state.flags.charged());
-				_state.discharge(); /* reset */
-				_state.flags.charge(_state.flags.value() & ~2U);
+				assert(state.flags.charged());
+				state.discharge(); /* reset */
+				state.flags.charge(state.flags.value() & ~2U);
 			} else {
-				order = _state.qual_primary.value() & 7;
+				order = state.qual_primary.value() & 7;
 				if (order > 2) order = 2;
 
-				_handle_io(_state.qual_primary.value() & 8, order,
-				           unsigned(_state.qual_primary.value() >> 16));
+				_handle_io(state, state.qual_primary.value() & 8, order,
+				           unsigned(state.qual_primary.value() >> 16));
 			}
 		}
 
-		void _vmx_ept()
+		void _vmx_ept(Genode::Vcpu_state & state)
 		{
-			if (!_handle_map_memory(_state.qual_primary.value() & 0x38))
+			if (!_handle_map_memory(state, state.qual_primary.value() & 0x38))
 				/* this is an access to MMIO */
-				_handle_vcpu(NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
+				handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
 		}
 
-		void _vmx_cpuid()
+		void _vmx_cpuid(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(SKIP, CpuMessage::TYPE_CPUID);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_CPUID);
 		}
 
-		void _vmx_msr_read()
+		void _vmx_msr_read(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(SKIP, CpuMessage::TYPE_RDMSR);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_RDMSR);
 		}
 
-		void _vmx_msr_write()
+		void _vmx_msr_write(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(SKIP, CpuMessage::TYPE_WRMSR);
+			handle_vcpu(state, SKIP, CpuMessage::TYPE_WRMSR);
 		}
 
-		void _vmx_mov_crx()
+		void _vmx_mov_crx(Genode::Vcpu_state & state)
 		{
-			_handle_vcpu(NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
+			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
 		}
 
 		/***********************************
