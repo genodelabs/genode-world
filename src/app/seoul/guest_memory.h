@@ -102,7 +102,7 @@ class Seoul::Guest_memory
 			/*
 			 * RAM used as backing store for guest-physical memory
 			 */
-			env.rm().attach_executable(_ds, _local_addr);
+			env.rm().attach_rwx(_ds, _local_addr);
 
 			/* register ds for VM region */
 			add_region(alloc, 0UL, _local_addr, _ds, remaining_size);

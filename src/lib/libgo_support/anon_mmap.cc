@@ -120,7 +120,7 @@ class Genode::Vm_region_map
 					throw Region_map::Region_conflict();
 				}
 			} else
-				_base = _env.rm().attach(_rm.dataspace());
+				_base = _env.rm().attach(_rm.dataspace(), 0, 0, false, nullptr, true, true);
 		}
 
 		~Vm_region_map()
@@ -171,11 +171,11 @@ class Genode::Vm_region_map
 				[&] () { _env.upgrade(Parent::Env::pd(), "ram_quota=8K"); });
 		}
 
-		Local_addr attach_executable(Dataspace_capability ds, addr_t local_addr, size_t size)
+		Local_addr attach_rwx(Dataspace_capability ds, addr_t local_addr, size_t size)
 		{
 			return retry<Genode::Out_of_ram>(
 				[&] () {
-					return _rm.attach_executable(ds, local_addr - _base, size);
+					return _rm.attach_rwx(ds, local_addr - _base, size);
 				},
 				[&] () { _env.upgrade(Parent::Env::pd(), "ram_quota=8K"); });
 		}
@@ -273,7 +273,7 @@ class Genode::Vm_area
 			try
 			{
 				if (executable)
-					_rm.attach_executable(ds, base, size);
+					_rm.attach_rwx(ds, base, size);
 				else
 					_rm.attach_at(ds, base, size);
 			}

@@ -4333,7 +4333,8 @@ class Genode::Vm_region_map
 		Env               &_env;
 		Rm_connection      _rm_connection { _env };
 		Region_map_client  _rm { _rm_connection.create(VM_SIZE) };
-		addr_t       const _base { _env.rm().attach(_rm.dataspace()) };
+		addr_t       const _base {
+			_env.rm().attach(_rm.dataspace(), 0, 0, false, nullptr, true, true) };
 		Allocator_avl      _range;
 
 	public:
@@ -4367,12 +4368,12 @@ class Genode::Vm_region_map
 				[&] () { _rm_connection.upgrade_ram(8*1024); });
 		}
 
-		Local_addr attach_executable(Dataspace_capability ds, addr_t local_addr)
+		Local_addr attach_rwx(Dataspace_capability ds, addr_t local_addr)
 		{
 			return retry<Genode::Out_of_ram>(
 				[&] () {
 					return retry<Genode::Out_of_caps>(
-						[&] () { return _rm.attach_executable(ds, local_addr - _base); },
+						[&] () { return _rm.attach_rwx(ds, local_addr - _base); },
 						[&] () { _rm_connection.upgrade_caps(2); },
 						~0u);
 				},
@@ -4427,7 +4428,7 @@ class Genode::Vm_area
 			Ram_dataspace_capability ds = _env.ram().alloc(size);
 
 			if (executable)
-				_rm.attach_executable(ds, base);
+				_rm.attach_rwx(ds, base);
 			else
 				_rm.attach_at(ds, base);
 
