@@ -39,7 +39,7 @@ class Log_tee::Session_component : public Rpc_object<Log_session>
 			Log_connection(Env &env, char const *args)
 			:
 				Connection<Log_session>(env, session_label_from_args(args),
-				                        Ram_quota { RAM_QUOTA }, Args(args)),
+				                        Ram_quota { RAM_QUOTA }, Args { }),
 				Log_session_client(cap())
 			{ }
 		} _log;
