@@ -267,7 +267,7 @@ set config {
 		<config>
 			<policy label_prefix="ps2_drv">  <device name="ps2"/>    </policy>
 			<policy label_prefix="ahci_drv"> <pci class="AHCI"/>     </policy>
-			<policy label_prefix="nic_drv">  <pci class="ETHERNET"/> </policy>
+			<policy label_prefix="nic_drv" info="yes"> <pci class="ETHERNET"/> </policy>
 			<policy label_prefix="audio_drv">
 				<pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>
 			<policy label_prefix="fb_drv"  info="yes"> <pci class="VGA"/> </policy>
@@ -453,7 +453,7 @@ append_if $use_genode_iso config {
 append_if $use_nic_session config {
 
 	<start name="nic_drv" caps="150" priority="-2">
-		<binary name="ipxe_nic_drv"/>
+		<binary name="pc_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<route>
 			<service name="Uplink"><child name="nic_router"/></service>
@@ -622,7 +622,7 @@ set boot_modules {
 lappend_if $use_block_vdi     boot_modules vdi_block
 lappend_if $use_vfs_block     boot_modules vfs_block
 lappend_if $use_drv_ahci      boot_modules ahci_drv
-lappend_if $use_nic_session   boot_modules ipxe_nic_drv
+lappend_if $use_nic_session   boot_modules pc_nic_drv
 lappend_if $use_nic_session   boot_modules nic_router
 
 lappend_if $use_genode_iso    boot_modules iso9660

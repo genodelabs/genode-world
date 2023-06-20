@@ -57,8 +57,8 @@ append config {
 		<provides> <service name="Rtc"/> </provides>
 	</start>
 	<start name="nic_drv">
-		<binary name="ipxe_nic_drv"/>
-		<resource name="RAM" quantum="4M"/>
+		<binary name="pc_nic_drv"/>
+		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
 	<start name="nic_router" caps="200">
@@ -180,7 +180,7 @@ set boot_modules {
 	libssl.lib.so
 	lxip.lib.so vfs_lxip.lib.so
 	nic_router
-	ipxe_nic_drv
+	pc_nic_drv
 	rtc_drv
 	sequence
 	stubby

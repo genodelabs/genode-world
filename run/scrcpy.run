@@ -79,7 +79,7 @@ proc socket_fs_plugin {} {
 
 proc binary_nic_drv { } {
 	if {[have_board linux]}     { return "linux_nic_drv" }
-	if {[have_board pc]}        { return "ipxe_nic_drv" }
+	if {[have_board pc]}        { return "pc_nic_drv" }
 	if {[have_board imx8q_evk]} { return "fec_nic_drv" }
 	return "unknown_nic_drv"
 }

@@ -69,7 +69,7 @@ set config {
 	</start>
 
 	<start name="nic_drv">
-		<binary name="ipxe_nic_drv"/>
+		<binary name="pc_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<config mode="uplink_client"/>
 		<route>
@@ -224,7 +224,7 @@ if {![file exists bin/ed25519_key]} {
 
 # generic modules
 set boot_modules {
-	core ld.lib.so init timer ipxe_nic_drv rtc_drv report_rom vfs fs_rom
+	core ld.lib.so init timer pc_nic_drv rtc_drv report_rom vfs fs_rom
 	test-terminal_echo nic_router
 
 	libc.lib.so libm.lib.so vfs.lib.so

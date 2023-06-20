@@ -47,7 +47,7 @@ export CC=genode-$ARCH-gcc
 export RANLIB=genode-$ARCH-ranlib
 	execute file above like '. pathes.sh'
 	correct if need begining of build/x86_64/etc/build.conf and uncomment 
-	libports, ports, world, dde_ipxe, dde_linux repos inside:
+	libports, ports, world, pc, dde_linux repos inside:
 	GENODE_DIR  := <your genode dir>
 	BASE_DIR    := $(GENODE_DIR)/repos/base
 	CONTRIB_DIR := $(GENODE_DIR)/contrib

@@ -14,7 +14,7 @@
 	<!-- networking -->
 
 	<start name="nic_inner" caps="120">
-		<binary name="ipxe_nic_drv"/>
+		<binary name="pc_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<route>
 			<service name="Platform"> <parent/> </service>
@@ -29,7 +29,7 @@
 	</start>
 
 	<start name="nic_outer" caps="120">
-		<binary name="ipxe_nic_drv"/>
+		<binary name="pc_nic_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<route>
 			<service name="Platform"> <parent/> </service>
