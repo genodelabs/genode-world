@@ -32,10 +32,6 @@
 
 using namespace Genode;
 
-extern char **genode_argv;
-extern int genode_argc;
-extern char **genode_envp;
-
 /* initial environment for the FreeBSD libc implementation */
 extern char **environ;
 
@@ -44,11 +40,15 @@ extern "C" int main(int argc, char **argv, char **envp);
 
 static void construct_component(Libc::Env &env)
 {
-	populate_args_and_env(env, genode_argc, genode_argv, genode_envp);
+	int argc    = 0;
+	char **argv = nullptr;
+	char **envp = nullptr;
 
-	environ = genode_envp;
+	populate_args_and_env(env, argc, argv, envp);
 
-	exit(main(genode_argc, genode_argv, genode_envp));
+	environ = envp;
+
+	exit(main(argc, argv, envp));
 }
 
 

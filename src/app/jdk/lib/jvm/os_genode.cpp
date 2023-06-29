@@ -25,6 +25,7 @@
 #include <base/heap.h>
 #include <base/registry.h>
 #include <libc/component.h>
+#include <libc/args.h>             /* populate_args_and_env() */
 #include <region_map/client.h>
 #include <rm_session/connection.h>
 #include <util/retry.h>
@@ -4609,10 +4610,6 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
  ** Startup code **
  ******************/
 
-extern char **genode_argv;
-extern int    genode_argc;
-extern char **genode_envp;
-
 /* initial environment for the FreeBSD libc implementation */
 extern char **environ;
 
@@ -4622,88 +4619,21 @@ extern "C" int main(int argc, char ** argv, char **envp);
 
 static void construct_component(Libc::Env &env)
 {
-	using Genode::Xml_node;
-	using Genode::Xml_attribute;
+	int argc    = 0;
+	char **argv = nullptr;
+	char **envp = nullptr;
 
-	env.config([&] (Xml_node const &node) {
-		int argc = 0;
-		int envc = 0;
-		char **argv;
-		char **envp;
+	populate_args_and_env(env, argc, argv, envp);
 
-		/* count the number of arguments and environment variables */
-		node.for_each_sub_node([&] (Xml_node const &node) {
-			/* check if the 'value' attribute exists */
-			if (node.has_type("arg") && node.has_attribute("value"))
-				++argc;
-			else
-			if (node.has_type("env") && node.has_attribute("key") && node.has_attribute("value"))
-				++envc;
-		});
+	environ = envp;
 
-		if (argc == 0 && envc == 0)
-			return; /* from lambda */
+	/*
+	 * From hotspot/src/share/vm/runtime/globals.hpp:
+	 * We assume SMP because of Genode Linux and the necessary cmpxchg prefixes
+	 */
+	AssumeMP = true;
 
-		/* arguments and environment are a contiguous array (but don't count on it) */
-		argv = (char**)malloc((argc + envc + 1) * sizeof(char*));
-		envp = &argv[argc];
-
-		/* read the arguments */
-		int arg_i = 0;
-		int env_i = 0;
-		node.for_each_sub_node([&] (Xml_node const &node) {
-			/* insert an argument */
-			if (node.has_type("arg")) try {
-				Xml_attribute attr = node.attribute("value");
-				char *arg = argv[arg_i] = (char*)malloc(attr.value_size() + 1);
-				attr.with_raw_value([&] (char const *start, size_t len) {
-					Genode::copy_cstring(arg, start, len + 1);
-				});
-				++arg_i;
-
-			} catch (Xml_node::Nonexistent_attribute) { }
-
-			else
-
-			/* insert an environment variable */
-			if (node.has_type("env")) try {
-				Xml_attribute key_attr = node.attribute("key");
-				Xml_attribute val_attr = node.attribute("value");
-
-				Genode::size_t const pair_len =
-					key_attr.value_size() +
-					val_attr.value_size() + 1;
-				char *env = envp[env_i] = (char*)malloc(pair_len);
-
-				Genode::size_t off = 0;
-				key_attr.with_raw_value([&] (char const *start, size_t len) {
-					Genode::memcpy(&env[off], start, len);
-				});
-				off = key_attr.value_size();
-				env[off++] = '=';
-				val_attr.with_raw_value([&] (char const *start, size_t len) {
-					Genode::copy_cstring(&env[off], start, len + 1);
-				});
-				++env_i;
-
-			} catch (Xml_node::Nonexistent_attribute) { }
-		});
-
-		envp[env_i] = NULL;
-
-		/* register command-line arguments at Genode's startup code */
-		genode_argc = argc;
-		genode_argv = argv;
-		genode_envp = environ = envp;
-	});
-
-  /*
-   * From hotspot/src/share/vm/runtime/globals.hpp:
-   * We assume SMP because of Genode Linux and the necessary cmpxchg prefixes
-   */
-  AssumeMP = true;
-
-	exit(main(genode_argc, genode_argv, genode_envp));
+	exit(main(argc, argv, envp));
 }
 
 
