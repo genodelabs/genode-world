@@ -8,6 +8,7 @@ set packages "
 	[depot_user]/src/[base_src]
 	[depot_user]/src/init
 	[depot_user]/src/gmp
+	[depot_user]/src/vfs_jitterentropy
 	[depot_user]/src/libc
 	[depot_user]/src/posix
 	[depot_user]/src/vfs
@@ -49,8 +50,15 @@ install_config {
 	<start name="random-prime" caps="150">
 		<resource name="RAM" quantum="16M"/>
 		<config>
+			<arg value="random-prime"/>
+			<arg value="256"/>
 			<vfs>
-				<dir name="dev"> <log/> <inline name="rtc">2018-01-01 00:01</inline> </dir>
+				<dir name="dev">
+					<log/>
+					<inline name="rtc">2018-01-01 00:01</inline>
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+				</dir>
 			</vfs>
 			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
 		</config>
