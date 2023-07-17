@@ -2,6 +2,7 @@ SCIP_DIR = $(call select_from_ports,scip)/src/lib/scip/src
 LIBS    += libc zlib soplex
 INC_DIR += $(SCIP_DIR)
 INC_DIR += $(REP_DIR)/src/lib/scip
+CC_CXX_OPT_STD = -std=c++17
 
 # plugin files
 SRC_C    =       scip/branch_allfullstrong.c \
