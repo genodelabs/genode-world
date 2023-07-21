@@ -34,23 +34,27 @@ if {[get_cmd_switch --autopilot]} {
 
 set version "2.0.13"
 
-# sanity check that the right version is used
-set wrong_version [catch {
-	spawn iperf -v
-	expect {
-		{iperf version 2.0.13 (21 Jan 2019) pthreads}  { }
-		eof { return }
-		timeout { return }
-	}
-}]
+if {![info exists ::env(VERSION_AGNOSTIC)] } {
+	# sanity check that the right version is used
+	set wrong_version [catch {
+		spawn iperf -v
+		expect {
+			{iperf version 2.0.13 (21 Jan 2019) pthreads}  { }
+			eof { return }
+			timeout { return }
+		}
+	}]
 
-if {$wrong_version} {
-	puts -nonewline "\nPlease compile a iperf client of version $version "
-	puts "for your host system."
-	puts "The sources are available in 'contrib/iperf-<hash>' (after you "
-	puts "prepared the port by calling 'tool/ports/prepare_port iperf')."
-	puts "Please name the binary iperf\n"
-	exit 1;
+	if {$wrong_version} {
+		puts -nonewline "\nPlease compile a iperf client of version $version "
+		puts "for your host system."
+		puts "The sources are available in 'contrib/iperf-<hash>' (after you "
+		puts "prepared the port by calling 'tool/ports/prepare_port iperf')."
+		puts "Please name the binary 'iperf'.\n"
+		puts "Alternatively you can set the environment varible "
+		puts "VERSION_AGNOSTIC=1 to skip the version check (at your own risk).\n"
+		exit 1;
+	}
 }
 
 # iperf configuration
