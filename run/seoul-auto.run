@@ -51,11 +51,6 @@ set memory_vmm_vm     "512M"
 set vcpus_to_be_used  2
 
 
-if {[have_spec hw]} {
-	# XXX SMP is not yet supported on base-hw
-	set vcpus_to_be_used  1
-}
-
 if {[have_spec sel4]} {
 	# The seL4 kernel dies with an exception XXX
 	set vcpus_to_be_used  1
