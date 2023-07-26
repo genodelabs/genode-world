@@ -1,0 +1,256 @@
+#
+# Build
+#
+
+create_boot_directory
+
+set packages "
+	[depot_user]/src/[base_src]
+	[depot_user]/src/dynamic_rom
+	[depot_user]/src/gmp
+	[depot_user]/src/init
+	[depot_user]/src/libc
+	[depot_user]/src/posix
+	[depot_user]/src/vfs
+"
+
+import_from_depot $packages
+
+build { test/nettle/testsuite }
+
+append tests { aes-test }
+append tests { arcfour-test }
+append tests { arctwo-test }
+append tests { base16-test }
+append tests { base64-test }
+append tests { bcrypt-test }
+# append tests { bignum-test }           <-- hogweed needed, deactivated
+append tests { blowfish-test }
+append tests { buffer-test }
+append tests { camellia-test }
+append tests { cast128-test }
+append tests { cbc-test }
+append tests { ccm-test }
+append tests { cfb-test }
+append tests { chacha-poly1305-test }
+append tests { chacha-test }
+append tests { cmac-test }
+append tests { cnd-memcpy-test }
+# append tests { ctr-test }              <-- additional lib nettle_des3, deactivated
+append tests { curve25519-dh-test }
+append tests { curve448-dh-test }
+# append tests { cxx-test }              <-- C++, implicit rule not working, deactivated
+# append tests { des3-test }             <-- additional lib nettle_des3, deactivated
+append tests { des-test }
+# append tests { dlopen-test }           <-- failed on host, deactivated
+# append tests { dsa-keygen-test }       <-- build error, hogweed needed, deactivated
+# append tests { dsa-test }              <-- build error, hogweed needed, deactivated
+append tests { eax-test }
+# append tests { ecc-add-test }          <-- build error, hogweed needed, deactivated
+# append tests { ecc-dup-test }          <-- build error, hogweed needed, deactivated
+# append tests { ecc-modinv-test }       <-- build error, hogweed needed, deactivated
+# append tests { ecc-mod-test }          <-- build error, hogweed needed, deactivated
+# append tests { ecc-mul-a-test }        <-- build error, hogweed needed, deactivated
+# append tests { ecc-mul-g-test }        <-- build error, hogweed needed, deactivated
+# append tests { ecc-redc-test }         <-- build error, hogweed needed, deactivated
+# append tests { ecc-sqrt-test }         <-- build error, hogweed needed, deactivated
+# append tests { ecdh-test }             <-- build error, hogweed needed ?, deactivated
+# append tests { ecdsa-keygen-test }     <-- build error, hogweed needed ?, deactivated
+# append tests { ecdsa-sign-test }       <-- build error, hogweed needed ?, deactivated
+# append tests { ecdsa-verify-test }     <-- build error, hogweed needed ?, deactivated
+append tests { ed25519-test }
+append tests { ed448-test }
+# append tests { eddsa-compress-test }   <-- build error, hogweed needed ?, deactivated
+# append tests { eddsa-sign-test }       <-- build error, hogweed needed ?, deactivated
+# append tests { eddsa-verify-test }     <-- build error, hogweed needed ?, deactivated
+append tests { gcm-test }
+# append tests { gostdsa-keygen-test }   <-- build error, hogweed needed ?, deactivated
+# append tests { gostdsa-sign-test }     <-- build error, hogweed needed ?, deactivated
+# append tests { gostdsa-verify-test }   <-- build error, hogweed needed ?, deactivated
+# append tests { gostdsa-vko-test }      <-- build error, hogweed needed ?, deactivated
+append tests { gosthash94-test }
+append tests { hkdf-test }
+append tests { hmac-test }
+append tests { knuth-lfib-test }
+append tests { md2-test }
+append tests { md4-test }
+append tests { md5-compat-test }
+append tests { md5-test }
+append tests { memeql-test }
+# append tests { memxor-test }           <-- temporary deactivated as run > 5s
+append tests { meta-aead-test }
+append tests { meta-armor-test }
+append tests { meta-cipher-test }
+append tests { meta-hash-test }
+append tests { meta-mac-test }
+# append tests { nettle-pbkdf2-test }    <-- fails on host, deactivated
+append tests { pbkdf2-test }
+# append tests { pkcs1-conv-test }       <-- skipped on host, deactivated
+append tests { pkcs1-sec-decrypt-test }
+append tests { pkcs1-test }
+append tests { poly1305-test }
+append tests { pss-mgf1-test }
+append tests { pss-test }
+# append tests { random-prime-test }     <-- build error, ???, deactivated
+append tests { ripemd160-test }
+# append tests { rsa2sexp-test }         <-- build error, ???, deactivated
+# append tests { rsa-compute-root-test } <-- runtime error: Error: LD: jump slot relocation failed for symbol: '__gmpn_addaddmul_1msb0'
+# append tests { rsa-encrypt-test }      <-- build error, ???, deactivated
+# append tests { rsa-keygen-test }       <-- build error, ???, deactivated
+# append tests { rsa-pss-sign-tr-test }  <-- build error, ???, deactivated
+# append tests { rsa-sec-decrypt-test }  <-- runtime error: Error: LD: jump slot relocation failed for symbol: '__gmpn_addaddmul_1msb0'
+# append tests { rsa-sign-tr-test }      <-- build error, ???, deactivated
+# append tests { rsa-test }              <-- build error, ???, deactivated
+append tests { salsa20-test }
+append tests { serpent-test }
+# append tests { sexp2rsa-test }         <-- build/link error, ???, deactivated
+# append tests { sexp-conv-test }        <-- fails on host, deactivated
+# append tests { sexp-format-test }      <-- build/link error, ???, deactivated
+# append tests { sexp-test }             <-- build/link error, ???, deactivated
+# append tests { sha1-huge-test }        <-- temporary deactivated as run > 5s
+append tests { sha1-test }
+append tests { sha224-test }
+append tests { sha256-test }
+append tests { sha3-224-test }
+append tests { sha3-256-test }
+append tests { sha3-384-test }
+append tests { sha3-512-test }
+append tests { sha384-test }
+append tests { sha3-permute-test }
+append tests { sha512-224-test }
+append tests { sha512-256-test }
+append tests { sha512-test }
+append tests { shake256-test }
+append tests { siv-test }
+append tests { streebog-test }
+# append tests { symbols-test }          <-- build error, ???, deactivated
+append tests { twofish-test }
+append tests { umac-test }
+append tests { version-test }
+# append tests { x86-ibt-test }          <-- skipped on host, deactivated
+append tests { xts-test }
+# append tests { yarrow-test }           <-- fails on host, deactivated
+
+#
+# Generate config
+#
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="dynamic_rom">
+		<resource name="RAM" quantum="20M"/>
+		<provides><service name="ROM"/> </provides>
+		<config verbose="yes">
+			<rom name="subinit.config">
+				<inline>
+					<config />
+				</inline>
+				<sleep milliseconds="1000"/>
+}
+foreach test $tests {
+append config {
+				<inline>
+					<config verbose="yes">
+						<parent-provides>
+							<service name="Timer"/>
+							<service name="LOG"/>
+							<service name="ROM"/>
+							<service name="CPU"/>
+							<service name="PD"/>
+							<service name="RM"/>
+							<service name="Nic"/>
+						</parent-provides>
+}
+append config "							<start name=\"$test\" caps=\"320\">"
+append config "							<binary name=\"$test\" />"
+append config {
+							<resource name="RAM" quantum="16M"/>
+							<config verbose="yes">
+}
+append config "								<arg value=\"$test\"/>"
+append config {
+								<arg value="-v"/>
+								<vfs>
+									<dir name="dev"> <log/> <inline name="rtc">2018-01-01 00:01</inline> </dir>
+								</vfs>
+								<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+							</config>
+							<route>
+								<any-service> <parent/> </any-service>
+							</route>
+						</start>
+					</config>
+				</inline>
+				<sleep milliseconds="2000"/>
+				<inline>
+					<config />
+				</inline>
+	}
+}
+append config {
+			</rom>
+		</config>
+	</start>
+	<start name="subinit" caps="1000">
+		<binary name="init"/>
+		<resource name="RAM" quantum="80M"/>
+		<route>
+			<service name="ROM" label="config">
+				<child name="dynamic_rom" label="subinit.config"/>
+			</service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+#
+# Boot image
+#
+set binaries {
+	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so gmp.lib.so
+	nettle.lib.so
+}
+
+append binaries $tests
+
+puts $binaries
+build_boot_image $binaries
+
+#	core init ld.lib.so
+#	timer vfs
+
+append qemu_args " -nographic "
+
+set pattern ""
+foreach test $tests {
+	append pattern ".*child \"$test\" exited with exit value 0"
+}
+
+puts $pattern
+
+run_genode_until $pattern 400
