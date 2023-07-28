@@ -73,7 +73,7 @@ TESTS += pkcs1-test
 TESTS += poly1305-test
 TESTS += pss-mgf1-test
 TESTS += pss-test
-# TESTS += random-prime-test     <-- build error, ???, deactivated
+TESTS += random-prime-test
 TESTS += ripemd160-test
 # TESTS += rsa2sexp-test         <-- build error, ???, deactivated
 # TESTS += rsa-compute-root-test <-- runtime error: Error: LD: jump slot relocation failed for symbol: '__gmpn_addaddmul_1msb0'
@@ -105,7 +105,7 @@ TESTS += sha512-test
 TESTS += shake256-test
 TESTS += siv-test
 TESTS += streebog-test
-# TESTS += symbols-test          <-- build error, ???, deactivated
+# TESTS += symbols-test          <-- no c code, deactivated
 TESTS += twofish-test
 TESTS += umac-test
 TESTS += version-test
@@ -117,7 +117,7 @@ tests: $(TESTS)
 
 mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-%-test:
+%-test: nettle_test.template
 	echo $@
 	mkdir $(mkfile_path)$@
 	sed 's/@@test_exe@@/$@/g' $(mkfile_path)nettle_test.template > $(mkfile_path)$@/target.mk

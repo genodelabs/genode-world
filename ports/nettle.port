@@ -6,7 +6,8 @@ URL(nettle) := https://ftp.gnu.org/gnu/nettle/nettle-$(VERSION).tar.gz
 SHA(nettle) := f001f64eb444bf13dd91bceccbc20acbc60c4311d6e2b20878452eb9a9cec75a
 DIR(nettle) := src/lib/nettle
 
-PATCHES := src/lib/nettle/timing.patch
+PATCHES := src/lib/nettle/timing.patch \
+           src/lib/nettle/testutils.patch
 
 DIRS := include/nettle
 DIR_CONTENT(include/nettle) := src/lib/nettle/aes.h \

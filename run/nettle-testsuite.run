@@ -91,7 +91,7 @@ append tests { pkcs1-test }
 append tests { poly1305-test }
 append tests { pss-mgf1-test }
 append tests { pss-test }
-# append tests { random-prime-test }     <-- build error, ???, deactivated
+append tests { random-prime-test }
 append tests { ripemd160-test }
 # append tests { rsa2sexp-test }         <-- build error, ???, deactivated
 # append tests { rsa-compute-root-test } <-- runtime error: Error: LD: jump slot relocation failed for symbol: '__gmpn_addaddmul_1msb0'
