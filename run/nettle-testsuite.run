@@ -54,20 +54,20 @@ append tests { eax-test }
 # append tests { ecc-mul-g-test }        <-- build error, hogweed needed, deactivated
 # append tests { ecc-redc-test }         <-- build error, hogweed needed, deactivated
 # append tests { ecc-sqrt-test }         <-- build error, hogweed needed, deactivated
-# append tests { ecdh-test }             <-- build error, hogweed needed ?, deactivated
-# append tests { ecdsa-keygen-test }     <-- build error, hogweed needed ?, deactivated
-# append tests { ecdsa-sign-test }       <-- build error, hogweed needed ?, deactivated
-# append tests { ecdsa-verify-test }     <-- build error, hogweed needed ?, deactivated
+# append tests { ecdh-test }             <-- build error, hogweed needed, deactivated
+# append tests { ecdsa-keygen-test }     <-- build error, hogweed needed, deactivated
+# append tests { ecdsa-sign-test }       <-- build error, hogweed needed, deactivated
+# append tests { ecdsa-verify-test }     <-- build error, hogweed needed, deactivated
 append tests { ed25519-test }
 append tests { ed448-test }
-# append tests { eddsa-compress-test }   <-- build error, hogweed needed ?, deactivated
-# append tests { eddsa-sign-test }       <-- build error, hogweed needed ?, deactivated
-# append tests { eddsa-verify-test }     <-- build error, hogweed needed ?, deactivated
+# append tests { eddsa-compress-test }   <-- build error, hogweed needed, deactivated
+# append tests { eddsa-sign-test }       <-- build error, hogweed needed, deactivated
+# append tests { eddsa-verify-test }     <-- build error, hogweed needed, deactivated
 append tests { gcm-test }
-# append tests { gostdsa-keygen-test }   <-- build error, hogweed needed ?, deactivated
-# append tests { gostdsa-sign-test }     <-- build error, hogweed needed ?, deactivated
-# append tests { gostdsa-verify-test }   <-- build error, hogweed needed ?, deactivated
-# append tests { gostdsa-vko-test }      <-- build error, hogweed needed ?, deactivated
+# append tests { gostdsa-keygen-test }   <-- build error, hogweed needed, deactivated
+# append tests { gostdsa-sign-test }     <-- build error, hogweed needed, deactivated
+# append tests { gostdsa-verify-test }   <-- build error, hogweed needed, deactivated
+# append tests { gostdsa-vko-test }      <-- build error, hogweed needed, deactivated
 append tests { gosthash94-test }
 append tests { hkdf-test }
 append tests { hmac-test }
@@ -93,14 +93,14 @@ append tests { pss-mgf1-test }
 append tests { pss-test }
 append tests { random-prime-test }
 append tests { ripemd160-test }
-# append tests { rsa2sexp-test }         <-- build error, ???, deactivated
-# append tests { rsa-compute-root-test } <-- runtime error: Error: LD: jump slot relocation failed for symbol: '__gmpn_addaddmul_1msb0'
-# append tests { rsa-encrypt-test }      <-- build error, ???, deactivated
-# append tests { rsa-keygen-test }       <-- build error, ???, deactivated
-# append tests { rsa-pss-sign-tr-test }  <-- build error, ???, deactivated
-# append tests { rsa-sec-decrypt-test }  <-- runtime error: Error: LD: jump slot relocation failed for symbol: '__gmpn_addaddmul_1msb0'
-# append tests { rsa-sign-tr-test }      <-- build error, ???, deactivated
-# append tests { rsa-test }              <-- build error, ???, deactivated
+# append tests { rsa2sexp-test }         <-- build error, would need rsa2sexp.c, deactivated
+# append tests { rsa-compute-root-test } <-- build error, hogweed needed, deactivated
+# append tests { rsa-encrypt-test }      <-- build error, hogweed needed, deactivated
+# append tests { rsa-keygen-test }       <-- build error, hogweed needed, deactivated
+# append tests { rsa-pss-sign-tr-test }  <-- build error, hogweed needed, deactivated
+# append tests { rsa-sec-decrypt-test }  <-- build error, hogweed needed, deactivated
+# append tests { rsa-sign-tr-test }      <-- build error, hogweed needed, deactivated
+# append tests { rsa-test }              <-- build error, hogweed needed, deactivated
 append tests { salsa20-test }
 append tests { serpent-test }
 # append tests { sexp2rsa-test }         <-- build/link error, ???, deactivated
