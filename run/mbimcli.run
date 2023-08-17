@@ -1,84 +1,24 @@
 
-set     depot_archives { }
-lappend depot_archives [depot_user]/src/[base_src]
-lappend depot_archives [depot_user]/src/glib
-lappend depot_archives [depot_user]/src/init
-lappend depot_archives [depot_user]/src/libc
-lappend depot_archives [depot_user]/src/libiconv
-lappend depot_archives [depot_user]/src/nic_router
-lappend depot_archives [depot_user]/src/posix
-lappend depot_archives [depot_user]/src/report_rom
-lappend depot_archives [depot_user]/src/usb_modem_drv
-lappend depot_archives [depot_user]/src/vfs
-lappend depot_archives [depot_user]/src/vfs_pipe
-lappend depot_archives [depot_user]/src/ffi
-lappend depot_archives [depot_user]/src/zlib
-
-if {[have_board imx8q_evk] } {
-	lappend depot_archives [depot_user]/src/imx8mq_platform_drv
-	lappend depot_archives [depot_user]/src/imx8mq_usb_host_drv
-	lappend depot_archives [depot_user]/raw/imx8q_evk-devices
-	set platform_drv_binary imx8mq_platform_drv
-	set usb_host_drv_binary imx8mq_usb_host_drv
-}
-
-if {[have_board imx6q_sabrelite]} {
-	lappend depot_archives [depot_user]/src/imx6q_platform_drv
-	lappend depot_archives [depot_user]/src/legacy_usb_host_drv
-	lappend depot_archives [depot_user]/raw/imx6q_sabrelite-devices
-	set platform_drv_binary platform_drv
-	set usb_host_drv_binary legacy_imx6q_sabrelite_usb_host_drv
-}
-
-if {[have_board rpi]} {
-	lappend depot_archives [depot_user]/src/rpi_platform_drv
-	lappend depot_archives [depot_user]/src/legacy_usb_host_drv
-	lappend depot_archives [depot_user]/raw/rpi-devices
-	set platform_drv_binary rpi_platform_drv
-	set usb_host_drv_binary rpi_usb_host_drv
-}
-
-if {[have_board pc]} {
-	lappend depot_archives [depot_user]/src/pc_platform_drv
-	lappend depot_archives [depot_user]/src/pc_usb_host_drv
-	lappend depot_archives [depot_user]/raw/pbxa9-devices
-	set platform_drv_binary pc_platform_drv
-	set usb_host_drv_binary pc_usb_host_drv
-}
-
-set     build_components { }
-lappend build_components app/mbimcli
-lappend build_components app/ping
-
-set     boot_modules { }
-lappend boot_modules libmbim.lib.so
-lappend boot_modules mbimcli
-lappend boot_modules ping
-
-proc usb_policy { } {
-	return {<policy label="usb_modem_drv -> " vendor_id="0x12d1" product_id="0x15c1"/>}
-}
-
-proc platform_usb_devices { } {
-	if {[have_spec x86]} {
-		return {<pci class="USB"/>}
-	}
-	if {[have_board rpi]} {
-		return {<device name="dwc_otg"/>}
-	}
-	if {[have_board imx8q_evk]} {
-		return {<device name="usb_host_2"/>}
-	}
-	if {[have_board imx6q_sabrelite]} {
-		return {<device name="mxs_phy"/> <device name="usbmisc_imx"/> <device name="imx_usb"/>}
-	}
-}
-
 create_boot_directory
 
-build $build_components
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/test_usb_host_drv-[board] \
+                  [depot_user]/src/glib \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/libiconv \
+                  [depot_user]/src/nic_router \
+                  [depot_user]/src/posix \
+                  [depot_user]/src/report_rom \
+                  [depot_user]/src/usb_net_drv \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_pipe \
+                  [depot_user]/src/ffi \
+                  [depot_user]/src/zlib \
 
-import_from_depot $depot_archives
+set build_components { app/mbimcli app/ping }
+
+build $build_components
 
 append config {
 <config>
@@ -108,7 +48,7 @@ append config {
 			<service name="Report"/>
 			<service name="ROM"/>
 		</provides>
-		<config verbose="no">
+		<config verbose="yes">
 			<policy label="nic_router -> config" report="mbimcli -> nic_router.config"/>
 		</config>
 		<route>
@@ -116,51 +56,29 @@ append config {
 		</route>
 	</start>
 
-	<start name="platform_drv" caps="800" managing_system="yes">
-		<binary name="}
-append config $platform_drv_binary
-append config {"/>
-		<resource name="RAM" quantum="8M"/>
-		<provides>
-			<service name="Platform"/>
-			<service name="Regulator"/>
-		</provides>
-		<config>
-			<policy label="usb_drv -> " info="yes">}
-append config [platform_usb_devices]
-append config {
-			</policy>
-		</config>
-		<route>
-			<any-service> <parent/> </any-service>
-		</route>
-	</start>
-
-	<start name="usb_drv" caps="180">
-		<binary name="}
-append config $usb_host_drv_binary
-append config {"/>
-		<resource name="RAM" quantum="64M"/>
-		<provides> <service name="Usb"/> </provides>
-		<config bios_handoff="yes">
-			<report devices="no"/>
-			}
-append config [usb_policy]
-append config {
-		</config>
-		<route>
-			<any-service> <parent/> <any-child/> </any-service>
-		</route>
-	</start>
-
-	<start name="usb_modem_drv">
+	<start name="usb_net_drv">
+		<binary name="usb_net_drv"/>
 		<resource name="RAM" quantum="16M"/>
 		<provides>
 			<service name="Terminal"/>
 		</provides>
-		<config mac="02:00:00:00:01:01"/>
+		<!-- MIBM config profile is 3 for Huawei ME906e, 0 lets Linux driver choose
+		     config -->
+		<config mac="02:00:00:00:01:01" configuration="3"/>
 		<route>
 			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+
+	<start name="usb_drv" caps="1500" managing_system="yes">
+		<binary name="init"/>
+		<resource name="RAM" quantum="32M"/>
+		<provides> <service name="Usb"/> </provides>
+		<route>
+			<service name="ROM" label="config">
+				<parent label="drivers.config"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
 		</route>
 	</start>
 
@@ -212,7 +130,22 @@ append config {
 
 install_config $config
 
-build_boot_image $boot_modules
+#
+# Define USB host controller config
+#
+set config {<config bios_handoff="no">}
+#
+# Huawai ME906e, change to your modem and adjust "configuration" for
+# 'usb_net_drv'
+#
+append config {	<policy label_prefix="usb_net_drv" vendor_id="0x12d1" product_id="0x15c1"/>}
+append config {</config>}
+
+set fd [open [run_dir]/genode/usb_host_drv.config w]
+puts $fd $config
+close $fd
+
+build_boot_image { mbimcli libmbim.lib.so ping }
 
 if {[have_include "power_on/qemu"]} {
 	set USB_PORT 0
