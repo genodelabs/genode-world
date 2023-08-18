@@ -1,5 +1,5 @@
 This directory contains a port of the MBIM control interface to Genode. The app
-directly communicates via a Terminal session to Genode 'usb_modem' driver.
+directly communicates via a Terminal session to Genode 'usb_net' driver.
 
 Configuration
 ~~~~~~~~~~~~~

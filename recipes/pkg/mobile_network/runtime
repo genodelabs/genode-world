@@ -68,7 +68,7 @@
 			</route>
 		</start>
 
-		<start name="usb_modem_drv" caps="200">
+		<start name="usb_net_drv" caps="200">
 			<resource name="RAM" quantum="16M"/>
 			<provides>
 				<service name="Terminal"/>
@@ -113,7 +113,7 @@
 					<parent label="state"/>
 				</service>
 				<service name="Terminal">
-					<child name="usb_modem_drv"/>
+					<child name="usb_net_drv"/>
 				</service>
 				<any-service> <parent/> </any-service>
 			</route>
@@ -124,7 +124,7 @@
 	<content>
 		<rom label="init"/>
 		<rom label="mbimcli"/>
-		<rom label="usb_modem_drv"/>
+		<rom label="usb_net_drv"/>
 		<rom label="report_rom"/>
 		<rom label="nic_router"/>
 		<rom label="fs_rom"/>

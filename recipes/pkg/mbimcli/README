@@ -2,13 +2,13 @@
                         MBIM control interface
 
 The app directly communicates via a Terminal session to Genode's
-'usb_modem' driver. As it receives APN and PIN configuration from its config
+'usb_net' driver. As it receives APN and PIN configuration from its config
 ROM, it is best used with a launcher file such as:
 
 <launcher pkg="<depot-user>/pkg/mbimcli/<version>">
 	<route>
 		<service name="Terminal">
-			<child name="usb_modem_drv"/>
+			<child name="usb_net_drv"/>
 		</service>
 		<service name="Report" label="nic_router.config">
 			<parent/>
