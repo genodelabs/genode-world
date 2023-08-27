@@ -159,6 +159,7 @@ SRC_C_LIB_NETTLE += lib/nettle/int/dsa-compute-k.c
 SRC_C_LIB_NETTLE += lib/nettle/int/dsa-keygen-fips186.c
 SRC_C_LIB_NETTLE += lib/nettle/int/dsa-validate.c
 SRC_C_LIB_NETTLE += lib/nettle/int/ecdsa-compute-k.c
+SRC_C_LIB_NETTLE += lib/nettle/int/mpn-base256.c
 SRC_C_LIB_NETTLE += lib/nettle/int/provable-prime.c
 SRC_C_LIB_NETTLE += lib/nettle/int/rsa-keygen-fips186.c
 SRC_C_LIB_NETTLE += lib/nettle/int/tls1-prf.c
