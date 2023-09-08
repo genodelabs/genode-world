@@ -889,3 +889,5 @@ SDLgfx_rotozoomSurfaceSizeTrig T
 SW_CreateRendererForSurface T
 SW_RenderDriver D 96
 _ZN4Libc9Component9constructERNS_3EnvE T
+_Z15sdl_init_genodeRN6Genode3EnvE T
+main U
