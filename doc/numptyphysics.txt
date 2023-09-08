@@ -255,7 +255,7 @@ After this step, the program links successfully!
 Testing the program
 ===================
 
-To run the game, we need to create a run script. The easiest way is to take
+To run the game, we need to create a run script. The easiest way is to use a
 template and modify it according to our needs. The _libports/run/sdl.run_
 script is a good starting point. So let's copy this file to
 _world.git/run/numptyphysics.run_ and give it a try from within the
