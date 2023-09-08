@@ -29,16 +29,13 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* SDL includes */
 #include <SDL2/SDL.h>
+#include <stdio.h>
 
-/* Genode includes */
-#include <base/env.h>
-#include <timer_session/connection.h>
 
 static void draw(SDL_Surface * const screen, int w, int h, int v)
 {
-	if (screen == nullptr) { return; }
+	if (screen == NULL) { return; }
 
 	/* paint something into pixel buffer */
 	Uint32* const pixels = (Uint32*) screen->pixels;
@@ -49,6 +46,7 @@ static void draw(SDL_Surface * const screen, int w, int h, int v)
 	}
 }
 
+
 static SDL_Window *create_window(int w, int h)
 {
 	SDL_Window *window = SDL_CreateWindow("sdl2 test window",
@@ -56,31 +54,13 @@ static SDL_Window *create_window(int w, int h)
 	                                      SDL_WINDOWPOS_UNDEFINED,
 	                                      w, h,
 	                                      SDL_WINDOW_FULLSCREEN);
-	if (window == nullptr) {
+	if (window == NULL) {
 		printf("Error: could not create window: %s\n", SDL_GetError());
 	}
 
 	return window;
 }
 
-#if 0
-static SDL_Surface *resize_screen(SDL_Surface * const screen, int w, int h)
-{
-	if (screen == nullptr) { return nullptr; }
-
-	int oldw = screen->w;
-	int oldh = screen->h;
-
-	SDL_Surface *nscreen = set_video_mode(w, h);
-	if (nscreen == nullptr) {
-		printf("Error: could not resize %dx%d -> %dx%d: %s\n",
-		       oldw, oldh, w, h, SDL_GetError());
-		return nullptr;
-	}
-
-	return nscreen;
-}
-#endif
 
 static void dump_supported_features()
 {
@@ -104,33 +84,33 @@ static void dump_supported_features()
 	int const system_ram       = SDL_GetSystemRAM();
 	size_t simd_alignment      = SDL_SIMDGetAlignment();
 
-	Genode::log("CPU count : " , cpu_count,
-	            ", L1 cache line size: ", cache_l1);
-	Genode::log("System ram: ", system_ram,
-	            ", SIMD alignment: ", simd_alignment);
-	Genode::log("Features:", has_rdtsc ? " rdtsc" : "",
-	                         has_altivec ? " altivec" : "",
-	                         has_mmx ? " mmx" : "",
-	                         has_3dnow ? " 3dnow" : "",
-	                         has_sse ? " sse" : "",
-	                         has_sse2 ? " sse2" : "",
-	                         has_sse3 ? " sse3" : "",
-	                         has_sse41 ? " sse41" : "",
-	                         has_sse42 ? " sse42" : "",
-	                         has_avx ? " avx" : "",
-	                         has_avx2 ? " avx2" : "",
-	                         has_avx512f ? " avx512f" : "",
-	                         has_armsimd ? " ARM SIMD" : "",
-	                         has_armneon ? " ARM NEON" : "");
+	printf("CPU count : %d L1 cache line size: %d\n",
+	       cpu_count, cache_l1);
+	printf("System ram: %d SIMD alignment: %zu\n",
+	       system_ram, simd_alignment);
+	printf("Features: ");
+	if (has_rdtsc)   printf("rdtsc ");
+	if (has_altivec) printf("altivec ");
+	if (has_mmx)     printf("mmx ");
+	if (has_3dnow)   printf("3dnow ");
+	if (has_sse)     printf("sse ");
+	if (has_sse2)    printf("sse2 ");
+	if (has_sse3)    printf("sse3 ");
+	if (has_sse41)   printf("sse41 ");
+	if (has_sse42)   printf("sse42 ");
+	if (has_avx)     printf("avx ");
+	if (has_avx2)    printf("avx2 ");
+	if (has_avx512f) printf("avx512f ");
+	if (has_armsimd) printf("ARM SIMD ");
+	if (has_armneon) printf("ARM NEON ");
+	printf("\n");
 }
 
 
-extern "C" void wait_for_continue();
-
-
-int main(int, char*[] )
+int main(int argc, char *argv[])
 {
-//	wait_for_continue();
+	(void)argc;
+	(void)argv;
 
 	if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 		printf("%u SDL error: %s\n", __LINE__, SDL_GetError());
@@ -191,7 +171,7 @@ int main(int, char*[] )
 
 	unsigned loop_cnt = 0;
 
-	bool done = false;
+	SDL_bool done = SDL_FALSE;
 	while (!done) {
 		loop_cnt ++;
 
@@ -203,19 +183,11 @@ int main(int, char*[] )
 			switch(event.type) {
 			case SDL_KEYDOWN:
 				printf("%s\n", SDL_GetKeyName(event.key.keysym.sym));
-				done = true;
+				done = SDL_TRUE;
 				break;
-/*
-			case SDL_VIDEORESIZE:
-				screen = resize_screen(screen, event.resize.w, event.resize.h);
-				if (screen == nullptr) { done = true; }
-
-				break;
-*/
 			}
 		}
 
-		//Update the surface
 		if (SDL_UpdateWindowSurface(window)) {
 			printf("%u SDL error: %s\n", __LINE__, SDL_GetError());
 			return 1;

@@ -1,7 +1,7 @@
 set build_components { test/sdl2 }
 
 set app_config {
-	<start name="test-sdl2">
+	<start name="test-sdl2" caps="128">
 		<resource name="RAM" quantum="48M"/>
 		<config ld_verbose="yes">
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>
@@ -11,7 +11,10 @@ set app_config {
 
 set boot_modules {
 	test-sdl2
-	libc.lib.so vfs.lib.so sdl2.lib.so
+	egl.lib.so expat.lib.so glapi.lib.so
+	libc.lib.so libdrm.lib.so libm.lib.so
+	mesa.lib.so sdl2.lib.so stdcxx.lib.so
+	vfs.lib.so vfs_gpu.lib.so zlib.lib.so
 }
 
 source ${genode_dir}/repos/world/run/gui_app.inc
