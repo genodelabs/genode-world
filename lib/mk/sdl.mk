@@ -98,3 +98,5 @@ $(INSTALL_DIR)/sdl.lib.so: $(INSTALL_DIR)/SDL.lib.so
 $(INSTALL_DIR)/SDL.lib.so:
 	$(VERBOSE)ln -sf sdl.lib.so $@
 
+# capture dependency from mesa port ('call select_from_ports,mesa')
+include $(call select_from_repositories,lib/import/import-mesa_api.mk)
