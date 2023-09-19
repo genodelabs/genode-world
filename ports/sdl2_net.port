@@ -1,0 +1,10 @@
+LICENSE   := BSD
+VERSION   := 2.2.0
+DOWNLOADS := sdl2_net.archive
+
+URL(sdl2_net) := https://github.com/libsdl-org/SDL_net/archive/refs/tags/release-$(VERSION).tar.gz
+SHA(sdl2_net) := 08d741282c0c22b82ed134f09cd319803132289cae06fb47b5ada2752faf0493
+DIR(sdl2_net) := src/lib/sdl2_net
+
+DIRS := include/SDL2
+DIR_CONTENT(include/SDL2) := src/lib/sdl2_net/SDL_net.h
