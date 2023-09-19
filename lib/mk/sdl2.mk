@@ -72,6 +72,7 @@ SRC_C   += file/SDL_rwops.c
 SRC_C   += filesystem/unix/SDL_sysfilesystem.c
 
 # haptic subsystem
+CC_OPT  += -DSDL_HAPTIC_DUMMY
 SRC_C   += haptic/SDL_haptic.c \
            haptic/dummy/SDL_syshaptic.c
 INC_DIR += $(SDL2_DIR)/src/haptic
