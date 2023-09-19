@@ -1,0 +1,10 @@
+LICENSE   := BSD
+VERSION   := 2.6.3
+DOWNLOADS := sdl2_mixer.archive
+
+URL(sdl2_mixer) := https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/release-$(VERSION).tar.gz
+SHA(sdl2_mixer) := 91dd065e9e63f499e5317350b110184b0ba96bc5f63c39b3a9939a136c40c035
+DIR(sdl2_mixer) := src/lib/sdl2_mixer
+
+DIRS := include/SDL2
+DIR_CONTENT(include/SDL2) := src/lib/sdl2_mixer/include/SDL_mixer.h
