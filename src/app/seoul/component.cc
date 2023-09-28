@@ -3,11 +3,12 @@
  * \author Alexander Boettcher
  * \author Norman Feske
  * \author Markus Partheymueller
+ * \author Benjamin Lamowski
  * \date   2011-11-18
  */
 
 /*
- * Copyright (C) 2011-2022 Genode Labs GmbH
+ * Copyright (C) 2011-2023 Genode Labs GmbH
  * Copyright (C) 2012 Intel Corporation
  *
  * This file is distributed under the terms of the GNU General Public License
@@ -323,7 +324,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 				break;
 			}
 
-			Seoul::write_vm_state(dummy_state, mtd, state);
+			Seoul::write_vcpu_state(dummy_state, mtd, state);
 		}
 
 		void exit_config_amd(Genode::Vcpu_state &state, unsigned exit)
@@ -367,7 +368,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 				break;
 			}
 
-			Seoul::write_vm_state(dummy_state, mtd, state);
+			Seoul::write_vcpu_state(dummy_state, mtd, state);
 		}
 
 		/***********************************
@@ -394,7 +395,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 		void handle_vcpu(Genode::Vcpu_state & state, Skip skip, CpuMessage::Type type)
 		{
 			/* convert Genode VM state to Seoul state */
-			unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
+			unsigned mtd = Seoul::read_vcpu_state(state, _seoul_state);
 
 			CpuMessage msg(type, &_seoul_state, mtd);
 
@@ -434,7 +435,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 				              " ", Genode::Hex(~mtd & msg.mtr_out));
 
 			/* convert Seoul state to Genode VM state */
-			Seoul::write_vm_state(_seoul_state, msg.mtr_out, state);
+			Seoul::write_vcpu_state(_seoul_state, msg.mtr_out, state);
 		}
 
 		bool _handle_map_memory(Genode::Vcpu_state & state, bool need_unmap)
@@ -470,7 +471,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			/* EPT violation during IDT vectoring? */
 			if (state.inj_info.value() & 0x80000000U) {
 				/* convert Genode VM state to Seoul state */
-				unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
+				unsigned mtd = Seoul::read_vcpu_state(state, _seoul_state);
 				assert(mtd & MTD_INJ);
 
 				Logging::printf("EPT violation during IDT vectoring.\n");
@@ -482,7 +483,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 					               __func__, _seoul_state.cs.sel, _seoul_state.eip);
 
 				/* convert Seoul state to Genode VM state */
-				Seoul::write_vm_state(_seoul_state, _win.mtr_out, state);
+				Seoul::write_vcpu_state(_seoul_state, _win.mtr_out, state);
 //				state.inj_info.charge(state.inj_info.value() & ~0x80000000U);
 			} else
 				state.discharge(); /* reset */
@@ -508,7 +509,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 				                is_in, io_order, port);
 
 			/* convert Genode VM state to Seoul state */
-			unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
+			unsigned mtd = Seoul::read_vcpu_state(state, _seoul_state);
 
 			Genode::addr_t ax = state.ax.value();
 
@@ -525,7 +526,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 				_seoul_state.rax = ax;
 
 			/* convert Seoul state to Genode VM state */
-			Seoul::write_vm_state(_seoul_state, msg.mtr_out, state);
+			Seoul::write_vcpu_state(_seoul_state, msg.mtr_out, state);
 		}
 
 		/* SVM portal functions */
@@ -635,14 +636,14 @@ class Vcpu : public StaticReceiver<Vcpu>
 		void _vmx_pause(Genode::Vcpu_state & state)
 		{
 			/* convert Genode VM state to Seoul state */
-			unsigned mtd = Seoul::read_vm_state(state, _seoul_state);
+			unsigned mtd = Seoul::read_vcpu_state(state, _seoul_state);
 
 			CpuMessage msg(CpuMessage::TYPE_SINGLE_STEP, &_seoul_state, mtd);
 
 			_skip_instruction(msg);
 
 			/* convert Seoul state to Genode VM state */
-			Seoul::write_vm_state(_seoul_state, msg.mtr_out, state);
+			Seoul::write_vcpu_state(_seoul_state, msg.mtr_out, state);
 		}
 
 		void _vmx_invalid(Genode::Vcpu_state & state)

@@ -1,11 +1,12 @@
 /*
  * \brief  Transform state between Genode VM session interface and Seoul
  * \author Alexander Boettcher
+ * \author Benjamin Lamowski
  * \date   2018-08-27
  */
 
 /*
- * Copyright (C) 2018 Genode Labs GmbH
+ * Copyright (C) 2018-2023 Genode Labs GmbH
  *
  * This file is part of the Genode OS framework, which is distributed
  * under the terms of the GNU Affero General Public License version 3.
@@ -15,7 +16,7 @@
 
 #include "state.h"
 
-void Seoul::write_vm_state(CpuState &seoul, unsigned mtr, Genode::Vcpu_state &state)
+void Seoul::write_vcpu_state(CpuState &seoul, unsigned mtr, Genode::Vcpu_state &state)
 {
 	state.discharge(); /* reset */
 
@@ -172,7 +173,7 @@ void Seoul::write_vm_state(CpuState &seoul, unsigned mtr, Genode::Vcpu_state &st
 		Genode::error("state transfer incomplete ", Genode::Hex(mtr));
 }
 
-unsigned Seoul::read_vm_state(Genode::Vcpu_state &state, CpuState &seoul)
+unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 {
 	unsigned mtr = 0;
 
