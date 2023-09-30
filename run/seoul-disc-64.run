@@ -22,7 +22,7 @@ set use_nic_session   1
 
 set use_top           0
 
-set memory_vmm_vm     "1024M"
+set memory_vmm_vm     "6144M"
 
 set vcpus_to_be_used  2
 
@@ -46,7 +46,7 @@ if {[have_include power_on/qemu]} {
 		exit 1
 	}
 
-	append qemu_args " -m 1536 "
+	append qemu_args " -m 7400 "
 #	append qemu_args " -cpu EPYC"
 	append qemu_args " -accel kvm -cpu host"
 	append qemu_args " -smp $vcpus_to_be_used"

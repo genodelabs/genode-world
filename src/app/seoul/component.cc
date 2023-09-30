@@ -790,11 +790,16 @@ class Machine : public StaticReceiver<Machine>
 				try {
 					Genode::Dataspace_capability ds = _env.ram().alloc(msg.len);
 					Genode::addr_t local_addr = _env.rm().attach(ds);
-					_guest_memory.add_region(_heap, guest_addr, local_addr, ds,
-					                         msg.type == MessageHostOp::OP_ALLOC_IOMEM_SMALL ?
-					                         msg.len_short : msg.len);
-					msg.ptr = reinterpret_cast<char *>(local_addr);
-					return true;
+
+					auto alloc_size = msg.type == MessageHostOp::OP_ALLOC_IOMEM_SMALL ?
+					                  msg.len_short : msg.len;
+					bool ok = _guest_memory.add_region(_heap, guest_addr,
+					                                   local_addr, ds,
+					                                   alloc_size);
+					if (ok)
+						msg.ptr = reinterpret_cast<char *>(local_addr);
+
+					return ok;
 				} catch (...) {
 					return false;
 				}
@@ -807,12 +812,11 @@ class Machine : public StaticReceiver<Machine>
 				if (verbose_debug)
 					Logging::printf("OP_GUEST_MEM value=0x%lx\n", msg.value);
 
-				if (msg.value >= _guest_memory.remaining_size) {
-					msg.value = 0;
-				} else {
-					msg.len = _guest_memory.remaining_size - msg.value;
-					msg.ptr = _guest_memory.backing_store_local_base() + msg.value;
-				}
+				if (msg.value != 0)
+					Logging::panic ("legacy op_guest_mem mode not supported");
+
+				msg.len = _guest_memory.backing_store_size() - msg.value;
+				msg.ptr = _guest_memory.backing_store_local_base() + msg.value;
 
 				if (verbose_debug)
 					Logging::printf(" -> len=0x%zx, ptr=0x%p\n",
@@ -825,7 +829,6 @@ class Machine : public StaticReceiver<Machine>
 			case MessageHostOp::OP_RESERVE_IO_RANGE:
 
 				msg.phys = _guest_memory.alloc_io_memory(msg.value);
-				Genode::warning("alloc from guest ", msg.value, " ", Genode::Hex(msg.phys));
 				return true;
 
 			case MessageHostOp::OP_VCPU_CREATE_BACKEND:
@@ -1375,6 +1378,7 @@ void Component::construct(Genode::Env &env)
 	bool const vmm_vcpu_same_cpu = node.attribute_value("vmm_vcpu_same_cpu",
 	                                                    false);
 	bool const cpuid_native      = node.attribute_value("cpuid_native", false);
+	bool const memory_verbose    = node.attribute_value("verbose_mem", false);
 
 	/* request max available memory */
 	auto vm_size = env.pd().avail_ram().value;
@@ -1395,21 +1399,18 @@ void Component::construct(Genode::Env &env)
 	Genode::log(" framebuffer ", width, "x", height);
 
 	/* setup guest memory */
-	static Seoul::Guest_memory guest_memory(env, heap, vm_con, vm_size);
+	static Seoul::Guest_memory guest_memory(env, heap, vm_con, vm_size,
+	                                        memory_verbose);
 
 	typedef Genode::Hex_range<unsigned long> Hex_range;
 
 	/* diagnostic messages */
-	if (guest_memory.backing_store_local_base())
-		Genode::log(Hex_range((unsigned long)guest_memory.backing_store_local_base(),
-		                      guest_memory.remaining_size),
-		            " - ", vm_size / 1024 / 1024, " MiB",
-		            " - VMM accessible shadow mapping of VM memory"); 
+	guest_memory.dump_regions();
 
-	Genode::log(Hex_range((Genode::addr_t)&_prog_img_beg,
-	                      (Genode::addr_t)&_prog_img_end -
-	                      (Genode::addr_t)&_prog_img_beg),
-	            " - VMM program image");
+	Genode::log("- vmm: ", Hex_range((Genode::addr_t)&_prog_img_beg,
+	            (Genode::addr_t)&_prog_img_end - (Genode::addr_t)&_prog_img_beg),
+	            " - seoul program image");
+
 
 	if (!guest_memory.backing_store_local_base()) {
 		Genode::error("Not enough space left for ",
