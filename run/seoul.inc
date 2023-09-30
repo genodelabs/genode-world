@@ -102,8 +102,9 @@ build $build_components
 set vm_cfg_fd [open "bin/vm_seoul.cfg" w]
 puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\" cpuid_native=\"$cpuid_native\">"
 puts $vm_cfg_fd {	 <machine verbose="no">
-		<mem start="0x0" end="0x9a000"/>
-		<mem start="0x100000" end="0xfffff000"/>
+		<mem start="0x0"         end="0x9a000"/>
+		<mem start="0x100000"    end="0xc0000000"/>   <!-- [1M- 3G) -->
+		<mem start="0x100000000" end="0x1100000000"/> <!-- [4G-68G) -->
 		<!--<ioio/>-->
 		<nullio io_base="0x80" />
 		<pic io_base="0x20" elcr_base="0x4d0"/>
