@@ -74,7 +74,7 @@ class Udp_log::Session_component : public Genode::Rpc_object<Log_session>
 
 		/* LOG session implementation */
 
-		size_t write(String const &string) override
+		void write(String const &string) override
 		{
 			/*  TODO implement ARP, i.e. do not send LOG packets until MAC is known
 			 *       for this we need the following modifications:
@@ -87,7 +87,7 @@ class Udp_log::Session_component : public Genode::Rpc_object<Log_session>
 			 *       - a session component stores uses the broadcast MAC until the address is resolved
 			 */
 
-			return _logger.write(_prefix, string, _dst_ip, _dst_port, _dst_mac);
+			_logger.write(_prefix, string, _dst_ip, _dst_port, _dst_mac);
 		}
 		
 };
