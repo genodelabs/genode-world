@@ -166,7 +166,7 @@ class Udp_log::Logger
 				            string.string(), string.size(), size_guard);
 
 				/* fill in header values that need the packet to be complete already */
-				udp.length(size_guard.head_size() - udp_off);
+				udp.length((Genode::uint16_t)(size_guard.head_size() - udp_off));
 				if (!_chksum_offload)
 					udp.update_checksum(ip.src(), ip.dst());
 				ip.total_length(size_guard.head_size() - ip_off);
