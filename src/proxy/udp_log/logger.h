@@ -22,6 +22,7 @@ using namespace Net;
 
 namespace Udp_log {
 	using Genode::size_t;
+	using Genode::uint16_t;
 	using Genode::Xml_node;
 	using Nic::Packet_stream_source;
 	using Nic::Packet_descriptor;
@@ -113,14 +114,14 @@ class Udp_log::Logger
 			_nic.tx_channel()->sigh_ready_to_submit(_source_submit);
 		}
 
-		size_t write(PREFIX const &prefix, MSG const &string,
-		             Ipv4_address const &ipaddr,
-		             Port         const &port,
-		             Mac_address  const &mac)
+		void write(PREFIX const &prefix, MSG const &string,
+		           Ipv4_address const &ipaddr,
+		           Port         const &port,
+		           Mac_address  const &mac)
 		{
-			if (!_nic.link_state()) {
-				return 0;
-			}
+			if (!_nic.link_state())
+				return;
+
 
 			enum {
 				HDR_SZ      = sizeof(Ethernet_frame) + sizeof(Ipv4_packet) + sizeof(Udp_packet),
@@ -166,7 +167,7 @@ class Udp_log::Logger
 				            string.string(), string.size(), size_guard);
 
 				/* fill in header values that need the packet to be complete already */
-				udp.length((Genode::uint16_t)(size_guard.head_size() - udp_off));
+				udp.length(uint16_t(size_guard.head_size() - udp_off));
 				if (!_chksum_offload)
 					udp.update_checksum(ip.src(), ip.dst());
 				ip.total_length(size_guard.head_size() - ip_off);
@@ -179,8 +180,6 @@ class Udp_log::Logger
 
 			if (_verbose)
 				Genode::log(prefix, Genode::Cstring(string.string(), string.size()-2));
-
-			return string.size();
 		}
 
 		
