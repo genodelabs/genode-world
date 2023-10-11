@@ -544,6 +544,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 		void _svm_startup(Genode::Vcpu_state & state)
 		{
 			_started.down();
+
 			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
 			state.ctrl_primary.charge(_rdtsc_exit ? (1U << 14) : 0);
 		}
@@ -665,6 +666,8 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		void _vmx_startup(Genode::Vcpu_state & state)
 		{
+			_started.down();
+
 			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_HLT);
 			state.ctrl_primary.charge(_rdtsc_exit ? (1U << 12) : 0);
 			state.ctrl_secondary.charge(0);
