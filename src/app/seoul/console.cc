@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Genode Labs GmbH
+ * Copyright (C) 2011-2023 Genode Labs GmbH
  * Copyright (C) 2012 Intel Corporation
  *
  * This file is distributed under the terms of the GNU General Public License
@@ -327,16 +327,17 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		return true;
 	case MessageConsole::TYPE_RESUME: /* first of all sleeping CPUs woke up */
 	{
-		unsigned gui_count = 0;
-		bool vga_vesa_visible = false;
+		bool visible_vga_vesa = false;
+		bool visible_others   = false;
 
 		for_each_gui([&](auto &gui) {
-			gui_count ++;
 			if (gui.id == ID_VGA_VESA && gui.visible)
-				vga_vesa_visible = true;
+				visible_vga_vesa = true;
+			if (gui.id != ID_VGA_VESA && gui.visible)
+				visible_others   = true;
 		});
 
-		if (gui_count > 1 && vga_vesa_visible && _vga_vesa.idle()) {
+		if (visible_others && visible_vga_vesa && _vga_vesa.idle()) {
 			apply_msg(ID_VGA_VESA, [&](auto &gui) {
 				Genode::log("hide vga_vesa window due to inactivity");
 				gui.hide();
@@ -344,7 +345,7 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			});
 		}
 
-		if (vga_vesa_visible)
+		if (visible_vga_vesa)
 			_reactivate_periodic_timer();
 
 		return true;
@@ -352,8 +353,18 @@ bool Seoul::Console::receive(MessageConsole &msg)
 	case MessageConsole::TYPE_CONTENT_UPDATE:
 	{
 		bool const found = apply_msg(msg.id, [&](auto &gui) {
-			if (msg.view == 0)
+			if (msg.id == ID_VGA_VESA) {
+				/* trigger "artificial" wakeup if vga/vesa idle */
+				if (_vga_vesa.reactivate_key_pressed()) {
+					/* trigger handle fb update with timeout programming */
+					auto msg = MessageTimeout(_timer, 1000);
+					receive(msg);
+				}
+			}
+
+			if (msg.view == 0) {
 				gui.refresh(msg.x, msg.y, msg.width, msg.height);
+			}
 			else if (msg.view == 1) {
 				int x = 0, y = 0;
 
@@ -454,14 +465,12 @@ Genode::Milliseconds Seoul::Console::_handle_fb()
 
 void Seoul::Console::_handle_input()
 {
+	bool valid_key = false;
+
 	for_each_gui([&](auto &gui) {
 		gui.input.for_each_event([&] (Input::Event const &ev) {
 
-			if (!cpu_state.active) {
-				cpu_state.active = true;
-				MessageTimer msg(_timer, _motherboard()->clock()->abstime(1, 1000));
-				_motherboard()->bus_timer.send(msg);
-			}
+			valid_key = true;
 
 			if (mouse_event(ev)) {
 				ev.handle_absolute_motion([&] (int x, int y) {
@@ -487,6 +496,15 @@ void Seoul::Console::_handle_input()
 					_vkeyb.handle_keycode_release(key); });
 		});
 	});
+
+	if (!valid_key)
+		return;
+
+	if (!cpu_state.active || _vga_vesa.reactivate_key_pressed()) {
+		cpu_state.active = true;
+		MessageTimer msg(_timer, _motherboard()->clock()->abstime(1, 1000));
+		_motherboard()->bus_timer.send(msg);
+	}
 }
 
 

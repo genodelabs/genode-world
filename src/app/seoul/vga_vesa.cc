@@ -26,14 +26,12 @@
 Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
                                                        bool const cpus_active)
 {
-	bool const skip_update = _fb_state.vga_off;
-
 	Genode::Color cursor_color(255,255,255);
 	bool          cursor_show = false;
 	int           cursor_x    = 0;
 	int           cursor_y    = 0;
 
-	if (skip_update || !cpus_active) {
+	if (_fb_state.vga_off || !cpus_active) {
 		_fb_state.idle ++;
 		return Milliseconds(0ULL);
 	} else
@@ -56,7 +54,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 	Genode::Surface<Pixel_rgb888> _surface(reinterpret_cast<Pixel_rgb888 *>(gui.pixels),
 	                                       gui.fb_mode.area);
 
-	for (int y = 0; y < 25; y++) {
+	for (int y = 0, prev = 0; y < 25; y++) {
 		for (int x = 0; x < 80; x++) {
 
 			Text_painter::Position const where(x*8, y*15);
@@ -151,8 +149,10 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 			}
 
 			/* Checksum for comparing */
-			if (_fb_state.cmp_even) _fb_state.checksum1 += character;
-			else _fb_state.checksum2 += character;
+			if (_fb_state.cmp_even) _fb_state.checksum1 += prev + character;
+			else _fb_state.checksum2 += prev + character;
+
+			prev = (prev + character) & 0xff;
 		}
 	}
 
@@ -213,7 +213,39 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vesa_mode(Backend_gui &gui,
 	if (!cpus_active) {
 		_fb_state.idle++;
 		_fb_state.unchanged = 0;
+		_fb_state.vesa_off = true;
 		return Milliseconds(0ULL);
+	}
+
+	if (_fb_state.cmp_even)
+		_fb_state.checksum1 = 0;
+	else
+		_fb_state.checksum2 = 0;
+
+	for (unsigned i = 0, prev = 0; i < gui.fb_size() / 4; i++) {
+		auto const add = prev + ((unsigned *)gui.pixels)[i];
+		if (_fb_state.cmp_even)
+			_fb_state.checksum1 += add;
+		else
+			_fb_state.checksum2 += add;
+
+		prev = add;
+	}
+
+	_fb_state.cmp_even = !_fb_state.cmp_even;
+
+	if (_fb_state.checksum1 == _fb_state.checksum2) {
+		_fb_state.idle++;
+		_fb_state.unchanged ++;
+		if (_fb_state.unchanged > 10'000) {
+			_fb_state.vesa_off = true;
+			_fb_state.unchanged = 0;
+
+			log("disable vga_vesa update to due same content");
+			return Milliseconds(0ULL);
+		}
+
+		return Milliseconds((_fb_state.unchanged >= 15) ? 1000ULL : _fb_state.unchanged * 10);
 	}
 
 	_fb_state.idle = 0;
