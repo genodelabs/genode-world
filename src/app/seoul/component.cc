@@ -1219,16 +1219,13 @@ class Machine : public StaticReceiver<Machine>
 		 * Device models are instantiated in the order of appearance in the XML
 		 * configuration.
 		 */
-		void setup_devices(Genode::Xml_node machine_node,
-		                   Seoul::Console &console,
-		                   Gui::Area const &gui_area)
+		void setup_devices(Genode::Xml_node const &machine_node)
 		{
 			using namespace Genode;
 
 			bool const verbose = machine_node.attribute_value("verbose", false);
 
-			Xml_node node = machine_node.sub_node();
-			for (;; node = node.next()) {
+			machine_node.for_each_sub_node([&](auto const &node) {
 
 				typedef String<32> Model_name;
 
@@ -1270,10 +1267,7 @@ class Machine : public StaticReceiver<Machine>
 				 */
 
 				dmi->create(_unsynchronized_motherboard, argv, "", 0);
-
-				if (node.last())
-					break;
-			}
+			});
 		}
 
 		/**
@@ -1470,7 +1464,7 @@ void Component::construct(Genode::Env &env)
 
 	vdisk.register_host_operations(machine.unsynchronized_motherboard());
 
-	machine.setup_devices(node.sub_node("machine"), vcon, gui_area);
+	machine.setup_devices(node.sub_node("machine"));
 
 	Genode::log("\n--- Booting VM ---");
 
