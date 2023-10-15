@@ -94,7 +94,7 @@ MODEL_INFO(drive, "sigma0drive", "controller", "port", "verbose")
 
 MODEL_INFO(vbios_multiboot, "modaddr", "lowmem")
 
-MODEL_INFO(vbios_disk, "boot_disknr")
+MODEL_INFO(vbios_disk, "boot_disknr", "disk_count")
 MODEL_INFO(vbios_keyboard, "host_keyboard")
 MODEL_INFO_NO_ARG(vbios_mem)
 MODEL_INFO_NO_ARG(vbios_time)

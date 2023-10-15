@@ -46,33 +46,8 @@ set vcpus_to_be_used  2
 
 if {[have_include power_on/qemu]} {
 
-	if {![file exists bin/seoul-disc.raw]} {
-		if {![file exists bin/seoul_stress32.vdi]} {
-			puts "Please provide a disk image file to bin/seoul_stress32.vdi"
-			exit 1
-		}
-
-#		if {![file exists bin/seoul_stress32.raw]} {
-#			puts "Please provide a disk image file to bin/seoul_stress32.raw"
-#			exit 1
-#		}
-
-		set mke2fs [installed_command mke2fs]
-		set dd     [installed_command dd]
-
-#		catch { exec $dd if=/dev/zero of=bin/seoul-disc.raw bs=1M count=12000 }
-		catch { exec $dd if=/dev/zero of=bin/seoul-disc.raw bs=1M count=6000 }
-		catch { exec $mke2fs -F bin/seoul-disc.raw }
-
-		exec [installed_command e2cp] bin/seoul_stress32.vdi bin/seoul-disc.raw:seoul_stress32.vdi
-#		exec [installed_command e2cp] bin/seoul_stress32.raw bin/seoul-disc.raw:seoul_stress32.raw
-	}
-
 	append qemu_args " -m 2536 "
 	append qemu_args " -cpu EPYC"
-
-	append qemu_args " -drive id=disk,file=bin/seoul-disc.raw,format=raw,if=none"
-	append qemu_args " -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0"
 
 	run_genode_until forever
 	exit

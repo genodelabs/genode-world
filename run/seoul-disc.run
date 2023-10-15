@@ -22,9 +22,15 @@ set use_nic_session   1
 
 set use_top           0
 
-set memory_vmm_vm     "512M"
+set memory_vmm_vm     "1512M"
 
 set vcpus_to_be_used  1
+
+set use_virtio        0
+
+set cpuid_native      "no"
+
+set use_disk_count    1
 
 if {[have_include power_on/qemu]} {
 
@@ -33,9 +39,24 @@ if {[have_include power_on/qemu]} {
 		exit 1
 	}
 
-	append qemu_args " -m 1536 "
+	append qemu_args " -m 2536 "
 	append qemu_args " -cpu EPYC"
+#	append qemu_args " -accel kvm -cpu host"
+
+	if { $use_block_sata && $use_disk_count > 1 } {
+		set disk_image "bin/seoul-disc2.raw"
+		if {![file exists $disk_image]} {
+			catch { exec dd if=/dev/zero of=$disk_image bs=1M count=8192 }
+		}
+	}
+
 	append_if $use_block_sata qemu_args " -drive id=disk,file=bin/seoul-disc.raw,format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0 -boot d"
+
+	if { $use_block_sata && $use_disk_count > 1 } {
+		append qemu_args " -drive id=hdd,file=$disk_image,format=raw,if=none -device ide-hd,drive=hdd,bus=ahci.1 "
+	}
+
+	append_if [have_include image/iso] qemu_args " -boot d "
 }
 
 source ${genode_dir}/repos/world/run/seoul.inc
