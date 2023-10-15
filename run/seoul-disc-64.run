@@ -46,7 +46,7 @@ if {[have_include power_on/qemu]} {
 		exit 1
 	}
 
-	append qemu_args " -m 7400 "
+	append qemu_args " -m 8200 "
 #	append qemu_args " -cpu EPYC"
 	append qemu_args " -accel kvm -cpu host"
 	append qemu_args " -smp $vcpus_to_be_used"

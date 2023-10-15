@@ -689,6 +689,10 @@ class Vcpu : public StaticReceiver<Vcpu>
 				state.flags.charge(state.flags.value() & ~2U);
 			} else {
 				order = state.qual_primary.value() & 7;
+				/*
+				 * Table 28-5. Exit Qualification for I/O Instructions
+				 * order 0 == 8bit, 1 == 16bit, 3 == 32bit
+				 */
 				if (order > 2) order = 2;
 
 				_handle_io(state, state.qual_primary.value() & 8, order,

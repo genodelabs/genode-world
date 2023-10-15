@@ -55,6 +55,30 @@ if {$use_audio} {
 	import_from_depot [depot_user]/src/bsd_audio_drv
 }
 
+if {![info exists use_disk_count]} {
+	set use_disk_count 1
+}
+
+if {[have_include power_on/qemu] && $use_block_vdi} {
+	if {![file exists bin/seoul-disc-vdi.raw]} {
+		if {![file exists bin/guest.vdi]} {
+			puts "Please provide a disk image file to bin/guest.vdi"
+			exit 1
+		}
+
+		set mke2fs [installed_command mke2fs]
+		set dd     [installed_command dd]
+
+		catch { exec $dd if=/dev/zero of=bin/seoul-disc-vdi.raw bs=1M count=12000 }
+		catch { exec $mke2fs -F bin/seoul-disc-vdi.raw }
+
+		exec [installed_command e2cp] bin/guest.vdi bin/seoul-disc-vdi.raw:guest.vdi
+	}
+
+	append qemu_args " -drive id=disk,file=bin/seoul-disc-vdi.raw,format=raw,if=none"
+	append qemu_args " -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0"
+}
+
 #
 # Build
 #
@@ -100,7 +124,7 @@ build $build_components
 
 # write Seoul config file
 set vm_cfg_fd [open "bin/vm_seoul.cfg" w]
-puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\" cpuid_native=\"$cpuid_native\">"
+puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\" cpuid_native=\"$cpuid_native\" ld_verbose=\"yes\">"
 puts $vm_cfg_fd {	 <machine verbose="no">
 		<mem start="0x0"         end="0x9a000"/>
 		<mem start="0x100000"    end="0xc0000000"/>   <!-- [1M- 3G) -->
@@ -121,9 +145,7 @@ puts $vm_cfg_fd {	 <machine verbose="no">
 		<vga io_base="0x03c0"/>}
 
 if {!$use_multiboot} {
-	puts $vm_cfg_fd {
-		<vbios_disk boot_disknr="0"/>
-	}
+	puts $vm_cfg_fd "		<vbios_disk boot_disknr=\"0\" disk_count=\"$use_disk_count\"/>"
 }
 
 	puts $vm_cfg_fd {
@@ -159,10 +181,21 @@ if {!$use_multiboot} {
 		<ahci mem="0xe0800000" irq="14" bdf="0x30"/>
 		<drive sigma0drive="0" controller="0" port="0"/>
 		}
+
+		if {$use_disk_count > 1} {
+			puts $vm_cfg_fd {
+				<drive sigma0drive="1" controller="0" port="1"/>
+			}
+		}
 	}
 	if {$use_model_ide} {
 		puts $vm_cfg_fd {
 		<ide port0="0x1f0" port1="0x3f6" irq="14" bdf="0x38" disk="0"/>
+		}
+
+		if {$use_disk_count > 1} {
+			puts "unsupported disk count for IDE model"
+			exit 1
 		}
 	}
 }
@@ -347,7 +380,8 @@ append_if $use_drv_ahci config {
 		<config>}
 
 append_if [expr $use_block_sata && !$use_part_block] config {
-			<policy label="seoul -> disk0" device="0" writeable="yes"/>}
+			<policy label="seoul -> disk0" device="0" writeable="yes"/>
+			<policy label="seoul -> disk1" device="1" writeable="yes"/>}
 
 append_if [expr $use_block_vdi && !$use_part_block] config {
 			<policy label="rump_fs -> " device="0" writeable="yes"/>}
@@ -394,11 +428,11 @@ append_if $use_block_ram config {
 append_if $use_fs_rump config {
 	<start name="rump_fs" priority="-1" caps="200">
 		<binary name="vfs"/>
-		<resource name="RAM" quantum="32M"/>
+		<resource name="RAM" quantum="64M"/>
 		<provides><service name="File_system"/></provides>
 		<config ld_verbose="yes">
 			<vfs>
-				<rump fs="ext2fs" ram="28M"/>
+				<rump fs="ext2fs" ram="50M"/>
 			</vfs>
 			<default-policy root="/" writeable="yes"/>
 		</config>
@@ -419,7 +453,7 @@ append_if $use_block_vdi config {
 	<start name="vdi_block">
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Block"/> </provides>
-		<config file="/seoul_stress32.vdi" writeable="yes">
+		<config file="/guest.vdi" writeable="yes">
 			<vfs> <fs buffer_size="1M"/> </vfs>
 			<policy label="seoul -> disk0" device="0" writeable="yes"/>
 		</config>
