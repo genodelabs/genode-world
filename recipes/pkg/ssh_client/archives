@@ -1,5 +1,4 @@
 _/pkg/terminal
-_/src/gui_fb
 _/src/init
 _/src/libc
 _/src/libssh
