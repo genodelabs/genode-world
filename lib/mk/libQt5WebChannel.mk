@@ -5,6 +5,8 @@ QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick
 
 LIBS = egl expat libc libm mesa qt5_component stdcxx $(QT5_PORT_LIBS)
 
+INSTALL_LIBS = lib/libQt5WebChannel.lib.so
+
 built.tag: qmake_prepared.tag
 
 	@#
@@ -31,23 +33,18 @@ built.tag: qmake_prepared.tag
 	$(VERBOSE)ln -sf .$(CURDIR)/qmake_root install/qt
 
 	@#
-	@# create stripped versions
+	@# strip libs and create symlinks in 'bin' and 'debug' directories
 	@#
 
-	$(VERBOSE)cd $(CURDIR)/install$(CURDIR)/qmake_root/lib && \
-		$(STRIP) libQt5WebChannel.lib.so -o libQt5WebChannel.lib.so.stripped
-
-	@#
-	@# create symlinks in 'bin' directory
-	@#
-
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebChannel.lib.so.stripped $(PWD)/bin/libQt5WebChannel.lib.so
-
-	@#
-	@# create symlinks in 'debug' directory
-	@#
-
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebChannel.lib.so $(PWD)/debug/
+	for LIB in $(INSTALL_LIBS); do \
+		cd $(CURDIR)/install/qt/$$(dirname $${LIB}) && \
+			$(OBJCOPY) --only-keep-debug $$(basename $${LIB}) $$(basename $${LIB}).debug && \
+			$(STRIP) $$(basename $${LIB}) -o $$(basename $${LIB}).stripped && \
+			$(OBJCOPY) --add-gnu-debuglink=$$(basename $${LIB}).debug $$(basename $${LIB}); \
+		ln -sf $(CURDIR)/install/qt/$${LIB}.stripped $(PWD)/bin/$$(basename $${LIB}); \
+		ln -sf $(CURDIR)/install/qt/$${LIB}.stripped $(PWD)/debug/$$(basename $${LIB}); \
+		ln -sf $(CURDIR)/install/qt/$${LIB}.debug $(PWD)/debug/; \
+	done
 
 	@#
 	@# mark as done

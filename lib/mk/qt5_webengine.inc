@@ -10,6 +10,11 @@ QT5_PORT_LIBS += libQt5WebChannel
 
 LIBS = egl expat libc libm mesa nss3 stdcxx $(QT5_PORT_LIBS)
 
+INSTALL_LIBS = lib/libQt5WebEngine.lib.so \
+               lib/libQt5WebEngineCore.lib.so \
+               lib/libQt5WebEngineWidgets.lib.so \
+               qml/QtWebEngine/libqtwebengineplugin.lib.so
+
 QT5_GENODE_LIBS_SHLIB += nss3.lib.so
 qmake_prepared.tag: qmake_root/lib/nss3.lib.so
 
@@ -66,36 +71,18 @@ built.tag: qmake_prepared.tag
 	$(VERBOSE)ln -sf .$(CURDIR)/qmake_root install/qt
 
 	@#
-	@# create stripped versions
+	@# strip libs and create symlinks in 'bin' and 'debug' directories
 	@#
 
-	$(VERBOSE)cd $(CURDIR)/install$(CURDIR)/qmake_root/lib && \
-		$(STRIP) libQt5WebEngine.lib.so -o libQt5WebEngine.lib.so.stripped && \
-		$(STRIP) libQt5WebEngineCore.lib.so -o libQt5WebEngineCore.lib.so.stripped && \
-		$(STRIP) libQt5WebEngineWidgets.lib.so -o libQt5WebEngineWidgets.lib.so.stripped
-
-	$(VERBOSE)cd $(CURDIR)/install/qt/qml/QtWebEngine && \
-		$(STRIP) libqtwebengineplugin.lib.so -o libqtwebengineplugin.lib.so.stripped
-
-	@#
-	@# create symlinks in 'bin' directory
-	@#
-
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebEngine.lib.so.stripped $(PWD)/bin/libQt5WebEngine.lib.so
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebEngineCore.lib.so.stripped $(PWD)/bin/libQt5WebEngineCore.lib.so
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebEngineWidgets.lib.so.stripped $(PWD)/bin/libQt5WebEngineWidgets.lib.so
-
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtWebEngine/libqtwebengineplugin.lib.so.stripped $(PWD)/bin/libqtwebengineplugin.lib.so
-
-	@#
-	@# create symlinks in 'debug' directory
-	@#
-
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebEngine.lib.so $(PWD)/debug/
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebEngineCore.lib.so $(PWD)/debug/
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/lib/libQt5WebEngineWidgets.lib.so $(PWD)/debug/
-
-	$(VERBOSE)ln -sf $(CURDIR)/install/qt/qml/QtWebEngine/libqtwebengineplugin.lib.so $(PWD)/debug/
+	for LIB in $(INSTALL_LIBS); do \
+		cd $(CURDIR)/install/qt/$$(dirname $${LIB}) && \
+			$(OBJCOPY) --only-keep-debug $$(basename $${LIB}) $$(basename $${LIB}).debug && \
+			$(STRIP) $$(basename $${LIB}) -o $$(basename $${LIB}).stripped && \
+			$(OBJCOPY) --add-gnu-debuglink=$$(basename $${LIB}).debug $$(basename $${LIB}); \
+		ln -sf $(CURDIR)/install/qt/$${LIB}.stripped $(PWD)/bin/$$(basename $${LIB}); \
+		ln -sf $(CURDIR)/install/qt/$${LIB}.stripped $(PWD)/debug/$$(basename $${LIB}); \
+		ln -sf $(CURDIR)/install/qt/$${LIB}.debug $(PWD)/debug/; \
+	done
 
 	@#
 	@# create tar archives
