@@ -67,6 +67,7 @@ static Device_model_info \
  */
 
 MODEL_INFO(mem,     "start",     "end")
+MODEL_INFO(mio,     "start",     "size", "readonly", "destination")
 MODEL_INFO(nullio,  "io_base",   "size")
 MODEL_INFO(pic,     "io_base",   "irq", "elcr_base")
 MODEL_INFO(pit,     "io_base",   "irq")

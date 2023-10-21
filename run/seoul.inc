@@ -105,6 +105,7 @@ puts $vm_cfg_fd {	 <machine verbose="no">
 		<mem start="0x0"         end="0x9a000"/>
 		<mem start="0x100000"    end="0xc0000000"/>   <!-- [1M- 3G) -->
 		<mem start="0x100000000" end="0x1100000000"/> <!-- [4G-68G) -->
+		<mio start="0xe0000"     size="0x10000" readonly="1"/>
 		<!--<ioio/>-->
 		<nullio io_base="0x80" />
 		<pic io_base="0x20" elcr_base="0x4d0"/>
