@@ -454,28 +454,34 @@ class Vcpu : public StaticReceiver<Vcpu>
 			auto const vm_fault_addr = state.qual_secondary.value();
 
 			if (verbose_npt)
-				Genode::log("--> request mapping at", Genode::Hex(vm_fault_addr));
+				Genode::log("--> request mapping at ", Genode::Hex(vm_fault_addr));
 
-			if (need_unmap)
-				Genode::error("_handle_map_memory: need_unmap not handled, yet");
+			if (need_unmap) {
+				Genode::log(__func__, " need_unmap handled ",
+				            Genode::Hex(vm_fault_addr), " ",
+				            " cr0=", Genode::Hex(state.cr0.value()));
+				_guest_memory.detach(vm_fault_addr & ~0xffful, 4096);
+			}
 
 			if (sizeof(uintptr_t) == 4 && vm_fault_addr >= (1ull << (32 + 12)))
 				Logging::panic("unsupported guest fault on 32bit");
 
-			MessageMemRegion mem_region(uintptr_t(vm_fault_addr >> PAGE_SIZE_LOG2));
+			MessageMemRegion mem_region(uintptr_t(vm_fault_addr >> PAGE_SIZE_LOG2),
+			                            state.cr0.value());
 
-			if (!_motherboard()->bus_memregion.send(mem_region, false) ||
-			    !mem_region.ptr)
+			if (!mem_region.count && (!_motherboard()->bus_memregion.send(mem_region, false) ||
+			    !mem_region.ptr))
 				return false;
 
 			if (verbose_npt)
 				Logging::printf("VM page 0x%lx in [0x%lx:0x%lx),"
-				                " VMM area: [0x%lx:0x%lx)\n",
+				                " VMM area: [0x%lx:0x%lx) %s\n",
 				                mem_region.page, mem_region.start_page,
 				                mem_region.start_page + mem_region.count,
 				                (Genode::addr_t)mem_region.ptr >> PAGE_SIZE_LOG2,
 				                ((Genode::addr_t)mem_region.ptr >> PAGE_SIZE_LOG2)
-				                + mem_region.count);
+				                + mem_region.count,
+				                mem_region.read_only ? "readonly" : "writeable");
 
 			assert(state.inj_info.charged());
 
@@ -503,11 +509,11 @@ class Vcpu : public StaticReceiver<Vcpu>
 				if (_map_small)
 					_guest_memory.attach_to_vm(_vm_con,
 					                           mem_region.page << PAGE_SIZE_LOG2,
-					                           1 << PAGE_SIZE_LOG2);
+					                           1 << PAGE_SIZE_LOG2, !mem_region.read_only);
 				else
 					_guest_memory.attach_to_vm(_vm_con,
 					                           mem_region.start_page << PAGE_SIZE_LOG2,
-					                           mem_region.count << PAGE_SIZE_LOG2);
+					                           mem_region.count << PAGE_SIZE_LOG2, !mem_region.read_only);
 			});
 
 			return true;
@@ -832,6 +838,11 @@ class Machine : public StaticReceiver<Machine>
 			case MessageHostOp::OP_RESERVE_IO_RANGE:
 
 				msg.phys = _guest_memory.alloc_io_memory(msg.value);
+				return true;
+
+			case MessageHostOp::OP_DETACH_MEM:
+
+				_guest_memory.detach(msg.value, msg.len);
 				return true;
 
 			case MessageHostOp::OP_VCPU_CREATE_BACKEND:

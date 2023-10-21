@@ -192,7 +192,7 @@ class Seoul::Guest_memory
 				env.rm().attach(region._ds, 0 /* size */, 0 /* offset */,
 				                true /* use local addr */,
 				                region._local_addr,
-				                true /* writable */);
+				                true /* writeable */);
 			});
 		}
 
@@ -251,7 +251,8 @@ class Seoul::Guest_memory
 			});
 		}
 
-		void attach_to_vm(Vm_connection &vm_con, addr_t g_phys, addr_t size)
+		void attach_to_vm(Vm_connection &vm_con, addr_t g_phys, addr_t size,
+		                  bool const writeable)
 		{
 			bool partial_match = false;
 
@@ -274,7 +275,7 @@ class Seoul::Guest_memory
 					vm_con.attach(region._ds, g_phys, { .offset     = ds_offset,
 					                                    .size       = attach_size,
 					                                    .executable = true,
-					                                    .writeable  = true });
+					                                    .writeable  = writeable });
 
 					if (_verbose)
 						log(__func__, "   attached ", Hex_range(g_phys, attach_size),
