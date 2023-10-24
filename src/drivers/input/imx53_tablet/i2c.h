@@ -15,7 +15,7 @@
 #define _DRIVERS__INPUT__SPEC__IMX53__I2C_H_
 
 /* Genode includes */
-#include <util/mmio.h>
+#include <platform_session/device.h>
 #include <timer_session/connection.h>
 
 /* local includes */
@@ -27,7 +27,7 @@ namespace I2c
 }
 
 
-class I2c::I2c : Genode::Mmio
+class I2c::I2c : Platform::Device::Mmio
 {
 	private:
 
@@ -111,8 +111,8 @@ class I2c::I2c : Genode::Mmio
 
 	public:
 
-		I2c(Genode::addr_t const base, Irq_handler &irq_handler)
-		: Mmio(base),
+		I2c(Platform::Device & d, Irq_handler &irq_handler)
+		: Platform::Device::Mmio(d),
 		  _irq_handler(irq_handler)
 		{
 			write<Control>(0);

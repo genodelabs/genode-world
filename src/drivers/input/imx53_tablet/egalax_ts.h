@@ -15,8 +15,6 @@
 #define _DRIVERS__INPUT__SPEC__IMX53__EGALAX_TS_H_
 
 /* Genode includes */
-#include <drivers/defs/imx53.h>
-#include <base/attached_io_mem_dataspace.h>
 #include <input/event_queue.h>
 #include <input/event.h>
 #include <input/keycodes.h>
@@ -36,21 +34,19 @@ class Input::Touchscreen {
 		enum I2c_addresses { I2C_ADDR = 0x4    };
 		enum Finger_state  { PRESSED, RELEASED };
 
-		Irq_handler                       _irq_handler;
-		Genode::Attached_io_mem_dataspace _i2c_ds;
-		I2c::I2c                          _i2c;
-		Genode::uint8_t                   _buf[10];
-		Finger_state                      _state;
+		Platform::Device _device;
+		Irq_handler      _irq_handler;
+		I2c::I2c         _i2c;
+		Genode::uint8_t  _buf[10];
+		Finger_state     _state { RELEASED };
 
 	public:
 
-		Touchscreen(Genode::Env &env)
+		Touchscreen(Genode::Env &env, Platform::Connection &platform)
 		:
-			_irq_handler(env, Imx53::I2C_3_IRQ),
-			_i2c_ds(env, Imx53::I2C_3_BASE, Imx53::I2C_3_SIZE),
-			_i2c((Genode::addr_t)_i2c_ds.local_addr<void>(),
-			     _irq_handler),
-			     _state(RELEASED)
+			_device(platform, "i2c3"),
+			_irq_handler(env, _device),
+			_i2c(_device, _irq_handler)
 		{
 			/* ask for touchscreen firmware version */
 			Genode::uint8_t cmd[10] = { 0x03, 0x03, 0xa, 0x01, 0x41 };

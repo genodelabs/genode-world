@@ -27,38 +27,16 @@
 using namespace Genode;
 
 
-Input::Tablet_driver* Input::Tablet_driver::factory(Genode::Env &env,
-                                                    Event_queue &ev_queue)
-{
-	static Input::Tablet_driver driver(env, ev_queue);
-	return &driver;
-}
-
-
 struct Main
 {
 	Genode::Env &env;
 
-	Input::Session_component session { env, env.ram() };
-	Input::Root_component    root { env.ep().rpc_ep(), session };
+	Input::Session_component session  { env, env.ram() };
+	Input::Root_component    root     { env.ep().rpc_ep(), session };
+	Input::Tablet_driver     driver   { env, session.event_queue() };
 
-	Main(Genode::Env &env) : env(env)
-	{
-		Platform::Connection plat_drv { env };
-		switch (plat_drv.revision()) {
-			case Platform::Session::SMD:
-				plat_drv.enable(Platform::Session::I2C_2);
-				plat_drv.enable(Platform::Session::I2C_3);
-				plat_drv.enable(Platform::Session::BUTTONS);
-				Input::Tablet_driver::factory(env, session.event_queue());
-				break;
-			default:
-				warning("No input driver available for this board");
-		}
-
-		/* tell parent about the service */
-		env.parent().announce(env.ep().manage(root));
-	}
+	Main(Genode::Env &env) : env(env) {
+		env.parent().announce(env.ep().manage(root)); }
 };
 
 

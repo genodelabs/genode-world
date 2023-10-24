@@ -15,8 +15,6 @@
 #define _DRIVERS__INPUT__SPEC__IMX53__MPR121_H_
 
 /* Genode includes */
-#include <drivers/defs/imx53.h>
-#include <base/attached_io_mem_dataspace.h>
 #include <input/event_queue.h>
 #include <input/event.h>
 #include <input/keycodes.h>
@@ -45,20 +43,18 @@ class Input::Buttons {
 			POWER   = 8,
 		};
 
-		Irq_handler                       _irq_handler;
-		Genode::Attached_io_mem_dataspace _i2c_ds;
-		I2c::I2c                          _i2c;
-		Genode::uint8_t                   _state;
+		Platform::Device _device;
+		Irq_handler      _irq_handler;
+		I2c::I2c         _i2c;
+		Genode::uint8_t  _state { 0 };
 
 	public:
 
-		Buttons(Genode::Env &env)
+		Buttons(Genode::Env &env, Platform::Connection &platform)
 		:
-			_irq_handler(env, Imx53::I2C_2_IRQ),
-			_i2c_ds(env, Imx53::I2C_2_BASE, Imx53::I2C_2_SIZE),
-			_i2c((Genode::addr_t)_i2c_ds.local_addr<void>(),
-			     _irq_handler),
-			_state(0)
+			_device(platform, "i2c2"),
+			_irq_handler(env, _device),
+			_i2c(_device, _irq_handler)
 		{
 			static Genode::uint8_t init_cmd[][2] = {
 				{0x41, 0x8 }, {0x42, 0x5 }, {0x43, 0x8 },

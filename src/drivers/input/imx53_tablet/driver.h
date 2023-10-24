@@ -37,6 +37,7 @@ class Input::Tablet_driver
 			GPIO_BUTTON = 132,
 		};
 
+		Platform::Connection                      _platform;
 		Event_queue                              &_ev_queue;
 		Gpio::Connection                          _gpio_ts;
 		Gpio::Connection                          _gpio_bt;
@@ -59,8 +60,11 @@ class Input::Tablet_driver
 			_irq_bt.ack_irq();
 		}
 
+	public:
+
 		Tablet_driver(Genode::Env &env, Event_queue &ev_queue)
 		:
+			_platform(env),
 			_ev_queue(ev_queue),
 			_gpio_ts(env, GPIO_TOUCH),
 			_gpio_bt(env, GPIO_BUTTON),
@@ -68,8 +72,8 @@ class Input::Tablet_driver
 			_irq_bt(_gpio_bt.irq_session(Gpio::Session::FALLING_EDGE)),
 			_ts_dispatcher(env.ep(), *this, &Tablet_driver::_handle_ts),
 			_bt_dispatcher(env.ep(), *this, &Tablet_driver::_handle_bt),
-			_touchscreen(env),
-			_buttons(env)
+			_touchscreen(env, _platform),
+			_buttons(env, _platform)
 		{
 			/* GPIO touchscreen handling */
 			_gpio_ts.direction(Gpio::Session::OUT);
@@ -87,10 +91,6 @@ class Input::Tablet_driver
 			_irq_bt.sigh(_bt_dispatcher);
 			_irq_bt.ack_irq();
 		}
-
-	public:
-
-		static Tablet_driver* factory(Genode::Env &env, Event_queue &ev_queue);
 };
 
 #endif /* _DRIVERS__INPUT__SPEC__IMX53__DRIVER_H_ */

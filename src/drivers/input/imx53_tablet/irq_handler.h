@@ -15,14 +15,14 @@
 #define _IRQ_HANDLER_H_
 
 /* Genode includes */
-#include <irq_session/connection.h>
+#include <platform_session/device.h>
 
 class Irq_handler
 {
 	private:
 
 		Genode::Env                           &_env;
-		Genode::Irq_connection                 _irq;
+		Platform::Device::Irq                  _irq;
 		Genode::Io_signal_handler<Irq_handler> _handler;
 
 		unsigned _sem_cnt = 1;
@@ -31,13 +31,13 @@ class Irq_handler
 
 	public:
 
-		Irq_handler(Genode::Env &env, int irq_number)
+		Irq_handler(Genode::Env &env, Platform::Device &device)
 		:
-			_env(env), _irq(env, irq_number),
+			_env(env), _irq(device),
 			_handler(env.ep(), *this, &Irq_handler::_handle)
 		{
 			_irq.sigh(_handler);
-			_irq.ack_irq();
+			_irq.ack();
 		}
 
 		void wait()
@@ -47,7 +47,7 @@ class Irq_handler
 				_env.ep().wait_and_dispatch_one_io_signal();
 		}
 
-		void ack() { _irq.ack_irq(); }
+		void ack() { _irq.ack(); }
 };
 
 #endif /* _IRQ_HANDLER_H_ */
