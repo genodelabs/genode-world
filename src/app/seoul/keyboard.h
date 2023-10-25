@@ -39,19 +39,18 @@ class Seoul::Keyboard
 	private:
 
 		Synced_motherboard &_motherboard;
-		unsigned            _flags;
+		unsigned            _flags { };
+		unsigned            _last_keycode { };
 
 		bool _map_keycode(unsigned &, bool);
 
 	public:
 
-		/**
-		 * Constructor
-		 */
-		Keyboard(Synced_motherboard &);
+		Keyboard(Synced_motherboard &mb) : _motherboard(mb) { }
 
 		void handle_keycode_press(unsigned keycode);
 		void handle_keycode_release(unsigned keycode);
+		void handle_repeat();
 };
 
 #endif /* _KEYBOARD_H_ */
