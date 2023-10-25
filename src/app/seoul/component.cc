@@ -1316,7 +1316,7 @@ class Machine : public StaticReceiver<Machine>
 					ok = vcpu->set_cpuid(0, EDX, edx); assert(ok);
 					ok = vcpu->set_cpuid(0, ECX, ecx); assert(ok);
 
-					for (unsigned id = 0x80000002u; id < 0x80000000u + 3; id++) {
+					for (unsigned id = 0x80000002u; id < 0x80000002u + 3; id++) {
 						eax = Cpu::cpuid(id, ebx, ecx, edx);
 
 						ok = vcpu->set_cpuid(id, EAX, eax); assert(ok);
@@ -1327,7 +1327,9 @@ class Machine : public StaticReceiver<Machine>
 				}
 
 				/* propagate feature flags from the host */
-				Cpu::cpuid(1, ebx, ecx, edx);
+				eax = Cpu::cpuid(1, ebx, ecx, edx);
+				ok  = vcpu->set_cpuid(1, EAX, eax);
+				assert(ok);
 
 				/* clflush size, apic_id */
 				ok = vcpu->set_cpuid(1, EBX, (apic_id << 24) | (ebx & 0xff00), 0xff00ff00u);
