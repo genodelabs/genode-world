@@ -4,7 +4,7 @@ DOWNLOADS := seoul.git
 
 URL(seoul) := https://github.com/alex-ab/seoul.git
 # branch genode_23_10
-REV(seoul) := 09546585575b1dc0af30da0238fc818810c44235
+REV(seoul) := e9660c19828610b49a81fd0fad52813dd1799ca1
 DIR(seoul) := src/app/seoul
 
 #
