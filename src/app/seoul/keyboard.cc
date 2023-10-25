@@ -1,12 +1,13 @@
 /*
  * \brief  Keyboard manager
  * \author Markus Partheymueller
+ * \author Alexander Boettcher
  * \date   2012-07-31
  */
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2017 Genode Labs GmbH
+ * Copyright (C) 2013-2023 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -26,21 +27,19 @@
 #include <nul/vcpu.h>
 
 
-Seoul::Keyboard::Keyboard(Synced_motherboard &mb)
-: _motherboard(mb), _flags(0) { }
-
-
 bool Seoul::Keyboard::_map_keycode(unsigned &keycode, bool press)
 {
+	unsigned nflags = 0;
+
 	switch (keycode) {
 
 	/* modifiers */
-	case Input::KEY_LEFTSHIFT:  _flags |= KBFLAG_LSHIFT; keycode = 0x12; break;
-	case Input::KEY_RIGHTSHIFT: _flags |= KBFLAG_RSHIFT; keycode = 0x59; break;
-	case Input::KEY_LEFTALT:    _flags |= KBFLAG_LALT;   keycode = 0x11; break;
-	case Input::KEY_RIGHTALT:   _flags |= KBFLAG_RALT;   keycode = 0x11; break;
-	case Input::KEY_LEFTCTRL:   _flags |= KBFLAG_LCTRL;  keycode = 0x14; break;
-	case Input::KEY_RIGHTCTRL:  _flags |= KBFLAG_RCTRL;  keycode = 0x14; break;
+	case Input::KEY_LEFTSHIFT:  nflags |= KBFLAG_LSHIFT; keycode = 0x12; break;
+	case Input::KEY_RIGHTSHIFT: nflags |= KBFLAG_RSHIFT; keycode = 0x59; break;
+	case Input::KEY_LEFTALT:    nflags |= KBFLAG_LALT;   keycode = 0x11; break;
+	case Input::KEY_RIGHTALT:   nflags |= KBFLAG_RALT;   keycode = 0x11; break;
+	case Input::KEY_LEFTCTRL:   nflags |= KBFLAG_LCTRL;  keycode = 0x14; break;
+	case Input::KEY_RIGHTCTRL:  nflags |= KBFLAG_RCTRL;  keycode = 0x14; break;
 	case Input::KEY_LEFTMETA:   _flags |= KBFLAG_LWIN;   keycode = 0x1f;
 		if (press) return false;
 		break;
@@ -84,13 +83,26 @@ bool Seoul::Keyboard::_map_keycode(unsigned &keycode, bool press)
 		} else return false;
 	}
 
+	if (press)
+		_flags |=  nflags;
+	else
+		_flags &= ~nflags;
+
 	return true;
+}
+
+
+void Seoul::Keyboard::handle_repeat()
+{
+	handle_keycode_press(_last_keycode);
 }
 
 
 void Seoul::Keyboard::handle_keycode_press(unsigned keycode)
 {
-	unsigned orig_keycode = keycode;
+	unsigned const orig_keycode = keycode;
+
+	_last_keycode = orig_keycode;
 
 	if (!_map_keycode(keycode, true))
 		return;

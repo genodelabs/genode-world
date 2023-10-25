@@ -479,6 +479,9 @@ void Seoul::Console::_handle_input()
 				if (key <= 0xee)
 					_vkeyb.handle_keycode_press(key); });
 
+			ev.handle_repeat([&] (Genode::Codepoint) {
+				_vkeyb.handle_repeat(); });
+
 			ev.handle_release([&] (Input::Keycode key) {
 				if (key <= 0xee)
 					_vkeyb.handle_keycode_release(key); });
