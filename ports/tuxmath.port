@@ -10,3 +10,4 @@ URL(tuxmath) := http://downloads.sourceforge.net/project/tuxmath/tuxmath-source/
 SHA(tuxmath) := 6d26c08672edf5cce0ef2f685555867a7016c8a186282518276378b6c58774f4
 DIR(tuxmath) := src/app/tuxmath
 
+PATCHES := src/app/tuxmath/no_common.patch
