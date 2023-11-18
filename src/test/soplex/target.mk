@@ -6,3 +6,4 @@ SRC_CC   = example.cpp
 vpath example.cpp $(SOPLEX)
 
 CC_CXX_WARN_STRICT =
+CC_CXX_OPT_STD = -std=gnu++17
