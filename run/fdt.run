@@ -1,4 +1,4 @@
-build "core init test/fdt"
+build { core lib/ld init lib/fdt test/fdt }
 
 create_boot_directory
 
@@ -21,14 +21,9 @@ install_config {
 	<start name="test-fdt">
 		<resource name="RAM" quantum="10M"/>
 	</start>
-</config>
-}
+</config>}
 
-build_boot_image {
-	core init timer test-fdt
-	ld.lib.so fdt.lib.so
-	tree.dtb
-}
+build_boot_image [list {*}[build_artifacts] tree.dtb]
 
 append qemu_args " -nographic  "
 

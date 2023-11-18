@@ -1,24 +1,18 @@
 assert_spec linux
 
-#
-# Check used commands
-#
-set mke4fs [installed_command mkfs.ext4]
-set dd     [installed_command dd]
-
-#
-# Build
-#
-set build_components {
-	core init
-	timer
+build {
+	core lib/ld init timer lib/vfs lib/libc
 	server/lwext4_fs
 	server/lx_block
 	server/report_rom
 	test/libc_vfs
 }
 
-build $build_components
+#
+# Check used commands
+#
+set mke4fs [installed_command mkfs.ext4]
+set dd     [installed_command dd]
 
 #
 # Build EXT2-file-system image
@@ -29,10 +23,7 @@ catch { exec $mke4fs -F bin/ext4.raw }
 
 create_boot_directory
 
-#
-# Generate config
-#
-append config {
+install_config {
 <config>
 	<parent-provides>
 		<service name="ROM"/>
@@ -88,19 +79,7 @@ append config {
 	</start>
 </config>}
 
-install_config $config
-
-#
-# Boot modules
-#
-
-# generic modules
-set boot_modules {
-	core ld.lib.so init timer report_rom lx_block
-	lwext4_fs ext4.raw libc.lib.so test-libc_vfs vfs.lib.so
-}
-
-build_boot_image $boot_modules
+build_boot_image [list {*}[build_artifacts] ext4.raw]
 
 append qemu_args "  -nographic"
 

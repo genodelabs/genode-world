@@ -1,4 +1,13 @@
-set build_components { app/supertux }
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/vfs \
+               [depot_user]/src/sdl \
+               [depot_user]/src/sdl_image \
+               [depot_user]/src/sdl_mixer \
+               [depot_user]/src/stdcxx \
+               [depot_user]/src/libpng \
+               [depot_user]/src/zlib
+
+build { app/supertux }
 
 set app_config {
 <start name="supertux" priority="-2" caps="200">
@@ -14,19 +23,5 @@ set app_config {
 		</vfs>
 	</config>
 </start>}
-
-set boot_modules {
-	supertux
-	jpeg.lib.so
-	libc.lib.so vfs.lib.so
-	libm.lib.so
-	libpng.lib.so
-	sdl_image.lib.so
-	sdl_mixer.lib.so
-	sdl.lib.so
-	stdcxx.lib.so
-	zlib.lib.so
-	supertux_data.tar
-}
 
 source ${genode_dir}/repos/world/run/gui_app.inc

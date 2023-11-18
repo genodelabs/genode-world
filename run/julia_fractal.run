@@ -1,3 +1,7 @@
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/vfs \
+               [depot_user]/src/stdcxx
+
 set app_config {
   <start name="julia_fractal">
     <resource name="RAM" quantum="8M"/>
@@ -7,14 +11,6 @@ set app_config {
     </route>
   </start>}
 
-set build_components { app/julia_fractal }
-
-set boot_modules {
-	julia_fractal
-	libc.lib.so
-	vfs.lib.so
-	libm.lib.so
-	stdcxx.lib.so
-}
+build { app/julia_fractal }
 
 source ${genode_dir}/repos/world/run/gui_app.inc

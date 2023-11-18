@@ -16,11 +16,11 @@ CC_OPT += -fcommon
 
 CC_WARN += -Wno-implicit-function-declaration
 
-.PHONY: tyrian.tar
+CUSTOM_TARGET_DEPS += tyrian.tar
 
-$(TARGET): tyrian.tar
+BUILD_ARTIFACTS := $(TARGET) tyrian.tar
 
 tyrian.tar:
-	$(VERBOSE) tar cf $@ -C $(OPENTYRIAN_DIR)/tyrian21 .
+	$(VERBOSE)cd $(OPENTYRIAN_DIR)/tyrian21; tar cf $(PWD)/bin/$@ .
 
 CC_CXX_WARN_STRICT =

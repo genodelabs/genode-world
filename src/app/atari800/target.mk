@@ -18,9 +18,12 @@ INC_DIR += $(ATARI800_DIR)/src $(PRG_DIR)
 
 CC_WARN := -Wall -Wno-unused-but-set-variable -Wno-logical-not-parentheses
 
-LIBS += sdl zlib libc libpng
+LIBS += sdl zlib libc libm libpng
 
-$(TARGET): atari800_rom.tar
+CUSTOM_TARGET_DEPS += atari800_rom.tar
+
+BUILD_ARTIFACTS := $(TARGET) atari800_rom.tar
+
 atari800_rom.tar:
 	$(VERBOSE)cd $(ATARI800_DIR)/xformer; tar cf $(PWD)/bin/$@ *.ROM
 

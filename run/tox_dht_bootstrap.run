@@ -8,8 +8,6 @@ if { ![have_board pbxa9] && ![have_board pc] } {
 	exit 0
 }
 
-create_boot_directory
-build { app/tox_dht_bootstrap lib/vfs_import }
 import_from_depot \
 	[depot_user]/src/[base_src] \
 	[depot_user]/pkg/[drivers_nic_pkg] \
@@ -17,7 +15,12 @@ import_from_depot \
 	[depot_user]/src/libc \
 	[depot_user]/src/vfs \
 	[depot_user]/src/vfs_lwip \
-	[depot_user]/src/report_rom \
+	[depot_user]/src/vfs_import \
+	[depot_user]/src/report_rom
+
+build { app/tox_dht_bootstrap lib/libsodium lib/c-toxcore }
+
+create_boot_directory
 
 install_config {
 <config>
@@ -85,14 +88,9 @@ install_config {
 			<bootstrap key="E59A0E71ADA20D35BD1B0957059D7EF7E7792B3D680AE25C6F4DBBA09114D165" ip="37.97.185.116"/>
 		</config>
 	</start>
-</config>
-}
+</config> }
 
-build_boot_image {
-	libsodium.lib.so
-	c-toxcore.lib.so
-	tox_dht_bootstrap
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -object filter-dump,id=net0,netdev=net0,file=[run_dir].pcap"
 append qemu_args " -nographic"

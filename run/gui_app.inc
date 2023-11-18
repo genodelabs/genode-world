@@ -3,10 +3,13 @@
 # on a framebuffer and input device. The following variables should/can be
 # defined prior including this file:
 #
-# fb_config        - optional XML config to be passed to the fb_drv
-# build_components - application-specific build supplements
-# boot_modules     - application-specific boot modules
-# app_config       - start node(s) of init for running the application
+# import       - depot archives content to include as boot modules
+# fb_config    - optional XML config to be passed to the fb_drv
+# boot_modules - supplemental boot modules
+# app_config   - start node(s) of init for running the application
+#
+# Build artifacts created via the 'build' command are automatically added
+# as boot modules.
 #
 
 create_boot_directory
@@ -25,7 +28,6 @@ if {![info exists fb_config]} {
 set fd [open [run_dir]/genode/fb_drv.config w]
 puts $fd $fb_config
 close $fd
-
 
 install_config {
 <config prio_levels="4">
@@ -58,9 +60,6 @@ install_config {
 			<service name="Event">   <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-		<provides>
-			<service name="Gpu"/>
-		</provides>
 	</start>
 
 	<start name="timer">
@@ -107,9 +106,6 @@ install_config {
 
 </config>}
 
-if {[llength $build_components] > 0} {
-	build $build_components
-}
 #
 # Pin the nitpicker focus to the window manager by providing a static focus ROM
 #
@@ -118,6 +114,8 @@ puts $fd "<focus label=\"wm -> focus\"/>"
 close $fd
 
 file copy -force [genode_dir]/repos/gems/recipes/raw/motif_wm/wm.config [run_dir]/genode/
+
+lappend boot_modules {*}[build_artifacts]
 
 build_boot_image $boot_modules
 

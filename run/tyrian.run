@@ -1,4 +1,11 @@
-set build_components { app/opentyrian }
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/vfs \
+               [depot_user]/src/sdl \
+               [depot_user]/src/sdl_net \
+               [depot_user]/src/libpng \
+               [depot_user]/src/zlib
+
+build { app/opentyrian }
 
 set app_config {
 
@@ -6,26 +13,15 @@ set app_config {
 		<resource name="RAM" quantum="128M"/>
 		<config>
 			<sdl_audio_volume value="100"/>
-			<libc stdout="/dev/log" stderr="/dev/log"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 			<vfs>
-				<dir name="dev"> <log/> </dir>
+				<dir name="dev">
+					<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
 				<tar name="tyrian.tar"/>
 				<ram/>
 			</vfs>
 		</config>
 	</start>}
-
-create_boot_directory
-
-file copy -force app/opentyrian/tyrian.tar [run_dir]/genode
-
-set boot_modules {
-	libc.lib.so vfs.lib.so
-	libm.lib.so
-	libpng.lib.so
-	sdl.lib.so
-	sdl_net.lib.so
-	opentyrian tyrian.tar
-}
 
 source ${genode_dir}/repos/world/run/gui_app.inc

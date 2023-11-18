@@ -5,7 +5,7 @@ import_from_depot \
 	genodelabs/src/init \
 	genodelabs/src/log_tee \
 
-build "test/log"
+build { test/log }
 
 install_config {
 	<config>
@@ -35,7 +35,7 @@ install_config {
 	</config>
 }
 
-build_boot_image "test-log"
+build_boot_image [build_artifacts]
 
 append qemu_args "-nographic "
 

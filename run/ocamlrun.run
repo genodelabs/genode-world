@@ -2,17 +2,13 @@ set ocamlc [installed_command ocamlc]
 
 create_boot_directory
 
-proc depot_user {} { return [get_cmd_arg --depot-user genodelabs] }
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/posix
 
-import_from_depot \
-	[depot_user]/src/[base_src] \
-	[depot_user]/src/init \
-
-append build_components {
-	app/ocamlrun
-}
-
-build $build_components
+build { app/ocamlrun }
 
 install_config {
 	<config verbose="yes">
@@ -60,9 +56,7 @@ close $fd
 exec ocamlc -o [run_dir]/a.out [run_dir]/hello.ml
 exec tar cf [run_dir]/genode/bytecode.tar -C [run_dir] a.out
 
-build_boot_image {
-	ocamlrun libc.lib.so vfs.lib.so libm.lib.so posix.lib.so
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic -serial mon:stdio "
 

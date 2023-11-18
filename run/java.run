@@ -1,21 +1,16 @@
-
 if {![have_spec x86_64] && ![have_spec arm_v7] ||
 	[expr [have_spec sel4] && ![have_spec x86_64]]} {
 	puts "Java is not supported on this platform. Valid platforms are x86_64 and arm_v7a."
 	exit 0
 }
 
-set build_components {
-	core init
-	timer
-}
+build { core lib/ld init timer }
 
-build $build_components
 create_boot_directory
 
 import_from_depot [depot_user]/pkg/jdk
 
-set config {
+install_config {
 <config>
 	<parent-provides>
 		<service name="ROM"/>
@@ -83,16 +78,9 @@ set config {
 			</vfs>
 		</config>
 	</start>
-</config>
-}
+</config>}
 
-install_config $config
-
-set boot_modules {
-	core init ld.lib.so timer
-}
-
-build_boot_image $boot_modules
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic -serial mon:stdio "
 

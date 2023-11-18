@@ -198,6 +198,6 @@ append qemu_args -nographic
 
 build { app/depot_query app/depot_deploy test/libc_getaddrinfo }
 
-build_boot_image { depot_query depot_deploy test-libc_getaddrinfo }
+build_boot_image [build_artifacts]
 
 run_genode_until "child \"test-libc_getaddrinfo\" exited with exit value 0.*\n" 120
