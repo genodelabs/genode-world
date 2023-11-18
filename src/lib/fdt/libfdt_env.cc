@@ -62,12 +62,12 @@ void *memmove(void *dest, const void *src, size_t n) {
 
 
 void *memset(void *s, int c, size_t n) {
-	return Genode::memset(s, c, n); }
+	return Genode::memset(s, char(c), n); }
 
 
 char *strchr(const char *s, int c)
 {
-	char ch = c;
+	char ch = char(c);
 
 	for (;; ++s) {
 		if (*s == ch)
@@ -83,7 +83,7 @@ char *strchr(const char *s, int c)
 char *strrchr(const char *s, int c)
 {
 	char *save;
-	char ch = c;
+	char ch = char(c);
 
 	for (save = nullptr;; ++s) {
 		if (*s == ch)
@@ -116,7 +116,7 @@ size_t strnlen(const char *s, size_t maxlen)
 unsigned long int strtoul(const char *nptr, char **endptr, int base)
 {
 	unsigned long r = 0;
-	size_t read = Genode::ascii_to_unsigned(nptr, r, base);
+	size_t read = Genode::ascii_to_unsigned(nptr, r, uint8_t(base));
 
 	if (endptr)
 		*endptr = (char *)(nptr + read);
