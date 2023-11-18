@@ -1,17 +1,19 @@
-set build_components { test/sdl }
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/vfs
+
+build { lib/sdl test/sdl }
 
 set app_config {
 	<start name="test-sdl">
 		<resource name="RAM" quantum="48M"/>
 		<config>
-			<vfs> <dir name="dev"> <log/> </dir> </vfs>
-			<libc stdout="/dev/log"/>
+			<vfs>
+				<dir name="dev">
+					<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
+			</vfs>
+			<libc stdout="/dev/log" rtc="/dev/rtc"/>
 		</config>
 	</start>}
-
-set boot_modules {
-	test-sdl
-	libc.lib.so vfs.lib.so libm.lib.so sdl.lib.so
-}
 
 source ${genode_dir}/repos/world/run/gui_app.inc

@@ -1,4 +1,10 @@
-set build_components { app/atari800 }
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/libpng \
+               [depot_user]/src/zlib \
+               [depot_user]/src/vfs \
+               [depot_user]/src/sdl
+
+build { app/atari800 }
 
 set app_config {
 
@@ -22,16 +28,5 @@ set app_config {
 		<arg value="-win-height"/> <arg value="480"/>
 	</config>
 </start>}
-
-set boot_modules {
-	atari800 atari800_rom.tar
-	libc.lib.so
-	libm.lib.so
-	libpng.lib.so
-	pthread.lib.so
-	sdl.lib.so
-	zlib.lib.so
-	vfs.lib.so
-}
 
 source ${genode_dir}/repos/world/run/gui_app.inc

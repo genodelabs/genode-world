@@ -3,8 +3,6 @@ if {![have_include power_on/qemu]} {
 	exit 0
 }
 
-create_boot_directory
-build { app/umurmur }
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/pkg/[drivers_nic_pkg] \
                   [depot_user]/src/init \
@@ -13,6 +11,10 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/posix \
                   [depot_user]/src/vfs_lwip \
                   [depot_user]/src/vfs
+
+build { lib/libconfig lib/protobuf-c app/umurmur }
+
+create_boot_directory
 
 install_config {
 <config verbose="yes">
@@ -88,7 +90,7 @@ default_channel = "Lobby";
 	</start>
 </config>}
 
-build_boot_image { libconfig.lib.so protobuf-c.lib.so umurmur }
+build_boot_image [build_artifacts]
 
 # qemu config
 append qemu_args " -nographic "

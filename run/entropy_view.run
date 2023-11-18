@@ -5,7 +5,9 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/nitpicker \
                   [depot_user]/src/init
 
-append config {
+build { app/entropy_view server/jitter_sponge }
+
+install_config {
 <config>
 	<parent-provides>
 		<service name="ROM"/>
@@ -39,6 +41,7 @@ append config {
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
 			<service name="Timer">   <child name="timer"/> </service>
 			<service name="Capture"> <child name="nitpicker"/> </service>
+			<service name="Event">   <child name="nitpicker"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<provides> <service name="Input"/> </provides>
@@ -46,7 +49,7 @@ append config {
 
 	<start name="nitpicker">
 		<resource name="RAM" quantum="8M"/>
-		<provides> <service name="Gui"/> <service name="Capture"/> </provides>
+		<provides> <service name="Gui"/> <service name="Event"/> <service name="Capture"/> </provides>
 		<config request_framebuffer="no">
 			<capture/>
 			<domain name="pointer" layer="1" content="client" label="no" origin="pointer" />
@@ -55,8 +58,6 @@ append config {
 			<default-policy domain="default"/>
 		</config>
 		<route>
-			<service name="Input">       <child name="drivers"/> </service>
-			<service name="Framebuffer"> <child name="drivers"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -83,16 +84,6 @@ append config {
 
 </config>}
 
-build {
-	app/entropy_view
-	server/jitter_sponge
-}
-
-install_config $config
-
-build_boot_image {
-	jitter_sponge
-	entropy_view
-}
+build_boot_image [build_artifacts]
 
 run_genode_until forever

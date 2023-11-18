@@ -1,4 +1,13 @@
-set build_components { test/sdl2 }
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/vfs \
+               [depot_user]/src/vfs_gpu \
+               [depot_user]/src/stdcxx \
+               [depot_user]/src/libdrm \
+               [depot_user]/src/expat \
+               [depot_user]/src/mesa \
+               [depot_user]/src/zlib
+
+build { lib/sdl2 test/sdl2 }
 
 set app_config {
 	<start name="test-sdl2" caps="128">
@@ -8,13 +17,5 @@ set app_config {
 			<libc stdout="/dev/log"/>
 		</config>
 	</start>}
-
-set boot_modules {
-	test-sdl2
-	egl.lib.so expat.lib.so glapi.lib.so
-	libc.lib.so libdrm.lib.so libm.lib.so
-	mesa.lib.so sdl2.lib.so stdcxx.lib.so
-	vfs.lib.so vfs_gpu.lib.so zlib.lib.so
-}
 
 source ${genode_dir}/repos/world/run/gui_app.inc

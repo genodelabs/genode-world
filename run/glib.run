@@ -1,10 +1,16 @@
-build test/glib
-
 create_boot_directory
 
 import_from_depot \
 	[depot_user]/src/[base_src] \
 	[depot_user]/src/init \
+	[depot_user]/src/zlib \
+	[depot_user]/src/libc \
+	[depot_user]/src/posix \
+	[depot_user]/src/libiconv \
+	[depot_user]/src/vfs \
+	[depot_user]/src/ffi
+
+build { test/glib lib/glib }
 
 install_config {
 <config>
@@ -35,9 +41,11 @@ install_config {
 				<dir name="home"> <ram/> </dir>
 				<dir name="var"> <dir name="tmp"> <ram/> </dir> </dir>
 				<dir name="tmp"> <ram/> </dir>
-				<dir name="dev"> <log/> </dir>
+				<dir name="dev">
+					<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 			<env key="HOME" value="/home"/>
 			<arg value="testglib"/>
 			<arg value="--verbose"/>
@@ -46,14 +54,7 @@ install_config {
 </config>
 }
 
-build_boot_image {
-	glib.lib.so
-	libc.lib.so vfs.lib.so
-	libiconv.lib.so zlib.lib.so ffi.lib.so
-	libm.lib.so
-	posix.lib.so
-	test-glib
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic  "
 

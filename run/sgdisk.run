@@ -1,6 +1,5 @@
 create_boot_directory
 
-
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/acpi_drv \
                   [depot_user]/src/ahci_drv \
@@ -13,10 +12,9 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/stdcxx \
                   [depot_user]/src/vfs
 
+build { lib/libuuid lib/popt app/sgdisk }
 
-build { app/sgdisk }
-
-set config {
+install_config {
 	<config verbose="yes">
 		<parent-provides>
 			<service name="CPU"/>
@@ -117,24 +115,14 @@ set config {
 	</config>
 }
 
-install_config $config
-
-
-build_boot_image {
-	sgdisk
-	libuuid.lib.so
-	popt.lib.so
-}
-
+build_boot_image [build_artifacts]
 
 # Create empty image file!
 set image_file "bin/image.raw"
 set image_size 20
 eval "exec -ignorestderr dd if=/dev/zero of=$image_file bs=1M count=$image_size"
 
-
 append qemu_args " -nographic -device ahci,id=ahci "
 append qemu_args " -drive id=disk,file=$image_file,format=raw,if=none -device ide-hd,drive=disk,bus=ahci.0 -boot d "
-
 
 run_genode_until ".*child \"sgdisk\" exited.*\n" 20

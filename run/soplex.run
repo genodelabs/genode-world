@@ -1,4 +1,8 @@
-build "core init test/soplex"
+build {
+	core lib/ld init lib/libc lib/libm lib/vfs lib/posix
+	lib/stdcxx lib/soplex lib/zlib lib/gmp
+	test/soplex
+}
 
 create_boot_directory
 
@@ -28,11 +32,7 @@ install_config {
 </config>
 }
 
-build_boot_image {
-	core init test-soplex
-	ld.lib.so libc.lib.so vfs.lib.so libm.lib.so posix.lib.so
-	stdcxx.lib.so soplex.lib.so zlib.lib.so gmp.lib.so
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic  "
 

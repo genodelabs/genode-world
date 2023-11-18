@@ -10,11 +10,14 @@ INC_DIR += $(GRAFX2_DIR)
 CC_OPT  += -DGENODE -DNOTTF=1
 
 # Prevent link error with GCC 10, which defaults to -fno-common
-CC_OPT += -fcommon
+CC_OPT  += -fcommon
 
 LIBS    += libc libpng sdl sdl_image libm zlib base
 
-$(TARGET): grafx2_data.tar
+CUSTOM_TARGET_DEPS += grafx2_data.tar
+
+BUILD_ARTIFACTS := $(TARGET) grafx2_data.tar
+
 grafx2_data.tar:
 	$(VERBOSE)cd $(GRAFX2_DIR)/../; tar cf $(PWD)/bin/$@ share
 

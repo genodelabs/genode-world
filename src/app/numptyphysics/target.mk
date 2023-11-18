@@ -59,7 +59,10 @@ LIBS += sdl sdl_image sdl_ttf zlib
 
 CC_OPT_Canvas := -DGENODE
 
-$(TARGET): numptyphysics_data.tar
+CUSTOM_TARGET_DEPS += numptyphysics_data.tar
+
+BUILD_ARTIFACTS := $(TARGET) numptyphysics_data.tar
+
 numptyphysics_data.tar:
 	$(VERBOSE)cd $(NUMPTY_DIR)/data; tar cf $(PWD)/bin/$@ .
 

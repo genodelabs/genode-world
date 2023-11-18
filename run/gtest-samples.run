@@ -1,20 +1,10 @@
-#
-# Build
-#
-
-set build_components {
-	core init
-	timer
+build {
+	core lib/ld init timer
+	server/vfs lib/vfs lib/libc lib/libm lib/posix lib/stdcxx lib/gtest
 	test/gtest-samples
 }
 
-build $build_components
-
 create_boot_directory
-
-#
-# Generate config
-#
 
 install_config {
 <config verbose="yes">
@@ -47,16 +37,7 @@ install_config {
 	</start>
 </config>}
 
-#
-# Boot image
-#
-
-build_boot_image {
-	core init ld.lib.so
-	timer
-	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
-	gtest.lib.so gtest-samples
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic "
 

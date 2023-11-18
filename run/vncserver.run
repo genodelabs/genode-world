@@ -3,10 +3,6 @@ if {![have_include power_on/qemu]} {
 	exit 0
 }
 
-build "test/vncserver"
-
-create_boot_directory
-
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/pkg/[drivers_nic_pkg] \
                   [depot_user]/src/init \
@@ -18,6 +14,10 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/libpng \
                   [depot_user]/src/zlib \
                   [depot_user]/src/posix
+
+build { lib/vncserver test/vncserver }
+
+create_boot_directory
 
 install_config {
 <config>
@@ -95,14 +95,12 @@ install_config {
 
 		</config>
 	</start>
-</config>
-}
+</config> }
 
-build_boot_image { test-vncserver vncserver.lib.so }
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic  "
 append_qemu_nic_args "hostfwd=tcp::5900-:5900"
-
 
 run_genode_until "child \"test-vncserver\" exited with exit value 0" 2000
 

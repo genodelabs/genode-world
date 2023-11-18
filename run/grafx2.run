@@ -1,28 +1,26 @@
-set build_components { app/grafx2 }
+lappend import [depot_user]/src/libc \
+               [depot_user]/src/vfs \
+               [depot_user]/src/sdl \
+               [depot_user]/src/sdl_image \
+               [depot_user]/src/jpeg \
+               [depot_user]/src/libpng \
+               [depot_user]/src/zlib
+
+build { app/grafx2 }
 
 set app_config {
 	<start name="grafx2" priority="-2" caps="200">
 		<resource name="RAM" quantum="64M"/>
 		<config>
-			<libc stdout="/dev/log" stderr="/dev/log"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
 			<vfs>
 				<tar name="grafx2_data.tar" />
-				<dir name="dev"> <log/> </dir>
+				<dir name="dev">
+					<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				</dir>
 				<ram/>
 			</vfs>
 		</config>
 	</start>}
-
-set boot_modules {
-	grafx2
-	grafx2_data.tar
-	jpeg.lib.so
-	libc.lib.so vfs.lib.so
-	libm.lib.so
-	libpng.lib.so
-	sdl_image.lib.so
-	sdl.lib.so
-	zlib.lib.so
-}
 
 source ${genode_dir}/repos/world/run/gui_app.inc

@@ -15,6 +15,7 @@ set packages "
 	[depot_user]/src/posix
 	[depot_user]/src/vfs
 	[depot_user]/src/nic_router
+	[depot_user]/src/stdcxx
 "
 append packages " [depot_user]/src/vfs_lxip"
 
@@ -162,7 +163,7 @@ set config {
 
 install_config $config
 
-build_boot_image { iperf stdcxx.lib.so }
+build_boot_image [build_artifacts]
 
 #
 # Execute test case

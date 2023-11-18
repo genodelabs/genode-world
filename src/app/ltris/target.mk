@@ -14,7 +14,10 @@ SRC_C     := $(notdir $(wildcard $(LTRIS_DIR)/src/*.c))
 
 vpath %.c $(LTRIS_DIR)/src
 
-$(TARGET): ltris_data.tar
+CUSTOM_TARGET_DEPS += ltris_data.tar
+
+BUILD_ARTIFACTS := $(TARGET) ltris_data.tar
+
 ltris_data.tar:
 	$(VERBOSE)cd $(LTRIS_DIR)/src; tar cf $(PWD)/bin/$@ gfx sounds figures
 

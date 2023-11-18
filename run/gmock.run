@@ -3,25 +3,15 @@ if {[have_board linux]} {
 	exit 0
 }
 
-#
-# Build
-#
-
-set build_components {
-	core init
-	timer
+build {
+	core lib/ld init timer
+	lib/libc lib/vfs lib/libm lib/posix lib/stdcxx lib/gmock lib/gtest
 	drivers/rtc
 	server/vfs
 	test/gmock
 }
 
-build $build_components
-
 create_boot_directory
-
-#
-# Generate config
-#
 
 install_config {
 <config verbose="yes">
@@ -72,18 +62,7 @@ install_config {
 	</start>
 </config>}
 
-#
-# Boot image
-#
-
-build_boot_image {
-	core init ld.lib.so
-	timer vfs
-	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
-	rtc_drv
-	gmock.lib.so gtest.lib.so
-	gmock
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic "
 

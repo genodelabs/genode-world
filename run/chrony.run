@@ -15,6 +15,8 @@ set packages "
 	[depot_user]/src/posix
 	[depot_user]/src/vfs
 	[depot_user]/src/vfs_pipe
+	[depot_user]/src/stdcxx
+	[depot_user]/src/libc
 	[depot_user]/src/vfs_jitterentropy
 	[depot_user]/pkg/system_rtc-[board]
 "
@@ -35,11 +37,7 @@ proc rtc_drv { } {
 
 import_from_depot $packages
 
-set build_components {
-	test/libc app/chrony drivers/rtc/spec/x86
-}
-
-build $build_components
+build { app/chrony drivers/rtc/spec/x86 lib/nettle lib/gnutls }
 
 #
 # Generate config
@@ -243,7 +241,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 
 install_config $config
 
-build_boot_image { chronyd stdcxx.lib.so gmp.lib.so nettle.lib.so gnutls.lib.so libc.lib.so libm.lib.so rtc_drv}
+build_boot_image [build_artifacts]
 
 #
 # Execute test case

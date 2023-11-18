@@ -13,14 +13,6 @@ proc socket_fs_plugin { } {
 	return $result
 }
 
-set build_components {
-	app/mbimcli
-}
-
-build $build_components
-
-create_boot_directory
-
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/pkg/test_usb_host_drv-[board] \
                   [depot_user]/src/curl \
@@ -41,7 +33,11 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/vfs_pipe \
                   [depot_user]/src/zlib
 
-append config {
+build { app/mbimcli lib/libmbim }
+
+create_boot_directory
+
+install_config {
 <config>
 	<parent-provides>
 		<service name="CPU"/>
@@ -157,10 +153,7 @@ append config {
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
-</config>
-}
-
-install_config $config
+</config> }
 
 
 #
@@ -178,7 +171,7 @@ set fd [open [run_dir]/genode/usb_host_drv.config w]
 puts $fd $config
 close $fd
 
-build_boot_image { mbimcli libmbim.lib.so }
+build_boot_image [build_artifacts]
 
 if {[have_include "power_on/qemu"]} {
 	set USB_PORT 0
