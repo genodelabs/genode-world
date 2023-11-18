@@ -5,4 +5,5 @@ SRC_CC   = graph_test.cc
 
 vpath graph_test.cc $(LEMON)
 
+CC_CXX_OPT_STD = -std=gnu++17
 CC_CXX_WARN_STRICT =
