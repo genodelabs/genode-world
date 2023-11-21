@@ -611,25 +611,9 @@ install_config $config
 # Boot modules
 #
 
-# generic modules
-set boot_modules {
-	rtc_drv vesa_fb_drv
-	seoul
-	vm_seoul.cfg
-}
-
-lappend_if $use_block_vdi     boot_modules vdi_block
-lappend_if $use_vfs_block     boot_modules vfs_block
-lappend_if $use_drv_ahci      boot_modules ahci_drv
-lappend_if $use_nic_session   boot_modules pc_nic_drv
-lappend_if $use_nic_session   boot_modules nic_router
-
-lappend_if $use_genode_iso    boot_modules iso9660
-lappend_if $use_genode_iso    boot_modules genode.iso
-
-lappend_if $use_block_ram     boot_modules seoul-disc.raw
-
-lappend_if $use_top           boot_modules top
+set boot_modules { vm_seoul.cfg }
+lappend_if $use_genode_iso boot_modules genode.iso
+lappend_if $use_block_ram  boot_modules seoul-disc.raw
 
 #
 # Add OS binaries of guest
@@ -661,6 +645,7 @@ if {$use_multiboot} {
 	append boot_modules $guest_os_binaries
 }
 
+lappend boot_modules {*}[build_artifacts]
 build_boot_image $boot_modules
 
 # A copy of the config is placed in the run folder.
