@@ -1,0 +1,10 @@
+LICENSE   := BSD
+VERSION   := 2.6.3
+DOWNLOADS := sdl2_image.archive
+
+URL(sdl2_image) := https://github.com/libsdl-org/SDL_image/archive/refs/tags/release-$(VERSION).tar.gz
+SHA(sdl2_image) := e3fb5136e1c0e0e118051fbd96cddaf988715ed9fec9296b4861e21823c75b75
+DIR(sdl2_image) := src/lib/sdl2_image
+
+DIRS := include/SDL2
+DIR_CONTENT(include/SDL2) := src/lib/sdl2_image/SDL_image.h
