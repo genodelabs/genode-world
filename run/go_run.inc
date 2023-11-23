@@ -64,8 +64,8 @@ append modules { vfs_} [socket_fs_plugin] {.lib.so }
 append_if $use_lxip modules { lxip.lib.so }
 
 # build section
-set build_components { 
-	core init timer lib/ld
+set build_components {
+	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs
 }
 
 append build_components { lib/vfs_} [socket_fs_plugin] {}
@@ -273,15 +273,7 @@ install_config $config
 
 # build boot image section
 
-set boot_modules { }
-
-foreach lib $modules {
-	lappend boot_modules "$lib"
-}
-
-lappend boot_modules "$executable"
-
-build_boot_image $boot_modules
+build_boot_image [build_artifacts]
 
 append qemu_args " -m $mem_size -nographic -smp $num_cpu"
 append_qemu_nic_args "hostfwd=tcp::5555-:$executable_port"

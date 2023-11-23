@@ -21,7 +21,7 @@ proc socket_fs_plugin { } {
 }
 
 build {
-	core init timer lib/ld
+	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs
 	lib/vfs_lwip
 	drivers/rtc
 	test/go_http
@@ -171,13 +171,7 @@ install_config {
 	</start>
 </config>}
 
-build_boot_image {
-	core init timer ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
-	rtc_drv vfs_lwip.lib.so vfs_pipe.lib.so vfs.lib.so go_http
-
-	linux_nic_drv
-	nic_router report_rom
-}
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic "
 append_qemu_nic_args "hostfwd=tcp::5555-:80"

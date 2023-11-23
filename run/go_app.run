@@ -30,8 +30,8 @@ set conf_verbose "yes"
 set conf_ld_verbose "yes"
 
 # build section
-set build_components { 
-	core init timer lib/ld
+set build_components {
+	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs
 }
 
 lappend build_components "$executable_place/$executable"
@@ -121,21 +121,7 @@ append config {
 
 install_config $config
 
-# build boot image section
-
-set boot_modules { }
-
-append boot_modules { core }
-append boot_modules { init }
-append boot_modules { timer }
-
-foreach lib $modules {
-	lappend boot_modules "$lib"
-}
-
-lappend boot_modules "$executable"
-
-build_boot_image $boot_modules
+build_boot_image [build_artifacts]
 
 append qemu_args " -m $mem_size -nographic -smp $num_cpu"
 
