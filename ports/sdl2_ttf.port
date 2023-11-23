@@ -1,0 +1,10 @@
+LICENSE   := BSD
+VERSION   := 2.20.2
+DOWNLOADS := sdl2_ttf.archive
+
+URL(sdl2_ttf) := https://github.com/libsdl-org/SDL_ttf/archive/refs/tags/release-$(VERSION).tar.gz
+SHA(sdl2_ttf) := 0fe9d587cdc4e6754b647536d0803bea8ca6ac77146c4209e0bed22391cf8241
+DIR(sdl2_ttf) := src/lib/sdl2_ttf
+
+DIRS := include/SDL2
+DIR_CONTENT(include/SDL2) := src/lib/sdl2_ttf/SDL_ttf.h
