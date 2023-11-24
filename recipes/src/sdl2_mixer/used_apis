@@ -11,3 +11,5 @@ timer_session
 libflac
 libogg
 libvorbis
+opus
+opusfile
