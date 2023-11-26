@@ -1,0 +1,14 @@
+LICENSE   := LGPLv2
+VERSION   := 2.0.25
+DOWNLOADS := sdl_gfx.archive
+
+URL(sdl_gfx) := https://downloads.sourceforge.net/project/sdlgfx/SDL_gfx-$(VERSION).tar.gz
+SHA(sdl_gfx) := 556eedc06b6cf29eb495b6d27f2dcc51bf909ad82389ba2fa7bdc4dec89059c0
+DIR(sdl_gfx) := src/lib/sdl_gfx
+
+DIRS := include
+
+HEADERS:= SDL_framerate.h SDL_gfxBlitFunc.h SDL_gfxPrimitives_font.h \
+          SDL_gfxPrimitives.h SDL_imageFilter.h SDL_rotozoom.h
+
+DIR_CONTENT(include) := $(addprefix src/lib/sdl_gfx/,$(HEADERS))
