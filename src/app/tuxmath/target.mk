@@ -26,10 +26,7 @@ CC_WARN  = -Wno-address
 
 vpath %.c $(TUXMATH_DIR)/src
 
-# supply custom getenv implementation (tuxmath asks for HOME)
 SRC_CC  += getenv.cc
-
-vpath getenv.cc $(REP_DIR)/src/app/numptyphysics
 
 CUSTOM_TARGET_DEPS += tuxmath_data.tar
 

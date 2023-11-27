@@ -1,8 +1,0 @@
-base
-libc
-sdl
-sdl_image
-sdl_ttf
-stdcxx
-vfs
-zlib

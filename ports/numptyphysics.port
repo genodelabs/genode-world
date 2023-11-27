@@ -1,9 +1,0 @@
-LICENSE   := GPLv3
-VERSION   := git
-DOWNLOADS := numptyphysics.git
-
-URL(numptyphysics) := https://gitlab.com/thp/numptyphysics.git
-DIR(numptyphysics) := src/app/numptyphysics
-REV(numptyphysics) := 336729c44c9ced3907d049cc1c1130a26c5708a3
-
-PATCHES := src/app/numptyphysics/canvas.patch
