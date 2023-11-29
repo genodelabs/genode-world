@@ -23,7 +23,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/raw/drivers_interactive-pc \
                   [depot_user]/pkg/themed_wm \
                   [depot_user]/src/report_rom \
-                  [depot_user]/src/platform_drv \
+                  [depot_user]/src/pc_platform_drv \
                   [depot_user]/src/acpi_drv \
                   [depot_user]/src/pci_decode
 
@@ -269,9 +269,10 @@ set config {
 			<service name="ROM"/>
 		</provides>
 		<config>
-			<policy label="pci_decode -> system" report="acpi_drv -> acpi"/>
+			<policy label="pci_decode -> system"    report="acpi_drv -> acpi"/>
+			<policy label="platform_drv -> acpi"    report="acpi_drv -> acpi"/>
 			<policy label="platform_drv -> devices" report="pci_decode -> devices"/>
-			<policy label="usb_hid_drv -> report" report="usb_drv -> devices"/>
+			<policy label="usb_hid_drv -> report"   report="usb_drv -> devices"/>
 		</config>
 	</start>
 
@@ -293,7 +294,8 @@ set config {
 	</start>
 
 	<start name="platform_drv" caps="400" managing_system="yes" priority="-1">
-		<resource name="RAM" quantum="4M"/>
+		<binary name="pc_platform_drv"/>
+		<resource name="RAM" quantum="6M"/>
 		<provides>
 			<service name="Platform"/>
 		</provides>
@@ -307,6 +309,8 @@ set config {
 			<policy label_prefix="usb_drv" info="yes"> <pci class="USB"/> </policy>
 		</config>
 		<route>
+			<service name="ROM" label="system">  <parent label="system_state.xml"/> </service>
+			<service name="ROM" label="acpi">    <child name="platform_reports"/> </service>
 			<service name="ROM" label="devices"> <child name="platform_reports"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
@@ -640,13 +644,17 @@ append_if $use_top config {
 append config {
 </config>}
 
+set system_state_fd [open "bin/system_state.xml" w]
+puts $system_state_fd {<system/>}
+close $system_state_fd
+
 install_config $config
 
 #
 # Boot modules
 #
 
-set boot_modules { vm_seoul.cfg }
+set boot_modules { vm_seoul.cfg system_state.xml }
 lappend_if $use_genode_iso boot_modules genode.iso
 lappend_if $use_block_ram  boot_modules seoul-disc.raw
 
@@ -685,6 +693,7 @@ build_boot_image $boot_modules
 
 # A copy of the config is placed in the run folder.
 exec rm -f bin/vm_seoul.cfg
+exec rm -f bin/system_state.xml
 
 
 if {$use_audio} {
