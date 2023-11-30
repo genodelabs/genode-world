@@ -10,4 +10,6 @@ PATCH_OPT := -p1 -d src/lib/util-linux/
 PATCHES   := src/lib/libuuid/patches/*.patch
 
 DIRS                         := include/libuuid
+DIRS                         += include/uuid
 DIR_CONTENT(include/libuuid) := src/lib/util-linux/libuuid/src/*.h
+DIR_CONTENT(include/uuid)    := src/lib/util-linux/libuuid/src/*.h

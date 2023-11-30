@@ -8,8 +8,9 @@ $(MIRROR_FROM_REP_DIR):
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/util-linux)
 
 include:
-	mkdir -p $@
+	mkdir -p $@/uuid
 	cp -r $(PORT_DIR)/include/libuuid/* $@
+	cp -r $(PORT_DIR)/include/libuuid/* $@/uuid
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/util-linux/COPYING $@
