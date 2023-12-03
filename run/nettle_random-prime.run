@@ -6,12 +6,13 @@ create_boot_directory
 
 set packages "
 	[depot_user]/src/[base_src]
-	[depot_user]/src/init
 	[depot_user]/src/gmp
-	[depot_user]/src/vfs_jitterentropy
+	[depot_user]/src/init
 	[depot_user]/src/libc
 	[depot_user]/src/posix
+	[depot_user]/src/stdcxx
 	[depot_user]/src/vfs
+	[depot_user]/src/vfs_jitterentropy
 "
 
 import_from_depot $packages
@@ -69,14 +70,7 @@ install_config {
 # Boot image
 #
 
-build_boot_image {
-
-	libc.lib.so vfs.lib.so libm.lib.so posix.lib.so stdcxx.lib.so gmp.lib.so 
-	nettle.lib.so random-prime
-}
-
-#	core init ld.lib.so
-#	timer vfs
+build_boot_image [build_artifacts]
 
 append qemu_args " -nographic "
 
