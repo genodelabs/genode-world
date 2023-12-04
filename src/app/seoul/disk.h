@@ -117,13 +117,13 @@ class Seoul::Disk : public StaticReceiver<Seoul::Disk>
 		size_t        const _backing_store_size;
 
 		/* slabs for temporary holding MessageDisk objects */
-		typedef Genode::Tslab<MessageDisk, 128> MessageDisk_Slab;
+		typedef Genode::Tslab<MessageDisk, 1024> MessageDisk_Slab;
 		typedef Genode::Synced_allocator<MessageDisk_Slab> MessageDisk_Slab_Sync;
 
 		MessageDisk_Slab_Sync _tslab_msg;
 
 		/* Structure to find back the MessageDisk object out of a Block Ack */
-		typedef Genode::Tslab<Avl_entry, 128> Avl_entry_slab;
+		typedef Genode::Tslab<Avl_entry, 512> Avl_entry_slab;
 		typedef Genode::Synced_allocator<Avl_entry_slab> Avl_entry_slab_sync;
 
 		Avl_entry_slab_sync _tslab_avl;
