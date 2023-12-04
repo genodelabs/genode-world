@@ -639,6 +639,10 @@ append_if $use_top config {
 	<start name="top">
 		<resource name="RAM" quantum="2M"/>
 		<config period_ms="10000"/>
+		<route>
+			<service name="TRACE"> <parent label=""/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>}
 
 append config {

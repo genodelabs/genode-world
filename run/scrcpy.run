@@ -408,6 +408,10 @@ append_if $use_top config {
 		<resource name="RAM" quantum="8M"/>
 		<resource name="CPU" quantum="1"/>
 		<config period_ms="20000"/>
+		<route>
+			<service name="TRACE"> <parent label=""/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
 	</start>}
 
 append_if $use_top_view config {
