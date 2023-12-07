@@ -1,8 +1,3 @@
-if {[get_cmd_switch --autopilot] && [have_board riscv_qemu]} {
-	puts "Autopilot mode is not supported on this platform."
-	exit 0
-}
-
 #
 # Lua C++ library test
 #
@@ -31,7 +26,7 @@ install_config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 	<start name="test-moon">
-		<resource name="RAM" quantum="1G"/>
+		<resource name="RAM" quantum="32M"/>
 		<config>
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>
 			<libc stdout="/dev/log"/>
