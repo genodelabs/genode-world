@@ -53,6 +53,7 @@ class Seoul::Guest_memory
 
 			Region_map_client rm(ds);
 			auto const backing_store = (addr_t)_env.rm().attach(rm.dataspace());
+			_env.rm().detach(backing_store);
 			_rm_reserve.destroy(ds);
 
 			/* reserve gap not to be used by dynamic allocations */
