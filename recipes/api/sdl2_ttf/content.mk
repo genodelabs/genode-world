@@ -1,6 +1,6 @@
 MIRROR_FROM_REP_DIR := lib/symbols/sdl2_ttf lib/import/import-sdl2_ttf.mk
 
-content: $(MIRROR_FROM_REP_DIR) include LICENSE
+content: $(MIRROR_FROM_REP_DIR) include LICENSE FindSDL2_ttf.cmake
 
 $(MIRROR_FROM_REP_DIR):
 	$(mirror_from_rep_dir)
@@ -13,3 +13,11 @@ include:
 
 LICENSE:
 	cp $(PORT_DIR)/src/lib/sdl2_ttf/LICENSE.txt $@
+
+FindSDL2_ttf.cmake:
+	echo 'set(SDL2_TTF_FOUND True)' > $@
+	echo 'set(SDL2_TTF_INCLUDE_DIR "$${CMAKE_CURRENT_LIST_DIR}/include/SDL2")' >> $@
+	echo 'set(SDL2_TTF_LIBRARY ":sdl2_ttf.lib.so")' >> $@
+	echo 'set(SDL2_TTF_LIBRARIES "$${SDL2_TTF_LIBRARY}")' >> $@
+	echo 'add_library(SDL2_ttf::SDL2_ttf INTERFACE IMPORTED)' >> $@
+	echo 'set_target_properties(SDL2_ttf::SDL2_ttf PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "$${SDL2_TTF_INCLUDE_DIR}")' >> $@
