@@ -7,33 +7,28 @@
 create_boot_directory
 
 set packages "
-	[depot_user]/src/[base_src]
 	[depot_user]/pkg/[drivers_nic_pkg]
+	[depot_user]/pkg/system_rtc-[board]
+	[depot_user]/src/[base_src]
 	[depot_user]/src/gmp
 	[depot_user]/src/init
+	[depot_user]/src/libc
 	[depot_user]/src/nic_router
 	[depot_user]/src/posix
-	[depot_user]/src/vfs
-	[depot_user]/src/vfs_pipe
 	[depot_user]/src/stdcxx
-	[depot_user]/src/libc
+	[depot_user]/src/vfs
 	[depot_user]/src/vfs_jitterentropy
-	[depot_user]/pkg/system_rtc-[board]
+	[depot_user]/src/vfs_lxip
+	[depot_user]/src/vfs_pipe
 "
 
-# [depot_user]/src/libc
-
-append packages " [depot_user]/src/vfs_lxip          "
-
 proc rtc_drv { } {
-        switch [board] {
-                linux   { return "linux_rtc_drv" }
-                pc      { return "rtc_drv" }
-                default { return "dummy_rtc_drv" }
-        }
+	switch [board] {
+		linux   { return "linux_rtc_drv" }
+		pc      { return "rtc_drv" }
+		default { return "dummy_rtc_drv" }
+	}
 }
-
-#append packages [depot_user]/src/[rtc_drv]
 
 import_from_depot $packages
 
@@ -70,7 +65,7 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start> 
-	<start name="nic_drv" caps="1000" managing_system="yes">
+	<start name="nic_drv" caps="1500" managing_system="yes">
 		<resource name="RAM" quantum="32M"/>
 		<binary name="init"/>
 		<route>
@@ -89,16 +84,16 @@ append config {
 		</config>
 	</start>
 	<start name="rtc_drv" ld="} [expr [have_board linux] ? "no" : "yes"] {">
-        <resource name="RAM" quantum="1M"/>
-        <binary name="} [rtc_drv] {"/>
+		<resource name="RAM" quantum="1M"/>
+		<binary name="} [rtc_drv] {"/>
 		<config verbose="yes" allow_setting_rtc="yes" />
-        <provides> <service name="Rtc"/> </provides>
+		<provides> <service name="Rtc"/> </provides>
 		<route>
 			<service name="Timer"> <child name="timer"/> </service>
 			<service name="ROM" label="set_rtc"> <child name="report_rom"/> </service>
 			<any-service> <parent /> </any-service>
 		</route>
-    </start>}
+	</start>}
 
 append config {
 	<start name="nic_router" caps="120">
@@ -111,25 +106,21 @@ append config {
 			<policy label_prefix="chrony_daemon" domain="server"/> 
 			<policy label_prefix="nic_drv"          domain="uplink"/>
 			<domain name="uplink" }
-append_if [have_spec linux] config "
-			        interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
-append config {
-			>
+append_if [have_spec linux] config " interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
+append config { >
 				<nat domain="server"
 				     tcp-ports="16384"
 				     udp-ports="16384"
 				     icmp-ids="16384"/>
-					 <!--				<nat domain="server" tcp-ports="100" />
-				<tcp-forward port="5001" domain="server" to="10.0.3.2" />
-				<tcp-forward port="12865" domain="server" to="10.0.3.2" /> -->
 			</domain>
 			<domain name="server" interface="10.0.3.1/24" verbose_packets="yes">
 				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
 				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
 				<dhcp-server ip_first="10.0.3.2"
 				             ip_last="10.0.3.3"
-				             ip_lease_time_sec="600"
-							 dns_config_from="uplink"/>
+				             ip_lease_time_sec="600">
+					<dns-server ip="8.8.8.8" />
+				</dhcp-server>
 			</domain>
 		</config>
 	</start> 
@@ -162,7 +153,7 @@ append config {
 					<log/>
 					<!--<inline name="rtc">2022-01-01 00:01</inline>-->
 					<jitterentropy name="random"/>
-                    <jitterentropy name="urandom"/>
+					<jitterentropy name="urandom"/>
 					<rtc/>
 					<null/>
 				</dir>
@@ -232,7 +223,6 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 			<service name="Nic"> <child name="nic_router"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
 			<service name="Rtc"> <child name="system_rtc"/> </service>
-<!--			<service name="Rtc"> <child name="rtc_drv"/> </service> -->
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -250,17 +240,6 @@ build_boot_image [build_artifacts]
 # qemu config
 append qemu_args "  -nographic "
 
-
 append_qemu_nic_args "hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153"
-
-# if {[have_include "power_on/qemu"]} {
-# 	set ip_addr "localhost"
-# 	set force_ports "-p 49153"
-# } elseif [have_board linux] {
-# 	set ip_addr $lx_ip_addr
-# } else {
-# 	regexp $ip_match_string $output all ip_addr
-# 	puts ""
-# }
 
 run_genode_until "init -> rtc_drv] set time to" 900
