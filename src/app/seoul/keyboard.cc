@@ -37,7 +37,9 @@ bool Seoul::Keyboard::_map_keycode(unsigned &keycode, bool press)
 	case Input::KEY_LEFTSHIFT:  nflags |= KBFLAG_LSHIFT; keycode = 0x12; break;
 	case Input::KEY_RIGHTSHIFT: nflags |= KBFLAG_RSHIFT; keycode = 0x59; break;
 	case Input::KEY_LEFTALT:    nflags |= KBFLAG_LALT;   keycode = 0x11; break;
-	case Input::KEY_RIGHTALT:   nflags |= KBFLAG_RALT;   keycode = 0x11; break;
+	case Input::KEY_RIGHTALT:   nflags |= KBFLAG_RALT;   keycode = 0x11;
+		_flags |= KBFLAG_EXTEND0;
+		break;
 	case Input::KEY_LEFTCTRL:   nflags |= KBFLAG_LCTRL;  keycode = 0x14; break;
 	case Input::KEY_RIGHTCTRL:  nflags |= KBFLAG_RCTRL;  keycode = 0x14; break;
 	case Input::KEY_LEFTMETA:   _flags |= KBFLAG_LWIN;   keycode = 0x1f;
@@ -77,7 +79,7 @@ bool Seoul::Keyboard::_map_keycode(unsigned &keycode, bool press)
 
 	/* up to 0x53, the Genode key codes correspond to scan code set 1 */
 	default:
-		if (keycode <= 0x53) {
+		if (keycode <= 0x53 || keycode == Input::KEY_102ND) {
 			keycode = GenericKeyboard::translate_sc1_to_sc2(static_cast<unsigned char>(keycode));
 			break;
 		} else return false;
