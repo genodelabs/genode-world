@@ -1456,13 +1456,10 @@ void Component::construct(Genode::Env &env)
 
 	vcon.register_host_operations(machine.unsynchronized_motherboard());
 
-	/* create disk thread */
 	static Seoul::Disk vdisk(env, machine.motherboard(),
 	                         machine.unsynchronized_motherboard(),
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
-
-	vdisk.register_host_operations(machine.unsynchronized_motherboard());
 
 	machine.setup_devices(node.sub_node("machine"));
 
