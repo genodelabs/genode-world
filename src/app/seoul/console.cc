@@ -178,9 +178,8 @@ void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 			if (ty > _input_absolute.h()) ty = _input_absolute.h();
 
 			MessageInput msg(0x10002, tx & mask, ty & mask);
-			if (_motherboard()->bus_input.send(msg) && !_absolute) {
+			if (_motherboard()->bus_input.send(msg)) {
 				_absolute = true;
-				/* store absolute dimension of virtio input device */
 				_input_absolute = Gui::Area(msg.data, msg.data2);
 			}
 		});
@@ -266,7 +265,15 @@ bool Seoul::Console::receive(MessageConsole &msg)
 				msg.size = gui.shape_size();
 				return true;
 			}
+
 			if (msg.view > 1 && msg.size) {
+				if (Genode::align_addr(msg.size, 12) > _env.pd().avail_ram().value) {
+					error("gpu memory allocation denied, requires ", msg.size,
+					      ", available ", _env.pd().avail_ram(),
+					      " id=", msg.view - 2);
+					return false;
+				}
+
 				Genode::Ram_dataspace_capability ds { };
 				try {
 					msg.ptr  = nullptr;
@@ -366,16 +373,15 @@ bool Seoul::Console::receive(MessageConsole &msg)
 				gui.refresh(msg.x, msg.y, msg.width, msg.height);
 			}
 			else if (msg.view == 1) {
-				int x = 0, y = 0;
+				int hot_x = 0, hot_y = 0;
 
-				/* makes mouse (somewhat) visible if solely relative input is used */
-				if (_relative && !_absolute) {
-					x = gui.last_host_pos.x() - msg.x;
-					y = gui.last_host_pos.y() - msg.y;
+				if (!(_relative && !_absolute)) {
+					hot_x = msg.hot_x;
+					hot_y = msg.hot_y;
 				}
 
 				gui.mouse_shape(true /* XXX */,
-				                x, y,
+				                hot_x, hot_y,
 				                msg.width, msg.height);
 			} else
 				return false;
@@ -419,6 +425,27 @@ bool Seoul::Console::receive(MessageMemRegion &msg)
 }
 
 
+bool Seoul::Console::_sufficient_ram(Gui::Area const &cur, Gui::Area const &area)
+{
+	int64 const pixels  = area.count();
+
+	if (!pixels)
+		return true;
+
+	auto const free_ram = _env.pd().avail_ram();
+	auto const required = Genode::align_addr(uint64(pixels) * 4, 12);
+
+	/* heuristics */
+	if (required + 2 * 4096 > free_ram.value) {
+		warning(cur, " -> ", area, " denied, requires ", required,
+		        ", available ", free_ram);
+		return false;
+	}
+
+	return true;
+}
+
+
 void Seoul::Console::_handle_gui_change()
 {
 	for_each_gui([&](auto &gui) {
@@ -430,15 +457,8 @@ void Seoul::Console::_handle_gui_change()
 		if (gui_mode.area == gui.fb_mode.area)
 			return;
 
-		int64 const pixdiff = gui_mode.area.count() - gui.fb_mode.area.count();
-
-		if (pixdiff > 0 && (Genode::align_addr(uint64(pixdiff) * 4, 12) >
-		                    _env.pd().avail_ram().value + 8192)) {
-			warning(gui.fb_mode.area, " -> ", gui_mode.area, " denied,"
-			        " requires ", Genode::align_addr(pixdiff * 4, 12),
-			        ", availalble ", _env.pd().avail_ram().value, " + 8k");
+		if (!_sufficient_ram(gui.fb_mode.area, gui_mode.area))
 			return;
-		}
 
 		/* send notification about new mode */
 		MessageConsole msg(MessageConsole::TYPE_MODEINFO_UPDATE, gui.id);
@@ -473,10 +493,6 @@ void Seoul::Console::_handle_input()
 			valid_key = true;
 
 			if (mouse_event(ev)) {
-				ev.handle_absolute_motion([&] (int x, int y) {
-					gui.last_host_pos = Genode::Point<unsigned>(x, y);
-				});
-
 				/* update PS2 mouse model */
 				_input_to_ps2(ev);
 

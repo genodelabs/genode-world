@@ -91,6 +91,7 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		void         _handle_gui_change();
 		Milliseconds _handle_fb();
 		unsigned     _handle_fb_gui(bool, Backend_gui &, bool);
+		bool         _sufficient_ram(Gui::Area const &, Gui::Area const &);
 
 		void _reactivate_periodic_timer();
 

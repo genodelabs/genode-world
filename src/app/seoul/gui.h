@@ -37,8 +37,6 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	Report::Connection         shape_report;
 	Genode::Attached_dataspace shape_attached;
 
-	Genode::Point<unsigned>    last_host_pos { 0, 0};
-
 	bool visible { false };
 
 	Backend_gui(Genode::Env &env,
