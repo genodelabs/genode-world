@@ -428,7 +428,7 @@ append_if $use_block_ram config {
 append_if $use_fs_rump config {
 	<start name="rump_fs" priority="-1" caps="200">
 		<binary name="vfs"/>
-		<resource name="RAM" quantum="64M"/>
+		<resource name="RAM" quantum="70M"/>
 		<provides><service name="File_system"/></provides>
 		<config ld_verbose="yes">
 			<vfs>
@@ -450,7 +450,7 @@ append_if $use_fs_rump config {
 	</start>}
 
 append_if $use_block_vdi config {
-	<start name="vdi_block">
+	<start name="vdi_block" priority="-2">
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Block"/> </provides>
 		<config file="/guest.vdi" writeable="yes">

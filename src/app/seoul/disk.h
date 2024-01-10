@@ -7,7 +7,7 @@
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2017 Genode Labs GmbH
+ * Copyright (C) 2013-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -23,10 +23,7 @@
 #define _DISK_H_
 
 /* Genode includes */
-#include <base/allocator_avl.h>
 #include <block_session/connection.h>
-#include <util/string.h>
-#include <base/synced_allocator.h>
 
 /* local includes */
 #include "synced_motherboard.h"
@@ -68,132 +65,97 @@ class Seoul::Disk : public StaticReceiver<Seoul::Disk>
 {
 	private:
 
-		Genode::Env &_env;
-
-		/* helper class to lookup a MessageDisk object */
-		class Avl_entry : public Genode::Avl_node<Avl_entry>
-		{
-
-			private:
-
-				Genode::addr_t  const _key;
-				MessageDisk   * const _msg;
-
-				/*
-				 * Noncopyable
-				 */
-				Avl_entry(Avl_entry const &);
-				Avl_entry &operator = (Avl_entry const &);
-
-			public:
-
-				Avl_entry(void * key, MessageDisk * const msg)
-				 : _key(reinterpret_cast<Genode::addr_t>(key)), _msg(msg) { }
-
-				bool higher(Avl_entry *e) const { return e->_key > _key; }
-
-				Avl_entry *find(Genode::addr_t ptr)
-				{
-					if (ptr == _key) return this;
-					Avl_entry *obj = this->child(ptr > _key);
-					return obj ? obj->find(ptr) : 0;
-				}
-		
-				MessageDisk * msg() { return _msg; }
-		};
-
-		/* block session used by disk models of VMM */
-		enum { MAX_DISKS = 4 };
-		struct disk_session {
+		struct Disk_session {
 			Block::Connection<> *blk_con;
 			Block::Session::Info info;
 			Disk_signal         *signal;
-		} _diskcon[MAX_DISKS] { };
+		};
 
-		Synced_motherboard &_motherboard;
-		Motherboard        &_unsynchronized_motherboard;
+		struct Outstanding {
+			unsigned long  usertag;
+			unsigned       dmacount;
+			DmaDescriptor *dma;
+			unsigned long  physoffset;
+		};
+
+		/* SATA model has max 33 and IDE 1 as max outstanding requests atm */
+		enum { MAX_DISKS = 4, MAX_OUTSTANDING = 48 };
+
+		Genode::Env         &_env;
+
+		struct Outstanding   _outstanding[MAX_OUTSTANDING] { };
+		struct Disk_session  _disks      [MAX_DISKS]       { };
+
+		Synced_motherboard  &_motherboard;
+		Motherboard         &_unsynchronized_motherboard;
 
 		char        * const _backing_store_base;
 		size_t        const _backing_store_size;
 
-		/* slabs for temporary holding MessageDisk objects */
-		typedef Genode::Tslab<MessageDisk, 1024> MessageDisk_Slab;
-		typedef Genode::Synced_allocator<MessageDisk_Slab> MessageDisk_Slab_Sync;
-
-		MessageDisk_Slab_Sync _tslab_msg;
-
-		/* Structure to find back the MessageDisk object out of a Block Ack */
-		typedef Genode::Tslab<Avl_entry, 512> Avl_entry_slab;
-		typedef Genode::Synced_allocator<Avl_entry_slab> Avl_entry_slab_sync;
-
-		Avl_entry_slab_sync _tslab_avl;
-
-		Genode::Avl_tree<Avl_entry> _lookup_msg  { };
-		Genode::Avl_tree<Avl_entry> _restart_msg { };
-		/* _alloc_mutex protects both lists + alloc_packet/release_packet !!! */
-		Genode::Mutex               _alloc_mutex { };
+		Genode::Mutex       _mutex            { };
+		bool                _resume_execution { };
 
 		/*
 		 * Noncopyable
 		 */
-		Disk(Disk const &);
+		Disk             (Disk const &);
 		Disk &operator = (Disk const &);
 
-		void check_restart();
-		bool restart(struct disk_session const &, MessageDisk * const);
-		bool execute(bool const write, struct disk_session const &,
-		             MessageDisk const &);
+		bool execute(bool, Disk_session const &, MessageDisk &);
 
-		template <typename FN>
-		bool check_dma_descriptors(MessageDisk const * const msg,
-		                           FN const &fn)
+		bool _execute_write(Block::Session::Tx::Source       &,
+		                    Block::Packet_descriptor   const &,
+		                    unsigned long              const,
+		                    Disk_session               const &,
+		                    MessageDisk                const &);
+
+		bool _execute_read (Block::Session::Tx::Source       &,
+		                    Block::Packet_descriptor   const &,
+		                    unsigned long              const,
+		                    Disk_session               const &,
+		                    MessageDisk                const &);
+
+		bool for_each_dma_desc(auto   const &msg,
+		                       auto   const &packet,
+		                       char * const  source,
+		                       auto   const &fn)
 		{
+			unsigned long offset = 0;
+
 			/* check bounds for read and write operations */
-			for (unsigned i = 0; i < msg->dmacount; i++) {
+			for (unsigned i = 0; i < msg.dmacount; i++) {
 				char * const dma_addr = _backing_store_base +
-				                        msg->dma[i].byteoffset +
-				                        msg->physoffset;
+				                        msg.dma[i].byteoffset +
+				                        msg.physoffset;
 
 				/* check for bounds */
 				if (dma_addr >= _backing_store_base + _backing_store_size ||
 				    dma_addr < _backing_store_base)
 					return false;
 
-				if (!fn(dma_addr, i))
+				auto const bytecount = msg.dma[i].bytecount;
+
+				if (!packet.size() || bytecount > packet.size() - offset)
 					return false;
+
+				fn(dma_addr, source + offset, bytecount);
+
+				offset += bytecount;
 			}
+
 			return true;
-		}
-
-		/* find the corresponding MessageDisk object */
-		Avl_entry * lookup_and_remove(Genode::Avl_tree<Avl_entry> &tree,
-		                              void * specific_obj = nullptr)
-		{
-			Genode::Mutex::Guard guard(_alloc_mutex);
-
-			Avl_entry * obj = tree.first();
-			if (obj && specific_obj)
-				obj = obj->find(reinterpret_cast<Genode::addr_t>(specific_obj));
-
-			if (obj)
-				tree.remove(obj);
-
-			return obj;
 		}
 
 	public:
 
-		/**
-		 * Constructor
-		 */
+		static constexpr unsigned block_packetstream_size = 4*512*1024;
+
 		Disk(Genode::Env &, Synced_motherboard &, Motherboard &,
 		     char * backing_store_base, Genode::size_t backing_store_size);
 
 		void handle_disk(unsigned);
 
 		bool receive(MessageDisk &msg);
-
-		void register_host_operations(Motherboard &);
 };
 
 #endif /* _DISK_H_ */
