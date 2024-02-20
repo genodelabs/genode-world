@@ -18,6 +18,8 @@ $(BUILD_BASE_DIR)/bin/ubuntu-ui-extras_qml.tar: build_with_cmake
 
 built.tag: $(BUILD_BASE_DIR)/bin/ubuntu-ui-extras_qml.tar
 
+BUILD_ARTIFACTS += ubuntu-ui-extras_qml.tar
+
 ifeq ($(called_from_lib_mk),yes)
 all: built.tag
 endif

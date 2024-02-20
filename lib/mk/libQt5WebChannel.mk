@@ -7,6 +7,8 @@ LIBS = egl expat libc libm mesa stdcxx $(QT5_PORT_LIBS)
 
 INSTALL_LIBS = lib/libQt5WebChannel.lib.so
 
+BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS))
+
 built.tag: qmake_prepared.tag
 
 	@#

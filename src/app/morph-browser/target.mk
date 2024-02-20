@@ -22,3 +22,5 @@ $(BUILD_BASE_DIR)/bin/morph-browser_qml.tar: build_with_cmake
 	$(VERBOSE)tar rf $@ -C install usr/local/share/morph-browser
 
 $(TARGET): $(BUILD_BASE_DIR)/bin/morph-browser_qml.tar
+
+BUILD_ARTIFACTS += morph-browser_qml.tar

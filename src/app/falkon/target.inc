@@ -23,3 +23,5 @@ $(BUILD_BASE_DIR)/bin/falkon_theme.tar:
 	$(VERBOSE)tar cf $@ --transform='s/themes/.local\/share\/falkon\/themes/' -C $(FALKON_DIR) themes/chrome
 
 $(TARGET): $(BUILD_BASE_DIR)/bin/falkon_theme.tar
+
+BUILD_ARTIFACTS += falkon_theme.tar
