@@ -15,6 +15,11 @@ INSTALL_LIBS = lib/libQt5WebEngine.lib.so \
                lib/libQt5WebEngineWidgets.lib.so \
                qml/QtWebEngine/libqtwebengineplugin.lib.so
 
+BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS)) \
+                  qt5_webengine_resources.tar \
+                  qt5_webengine_translations.tar \
+                  qt5_webengine_qml.tar
+
 QT5_GENODE_LIBS_SHLIB += nss3.lib.so
 qmake_prepared.tag: qmake_root/lib/nss3.lib.so
 

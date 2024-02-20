@@ -18,6 +18,9 @@ INSTALL_LIBS = lib/libUbuntuGestures.lib.so \
                qml/Ubuntu/Components/Styles/libUbuntuComponentsStyles.lib.so \
                qml/Ubuntu/PerformanceMetrics/libUbuntuPerformanceMetrics.lib.so
 
+BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS)) \
+                  ubuntu-ui-toolkit_qml.tar
+
 built.tag: qmake_prepared.tag
 
 	@#
