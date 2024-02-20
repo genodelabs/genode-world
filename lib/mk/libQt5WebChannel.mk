@@ -9,7 +9,7 @@ INSTALL_LIBS = lib/libQt5WebChannel.lib.so
 
 BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS))
 
-built.tag: qmake_prepared.tag
+build: qmake_prepared.tag
 
 	@#
 	@# run qmake
@@ -48,13 +48,8 @@ built.tag: qmake_prepared.tag
 		ln -sf $(CURDIR)/install/qt/$${LIB}.debug $(PWD)/debug/; \
 	done
 
-	@#
-	@# mark as done
-	@#
-
-	$(VERBOSE)touch $@
-
+.PHONY: build
 
 ifeq ($(called_from_lib_mk),yes)
-all: built.tag
+all: build
 endif

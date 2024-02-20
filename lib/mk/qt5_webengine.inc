@@ -29,7 +29,7 @@ qmake_prepared.tag: qmake_root/lib/nss3.lib.so
 #
 NINJAJOBS ?= -j$(shell echo -e "$(shell nproc)\n16" | sort -g | head -n1)
 
-built.tag: qmake_prepared.tag
+build: qmake_prepared.tag
 
 	@#
 	@# run qmake
@@ -97,13 +97,8 @@ built.tag: qmake_prepared.tag
 	$(VERBOSE)tar chf $(PWD)/bin/qt5_webengine_translations.tar -C install qt/translations
 	$(VERBOSE)tar chf $(PWD)/bin/qt5_webengine_qml.tar --exclude='*.lib.so' --transform='s/\.stripped//' -C install qt/qml
 
-	@#
-	@# mark as done
-	@#
-
-	$(VERBOSE)touch $@
-
+.PHONY: build
 
 ifeq ($(called_from_lib_mk),yes)
-all: built.tag
+all: build
 endif

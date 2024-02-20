@@ -12,14 +12,14 @@ LIBS = libc libm mesa qt5_component stdcxx $(QT5_PORT_LIBS)
 
 include $(call select_from_repositories,lib/import/import-qt5_cmake.mk)
 
-$(BUILD_BASE_DIR)/bin/ubuntu-ui-extras_qml.tar: build_with_cmake
+build: build_with_cmake
 	$(VERBOSE)ln -snf qt5 install/usr/local/lib/qt
-	$(VERBOSE)tar cf $@ --exclude='*.lib.so' --transform='s/\.stripped//' -C install/usr/local/lib qt/qml
+	$(VERBOSE)tar cf $(BUILD_BASE_DIR)/bin/ubuntu-ui-extras_qml.tar --exclude='*.lib.so' --transform='s/\.stripped//' -C install/usr/local/lib qt/qml
 
-built.tag: $(BUILD_BASE_DIR)/bin/ubuntu-ui-extras_qml.tar
+.PHONY: build
 
 BUILD_ARTIFACTS += ubuntu-ui-extras_qml.tar
 
 ifeq ($(called_from_lib_mk),yes)
-all: built.tag
+all: build
 endif
