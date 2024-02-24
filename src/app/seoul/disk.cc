@@ -165,8 +165,9 @@ bool Seoul::Disk::receive(MessageDisk &msg)
 
 		disk.info = disk.blk_con->info();
 
-		if (!disk.info.block_size || disk.info.block_size != 512)
-			Logging::panic("unsupported block size");
+		if (!disk.info.block_size || disk.info.block_size != 512 ||
+		     disk.info.align_log2 > 31)
+			Logging::panic("unsupported block size %lu", disk.info.align_log2);
 	}
 
 	msg.error = MessageDisk::DISK_OK;
@@ -249,7 +250,8 @@ bool Seoul::Disk::execute(bool const write, Disk_session const &disk,
 		return true;
 	}
 
-	auto result = tx.alloc_packet_attempt(blocks * blk_size);
+	auto result = tx.alloc_packet_attempt(blocks * blk_size,
+	                                      unsigned(disk.info.align_log2));
 
 	return result.convert<bool>([&](auto const p) {
 		typedef Block::Packet_descriptor Pkg;
