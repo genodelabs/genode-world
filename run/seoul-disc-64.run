@@ -50,7 +50,6 @@ if {[have_include power_on/qemu]} {
 #	append qemu_args " -cpu EPYC"
 	append qemu_args " -accel kvm -cpu host"
 	append qemu_args " -smp $vcpus_to_be_used"
-	append_if $use_block_sata qemu_args " -drive id=disk,file=bin/$image,format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0 -boot d"
 }
 
 source ${genode_dir}/repos/world/run/seoul.inc

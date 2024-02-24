@@ -34,8 +34,11 @@ set use_disk_count    1
 
 if {[have_include power_on/qemu]} {
 
-	if {![file exists bin/seoul-disc.raw]} {
-		puts "Please provide a disk image file to  bin/seoul-disc.raw"
+	set image  "seoul-disc.raw"
+	set image2 "seoul-disc2.raw"
+
+	if {![file exists bin/$image]} {
+		puts "Please provide a disk image file to  bin/$image"
 		exit 1
 	}
 
@@ -44,16 +47,9 @@ if {[have_include power_on/qemu]} {
 #	append qemu_args " -accel kvm -cpu host"
 
 	if { $use_block_sata && $use_disk_count > 1 } {
-		set disk_image "bin/seoul-disc2.raw"
-		if {![file exists $disk_image]} {
-			catch { exec dd if=/dev/zero of=$disk_image bs=1M count=8192 }
+		if {![file exists bin/$image2]} {
+			catch { exec dd if=/dev/zero of=bin/$image2 bs=1M count=8192 }
 		}
-	}
-
-	append_if $use_block_sata qemu_args " -drive id=disk,file=bin/seoul-disc.raw,format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0 -boot d"
-
-	if { $use_block_sata && $use_disk_count > 1 } {
-		append qemu_args " -drive id=hdd,file=$disk_image,format=raw,if=none -device ide-hd,drive=hdd,bus=ahci.1 "
 	}
 
 	append_if [have_include image/iso] qemu_args " -boot d "

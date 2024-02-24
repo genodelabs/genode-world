@@ -64,21 +64,22 @@ if { [have_spec sel4] } {
 # Download demo image
 #
 set uri "http://depot.genode.org/alex-ab/images"
-set image "seoul-auto-serial.img.gz"
+set image "seoul-auto-serial.img"
+set image_gz "seoul-auto-serial.img.gz"
 set sha1sum "d8e63259c61a9d4ec6027e9a2982378236268acd"
 
-if {![file exists bin/seoul-disc.raw]} {
+if {![file exists bin/$image]} {
 	exec mkdir -p bin
-	puts "Download file $image from $uri"
-	exec >& /dev/null wget -c -O bin/seoul-disc.raw.gz $uri/$image
-	set sha1 [exec sha1sum bin/seoul-disc.raw.gz]
+	puts "Download file $image_gz from $uri"
+	exec >& /dev/null wget -c -O bin/$image_gz $uri/$image_gz
+	set sha1 [exec sha1sum bin/$image_gz]
 	set sha1 [regexp -inline {[0-9a-h]+} $sha1]
 	if {[string compare $sha1 $sha1sum]} {
 		puts "SHA1 sum of binary does not match with expected one - abort"
-		rm bin/seoul-disc.raw.gz
+		rm bin/$image_gz
 		exit 1
 	}
-	exec gunzip bin/seoul-disc.raw.gz
+	exec gunzip bin/$image_gz
 }
 
 source ${genode_dir}/repos/world/run/seoul.inc

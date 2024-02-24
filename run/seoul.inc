@@ -6,7 +6,15 @@
 # \date   2011-11-21
 
 set use_fs_rump $use_block_vdi
-set use_drv_ahci [expr $use_block_vdi || $use_block_sata]
+
+if {![info exists use_ahci]} { set use_ahci 0 }
+
+# for uefi boot_fb works
+# set display_drv "boot_fb_drv"
+set display_drv "vesa_fb_drv"
+
+set use_drv_ahci  [expr  $use_ahci && ($use_block_vdi || $use_block_sata)]
+set use_drv_nvme  [expr !$use_ahci && ($use_block_vdi || $use_block_sata)]
 set use_vfs_block [expr $use_block_ram || $use_genode_iso]
 
 create_boot_directory
@@ -25,44 +33,28 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/report_rom \
                   [depot_user]/src/platform_drv \
                   [depot_user]/src/acpi_drv \
-                  [depot_user]/src/pci_decode
+                  [depot_user]/src/pci_decode \
+                  [depot_user]/src/vesa_drv \
+                  [depot_user]/src/boot_fb_drv
 
-if {$use_fs_rump} {
-	import_from_depot [depot_user]/src/rump
-}
+if {![info exists use_usb]}        { set use_usb        1 }
+if {![info exists use_virtio]}     { set use_virtio     0 }
+if {![info exists use_audio]}      { set use_audio      0 }
+if {![info exists use_disk_count]} { set use_disk_count 1 }
+if {![info exists cpuid_native]}   { set cpuid_native   "no" }
+if {![info exists vdi_name]}       { set vdi_name       "guest.vdi" }
+if {![info exists image]}          { set image          "seoul-disc.raw" }
 
-if {$use_part_block} {
-	import_from_depot [depot_user]/src/part_block
-}
-
-if {![info exists use_usb]} {
-	set use_usb 1
-}
-
-if {![info exists use_virtio]} {
-	set use_virtio 0
-}
-
-if {![info exists use_audio]} {
-	set use_audio 0
-}
-
-if {![info exists cpuid_native]} {
-	set cpuid_native "no"
-}
-
-if {$use_audio} {
-	import_from_depot [depot_user]/src/bsd_audio_drv
-}
-
-if {![info exists use_disk_count]} {
-	set use_disk_count 1
-}
+if {$use_fs_rump   } { import_from_depot [depot_user]/src/rump }
+if {$use_part_block} { import_from_depot [depot_user]/src/part_block }
+if {$use_drv_ahci  } { import_from_depot [depot_user]/src/ahci_drv }
+if {$use_drv_nvme  } { import_from_depot [depot_user]/src/nvme_drv }
+if {$use_audio     } { import_from_depot [depot_user]/src/bsd_audio_drv }
 
 if {[have_include power_on/qemu] && $use_block_vdi} {
 	if {![file exists bin/seoul-disc-vdi.raw]} {
-		if {![file exists bin/guest.vdi]} {
-			puts "Please provide a disk image file to bin/guest.vdi"
+		if {![file exists bin/$vdi_name]} {
+			puts "Please provide a disk image file to bin/$vdi_name"
 			exit 1
 		}
 
@@ -72,11 +64,171 @@ if {[have_include power_on/qemu] && $use_block_vdi} {
 		catch { exec $dd if=/dev/zero of=bin/seoul-disc-vdi.raw bs=1M count=12000 }
 		catch { exec $mke2fs -F bin/seoul-disc-vdi.raw }
 
-		exec [installed_command e2cp] bin/guest.vdi bin/seoul-disc-vdi.raw:guest.vdi
+		exec [installed_command e2cp] bin/$vdi_name bin/seoul-disc-vdi.raw:$vdi_name
 	}
 
-	append qemu_args " -drive id=disk,file=bin/seoul-disc-vdi.raw,format=raw,if=none"
-	append qemu_args " -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0"
+	if {$use_drv_ahci} {
+		append qemu_args " -drive id=disk,file=bin/seoul-disc-vdi.raw,format=raw,if=none"
+		append qemu_args " -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0"
+	}
+
+	if {$use_drv_nvme} {
+		append qemu_args " -device pcie-root-port,id=root_port1 "
+		append qemu_args " -drive id=nvme0,file=bin/seoul-disc-vdi.raw,format=raw,if=none "
+		append qemu_args " -device nvme,drive=nvme0,serial=fnord,id=nvme0n1,bus=root_port1 "
+	}
+}
+
+if {[have_include power_on/qemu] && $use_block_sata} {
+	if {$use_drv_ahci} {
+		append qemu_args " -drive id=disk,file=bin/$image,format=raw,if=none"
+		append qemu_args " -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0"
+
+		if { $use_disk_count > 1 } {
+			append qemu_args " -drive id=hdd,file=bin/$image2,format=raw,if=none"
+			append qemu_args " -device ide-hd,drive=hdd,bus=ahci.1 "
+		}
+	}
+
+	if {$use_drv_nvme} {
+		append qemu_args " -device pcie-root-port,id=root_port1 "
+		append qemu_args " -drive id=nvme0,file=bin/$image,format=raw,if=none "
+		append qemu_args " -device nvme,drive=nvme0,serial=fnord,id=nvme0n1,bus=root_port1 "
+	}
+
+}
+
+proc config_ahci { } {
+
+	global use_drv_ahci
+	global use_block_sata
+	global use_part_block
+	global use_block_vdi
+
+	set config_ahci ""
+
+	if {!$use_drv_ahci} {
+		return $config_ahci
+	}
+
+	append config_ahci {
+	<start name="ahci_drv" priority="-1">
+		<resource name="RAM" quantum="10M" />
+		<provides><service name="Block"/></provides>
+		<config>}
+
+	append_if [expr $use_block_sata && !$use_part_block] config_ahci {
+			<policy label="seoul -> disk0" device="0" writeable="yes"/>
+			<policy label="seoul -> disk1" device="1" writeable="yes"/>}
+
+	append_if [expr $use_block_vdi && !$use_part_block] config_ahci {
+			<policy label="rump_fs -> " device="0" writeable="yes"/>}
+
+	append_if [expr $use_block_vdi && $use_part_block] config_ahci {
+			<policy label="part_block -> " device="0" writeable="yes"/>}
+
+	append_if [expr $use_block_sata && $use_part_block] config_ahci {
+			<policy label="part_block -> " device="0" writeable="yes"/>}
+
+	append config_ahci {
+		</config>
+	</start>}
+
+	return $config_ahci
+}
+
+proc config_nvme { } {
+
+	global use_drv_nvme
+	global use_block_sata
+	global use_part_block
+	global use_block_vdi
+
+	set config_nvme ""
+
+	if {!$use_drv_nvme} {
+		return $config_nvme
+	}
+
+	append config_nvme {
+
+	<start name="nvme_drv" caps="120" priority="-1">
+		<resource name="RAM" quantum="24M"/>
+		<provides> <service name="Block"/> </provides>
+		<config max_hmb_size="16M" verbose_regs="yes" verbose_identify="yes">}
+
+	append_if [expr $use_block_sata && !$use_part_block] config_nvme {
+			<policy label="seoul -> disk0" writeable="yes"/>}
+
+	append_if [expr $use_block_vdi && !$use_part_block] config_nvme {
+			<policy label="rump_fs -> "    writeable="yes"/>}
+
+	append_if [expr $use_block_vdi && $use_part_block] config_nvme {
+			<policy label="part_block -> " writeable="yes"/>}
+
+	append_if [expr $use_block_sata && $use_part_block] config_nvme {
+			<policy label="part_block -> " writeable="yes"/>}
+
+	append config_nvme {
+		</config>
+	</start>}
+
+	return $config_nvme
+}
+
+proc config_part_block { } {
+
+	global use_drv_nvme
+	global use_drv_ahci
+	global use_part_block
+	global use_block_sata
+	global use_block_vdi
+	global partition_raw
+	global partition_rump
+
+	set config_part_block ""
+
+	if {!$use_part_block} { return $config_part_block }
+	if {!$use_block_sata} { return $config_part_block }
+
+	if {!$use_block_vdi && ![info exists partition_raw]} {
+		puts "\nusing part_block without partition_raw number will not work\n"
+		exit 0
+	}
+
+	if {$use_block_vdi && ![info exists partition_rump]} {
+		puts "\nusing part_block without partition_rump number will not work\n"
+		exit 0
+	}
+
+	# set variable with dummies when not used
+	if {!$use_block_vdi} { set partition_rump 10000 }
+	if { $use_block_vdi} { set partition_raw  10000 }
+
+	if {$use_drv_nvme} { set drv_name "nvme_drv" }
+	if {$use_drv_ahci} { set drv_name "ahci_drv" }
+
+	append config_part_block {
+
+	<start name="part_block" priority="-1">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Block"/></provides>
+		<route>
+			<any-service><child name="} $drv_name {"/> <parent/></any-service>
+		</route>
+		<config>}
+
+	append_if [expr !$use_block_vdi] config_part_block {
+			<policy label="seoul -> disk0" partition="} $partition_raw  {" writeable="yes"/>}
+
+	append_if [expr  $use_block_vdi] config_part_block {
+			<policy label="rump_fs -> "    partition="} $partition_rump {" writeable="yes"/>}
+
+	append config_part_block {
+		</config>
+	</start>}
+
+	return $config_part_block
 }
 
 #
@@ -107,14 +259,12 @@ if {[have_spec foc]} {
 }
 
 set build_components {
-	drivers/framebuffer/vesa
 	drivers/rtc
 	app/seoul
 }
 
 lappend_if $use_block_vdi       build_components server/vdi_block
 lappend_if $use_vfs_block       build_components server/vfs_block
-lappend_if $use_drv_ahci        build_components drivers/ahci
 lappend_if $use_nic_session     build_components drivers/nic
 lappend_if $use_nic_session     build_components server/nic_router
 lappend_if $use_genode_iso      build_components server/iso9660
@@ -238,7 +388,7 @@ close $vm_cfg_fd
 #
 
 set config {
-<config verbose="yes" prio_levels="4">
+<config verbose="no" prio_levels="4">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="IRQ"/>
@@ -298,9 +448,10 @@ set config {
 			<service name="Platform"/>
 		</provides>
 		<config>
-			<policy label_prefix="ps2_drv">  <device name="ps2"/>    </policy>
-			<policy label_prefix="ahci_drv"> <pci class="AHCI"/>     </policy>
-			<policy label_prefix="nic_drv" info="yes"> <pci class="ETHERNET"/> </policy>
+			<policy label_prefix="ps2_drv">             <device name="ps2"/>    </policy>
+			<policy label_prefix="ahci_drv">            <pci class="AHCI"/>     </policy>
+			<policy label_prefix="nvme_drv" info="yes"> <pci class="NVME"/>     </policy>
+			<policy label_prefix="nic_drv"  info="yes"> <pci class="ETHERNET"/> </policy>
 			<policy label_prefix="audio_drv">
 				<pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>
 			<policy label_prefix="fb_drv"  info="yes"> <pci class="VGA"/> </policy>
@@ -373,41 +524,10 @@ append_if $use_audio config {
 		<config/>
 	</start>}
 
-append_if $use_drv_ahci config {
-	<start name="ahci_drv" priority="-1">
-		<resource name="RAM" quantum="1M" />
-		<provides><service name="Block"/></provides>
-		<config>}
-
-append_if [expr $use_block_sata && !$use_part_block] config {
-			<policy label="seoul -> disk0" device="0" writeable="yes"/>
-			<policy label="seoul -> disk1" device="1" writeable="yes"/>}
-
-append_if [expr $use_block_vdi && !$use_part_block] config {
-			<policy label="rump_fs -> " device="0" writeable="yes"/>}
-
-append_if [expr $use_block_vdi && $use_part_block] config {
-			<policy label="part_block -> " device="0" writeable="yes"/>}
-
-append_if [expr $use_block_sata && $use_part_block] config {
-			<policy label="part_block -> " device="0" writeable="yes"/>}
-
-append_if $use_drv_ahci config {
-		</config>
-	</start>}
-
-append_if $use_part_block config {
-	<start name="part_block" priority="-1">
-		<resource name="RAM" quantum="10M"/>
-		<provides><service name="Block"/></provides>
-		<route>
-			<any-service><child name="ahci_drv"/> <parent/></any-service>
-		</route>
-		<config>
-			<policy label="seoul -> disk0" partition="5" writeable="yes"/>
-			<policy label="rump_fs -> " partition="4" writeable="yes"/>
-		</config>
-	</start>}
+append config {
+	} [config_ahci] {
+	} [config_nvme] {
+	} [config_part_block] { }
 
 append_if $use_block_ram config {
 	<start name="vfs_block" priority="-1" caps="300">
@@ -417,10 +537,10 @@ append_if $use_block_ram config {
 			<vfs>
 				<ram/>
 				<import>
-					<rom name="seoul-disc.raw"/>
+					<rom name="} $image {"/>
 				</import>
 			</vfs>
-			<default-policy file="/seoul-disc.raw" block_size="512"
+			<default-policy file="/} $image {" block_size="512"
 			                writeable="yes"/>
 		</config>
 	</start>}
@@ -441,8 +561,10 @@ append_if $use_fs_rump config {
 
 append_if [expr $use_fs_rump && $use_part_block] config {
 			<service name="Block"><child name="part_block"/></service>}
-append_if [expr $use_fs_rump && !$use_part_block] config {
+append_if [expr $use_fs_rump && !$use_part_block && $use_drv_ahci] config {
 			<service name="Block"><child name="ahci_drv"/></service>}
+append_if [expr $use_fs_rump && !$use_part_block && $use_drv_nvme] config {
+			<service name="Block"><child name="nvme_drv"/></service>}
 
 append_if $use_fs_rump config {
 			<any-service> <parent/> </any-service>
@@ -453,7 +575,7 @@ append_if $use_block_vdi config {
 	<start name="vdi_block" priority="-2">
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Block"/> </provides>
-		<config file="/guest.vdi" writeable="yes">
+		<config file="/} $vdi_name {" writeable="yes">
 			<vfs> <fs buffer_size="1M"/> </vfs>
 			<policy label="seoul -> disk0" device="0" writeable="yes"/>
 		</config>
@@ -488,7 +610,7 @@ append_if $use_nic_session config {
 
 	<start name="nic_drv" caps="150" priority="-2">
 		<binary name="pc_nic_drv"/>
-		<resource name="RAM" quantum="8M"/>
+		<resource name="RAM" quantum="16M"/>
 		<route>
 			<service name="Uplink"><child name="nic_router"/></service>
 			<any-service><parent/><any-child/></any-service>
@@ -531,7 +653,7 @@ append_if $use_nic_session config {
 
 append config {
 	<start name="fb_drv" priority="-1" caps="200">
-		<binary name="vesa_fb_drv"/>
+		<binary name="} $display_drv {"/>
 		<resource name="RAM" quantum="20M"/>
 		<route>
 			<service name="Timer">    <child name="timer"/></service>
@@ -652,7 +774,7 @@ install_config $config
 
 set boot_modules { vm_seoul.cfg }
 lappend_if $use_genode_iso boot_modules genode.iso
-lappend_if $use_block_ram  boot_modules seoul-disc.raw
+lappend_if $use_block_ram  boot_modules $image
 
 #
 # Add OS binaries of guest
@@ -689,8 +811,3 @@ build_boot_image $boot_modules
 
 # A copy of the config is placed in the run folder.
 exec rm -f bin/vm_seoul.cfg
-
-
-if {$use_audio} {
-	append qemu_args " -device ES1370 "
-}
