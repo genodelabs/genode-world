@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2022 Genode Labs GmbH
+ * Copyright (C) 2022-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -17,7 +17,8 @@
 #ifndef _AUDIO_H_
 #define _AUDIO_H_
 
-#include <audio_out_session/connection.h>
+#include <play_session/connection.h>
+#include <timer_session/connection.h>
 
 #include <nul/motherboard.h>
 
@@ -30,72 +31,63 @@ class Seoul::Audio
 {
 	private:
 
-		Genode::Signal_handler<Audio> const _sigh_processed;
+		Motherboard &_mb;
 
-		Genode::Mutex         _mutex { };
+		Play::Connection  _left;
+		Play::Connection  _right;
+		Play::Time_window _time_window { };
 
-		Motherboard          &_mb;
+		Genode::Mutex     _mutex { };
+		Timer::Connection _timer;
 
-		Audio_out::Connection  _audio_left;
-		Audio_out::Connection  _audio_right;
+		unsigned _samples { };
+		unsigned _data_id { 1 };
 
-		Audio_out::Packet * p_left   { nullptr };
-		unsigned            sample_offset { 0 };
-
-		struct Pkg {
-			unsigned value    { ~0U };
-			bool valid()      { return value != ~0U; }
-			void invalidate() { value = ~0U; }
-			void advance()    { value = (value + 1) % Audio_out::QUEUE_SIZE; }
-		};
-
-		Pkg _pkg_head { };
-		Pkg _pkg_tail { };
+		unsigned _frames_per_period { };
+		unsigned _period_us         { };
 
 		bool _audio_running { false };
 		bool _audio_verbose { false };
+
+		Genode::Signal_handler<Audio> const _timer_sigh;
+
+		enum { MAX_CACHED_FRAMES = 2500 };
+
+		float _left_data [MAX_CACHED_FRAMES] { };
+		float _right_data[MAX_CACHED_FRAMES] { };
 
 		void _audio_out();
 
 		void _audio_start()
 		{
+			if (_audio_verbose)
+				Genode::log(__func__, " ", _audio_running);
+
 			if (_audio_running)
 				return;
 
-			if (_audio_verbose)
-				Genode::log(__func__);
-
 			_audio_running = true;
-
-			_pkg_head.invalidate();
-			_pkg_tail.invalidate();
-
-			_audio_left.stream()->reset();
-			_audio_right.stream()->reset();
-
-			_audio_left .start();
-			_audio_right.start();
 		}
 
 		void _audio_stop()
 		{
+			if (_audio_verbose)
+				Genode::log(__func__, " ", _audio_running);
+
 			if (!_audio_running)
 				return;
 
-			if (_audio_verbose)
-				Genode::log(__func__);
-
-			_audio_left .stop();
-			_audio_right.stop();
-
 			_audio_running = false;
 
-			p_left = nullptr;
-			sample_offset = 0;
+			_samples = 0;
 
-			_audio_left .stream()->invalidate_all();
-			_audio_right.stream()->invalidate_all();
+			_right.stop();
+			_left .stop();
 		}
+
+		enum { CHANNELS = 2 };
+
+		unsigned max_samples() const { return _frames_per_period * CHANNELS; }
 
 		/*
 		 * Noncopyable

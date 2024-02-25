@@ -12,4 +12,4 @@ block_session
 nic_session
 rtc_session
 report_session
-audio_out_session
+play_session

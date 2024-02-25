@@ -112,7 +112,7 @@ proc config_ahci { } {
 	}
 
 	append config_ahci {
-	<start name="ahci_drv" priority="-1">
+	<start name="ahci_drv" priority="-2">
 		<resource name="RAM" quantum="10M" />
 		<provides><service name="Block"/></provides>
 		<config>}
@@ -152,7 +152,7 @@ proc config_nvme { } {
 
 	append config_nvme {
 
-	<start name="nvme_drv" caps="120" priority="-1">
+	<start name="nvme_drv" caps="120" priority="-2">
 		<resource name="RAM" quantum="24M"/>
 		<provides> <service name="Block"/> </provides>
 		<config max_hmb_size="16M" verbose_regs="yes" verbose_identify="yes">}
@@ -210,7 +210,7 @@ proc config_part_block { } {
 
 	append config_part_block {
 
-	<start name="part_block" priority="-1">
+	<start name="part_block" priority="-2">
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="Block"/></provides>
 		<route>
@@ -261,6 +261,7 @@ if {[have_spec foc]} {
 set build_components {
 	drivers/rtc
 	app/seoul
+	server/record_play_mixer
 }
 
 lappend_if $use_block_vdi       build_components server/vdi_block
@@ -413,7 +414,7 @@ set config {
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="platform_reports" priority="-1">
+	<start name="platform_reports" priority="-2">
 		<binary name="report_rom"/>
 		<resource name="RAM" quantum="1M"/>
 		<provides>
@@ -435,7 +436,7 @@ set config {
 		</route>
 	</start>
 
-	<start name="pci_decode" caps="350">
+	<start name="pci_decode" caps="350" priority="-1">
 		<resource name="RAM" quantum="2M"/>
 		<route>
 			<service name="ROM" label="system"> <child name="platform_reports"/> </service>
@@ -444,7 +445,7 @@ set config {
 		</route>
 	</start>
 
-	<start name="platform_drv" caps="400" managing_system="yes" priority="-1">
+	<start name="platform_drv" caps="400" managing_system="yes" priority="-2">
 		<resource name="RAM" quantum="6M"/>
 		<provides>
 			<service name="Platform"/>
@@ -465,12 +466,12 @@ set config {
 		</route>
 	</start>
 
-	<start name="rtc_drv" priority="-1">
+	<start name="rtc_drv" priority="-2">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Rtc"/></provides>
 	</start>
 
-	<start name="ps2_drv" priority="-1">
+	<start name="ps2_drv" priority="-2">
 		<resource name="RAM" quantum="3M"/>
 		<config/>
 		<route>
@@ -478,7 +479,7 @@ set config {
 			<any-service><parent/> <any-child/> </any-service> </route>
 	</start>
 
-	<start name="event_filter" caps="90" priority="-1">
+	<start name="event_filter" caps="90" priority="-2">
 		<resource name="RAM" quantum="1280K"/>
 		<provides> <service name="Event"/> </provides>
 		<route>
@@ -489,13 +490,13 @@ set config {
 	</start>}
 
 append_if $use_usb config {
-	<start name="usb_drv" priority="-1" caps="200">
+	<start name="usb_drv" priority="-2" caps="200">
 		<binary name="pc_usb_host_drv"/>
 		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Usb"/> </provides>
 		<config>
 			<report devices="yes"/>
-			<policy label_prefix="usb_hid_drv" class="0x3"/>
+			<policy label_prefix="usb_hid_drv"> <device class="0x3"/> </policy>
 		</config>
 		<route>
 			<service name="Report"> <child name="report_rom"/> </service>
@@ -503,7 +504,7 @@ append_if $use_usb config {
 		</route>
 	</start>
 
-	<start name="usb_hid_drv" priority="-1" caps="140">
+	<start name="usb_hid_drv" priority="-2" caps="140">
 		<resource name="RAM" quantum="11M"/>
 		<config use_report="yes"/>
 		<route>
@@ -516,14 +517,38 @@ append_if $use_usb config {
 	</start>}
 
 append_if $use_audio config {
-	<start name="audio_drv">
+	<start name="mixer" priority="-1">
+		<resource name="RAM" quantum="2M"/>
+		<binary name="record_play_mixer"/>
+		<provides> <service name="Record"/> <service name="Play"/> </provides>
+		<config jitter_ms="10">
+
+			<mix name="left">  <play label_suffix="left" /> </mix>
+			<mix name="right"> <play label_suffix="right"/> </mix>
+
+			<policy label_suffix="left"   record="left"  volume="1.0"/>
+			<policy label_suffix="right"  record="right" volume="1.0"/>
+		</config>
+		<route>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="audio_drv" priority="-1">
 		<binary name="pci_audio_drv"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides>
 			<service name="Audio_in"/>
 			<service name="Audio_out"/>
 		</provides>
-		<config/>
+		<config report_mixer="yes" record_play="yes">
+			<mixer field="outputs.master" value="200,200"/>
+		</config>
+		<route>
+			<service name="Report"> <child name="report_rom"/> </service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
 	</start>}
 
 append config {
@@ -532,7 +557,7 @@ append config {
 	} [config_part_block] { }
 
 append_if $use_block_ram config {
-	<start name="vfs_block" priority="-1" caps="300">
+	<start name="vfs_block" priority="-2" caps="300">
 		<resource name="RAM" quantum="300M" />
 		<provides><service name="Block"/></provides>
 		<config>
@@ -548,7 +573,7 @@ append_if $use_block_ram config {
 	</start>}
 
 append_if $use_fs_rump config {
-	<start name="rump_fs" priority="-1" caps="200">
+	<start name="rump_fs" priority="-2" caps="200">
 		<binary name="vfs"/>
 		<resource name="RAM" quantum="70M"/>
 		<provides><service name="File_system"/></provides>
@@ -588,7 +613,7 @@ append_if $use_block_vdi config {
 	</start>}
 
 append_if $use_genode_iso config {
-	<start name="vfs_block" priority="-1" caps="100">
+	<start name="vfs_block" priority="-2" caps="100">
 		<resource name="RAM" quantum="16M" />
 		<provides><service name="Block"/></provides>
 		<config>
@@ -599,7 +624,7 @@ append_if $use_genode_iso config {
 		</config>
 	</start>
 
-	<start name="iso9660" priority="-1">
+	<start name="iso9660" priority="-2">
 		<resource name="RAM" quantum="16M"/>
 		<provides><service name="ROM"/></provides>
 		<route>
@@ -610,7 +635,7 @@ append_if $use_genode_iso config {
 
 append_if $use_nic_session config {
 
-	<start name="nic_drv" caps="150" priority="-2">
+	<start name="nic_drv" caps="150" priority="-3">
 		<binary name="pc_nic_drv"/>
 		<resource name="RAM" quantum="16M"/>
 		<route>
@@ -619,7 +644,7 @@ append_if $use_nic_session config {
 		</route>
 	</start>
 
-	<start name="nic_router" caps="200" priority="-1">
+	<start name="nic_router" caps="200" priority="-2">
 		<resource name="RAM" quantum="10M"/>
 		<provides>
 			<service name="Nic"/>
@@ -654,7 +679,7 @@ append_if $use_nic_session config {
 }
 
 append config {
-	<start name="fb_drv" priority="-1" caps="200">
+	<start name="fb_drv" priority="-2" caps="200">
 		<binary name="} $display_drv {"/>
 		<resource name="RAM" quantum="20M"/>
 		<route>
@@ -670,7 +695,7 @@ append_if [expr ![have_include "power_on/qemu"]] config {
 append config {
 	</start>
 
-	<start name="seoul" priority="-2" caps="1200">
+	<start name="seoul" priority="-3" caps="1200">
 		<binary name="seoul"/>
 		<resource name="RAM" quantum="} $memory_vmm_vm {"/>
 		<route>
@@ -696,7 +721,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="nitpicker" priority="-1" caps="200">
+	<start name="nitpicker" priority="-2" caps="200">
 		<resource name="RAM" quantum="12M"/>
 		<provides>
 			<service name="Gui"/> <service name="Capture"/> <service name="Event"/>
@@ -719,7 +744,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="pointer" priority="-1">
+	<start name="pointer" priority="-2">
 		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Report"/> </provides>
 		<config shapes="yes" verbose="no"/>
@@ -731,7 +756,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="report_rom">
+	<start name="report_rom" priority="-2">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
@@ -741,7 +766,7 @@ append config {
 		</config>
 	</start>
 
-	<start name="wm" caps="1000" priority="-1">
+	<start name="wm" caps="1000" priority="-2">
 		<resource name="RAM" quantum="32M"/>
 		<binary name="init"/>
 		<provides>
@@ -758,7 +783,7 @@ append config {
 append_if $use_top config {
 	<start name="top">
 		<resource name="RAM" quantum="2M"/>
-		<config period_ms="10000"/>
+		<config period_ms="15000"/>
 		<route>
 			<service name="TRACE"> <parent label=""/> </service>
 			<any-service> <parent/> <any-child/> </any-service>

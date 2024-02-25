@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2022 Genode Labs GmbH
+ * Copyright (C) 2022-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -20,55 +20,48 @@
 
 Seoul::Audio::Audio(Genode::Env &env, Motherboard &mb)
 :
-	_sigh_processed(env.ep(), *this, &Audio::_audio_out),
 	_mb(mb),
-	_audio_left (env, "front left",  false, false),
-	_audio_right(env, "front right", false, false)
+	_left (env, "left" ),
+	_right(env, "right"),
+	_timer(env),
+	_timer_sigh(env.ep(), *this, &Audio::_audio_out)
 {
-	/* server processed one packet */
-	_audio_left.progress_sigh(_sigh_processed);
+	_timer.sigh(_timer_sigh);
 }
 
 
 void Seoul::Audio::_audio_out()
 {
-	Genode::Mutex::Guard guard(_mutex);
+	unsigned continue_id = 0;
 
-	if (!_pkg_head.valid())
-		return;
+	{
+		Genode::Mutex::Guard guard(_mutex);
 
-	do {
-		Audio_out::Packet *pkg = _audio_left.stream()->get(_pkg_head.value);
-		if (!pkg || !pkg->played())
-			break;
-
-		MessageAudio msg(MessageAudio::Type::AUDIO_CONTINUE_TX, _pkg_head.value);
-
-		VMM_MEMORY_BARRIER;
-
-		_mutex.release();
-
-		_mb.bus_audio.send(msg);
-
-		_mutex.acquire();
-
-		VMM_MEMORY_BARRIER;
-
-		if (msg.type == MessageAudio::Type::AUDIO_DRAIN_TX) {
-			/* already drained, we just stop and invalidate */
-			_audio_stop();
-			_pkg_head.invalidate();
+		if (_samples < max_samples())
 			return;
+
+		if (_audio_running) {
+			_time_window = _left.schedule_and_enqueue(_time_window, { _period_us }, [&] (auto &submit) {
+				for (auto i = 0u; i < _frames_per_period; i++)
+					submit(_left_data[i]);
+			});
+
+			_right.enqueue(_time_window, [&] (auto &submit) {
+				for (auto i = 0u; i < _frames_per_period; i++)
+					submit(_right_data[i]);
+			});
 		}
 
-		if (_pkg_head.value == _pkg_tail.value) {
-			_pkg_head.invalidate();
-			break;
-		} else
-			_pkg_head.advance();
-	} while (true);
-}
+		_samples = 0;
 
+		continue_id = _data_id;
+
+		_data_id ++;
+	}
+
+	MessageAudio msg(MessageAudio::Type::AUDIO_CONTINUE_TX, continue_id);
+	_mb.bus_audio.send(msg);
+}
 
 bool Seoul::Audio::receive(MessageAudio &msg)
 {
@@ -76,13 +69,37 @@ bool Seoul::Audio::receive(MessageAudio &msg)
 	    (msg.type == MessageAudio::Type::AUDIO_DRAIN_TX))
 		return false;
 
+	unsigned const guest_sample_size = sizeof(float);
+
 	Genode::Mutex::Guard guard(_mutex);
 
 	switch (msg.type) {
 	case MessageAudio::Type::AUDIO_START:
+		_audio_start();
+
+		if (msg.period_bytes()) {
+			_frames_per_period = msg.period_bytes() / CHANNELS / guest_sample_size;
+
+			if (_frames_per_period > MAX_CACHED_FRAMES)
+				_frames_per_period = MAX_CACHED_FRAMES;
+
+			_period_us = _frames_per_period * 1'000'000u / 44'100;
+		}
+
+		if (false)
+			Genode::log("start ", msg.period_bytes(), " -> ",
+			            _frames_per_period, " frames -> ", _period_us, " us");
+
+		_timer.trigger_periodic(_period_us);
+
 		return true;
 	case MessageAudio::Type::AUDIO_STOP:
 		_audio_stop();
+		_timer.trigger_periodic(0);
+
+		if (false)
+			Genode::log("stop");
+
 		return true;
 	case MessageAudio::Type::AUDIO_OUT:
 		break;
@@ -91,116 +108,54 @@ bool Seoul::Audio::receive(MessageAudio &msg)
 		return true;
 	}
 
-	/* MessageAudio::Type::AUDIO_OUT */
+	/* case MessageAudio::Type::AUDIO_OUT */
 
-	_audio_start();
+	if (_samples >= max_samples()) {
+		msg.id = _data_id;
+		return true;
+	}
 
 	if (msg.consumed >= msg.size)
 		Logging::panic("audio corrupt consumed=%u msg.size=%u entry\n",
 		               msg.consumed, msg.size);
 
-	while (true) {
+	if (msg.consumed >= msg.size)
+		Logging::panic("audio corrupt consumed=%u msg.size=%u loop\n",
+		               msg.consumed, msg.size);
 
-		#define USE_FLOAT
+	uintptr_t const data_ptr = msg.data + msg.consumed;
 
-#ifdef USE_FLOAT
-		unsigned const guest_sample_size = sizeof(float);
-#else
-		unsigned const guest_sample_size = sizeof(Genode::int16_t);
-#endif
+	auto samples = (((msg.size - msg.consumed) / guest_sample_size) > max_samples())
+	             ? max_samples() : ((msg.size - msg.consumed) / guest_sample_size);
 
-		enum { CHANNELS = 2 };
+	if (samples > max_samples() - _samples)
+		samples = max_samples() - _samples;
 
-		if (msg.consumed >= msg.size)
-			Logging::panic("audio corrupt consumed=%u msg.size=%u loop\n",
-			               msg.consumed, msg.size);
+	if (msg.consumed >= msg.size)
+		Logging::panic("audio corrupt consumed=%u msg.size=%u\n",
+		               msg.consumed, msg.size);
 
-		if (!p_left && _audio_left.stream()->full()) {
-			/* under run case */
-			Genode::log("reset/drain - stream full ?!");
+	for (unsigned i = 0; i < samples / CHANNELS; i++) {
+		unsigned const sample_pos = _samples / CHANNELS + i;
 
-			_audio_stop();
-			_pkg_head.invalidate();
+		float f_left  = ((float *)data_ptr)[i * CHANNELS + 0];
+		float f_right = ((float *)data_ptr)[i * CHANNELS + 1];
 
-			msg.type = MessageAudio::Type::AUDIO_DRAIN_TX;
-			return true;
-		}
 
-		if (!p_left) {
-			try {
-				p_left = _audio_left.stream()->alloc();
-			} catch (...) {
-				if (_audio_verbose)
-					Genode::log("audio - allocation exception");
-				return true;
-			}
-		}
+		if (f_left >  1.0f) f_left =  1.0f;
+		if (f_left < -1.0f) f_left = -1.0f;
 
-		if (!p_left) {
-			if (_audio_verbose)
-				Genode::log("audio - no packet, should not happen");
-			return true;
-		}
+		if (f_right >  1.0f) f_right =  1.0f;
+		if (f_right < -1.0f) f_right = -1.0f;
 
-		uintptr_t const data_ptr = msg.data + msg.consumed;
-
-		auto const max_samples = Audio_out::PERIOD * CHANNELS;
-		unsigned samples = (((msg.size - msg.consumed) / guest_sample_size) > max_samples)
-		                 ? max_samples : ((msg.size - msg.consumed) / guest_sample_size);
-
-		if (samples > max_samples - sample_offset)
-			samples = max_samples - sample_offset;
-
-		unsigned const pos         = _audio_left .stream()->packet_position(p_left);
-		Audio_out::Packet *p_right = _audio_right.stream()->get(pos);
-
-		if (msg.consumed >= msg.size)
-			Logging::panic("audio corrupt consumed=%u msg.size=%u\n",
-			               msg.consumed, msg.size);
-
-		for (unsigned i = 0; i < samples / CHANNELS; i++) {
-			unsigned sample_pos = sample_offset / CHANNELS + i;
-#ifdef USE_FLOAT
-			float f_left  = ((float *)data_ptr)[i*CHANNELS+0];
-			float f_right = ((float *)data_ptr)[i*CHANNELS+1];
-#else
-			float f_left  = float(((Genode::int16_t *)data_ptr)[i*CHANNELS+0]) / 32768.0f;
-			float f_right = float(((Genode::int16_t *)data_ptr)[i*CHANNELS+1]) / 32768.0f;
-#endif
-
-			if (f_left >  1.0f) f_left =  1.0f;
-			if (f_left < -1.0f) f_left = -1.0f;
-
-			if (f_right >  1.0f) f_right =  1.0f;
-			if (f_right < -1.0f) f_right = -1.0f;
-
-			p_left ->content()[sample_pos] = f_left;
-			p_right->content()[sample_pos] = f_right;
-		}
-
-		msg.consumed += samples * guest_sample_size;
-
-		msg.id = _audio_left.stream()->packet_position(p_left);
-		_pkg_tail.value = msg.id;
-
-		if (!_pkg_head.valid())
-			_pkg_head = _pkg_tail;
-
-		if ((sample_offset + samples) != max_samples) {
-			sample_offset = (sample_offset + samples) % max_samples;
-			/* delay packet until we get enough data */
-			return true;
-		}
-
-		_audio_right.submit(p_right);
-		_audio_left .submit(p_left);
-
-		p_left = p_right = nullptr;
-		sample_offset = 0;
-
-		if (msg.consumed >= msg.size)
-			break;
+		_left_data [sample_pos] = f_left;
+		_right_data[sample_pos] = f_right;
 	}
+
+	msg.consumed += samples * guest_sample_size;
+	msg.id        = _data_id;
+
+	_samples += samples;
 
 	return true;
 }
