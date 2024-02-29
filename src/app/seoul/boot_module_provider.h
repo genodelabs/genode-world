@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2011-2017 Genode Labs GmbH
+ * Copyright (C) 2011-2024 Genode Labs GmbH
  * Copyright (C) 2012 Intel Corporation
  *
  * This file is distributed under the terms of the GNU General Public License
@@ -34,7 +34,7 @@ class Boot_module_provider
 {
 	private:
 
-		Genode::Xml_node _multiboot_node;
+		Genode::Xml_node const _multiboot_node;
 
 		enum { MODULE_NAME_MAX_LEN = 48 };
 
@@ -54,7 +54,7 @@ class Boot_module_provider
 		 * \param multiboot_node  XML node containing the list of boot modules
 		 *                        as sub nodes
 		 */
-		Boot_module_provider(Genode::Xml_node multiboot_node)
+		Boot_module_provider(Genode::Xml_node const &multiboot_node)
 		:
 			_multiboot_node(multiboot_node)
 		{ }
@@ -159,76 +159,44 @@ class Boot_module_provider
 		 *
 		 * \return length of command line in bytes, or 0 if module does not exist
 		 */
-		Genode::size_t cmdline(int module_index,
-		                       char *dst, Genode::size_t dst_len) const
+		size_t cmdline(int module_index, char *dst, size_t dst_len) const
 		{
 			using namespace Genode;
 
-			try {
-				Xml_node mod_node = _multiboot_node.sub_node(module_index);
+			if (1ul + module_index > _multiboot_node.num_sub_nodes())
+				return 0;
 
-				if (mod_node.has_type("rom") || mod_node.has_type("inline")) {
+			auto const node = _multiboot_node.sub_node(module_index);
 
-					Genode::size_t cmd_len = 0;
-
-					Name const name = mod_node.attribute_value("name", Name());
-
-					Genode::size_t const name_len = Genode::strlen(name.string());
-
-					/*
-					 * Check if destination buffer can hold the name including
-					 * the zero termination.
-					 */
-					if (name_len + 1 >= dst_len)
-						return 0;
-
-					/* copy name to command line */
-					copy_cstring(&dst[cmd_len], name.string(), name_len + 1);
-					cmd_len += name_len;
-
-					/* check if name fills entire destination buffer */
-					if (cmd_len + 1 == dst_len) {
-						dst[cmd_len++] = 0;
-						return cmd_len;
-					}
-
-					if (mod_node.has_attribute("cmdline")) {
-
-						typedef String<256> Cmdline;
-						Cmdline const cmdline = mod_node.attribute_value("cmdline", Cmdline());
-
-						/* add single space between name and arguments */
-						dst[cmd_len++] = ' ';
-						if (cmd_len + 1 == dst_len) {
-							dst[cmd_len++] = 0;
-							return cmd_len;
-						}
-
-						/* copy 'cmdline' attribute to destination buffer */
-						copy_cstring(&dst[cmd_len], cmdline.string(), dst_len - cmd_len);
-
-						/*
-						 * The string returned by the 'value' function is
-						 * zero-terminated. Count and return the total number
-						 * of command-line characters.
-						 */
-						return Genode::strlen(dst);
-
-					}
-
-					return cmd_len;
-				}
-
-				warning("XML node ", module_index, " in multiboot node has unexpected type");
-
+			if (!node.has_type("rom") && !node.has_type("inline")) {
+				warning("XML node ", module_index, " has unexpected type");
 				return 0;
 			}
-			catch (Xml_node::Nonexistent_sub_node) { }
 
-			/*
-			 * We should get here only if there are XML parsing errors
-			 */
-			return 0;
+			auto const name = node.attribute_value("name", Name());
+
+			if (!name.length() || name.length() > dst_len)
+				return 0;
+
+			/* copy name to command line including zero termination */
+			::memcpy(dst, name.string(), name.length());
+
+			if (!node.has_attribute("cmdline"))
+				return name.length();
+
+			typedef String<256> Cmdline;
+			Cmdline const cmdline = node.attribute_value("cmdline", Cmdline());
+
+			if (!cmdline.length() || cmdline.length() > dst_len - name.length())
+				return 0;
+
+			/* replace zero termination with space between name and arguments */
+			dst[name.length() - 1] = ' ';
+
+			/* copy arguments to command line including zero termination */
+			::memcpy(dst + name.length(), cmdline.string(), cmdline.length());
+
+			return name.length() + cmdline.length();
 		}
 };
 

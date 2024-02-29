@@ -32,6 +32,8 @@ set use_multiboot_modaddr 0x2800000
 
 # Use a Genode run script of a 32bit platform and turn it into a bootable
 # setup for Seoul - adjust build_dir and run_script variable accordingly
+# Nowadays 64bit guests are also supported.
+
 set run_script      "log"
 set build_dir       "../x86_32"
 set run_script_path "$build_dir/var/run/$run_script"
@@ -48,16 +50,16 @@ set files_vm [exec isoinfo -i $genode_iso -x "/boot/grub/grub.cfg;1" 2> /dev/nul
 set vm [split $files_vm "\n"]
 set guest_os_binaries {}
 foreach line $vm {
-	if {[regexp "module\.*" $line] || [regexp "kernel\.*" $line]} {
+	if {[regexp "^ *module\.*" $line] || [regexp "^ *multiboot\.*" $line]} {
 		set label_file [lindex $line 1]
 		set binary_cmdline [lrange $line 2 end]
-		regsub -all "/fiasco/" $label_file "" binary_file
-		regsub -all "/boot/" $binary_file "" binary_file
+		regsub -all "/boot/"   $label_file  "" binary_file
 		regsub -all "/genode/" $binary_file "" binary_file
 
 		set file_type [exec file $run_script_path$label_file]
 		if {[regexp "gzip" $file_type]} {
-			puts "bender can't handle gzip types $run_script_path$label_file"
+			# neither bender nor executor/vbios_multiboot support unpacking
+			puts "can't handle gzip types $run_script_path$label_file"
 			exit 2
 		}
 
@@ -73,11 +75,13 @@ foreach line $vm {
 		}
 	}
 }
+
 # Seoul VM setup done
 
 source ${genode_dir}/repos/world/run/seoul.inc
 
 append qemu_args " -m 1024 "
+append qemu_args " -smp $vcpus_to_be_used"
 append qemu_args " -cpu EPYC "
 #append qemu_args " -accel kvm -cpu host"
 
