@@ -1,7 +1,7 @@
 SDL2_MIXER_PORT_DIR := $(call select_from_ports,sdl2_mixer)
 SRC_DIR := $(SDL2_MIXER_PORT_DIR)/src/lib/sdl2_mixer
 
-LIBS += libc libm sdl2 libFLAC libogg libvorbis opus opusfile
+LIBS += libc libm sdl2 libFLAC libogg libvorbis
 
 SRC_C := $(addprefix src/,$(notdir $(wildcard $(SRC_DIR)/src/*.c))) \
          $(addprefix src/codecs/,$(notdir $(wildcard $(SRC_DIR)/src/codecs/*.c)))
