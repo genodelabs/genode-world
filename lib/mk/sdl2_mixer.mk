@@ -25,7 +25,7 @@ endif
 #CC_OPT_wavestream      = -Wno-unused-but-set-variable
 #CC_OPT_effect_position = -Wno-misleading-indentation
 
-CC_OPT += -DMUSIC_OGG -DMUSIC_FLAC_LIBFLAC
+CC_OPT += -DMUSIC_OGG -DMUSIC_FLAC_LIBFLAC -DMUSIC_MP3_DRMP3
 
 # fix opusfile.h header file location <opus/…>
 #CC_OPT += -DMUSIC_OPUS
