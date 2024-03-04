@@ -35,7 +35,7 @@
 		<rom label="rc"/>
 		<rom label="terminal"/>
 		<rom label="vfs.lib.so"/>
-		<rom label="vfs_legacy_oss.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
 		<rom label="vfs_pipe.lib.so"/>
 	</content>
 

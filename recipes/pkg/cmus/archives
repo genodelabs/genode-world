@@ -13,5 +13,5 @@ _/src/opus
 _/src/posix
 _/src/terminal
 _/src/vfs
-_/src/vfs_legacy_oss
+_/src/vfs_oss
 _/src/vfs_pipe
