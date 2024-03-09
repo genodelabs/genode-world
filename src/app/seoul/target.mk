@@ -27,7 +27,11 @@ include $(call select_from_repositories,lib/mk/libc-common.inc)
 CC_WARN += -Wno-unused
 
 CC_CXX_OPT += -march=core2
+# 32bit builds need this ssse3 enforcement
 CC_OPT_model/intel82576vf := -mssse3
+CC_OPT_model/rtl8029      := -mssse3
+CC_OPT_network            := -mssse3
+
 CC_OPT_PIC :=
 
 vpath %.cc  $(SEOUL_CONTRIB_DIR)

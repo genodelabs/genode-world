@@ -769,7 +769,6 @@ class Machine : public StaticReceiver<Machine>
 		bool                   _map_small    { false   };
 		bool                   _rdtsc_exit   { false   };
 		bool                   _same_cpu     { false   };
-		Seoul::Network        *_nic          { nullptr };
 		Rtc::Session          *_rtc          { nullptr };
 		Seoul::Audio          *_audio        { nullptr };
 
@@ -1030,35 +1029,23 @@ class Machine : public StaticReceiver<Machine>
 					return true;
 				}
 			case MessageHostOp::OP_GET_MAC:
-				{
-					if (_nic) {
-						Logging::printf("Solely one network connection supported\n");
+			{
+				try {
+					/* casted later to unsigned */
+					if (msg.value >= 1ull << 32)
 						return false;
-					}
 
-					try {
-						_nic = new (_heap) Seoul::Network(_env, _heap,
-						                                  _motherboard);
-					} catch (...) {
-						Logging::printf("Creating network connection failed\n");
-						return false;
-					}
+					new (_heap) Seoul::Network(_env, _heap,
+					                           _unsynchronized_motherboard,
+					                           msg);
 
-					Nic::Mac_address mac = _nic->mac_address();
-
-					Logging::printf("Mac address: %2x:%2x:%2x:%2x:%2x:%2x\n",
-					                mac.addr[0], mac.addr[1], mac.addr[2],
-					                mac.addr[3], mac.addr[4], mac.addr[5]);
-
-					msg.mac = ((Genode::uint64_t)mac.addr[0] & 0xff) << 40 |
-					          ((Genode::uint64_t)mac.addr[1] & 0xff) << 32 |
-					          ((Genode::uint64_t)mac.addr[2] & 0xff) << 24 |
-					          ((Genode::uint64_t)mac.addr[3] & 0xff) << 16 |
-					          ((Genode::uint64_t)mac.addr[4] & 0xff) <<  8 |
-					          ((Genode::uint64_t)mac.addr[5] & 0xff);
-
-					return true;
+				} catch (...) {
+					Logging::printf("Creating network connection failed\n");
+					return false;
 				}
+
+				return true;
+			}
 			default:
 
 				Logging::printf("HostOp %d not implemented\n", msg.type);
@@ -1134,17 +1121,6 @@ class Machine : public StaticReceiver<Machine>
 			return true;
 		}
 
-		bool receive(MessageNetwork &msg)
-		{
-			if (msg.type != MessageNetwork::PACKET) return false;
-
-			if (!_nic)
-				return false;
-
-			/* XXX parallel invocations supported ? */
-			return _nic->transmit(msg.buffer, msg.len);
-		}
-
 		bool receive(MessagePciConfig &msg)
 		{
 			if (verbose_debug)
@@ -1196,7 +1172,6 @@ class Machine : public StaticReceiver<Machine>
 			_unsynchronized_motherboard.bus_hostop.add  (this, receive_static<MessageHostOp>);
 			_unsynchronized_motherboard.bus_timer.add   (this, receive_static<MessageTimer>);
 			_unsynchronized_motherboard.bus_time.add    (this, receive_static<MessageTime>);
-			_unsynchronized_motherboard.bus_network.add (this, receive_static<MessageNetwork>);
 			_unsynchronized_motherboard.bus_hwpcicfg.add(this, receive_static<MessageHwPciConfig>);
 			_unsynchronized_motherboard.bus_acpi.add    (this, receive_static<MessageAcpi>);
 			_unsynchronized_motherboard.bus_legacy.add  (this, receive_static<MessageLegacy>);
@@ -1368,10 +1343,8 @@ class Machine : public StaticReceiver<Machine>
 };
 
 
-extern unsigned long _prog_img_beg;  /* begin of program image (link address) */
-extern unsigned long _prog_img_end;  /* end of program image */
-
 extern void heap_init_env(Genode::Heap *);
+
 
 void Component::construct(Genode::Env &env)
 {
@@ -1420,11 +1393,6 @@ void Component::construct(Genode::Env &env)
 
 	/* diagnostic messages */
 	guest_memory.dump_regions();
-
-	Genode::log("- vmm: ", Hex_range((Genode::addr_t)&_prog_img_beg,
-	            (Genode::addr_t)&_prog_img_end - (Genode::addr_t)&_prog_img_beg),
-	            " - seoul program image");
-
 
 	if (!guest_memory.backing_store_local_base()) {
 		Genode::error("Not enough space left for ",

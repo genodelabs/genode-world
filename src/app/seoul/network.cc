@@ -7,7 +7,7 @@
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2017 Genode Labs GmbH
+ * Copyright (C) 2013-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -22,87 +22,133 @@
 /* local includes */
 #include "network.h"
 
+#include <service/net.h>
+
+
+unsigned NicID::id;
+
 
 Seoul::Network::Network(Genode::Env &env, Genode::Heap &heap,
-                        Synced_motherboard &mb)
+                        Motherboard &mb, MessageHostOp &msg)
 :
 	_motherboard(mb), _tx_block_alloc(&heap),
 	_nic(env, &_tx_block_alloc, BUF_SIZE, BUF_SIZE),
-	_rx_handler(env.ep(), *this, &Network::_handle_rx)
+	_client_id(unsigned(msg.value)),
+	_rx_handler(env.ep(), *this, &Network::_handle_rx),
+	_link_state(env.ep(), *this, &Network::_handle_link)
 {
 	_nic.rx_channel()->sigh_packet_avail(_rx_handler);
 	_nic.rx_channel()->sigh_ready_to_ack(_rx_handler);
-	/* vCPU EPs are synced by sync_motherboard, but adding main EP due
-	 * to an own handler causes SMP trouble - avoid it
+	_nic.link_state_sigh(_link_state);
+
+	/*
+	   makes solely sense if we can stall packets in network models and resume
+	   later, which is not supported by now
+
 	_nic.tx_channel()->sigh_ready_to_submit(_tx_handler);
 	_nic.tx_channel()->sigh_ack_avail(_tx_handler);
 	*/
+
+	_motherboard.bus_network.add (this, receive_static<MessageNetwork>);
+
+	auto const mac = _nic.mac_address();
+
+	Genode::log("network adapter ", _client_id, ", mac ", mac);
+
+	Genode::uint64_t mac_raw = 0;
+	memcpy(&mac_raw, mac.addr, 6);
+	msg.mac = __builtin_bswap64(mac_raw) >> 16;
+
+	_handle_link();
 }
 
 
 void Seoul::Network::_handle_rx()
 {
-	while (_nic.rx()->packet_avail()) {
+	Genode::Mutex::Guard guard(_mutex);
 
-		if (!_nic.rx()->ready_to_ack()) {
+	auto &rx = *_nic.rx();
+
+	if (!rx.packet_avail())
+		return;
+
+	while (rx.packet_avail()) {
+
+		if (!rx.ready_to_ack()) {
 			Genode::warning("network: not ready for receive ack");
 			break;
 		}
 
-		Nic::Packet_descriptor rx_packet = _nic.rx()->get_packet();
+		Nic::Packet_descriptor rx_packet = rx.try_get_packet();
+
+		if (!rx_packet.size())
+			break;
 
 		/* send it to the network bus */
-		char * rx_content = _nic.rx()->packet_content(rx_packet);
+		char * rx_content = rx.packet_content(rx_packet);
 		_forward_pkt = rx_content;
-		MessageNetwork msg((unsigned char *)rx_content, rx_packet.size(), 0);
-		_motherboard()->bus_network.send(msg);
+
+		_mutex.release();
+
+		MessageNetwork msg(MessageNetwork::PACKET,
+		                   { .buffer = (unsigned char *)rx_content, .len = rx_packet.size() },
+		                   _client_id, false /* no more packets */);
+		_motherboard.bus_network.send(msg);
+
+		_mutex.acquire();
+
 		_forward_pkt = 0;
 
 		/* acknowledge received packet */
-		_nic.rx()->acknowledge_packet(rx_packet);
+		rx.try_ack_packet(rx_packet);
 	}
+
+	rx.wakeup();
 }
 
 
-void Seoul::Network::_handle_tx()
+bool Seoul::Network::receive(MessageNetwork &msg)
 {
-	/* check for acknowledgements */
-	while (_nic.tx()->ack_avail()) {
-		Nic::Packet_descriptor const ack = _nic.tx()->get_acked_packet();
-		_nic.tx()->release_packet(ack);
-	}
-}
+	if (msg.type != MessageNetwork::PACKET || msg.client != _client_id)
+		return false;
 
-
-bool Seoul::Network::transmit(void const * const packet, Genode::size_t len)
-{
-	if (packet == _forward_pkt)
+	if (msg.data.buffer == _forward_pkt)
 		/* don't end in an endless forwarding loop */
 		return false;
 
+	Genode::Mutex::Guard guard(_mutex);
+
+	auto &tx = *_nic.tx();
+
 	/* check for acknowledgements */
-	_handle_tx();
+	while (tx.ack_avail())
+		tx.release_packet(tx.try_get_acked_packet());
 
-	/* exception is no option */
-	if (!_nic.tx()->ready_to_submit()) {
-		Genode::warning("network: congested - submit issue\n");
-		return false;
+	if (!tx.ready_to_submit()) {
+		Genode::warning("network: congested - submit issue - drop packet\n");
+		tx.wakeup(); /* in case msg.more was set in previous invocations */
+		return true;
 	}
 
-	/* allocate transmit packet */
-	Nic::Packet_descriptor tx_packet;
-	try {
-		tx_packet = _nic.tx()->alloc_packet(len);
-	} catch (Nic::Session::Tx::Source::Packet_alloc_failed) {
-		Genode::warning("network: congested - alloc issue\n");
-		return false;
-	}
+	tx.alloc_packet_attempt(msg.data.len).with_result([&] (auto &tx_packet) {
+		memcpy(tx.packet_content(tx_packet), msg.data.buffer, msg.data.len);
+		tx.try_submit_packet(tx_packet);
+	}, [&] (auto) {
+		Genode::warning("network: congested - alloc issue - drop packet\n");
+	});
 
-	/* fill packet with content */
-	char * const tx_content = _nic.tx()->packet_content(tx_packet);
-	memcpy(tx_content, packet, len);
-
-	_nic.tx()->submit_packet(tx_packet);
+	if (!msg.more)
+		tx.wakeup();
 
 	return true;
+}
+
+
+void Seoul::Network::_handle_link()
+{
+	MessageNetwork msg(MessageNetwork::LINK,
+	                   { .link_up = _nic.link_state() },
+	                   _client_id, false);
+
+	_motherboard.bus_network.send(msg);
 }

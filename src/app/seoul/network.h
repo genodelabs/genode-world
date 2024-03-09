@@ -7,7 +7,7 @@
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2017 Genode Labs GmbH
+ * Copyright (C) 2013-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -29,14 +29,16 @@
 #include <nic_session/connection.h>
 #include <nic/packet_allocator.h>
 
-/* local includes */
-#include "synced_motherboard.h"
+#include <nul/motherboard.h>
+
 
 namespace Seoul {
 	class Network;
+
+	using Genode::Signal_handler;
 }
 
-class Seoul::Network
+class Seoul::Network : public StaticReceiver<Network>
 {
 	private:
 
@@ -45,29 +47,26 @@ class Seoul::Network
 			BUF_SIZE    = Nic::Session::QUEUE_SIZE * PACKET_SIZE,
 		};
 
-		Synced_motherboard   &_motherboard;
-		Nic::Packet_allocator _tx_block_alloc;
-		Nic::Connection       _nic;
-
-		Genode::Signal_handler<Network> const _rx_handler;
-		void const *                          _forward_pkt = nullptr;
+		Genode::Mutex                   _mutex { };
+		Motherboard                   & _motherboard;
+		Nic::Packet_allocator           _tx_block_alloc;
+		Nic::Connection                 _nic;
+		unsigned                const   _client_id;
+		Signal_handler<Network> const   _rx_handler;
+		Signal_handler<Network> const   _link_state;
+		void                    const * _forward_pkt = nullptr;
 
 		void _handle_rx();
-		void _handle_tx();
+		void _handle_link();
 
-		/*
-		 * Noncopyable
-		 */
-		Network(Network const &);
+		Network             (Network const &);
 		Network &operator = (Network const &);
 
 	public:
 
-		Network(Genode::Env &, Genode::Heap &, Synced_motherboard &);
+		Network(Genode::Env &, Genode::Heap &, Motherboard &, MessageHostOp &);
 
-		Nic::Mac_address mac_address() { return _nic.mac_address(); }
-
-		bool transmit(void const * const packet, Genode::size_t len);
+		bool receive(MessageNetwork &msg);
 };
 
 #endif /* _NETWORK_H_ */
