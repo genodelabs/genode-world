@@ -54,7 +54,6 @@ class Seoul::Network : public StaticReceiver<Network>
 		unsigned                const   _client_id;
 		Signal_handler<Network> const   _rx_handler;
 		Signal_handler<Network> const   _link_state;
-		void                    const * _forward_pkt = nullptr;
 
 		void _handle_rx();
 		void _handle_link();

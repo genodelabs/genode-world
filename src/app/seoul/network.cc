@@ -86,18 +86,15 @@ void Seoul::Network::_handle_rx()
 
 		/* send it to the network bus */
 		char * rx_content = rx.packet_content(rx_packet);
-		_forward_pkt = rx_content;
 
 		_mutex.release();
 
-		MessageNetwork msg(MessageNetwork::PACKET,
+		MessageNetwork msg(MessageNetwork::PACKET_TO_MODEL,
 		                   { .buffer = (unsigned char *)rx_content, .len = rx_packet.size() },
 		                   _client_id, false /* no more packets */);
 		_motherboard.bus_network.send(msg);
 
 		_mutex.acquire();
-
-		_forward_pkt = 0;
 
 		/* acknowledge received packet */
 		rx.try_ack_packet(rx_packet);
@@ -109,11 +106,7 @@ void Seoul::Network::_handle_rx()
 
 bool Seoul::Network::receive(MessageNetwork &msg)
 {
-	if (msg.type != MessageNetwork::PACKET || msg.client != _client_id)
-		return false;
-
-	if (msg.data.buffer == _forward_pkt)
-		/* don't end in an endless forwarding loop */
+	if (msg.type != MessageNetwork::PACKET_TO_HOST || msg.client != _client_id)
 		return false;
 
 	Genode::Mutex::Guard guard(_mutex);
