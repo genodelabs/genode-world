@@ -1,0 +1,53 @@
+<runtime ram="64M" caps="512" binary="sdl2_playmus">
+
+	<requires>
+		<file_system label="media"/>
+		<play/>
+		<record/>
+		<rtc/>
+		<timer/>
+	</requires>
+
+	<content>
+		<rom label="ld.lib.so"/>
+		<rom label="sdl2_playmus"/>
+		<rom label="egl.lib.so"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libiconv.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libdrm.lib.so"/>
+		<rom label="libFLAC.lib.so"/>
+		<rom label="libogg.lib.so"/>
+		<rom label="libvorbis.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="opus.lib.so"/>
+		<rom label="sdl2.lib.so"/>
+		<rom label="sdl2_mixer.lib.so"/>
+		<rom label="sdl2_net.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_gpu.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" stdin="/dev/null" rtc="/dev/rtc"/>
+		<arg value="sdl2_playmus"/>
+		<arg value="/media/example.mp3"/>
+		<vfs>
+			<dir name="dev">
+				<log/> <rtc/>
+				<oss name="dsp"/>
+				<gpu/>
+			</dir>
+			<dir name="media">
+				<fs label="media"/>
+			</dir>
+		</vfs>
+	</config>
+
+</runtime>
