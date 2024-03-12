@@ -22,6 +22,7 @@
 namespace Seoul {
 	void write_vcpu_state(CpuState &, unsigned mtr, Genode::Vcpu_state &);
 	unsigned read_vcpu_state(Genode::Vcpu_state &, CpuState &);
+	void dump(unsigned mtr, Genode::Vcpu_state const &, CpuState const &);
 }
 
 #endif /* _STATE_H_ */

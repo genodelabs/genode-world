@@ -466,3 +466,204 @@ unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 
 	return mtr;
 }
+
+void Seoul::dump(unsigned mtr, Genode::Vcpu_state const &state, CpuState const &seoul)
+{
+	using namespace Genode;
+
+	auto output_reg = [&](auto const &string, auto const &value, auto const &value2) {
+		auto const diff_xor = value ^ value2;
+
+		if (diff_xor)
+			log(string, " ", Hex(value , Hex::PREFIX, Hex::PAD),
+			            " ", Hex(value2, Hex::PREFIX, Hex::PAD),
+			            " ^:", Hex(diff_xor));
+	};
+
+	if (mtr & MTD_GPR_ACDB) {
+		output_reg("rax", state.ax.value(), seoul.rax);
+		output_reg("rcx", state.cx.value(), seoul.rcx);
+		output_reg("rdx", state.dx.value(), seoul.rdx);
+		output_reg("rbx", state.bx.value(), seoul.rbx);
+		mtr &= ~MTD_GPR_ACDB;
+	}
+
+	if (mtr & MTD_GPR_BSD) {
+		output_reg("rdi", state.di.value(), seoul.rdi);
+		output_reg("rsi", state.si.value(), seoul.rsi);
+		output_reg("rbp", state.bp.value(), seoul.rbp);
+		mtr &= ~MTD_GPR_BSD;
+	}
+
+	if (mtr & MTD_RIP_LEN) {
+		output_reg("rip"   , state.ip.value(),     seoul.rip);
+		output_reg("ip_len", state.ip_len.value(), seoul.inst_len);
+		mtr &= ~MTD_RIP_LEN;
+	}
+
+	if (mtr & MTD_RSP) {
+		output_reg("rsp", state.sp.value(), seoul.rsp);
+		mtr &= ~MTD_RSP;
+	}
+
+	if (mtr & MTD_RFLAGS) {
+		output_reg("rfl", state.flags.value(), seoul.rfl);
+		mtr &= ~MTD_RFLAGS;
+	}
+
+	if (mtr & MTD_DR) {
+		output_reg("dr7", state.dr7.value(), seoul.dr7);
+		mtr &= ~MTD_DR;
+	}
+
+	if (mtr & MTD_CR) {
+		output_reg("cr0", state.cr0.value(), seoul.cr0);
+		output_reg("cr2", state.cr2.value(), seoul.cr2);
+		output_reg("cr3", state.cr3.value(), seoul.cr3);
+		output_reg("cr4", state.cr4.value(), seoul.cr4);
+		mtr &= ~MTD_CR;
+	}
+
+	if (mtr & MTD_CS_SS) {
+		output_reg("cs   sel", state.cs.value().sel,   seoul.cs.sel);
+		output_reg("cs    ar", state.cs.value().ar,    seoul.cs.ar);
+		output_reg("cs limit", state.cs.value().limit, seoul.cs.limit);
+		output_reg("cs base" , state.cs.value().base,  seoul.cs.base);
+
+		output_reg("ss   sel", state.ss.value().sel,   seoul.ss.sel);
+		output_reg("ss    ar", state.ss.value().ar,    seoul.ss.ar);
+		output_reg("ss limit", state.ss.value().limit, seoul.ss.limit);
+		output_reg("ss base" , state.ss.value().base,  seoul.ss.base);
+		mtr &= ~MTD_CS_SS;
+	}
+
+	if (mtr & MTD_DS_ES) {
+		output_reg("ds   sel", state.ds.value().sel,   seoul.ds.sel);
+		output_reg("ds    ar", state.ds.value().ar,    seoul.ds.ar);
+		output_reg("ds limit", state.ds.value().limit, seoul.ds.limit);
+		output_reg("ds base" , state.ds.value().base,  seoul.ds.base);
+
+		output_reg("es   sel", state.es.value().sel,   seoul.es.sel);
+		output_reg("es    ar", state.es.value().ar,    seoul.es.ar);
+		output_reg("es limit", state.es.value().limit, seoul.es.limit);
+		output_reg("es base" , state.es.value().base,  seoul.es.base);
+		mtr &= ~MTD_DS_ES;
+	}
+
+	if (mtr & MTD_FS_GS) {
+		output_reg("fs   sel", state.fs.value().sel,   seoul.fs.sel);
+		output_reg("fs    ar", state.fs.value().ar,    seoul.fs.ar);
+		output_reg("fs limit", state.fs.value().limit, seoul.fs.limit);
+		output_reg("fs base" , state.fs.value().base,  seoul.fs.base);
+
+		output_reg("gs   sel", state.gs.value().sel,   seoul.gs.sel);
+		output_reg("gs    ar", state.gs.value().ar,    seoul.gs.ar);
+		output_reg("gs limit", state.gs.value().limit, seoul.gs.limit);
+		output_reg("gs base" , state.gs.value().base,  seoul.gs.base);
+		mtr &= ~MTD_FS_GS;
+	}
+
+	if (mtr & MTD_TR) {
+		output_reg("tr   sel", state.tr.value().sel,   seoul.tr.sel);
+		output_reg("tr    ar", state.tr.value().ar,    seoul.tr.ar);
+		output_reg("tr limit", state.tr.value().limit, seoul.tr.limit);
+		output_reg("tr base" , state.tr.value().base,  seoul.tr.base);
+		mtr &= ~MTD_TR;
+	}
+
+	if (mtr & MTD_LDTR) {
+		output_reg("ldtr   sel", state.ldtr.value().sel,   seoul.ld.sel);
+		output_reg("ldtr    ar", state.ldtr.value().ar,    seoul.ld.ar);
+		output_reg("ldtr limit", state.ldtr.value().limit, seoul.ld.limit);
+		output_reg("ldtr base" , state.ldtr.value().base,  seoul.ld.base);
+		mtr &= ~MTD_LDTR;
+	}
+
+	if (mtr & MTD_GDTR) {
+		output_reg("gdtr limit", state.gdtr.value().limit, seoul.gd.limit);
+		output_reg("gdtr base" , state.gdtr.value().base,  seoul.gd.base);
+		mtr &= ~MTD_GDTR;
+	}
+
+	if (mtr & MTD_IDTR) {
+		output_reg("idtr limit", state.idtr.value().limit, seoul.id.limit);
+		output_reg("idtr base" , state.idtr.value().base,  seoul.id.base);
+		mtr &= ~MTD_IDTR;
+	}
+
+	if (mtr & MTD_SYSENTER) {
+		output_reg("sysenter_cs", state.sysenter_cs.value(), seoul.sysenter_cs);
+		output_reg("sysenter_sp", state.sysenter_sp.value(), seoul.sysenter_esp);
+		output_reg("sysenter_ip", state.sysenter_ip.value(), seoul.sysenter_eip);
+		mtr &= ~MTD_SYSENTER;
+	}
+
+	if (mtr & MTD_QUAL) {
+		output_reg("qual_primary",   state.qual_primary.value(),   seoul.qual[0]);
+		output_reg("qual_secondary", state.qual_secondary.value(), seoul.qual[1]);
+		mtr &= ~MTD_QUAL;
+	}
+
+	if (mtr & MTD_CTRL) {
+		output_reg("ctrl_primary",   state.ctrl_primary.value(),   seoul.ctrl[0]);
+		output_reg("ctrl_secondary", state.ctrl_secondary.value(), seoul.ctrl[1]);
+		mtr &= ~MTD_CTRL;
+	}
+
+	if (mtr & MTD_INJ) {
+		output_reg("inj_info",  state.inj_info.value(),  seoul.inj_info);
+		output_reg("inj_error", state.inj_error.value(), seoul.inj_error);
+		mtr &= ~MTD_INJ;
+	}
+
+	if (mtr & MTD_STATE) {
+		output_reg("intr_state", state.intr_state.value(), seoul.intr_state);
+		output_reg("actv_state", state.actv_state.value(), seoul.actv_state);
+		mtr &= ~MTD_STATE;
+	}
+
+	if (mtr & MTD_TSC) {
+		output_reg("tsc    ", state.tsc.value(),        seoul.tsc_value);
+		output_reg("tsc_off", state.tsc_offset.value(), seoul.tsc_off);
+		mtr &= ~MTD_TSC;
+	}
+
+#ifdef __x86_64__
+	if (mtr & MTD_EFER) {
+		output_reg("efer", state.efer.value(), seoul.efer);
+		mtr &= ~MTD_EFER;
+	}
+
+	if (mtr & MTD_R8_R15) {
+		output_reg("r8 ", state.r8.value() , seoul.r8);
+		output_reg("r9 ", state.r9.value() , seoul.r9);
+		output_reg("r10", state.r10.value(), seoul.r10);
+		output_reg("r11", state.r11.value(), seoul.r11);
+		output_reg("r12", state.r12.value(), seoul.r12);
+		output_reg("r13", state.r13.value(), seoul.r13);
+		output_reg("r14", state.r14.value(), seoul.r14);
+		output_reg("r15", state.r15.value(), seoul.r15);
+		mtr &= ~MTD_R8_R15;
+	}
+
+	if (mtr & MTD_SYSCALL_SWAPGS) {
+		output_reg("star ", state.star.value() , seoul.star);
+		output_reg("cstar", state.cstar.value(), seoul.cstar);
+		output_reg("lstar", state.lstar.value(), seoul.lstar);
+		output_reg("fmask", state.fmask.value(), seoul.fmask);
+		output_reg("kernel_gs_base", state.kernel_gs_base.value(), seoul.kernel_gs);
+		mtr &= ~MTD_SYSCALL_SWAPGS;
+	}
+
+	if (mtr & MTD_PDPTE) {
+		output_reg("pdpte_0", state.pdpte_0.value() , seoul.pdpte[0]);
+		output_reg("pdpte_1", state.pdpte_1.value() , seoul.pdpte[1]);
+		output_reg("pdpte_2", state.pdpte_2.value() , seoul.pdpte[2]);
+		output_reg("pdpte_3", state.pdpte_3.value() , seoul.pdpte[3]);
+		mtr &= ~MTD_PDPTE;
+	}
+#endif
+
+	if (mtr)
+		error("unknown state to dump ", Hex(mtr));
+}

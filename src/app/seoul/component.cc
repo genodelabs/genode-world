@@ -310,7 +310,8 @@ class Vcpu : public StaticReceiver<Vcpu>
 				mtd = MTD_ALL;
 				break;
 			case 0x1e: /* _vmx_ioio */
-				mtd = MTD_RIP_LEN | MTD_QUAL | MTD_GPR_ACDB | MTD_STATE | MTD_RFLAGS;
+				mtd = MTD_RIP_LEN | MTD_QUAL | MTD_GPR_ACDB | MTD_GPR_BSD |
+				      MTD_STATE | MTD_RFLAGS;
 				break;
 			case 0x28: /* _vmx_pause */
 				mtd = MTD_RIP_LEN | MTD_STATE;
@@ -365,7 +366,8 @@ class Vcpu : public StaticReceiver<Vcpu>
 				mtd = MTD_RIP_LEN | MTD_GPR_ACDB | MTD_TSC | MTD_STATE;
 				break;
 			case 0x7b: /* _svm_ioio */
-				mtd = MTD_RIP_LEN | MTD_QUAL | MTD_GPR_ACDB | MTD_STATE;
+				mtd = MTD_RIP_LEN | MTD_QUAL | MTD_GPR_ACDB | MTD_GPR_BSD |
+				      MTD_STATE | MTD_RFLAGS;
 				break;
 			case 0x7c: /* _svm_msr, MTD_ALL */
 			case 0x7f: /* _triple, MTD_ALL */
@@ -576,9 +578,9 @@ class Vcpu : public StaticReceiver<Vcpu>
 		void _svm_ioio(Genode::Vcpu_state & state)
 		{
 			if (state.qual_primary.value() & 0x4) {
-				Genode::log("invalid gueststate");
-				state.discharge(); /* reset */
-				state.ctrl_secondary.charge(0);
+				/* in/out string ops handled by instruction emulator halifax */
+				state.ip_len.charge(Genode::addr_t(state.qual_secondary.value() - state.ip.value()));
+				handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
 			} else {
 				unsigned order = unsigned(((state.qual_primary.value() >> 4) & 7) - 1);
 
@@ -681,14 +683,11 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		void _vmx_ioio(Genode::Vcpu_state & state)
 		{
-			unsigned order = 0U;
 			if (state.qual_primary.value() & 0x10) {
-				Logging::printf("invalid gueststate\n");
-				assert(state.flags.charged());
-				state.discharge(); /* reset */
-				state.flags.charge(state.flags.value() & ~2U);
+				/* in/out string ops handled by instruction emulator halifax */
+				handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
 			} else {
-				order = state.qual_primary.value() & 7;
+				unsigned order = state.qual_primary.value() & 7;
 				/*
 				 * Table 28-5. Exit Qualification for I/O Instructions
 				 * order 0 == 8bit, 1 == 16bit, 3 == 32bit
