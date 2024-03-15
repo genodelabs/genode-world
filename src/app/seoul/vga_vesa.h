@@ -48,6 +48,7 @@ class Seoul::Vga_vesa
 		Vga_vesa(Vga_vesa const &);
 		Vga_vesa &operator = (Vga_vesa const &);
 
+		Genode::Mutex        _mutex { };
 		Seoul::Guest_memory &_memory;
 		VgaRegs             *_regs     { nullptr };
 		char                *_guest_fb { nullptr };
@@ -148,6 +149,8 @@ class Seoul::Vga_vesa
 
 		void init(VgaRegs *regs, char *guest_fb, uint64 fb_phys_base)
 		{
+			Genode::Mutex::Guard guard(_mutex);
+
 			_regs = regs;
 			_guest_fb = guest_fb;
 			_fb_phys_base = fb_phys_base;
@@ -155,6 +158,8 @@ class Seoul::Vga_vesa
 
 		Milliseconds handle_fb_gui(Backend_gui &gui, bool const cpus_active)
 		{
+			Genode::Mutex::Guard guard(_mutex);
+
 			if (!_guest_fb || !_regs)
 				return Milliseconds(0ULL);
 
@@ -170,14 +175,18 @@ class Seoul::Vga_vesa
 			bool reactivate = (access >= PHYS_FRAME_VGA &&
 			                   access < PHYS_FRAME_VGA_COLOR + FRAME_COUNT_COLOR);
 
-			if (reactivate)
+			if (reactivate) {
+				Genode::Mutex::Guard guard(_mutex);
 				_fb_state.vga_off = false;
+			}
 
 			return reactivate;
 		}
 
 		bool reactivate_key_pressed()
 		{
+			Genode::Mutex::Guard guard(_mutex);
+
 			bool reactivate = _fb_state.vga_off || _fb_state.vesa_off;
 
 			if (_fb_state.vga_off)  _fb_state.vga_off  = false;
@@ -190,6 +199,8 @@ class Seoul::Vga_vesa
 		{
 			if (!msg.info)
 				return false;
+
+			Genode::Mutex::Guard guard(_mutex);
 
 			/*
 			 * We supply two modes to the guest, text mode and one
@@ -243,6 +254,7 @@ class Seoul::Vga_vesa
 
 		bool idle()
 		{
+			Genode::Mutex::Guard guard(_mutex);
 			return _fb_state.idle > 500;
 		}
 };

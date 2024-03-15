@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Genode Labs GmbH
+ * Copyright (C) 2011-2024 Genode Labs GmbH
  * Copyright (C) 2012 Intel Corporation
  *
  * This file is distributed under the terms of the GNU General Public License
@@ -22,16 +22,11 @@
  */
 
 /* base includes */
-#include <base/allocator_avl.h>
 #include <base/attached_rom_dataspace.h>
 #include <base/component.h>
 #include <base/heap.h>
-#include <base/rpc_server.h>
-#include <base/synced_interface.h>
-#include <rm_session/connection.h>
-#include <rom_session/connection.h>
-#include <util/touch.h>
-#include <util/misc_math.h>
+
+#include <timer_session/connection.h>
 
 #include <vm_session/connection.h>
 #include <vm_session/handler.h>
@@ -41,9 +36,8 @@
 #include <nic_session/connection.h>
 #include <nic/packet_allocator.h>
 #include <rtc_session/connection.h>
-#include <timer_session/connection.h>
 
-/* Seoul includes as used by NOVA userland (NUL) */
+/* Seoul includes */
 #include <nul/vcpu.h>
 #include <nul/motherboard.h>
 
@@ -51,7 +45,6 @@
 #include <service/time.h>
 
 /* local includes */
-#include "synced_motherboard.h"
 #include "device_model_registry.h"
 #include "boot_module_provider.h"
 #include "console.h"
@@ -77,56 +70,64 @@ enum {
 
 using Genode::Attached_rom_dataspace;
 
-typedef Genode::Synced_interface<TimeoutList<32, void> > Synced_timeout_list;
 
 class Timeouts
 {
 	private:
 
 		Timer::Connection                 _timer;
-		Synced_motherboard               &_motherboard;
-		Synced_timeout_list              &_timeouts;
+		Motherboard                      &_motherboard;
 		Genode::Signal_handler<Timeouts>  _timeout_sigh;
+
+		Genode::Mutex                     _mutex    { };
+		TimeoutList<32, void>             _timeouts { };
+
 		Late_timeout                      _late { };
 
 		Genode::uint64_t _check_and_wakeup()
 		{
-			Late_timeout::Remote const timeout_remote = _late.reset();
+			Genode::Mutex::Guard guard(_mutex);
 
-			timevalue const now = _motherboard()->clock()->time();
+			auto      const timeout_remote = _late.reset();
+			timevalue const now            = _motherboard.clock()->time();
 
-			unsigned timer_nr;
+			unsigned timer_nr      = 0;
 			unsigned timeout_count = 0;
 
-			while ((timer_nr = _timeouts()->trigger(now))) {
+			while ((timer_nr = _timeouts.trigger(now))) {
 
 				if (timeout_count == 0 && _late.apply(timeout_remote,
 				                                      timer_nr, now))
 				{
-					return _motherboard()->clock()->abstime(1, 1000);
+					return _motherboard.clock()->abstime(1, 1000);
 				}
 
-				MessageTimeout msg(timer_nr, _timeouts()->timeout());
-
-				if (_timeouts()->cancel(timer_nr) < 0)
+				if (_timeouts.cancel(timer_nr) < 0)
 					Logging::printf("Timeout not cancelled.\n");
 
-				_motherboard()->bus_timeout.send(msg);
+				auto const next_timeout = _timeouts.timeout();
+
+				_mutex.release();
+
+				MessageTimeout msg(timer_nr, next_timeout);
+				_motherboard.bus_timeout.send(msg);
+
+				_mutex.acquire();
 
 				timeout_count++;
 			}
 
-			return _timeouts()->timeout();
+			return _timeouts.timeout();
 		}
 
 		void check_timeouts()
 		{
-			Genode::uint64_t const next = _check_and_wakeup();
+			auto const next = _check_and_wakeup();
 
 			if (next == ~0ULL)
 				return;
 
-			timevalue rel_timeout_us = _motherboard()->clock()->delta(next, 1000 * 1000);
+			timevalue rel_timeout_us = _motherboard.clock()->delta(next, 1000 * 1000);
 			if (rel_timeout_us == 0)
 				rel_timeout_us = 1;
 
@@ -135,24 +136,42 @@ class Timeouts
 
 	public:
 
-		void reprogram(Clock &clock, MessageTimer const &msg)
+		unsigned alloc()
 		{
-			_late.timeout(clock, msg);
-			Genode::Signal_transmitter(_timeout_sigh).submit();
+			Genode::Mutex::Guard guard(_mutex);
+			return _timeouts.alloc();
+		}
+
+		void request(MessageTimer const &msg)
+		{
+			int res = -1;
+
+			{
+				Genode::Mutex::Guard guard(_mutex);
+				res = _timeouts.request(msg.nr, msg.abstime);
+			}
+
+			if (res == 0) {
+				_late.timeout(*_motherboard.clock(), msg);
+				Genode::Signal_transmitter(_timeout_sigh).submit();
+			}
+
+			if (res < 0)
+				Logging::printf("Could not program timeout.\n");
 		}
 
 		/**
 		 * Constructor
 		 */
-		Timeouts(Genode::Env &env, Synced_motherboard &mb,
-		             Synced_timeout_list &timeouts)
+		Timeouts(Genode::Env &env, Motherboard &mb)
 		:
 		  _timer(env),
 		  _motherboard(mb),
-		  _timeouts(timeouts),
 		  _timeout_sigh(env.ep(), *this, &Timeouts::check_timeouts)
 		{
 			_timer.sigh(_timeout_sigh);
+
+			_timeouts.init();
 		}
 
 };
@@ -173,12 +192,12 @@ class Vcpu : public StaticReceiver<Vcpu>
 		Genode::Vm_connection::Vcpu         _vm_vcpu;
 
 		Seoul::Guest_memory                &_guest_memory;
-		Synced_motherboard                 &_motherboard;
-		Genode::Synced_interface<VCpu>      _vcpu;
+		Motherboard                        &_motherboard;
+		VCpu                               &_vcpu;
 
 		CpuState                            _seoul_state { };
 
-		Genode::Semaphore                   _block { 0 };
+		Genode::Semaphore                   _block   { 0 };
 		Genode::Semaphore                   _started { 0 };
 
 	public:
@@ -187,10 +206,9 @@ class Vcpu : public StaticReceiver<Vcpu>
 		     Genode::Vm_connection & vm_con,
 		     Genode::Allocator     & alloc,
 		     Genode::Env           & env,
-		     Genode::Mutex         & vcpu_mutex,
-		     VCpu                  * unsynchronized_vcpu,
+		     VCpu                  & vcpu,
 		     Seoul::Guest_memory   & guest_memory,
-		     Synced_motherboard    & motherboard,
+		     Motherboard           & motherboard,
 		     unsigned const          vcpu_id,
 		     bool     const          vmx,
 		     bool     const          svm,
@@ -205,7 +223,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			_vm_vcpu(_vm_con, alloc, _handler, _exit_config),
 			_guest_memory(guest_memory),
 			_motherboard(motherboard),
-			_vcpu(vcpu_mutex, unsynchronized_vcpu)
+			_vcpu(vcpu)
 		{
 			if (!_svm && !_vmx)
 				Logging::panic("no SVM/VMX available, sorry");
@@ -214,10 +232,10 @@ class Vcpu : public StaticReceiver<Vcpu>
 			_seoul_state.head.cpuid = vcpu_id;
 
 			/* handle cpuid overrides */
-			unsynchronized_vcpu->executor.add(this, receive_static<CpuMessage>);
-			_started.up();
+			_vcpu.executor.add(this, receive_static<CpuMessage>);
 		}
 
+		void start() { _started.up(); }
 		void block() { _block.down(); }
 		void unblock() { _block.up(); }
 
@@ -418,7 +436,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			/**
 			 * Send the message to the VCpu.
 			 */
-			if (!_vcpu()->executor.send(msg, true))
+			if (!_vcpu.executor.send(msg, true))
 				Logging::panic("nobody to execute %s at %x:%x\n",
 				               __func__, msg.cpu->cs.sel, msg.cpu->eip);
 
@@ -427,7 +445,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			 */
 			if (msg.mtr_in & MTD_INJ && msg.type != CpuMessage::TYPE_CHECK_IRQ) {
 				msg.type = CpuMessage::TYPE_CHECK_IRQ;
-				if (!_vcpu()->executor.send(msg, true))
+				if (!_vcpu.executor.send(msg, true))
 					Logging::panic("nobody to execute %s at %x:%x\n",
 					               __func__, msg.cpu->cs.sel, msg.cpu->eip);
 			}
@@ -437,7 +455,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			 */
 			if (msg.mtr_out & MTD_INJ) {
 				msg.type = CpuMessage::TYPE_CALC_IRQWINDOW;
-				if (!_vcpu()->executor.send(msg, true))
+				if (!_vcpu.executor.send(msg, true))
 					Logging::panic("nobody to execute %s at %x:%x\n",
 					               __func__, msg.cpu->cs.sel, msg.cpu->eip);
 			}
@@ -471,7 +489,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			MessageMemRegion mem_region(uintptr_t(vm_fault_addr >> PAGE_SIZE_LOG2),
 			                            state.cr0.value());
 
-			if (!mem_region.count && (!_motherboard()->bus_memregion.send(mem_region, false) ||
+			if (!mem_region.count && (!_motherboard.bus_memregion.send(mem_region, false) ||
 			    !mem_region.ptr))
 				return false;
 
@@ -493,11 +511,12 @@ class Vcpu : public StaticReceiver<Vcpu>
 				unsigned mtd = Seoul::read_vcpu_state(state, _seoul_state);
 				assert(mtd & MTD_INJ);
 
-				Logging::printf("EPT violation during IDT vectoring.\n");
+				if (verbose_debug)
+					Logging::printf("EPT violation during IDT vectoring.\n");
 
 				CpuMessage _win(CpuMessage::TYPE_CALC_IRQWINDOW, &_seoul_state, mtd);
 				_win.mtr_out = MTD_INJ;
-				if (!_vcpu()->executor.send(_win, true))
+				if (!_vcpu.executor.send(_win, true))
 					Logging::panic("nobody to execute %s at %x:%x\n",
 					               __func__, _seoul_state.cs.sel, _seoul_state.eip);
 
@@ -537,7 +556,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 			_skip_instruction(msg);
 
-			if (!_vcpu()->executor.send(msg, true))
+			if (!_vcpu.executor.send(msg, true))
 				Logging::panic("nobody to execute %s at %x:%x\n",
 				               __func__, msg.cpu->cs.sel, msg.cpu->eip);
 
@@ -753,17 +772,13 @@ class Machine : public StaticReceiver<Machine>
 		Genode::Env           &_env;
 		Genode::Heap          &_heap;
 		Genode::Vm_connection &_vm_con;
+		Genode::Mutex          _mutex { };
 		Clock                  _clock;
-		Genode::Mutex          _motherboard_mutex { };
-		Motherboard            _unsynchronized_motherboard;
-		Synced_motherboard     _motherboard;
-		Genode::Mutex          _timeouts_mutex { };
-		TimeoutList<32, void>  _unsynchronized_timeouts { };
-		Synced_timeout_list    _timeouts;
+		Motherboard            _motherboard;
 		Seoul::Guest_memory   &_guest_memory;
 		Boot_module_provider  &_boot_modules;
-		Timeouts               _alarm_thread = { _env, _motherboard, _timeouts };
-		unsigned short         _vcpus_up = 0;
+		Timeouts               _timeouts { _env, _motherboard };
+		unsigned short         _vcpus_up { };
 
 		bool                   _map_small    { false   };
 		bool                   _rdtsc_exit   { false   };
@@ -771,8 +786,7 @@ class Machine : public StaticReceiver<Machine>
 		Rtc::Session          *_rtc          { nullptr };
 		Seoul::Audio          *_audio        { nullptr };
 
-		enum { MAX_CPUS = 8 };
-		Vcpu *                 _vcpus[MAX_CPUS] { nullptr };
+		Vcpu *                 _vcpus[16]    { nullptr };
 		Genode::Bit_array<64>  _vcpus_active { };
 
 		/*
@@ -885,8 +899,7 @@ class Machine : public StaticReceiver<Machine>
 
 					_vcpus_active.set(_vcpus_up, 1);
 
-					Vcpu * vcpu = new Vcpu(*ep, _vm_con, _heap, _env,
-					                       _motherboard_mutex, msg.vcpu,
+					Vcpu * vcpu = new Vcpu(*ep, _vm_con, _heap, _env, *msg.vcpu,
 					                       _guest_memory, _motherboard,
 					                       _vcpus_up, has_vmx, has_svm,
 					                       _map_small, _rdtsc_exit);
@@ -934,27 +947,31 @@ class Machine : public StaticReceiver<Machine>
 					if (!_vcpus[vcpu_id])
 						return false;
 
-					_vcpus_active.clear(vcpu_id, 1);
+					{
+						Genode::Mutex::Guard guard(_mutex);
 
-					if (!_vcpus_active.get(0, 64)) {
-						MessageConsole msgcon(MessageConsole::Type::TYPE_PAUSE,
-						                      Seoul::Console::ID_VGA_VESA);
-						_unsynchronized_motherboard.bus_console.send(msgcon);
+						_vcpus_active.clear(vcpu_id, 1);
+
+						if (!_vcpus_active.get(0, 64)) {
+							MessageConsole msgcon(MessageConsole::Type::TYPE_PAUSE,
+							                      Seoul::Console::ID_VGA_VESA);
+							_motherboard.bus_console.send(msgcon);
+						}
 					}
-
-					_motherboard_mutex.release();
 
 					_vcpus[vcpu_id]->block();
 
-					_motherboard_mutex.acquire();
+					{
+						Genode::Mutex::Guard guard(_mutex);
 
-					if (!_vcpus_active.get(0, 64)) {
-						MessageConsole msgcon(MessageConsole::Type::TYPE_RESUME,
-						                      Seoul::Console::ID_VGA_VESA);
-						_unsynchronized_motherboard.bus_console.send(msgcon);
+						if (!_vcpus_active.get(0, 64)) {
+							MessageConsole msgcon(MessageConsole::Type::TYPE_RESUME,
+							                      Seoul::Console::ID_VGA_VESA);
+							_motherboard.bus_console.send(msgcon);
+						}
+
+						_vcpus_active.set(vcpu_id, 1);
 					}
-
-					_vcpus_active.set(vcpu_id, 1);
 
 					return true;
 				}
@@ -1034,9 +1051,7 @@ class Machine : public StaticReceiver<Machine>
 					if (msg.value >= 1ull << 32)
 						return false;
 
-					new (_heap) Seoul::Network(_env, _heap,
-					                           _unsynchronized_motherboard,
-					                           msg);
+					new (_heap) Seoul::Network(_env, _heap, _motherboard, msg);
 
 				} catch (...) {
 					Logging::printf("Creating network connection failed\n");
@@ -1056,8 +1071,7 @@ class Machine : public StaticReceiver<Machine>
 		{
 			if (!_audio) {
 				try {
-					_audio = new (_heap) Seoul::Audio(_env, _motherboard,
-					                                  _unsynchronized_motherboard);
+					_audio = new (_heap) Seoul::Audio(_env, _motherboard);
 					_audio->verbose(verbose_audio);
 				} catch (...) {
 					Genode::error("Creating audio backend failed");
@@ -1076,19 +1090,13 @@ class Machine : public StaticReceiver<Machine>
 				if (verbose_debug)
 					Logging::printf("TIMER_NEW\n");
 
-				msg.nr = _timeouts()->alloc();
+				msg.nr = _timeouts.alloc();
 
 				return true;
 
 			case MessageTimer::TIMER_REQUEST_TIMEOUT:
 			{
-				int res = _timeouts()->request(msg.nr, msg.abstime);
-
-				if (res == 0)
-					_alarm_thread.reprogram(_clock, msg);
-				else
-				if (res < 0)
-					Logging::printf("Could not program timeout.\n");
+				_timeouts.request(msg);
 
 				return true;
 			}
@@ -1114,8 +1122,7 @@ class Machine : public StaticReceiver<Machine>
 			              rtc_ts.minute, rtc_ts.second);
 
 			msg.wallclocktime = mktime(&tms) * MessageTime::FREQUENCY;
-			Logging::printf("Got time %llx\n", msg.wallclocktime);
-			msg.timestamp = _unsynchronized_motherboard.clock()->clock(MessageTime::FREQUENCY);
+			msg.timestamp = _motherboard.clock()->clock(MessageTime::FREQUENCY);
 
 			return true;
 		}
@@ -1154,27 +1161,21 @@ class Machine : public StaticReceiver<Machine>
 		:
 			_env(env), _heap(heap), _vm_con(vm_con),
 			_clock(Attached_rom_dataspace(env, "platform_info").xml().sub_node("hardware").sub_node("tsc").attribute_value("freq_khz", 0ULL) * 1000ULL),
-			_unsynchronized_motherboard(&_clock, nullptr),
-			_motherboard(_motherboard_mutex, &_unsynchronized_motherboard),
-			_timeouts(_timeouts_mutex, &_unsynchronized_timeouts),
+			_motherboard(&_clock, nullptr),
 			_guest_memory(guest_memory),
 			_boot_modules(boot_modules),
 			_map_small(map_small),
 			_rdtsc_exit(rdtsc_exit),
 			_same_cpu(vmm_vcpu_same_cpu)
 		{
-			_motherboard_mutex.acquire();
-
-			_timeouts()->init();
-
 			/* register host operations, called back by the VMM */
-			_unsynchronized_motherboard.bus_hostop.add  (this, receive_static<MessageHostOp>);
-			_unsynchronized_motherboard.bus_timer.add   (this, receive_static<MessageTimer>);
-			_unsynchronized_motherboard.bus_time.add    (this, receive_static<MessageTime>);
-			_unsynchronized_motherboard.bus_hwpcicfg.add(this, receive_static<MessageHwPciConfig>);
-			_unsynchronized_motherboard.bus_acpi.add    (this, receive_static<MessageAcpi>);
-			_unsynchronized_motherboard.bus_legacy.add  (this, receive_static<MessageLegacy>);
-			_unsynchronized_motherboard.bus_audio.add   (this, receive_static<MessageAudio>);
+			_motherboard.bus_hostop.add  (this, receive_static<MessageHostOp>);
+			_motherboard.bus_timer.add   (this, receive_static<MessageTimer>);
+			_motherboard.bus_time.add    (this, receive_static<MessageTime>);
+			_motherboard.bus_hwpcicfg.add(this, receive_static<MessageHwPciConfig>);
+			_motherboard.bus_acpi.add    (this, receive_static<MessageAcpi>);
+			_motherboard.bus_legacy.add  (this, receive_static<MessageLegacy>);
+			_motherboard.bus_audio.add   (this, receive_static<MessageAudio>);
 		}
 
 
@@ -1240,7 +1241,7 @@ class Machine : public StaticReceiver<Machine>
 				 * it is not examined by the existing device models.
 				 */
 
-				dmi->create(_unsynchronized_motherboard, argv, "", 0);
+				dmi->create(_motherboard, argv, "", 0);
 			});
 		}
 
@@ -1255,7 +1256,7 @@ class Machine : public StaticReceiver<Machine>
 			unsigned apic_id = _vcpus_up - 1;
 
 			/* init vCPUs */
-			for (VCpu *vcpu = _unsynchronized_motherboard.last_vcpu; vcpu; vcpu = vcpu->get_last()) {
+			for (VCpu *vcpu = _motherboard.last_vcpu; vcpu; vcpu = vcpu->get_last()) {
 
 				enum { EAX = 0, EBX = 1, ECX = 2, EDX = 3 };
 				unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -1327,18 +1328,22 @@ class Machine : public StaticReceiver<Machine>
 				apic_id = apic_id ? apic_id - 1 : _vcpus_up - 1;
 			}
 
-			Genode::log("RESET device state");
+			if (verbose_debug)
+				Genode::log("RESET device state");
+
 			MessageLegacy msg2(MessageLegacy::RESET, 0);
-			_unsynchronized_motherboard.bus_legacy.send_fifo(msg2);
+			_motherboard.bus_legacy.send_fifo(msg2);
 
-			Genode::log("INIT done");
+			if (verbose_debug)
+				Genode::log("INIT done");
 
-			_motherboard_mutex.release();
+			for (auto &vcpu : _vcpus) {
+				if (vcpu)
+					vcpu->start();
+			}
 		}
 
-		Synced_motherboard &motherboard() { return _motherboard; }
-
-		Motherboard &unsynchronized_motherboard() { return _unsynchronized_motherboard; }
+		Motherboard &motherboard() { return _motherboard; }
 };
 
 
@@ -1388,8 +1393,6 @@ void Component::construct(Genode::Env &env)
 	static Seoul::Guest_memory guest_memory(env, heap, vm_con, vm_size,
 	                                        memory_verbose);
 
-	typedef Genode::Hex_range<unsigned long> Hex_range;
-
 	/* diagnostic messages */
 	guest_memory.dump_regions();
 
@@ -1414,17 +1417,10 @@ void Component::construct(Genode::Env &env)
 	static Machine machine(env, heap, vm_con, boot_modules, guest_memory,
 	                       map_small, rdtsc_exit, vmm_vcpu_same_cpu);
 
-	Gui::Area const gui_area(width, height);
-
-	/* create console thread */
 	static Seoul::Console vcon(env, heap, machine.motherboard(),
-	                           machine.unsynchronized_motherboard(),
-	                           gui_area, guest_memory);
-
-	vcon.register_host_operations(machine.unsynchronized_motherboard());
+	                           Gui::Area(width, height), guest_memory);
 
 	static Seoul::Disk vdisk(env, machine.motherboard(),
-	                         machine.unsynchronized_motherboard(),
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
 

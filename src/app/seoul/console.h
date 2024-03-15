@@ -38,7 +38,6 @@
 
 /* local includes */
 #include "keyboard.h"
-#include "synced_motherboard.h"
 #include "guest_memory.h"
 #include "gui.h"
 #include "vga_vesa.h"
@@ -54,38 +53,35 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 {
 	private:
 
-		Genode::Env                  &_env;
-		Motherboard                  &_unsynchronized_motherboard;
-		Synced_motherboard           &_motherboard;
+		Genode::Env               &_env;
+		Motherboard               &_mb;
+		Genode::Mutex              _mutex { };
+		Genode::List<Backend_gui>  _guis  { };
+		Genode::Allocator         &_alloc;
 
-		Genode::Signal_handler<Console> _signal_input
-			= { _env.ep(), *this, &Console::_handle_input };
+		Seoul::Guest_memory       &_memory;
+		Gui::Area  const           _gui_vesa;
+		Gui::Area                  _gui_non_vesa;
+		Gui::Area                  _gui_non_vesa_ack;
+		Gui::Area                  _input_absolute;
 
-		Genode::Signal_handler<Console> _signal_gui
-			= { _env.ep(), *this, &Console::_handle_gui_change };
+		unsigned  _timer { 0 };
+		Keyboard  _vkeyb { _mb };
 
-		Genode::List<Backend_gui>     _guis { };
-		Genode::Allocator            &_alloc;
+		int       _ox = 0, _oy = 0;
+		bool      _left        { };
+		bool      _middle      { };
+		bool      _right       { };
+		bool      _relative    { };
+		bool      _absolute    { };
+		bool      _cpus_active { };
 
-		Seoul::Guest_memory          &_memory;
-		Gui::Area  const              _gui_vesa;
-		Gui::Area                     _gui_non_vesa;
-		Gui::Area                     _gui_non_vesa_ack;
-		Gui::Area                     _input_absolute;
-		unsigned                      _timer    { 0 };
-		Keyboard                      _vkeyb    { _motherboard };
-		bool                          _left     { false };
-		bool                          _middle   { false };
-		bool                          _right    { false };
-		bool                          _relative { false };
-		bool                          _absolute { false };
-
-		Vga_vesa                      _vga_vesa;
+		Vga_vesa  _vga_vesa;
 
 		unsigned _input_to_ps2mouse(Input::Event const &);
 		unsigned _input_to_ps2wheel(Input::Event const &);
-		void     _input_to_virtio(Input::Event const &);
-		void     _input_to_ps2(Input::Event const &);
+		void     _input_to_virtio  (Input::Event const &);
+		void     _input_to_ps2     (Input::Event const &);
 
 		void         _handle_input();
 		void         _handle_gui_change();
@@ -93,7 +89,13 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		unsigned     _handle_fb_gui(bool, Backend_gui &, bool);
 		bool         _sufficient_ram(Gui::Area const &, Gui::Area const &);
 
-		void _reactivate_periodic_timer();
+		void _reactivate_periodic_timer(bool = false);
+
+		Genode::Signal_handler<Console> _signal_input
+			= { _env.ep(), *this, &Console::_handle_input };
+
+		Genode::Signal_handler<Console> _signal_gui
+			= { _env.ep(), *this, &Console::_handle_gui_change };
 
 		/*
 		 * Noncopyable
@@ -110,17 +112,14 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		bool receive(MessageMemRegion &);
 		bool receive(MessageTimeout &);
 
-		void register_host_operations(Motherboard &);
-
 		/**
 		 * Constructor
 		 */
-		Console(Genode::Env &env, Genode::Allocator &alloc,
-		        Synced_motherboard &, Motherboard &,
+		Console(Genode::Env &, Genode::Allocator &, Motherboard &,
 		        Gui::Area const, Seoul::Guest_memory &);
 
-		template <typename FUNC>
-		bool apply_msg(unsigned const id, FUNC const& fn) {
+		bool apply_msg(unsigned const id, auto const & fn)
+		{
 			for (auto *gui = _guis.first(); gui; gui = gui->next()) {
 				if (gui->id == id) {
 					return fn(*gui);
@@ -129,9 +128,9 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 			return false;
 		}
 
-		template <typename FUNC>
-		void for_each_gui(FUNC const& fn) {
-			for (auto *gui = _guis.first(); gui; gui = gui->next()) {
+		void for_each_gui(auto const & fn)
+		{
+			for (auto * gui = _guis.first(); gui; gui = gui->next()) {
 				fn(*gui);
 			}
 		}

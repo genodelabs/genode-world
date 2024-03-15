@@ -15,6 +15,7 @@
 #define _GUI_H_
 
 #include <base/id_space.h>
+#include <base/attached_ram_dataspace.h>
 #include <os/reporter.h>
 #include <pointer/shape_report.h>
 
@@ -29,7 +30,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	unsigned short         const id;
 	Framebuffer::Mode            fb_mode { };
 	Genode::Dataspace_capability fb_ds   { };
-	Genode::addr_t               pixels  { 0 };
+	Genode::addr_t               pixels  { };
 	View_handle                  view    { };
 
 	Input::Session_client       &input;
@@ -139,22 +140,28 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 
 	struct Pixel_buffer
 	{
-		using Id = Genode::Id_space<Pixel_buffer>::Id;
+		using Type = Genode::Id_space<Pixel_buffer>;
 
-		Genode::Id_space<Pixel_buffer>::Element id_element;
-		Genode::Ram_dataspace_capability  ds;
+		Type::Element                  id_element;
+		Genode::Attached_ram_dataspace ram;
 
-		Pixel_buffer(Genode::Id_space<Pixel_buffer> &space, Id id, Genode::Ram_dataspace_capability ds)
-		: id_element(*this, space, id), ds(ds) { }
+		Pixel_buffer(Genode::Env &env, Type &space, Type::Id id, size_t size)
+		:
+			id_element(*this, space, id),
+			ram(env.ram(), env.rm(), size)
+		{ }
 	};
 
 	Genode::Id_space<Pixel_buffer> pixel_buffers { };
 
-	template <typename T>
-	void free_buffer(Pixel_buffer::Id const id, T const &fn) {
-		return pixel_buffers.apply<Pixel_buffer>(id, [&](Pixel_buffer &buffer) {
+	void free_buffer(Pixel_buffer::Type::Id const &id, auto const &fn)
+	{
+		pixel_buffers.apply<Pixel_buffer>(id, [&](Pixel_buffer &buffer) {
 			fn(buffer);
 		});
+
+		if (!pixel_buffers.apply_any<Pixel_buffer>([](auto &){}))
+			hide();
 	}
 };
 

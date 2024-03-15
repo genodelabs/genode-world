@@ -19,7 +19,8 @@
 
 #include <audio_out_session/connection.h>
 
-#include "synced_motherboard.h"
+#include <nul/motherboard.h>
+
 
 namespace Seoul {
 	class Audio;
@@ -33,8 +34,7 @@ class Seoul::Audio
 
 		Genode::Mutex         _mutex { };
 
-		Synced_motherboard   &_motherboard;
-		Motherboard          &_unsynchronized_motherboard;
+		Motherboard          &_mb;
 
 		Audio_out::Connection  _audio_left;
 		Audio_out::Connection  _audio_right;
@@ -105,7 +105,7 @@ class Seoul::Audio
 
 	public:
 
-		Audio(Genode::Env &, Synced_motherboard &, Motherboard &);
+		Audio(Genode::Env &, Motherboard &);
 
 		bool receive(MessageAudio &);
 

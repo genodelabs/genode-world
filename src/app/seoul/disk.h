@@ -25,10 +25,8 @@
 /* Genode includes */
 #include <block_session/connection.h>
 
-/* local includes */
-#include "synced_motherboard.h"
-
 /* Seoul includes */
+#include <nul/motherboard.h>
 #include <host/dma.h>
 
 namespace Seoul {
@@ -82,12 +80,10 @@ class Seoul::Disk : public StaticReceiver<Seoul::Disk>
 		enum { MAX_DISKS = 4, MAX_OUTSTANDING = 48 };
 
 		Genode::Env         &_env;
+		Motherboard         &_mb;
 
 		struct Outstanding   _outstanding[MAX_OUTSTANDING] { };
 		struct Disk_session  _disks      [MAX_DISKS]       { };
-
-		Synced_motherboard  &_motherboard;
-		Motherboard         &_unsynchronized_motherboard;
 
 		char        * const _backing_store_base;
 		size_t        const _backing_store_size;
@@ -150,8 +146,7 @@ class Seoul::Disk : public StaticReceiver<Seoul::Disk>
 
 		static constexpr unsigned block_packetstream_size = 4*512*1024;
 
-		Disk(Genode::Env &, Synced_motherboard &, Motherboard &,
-		     char * backing_store_base, Genode::size_t backing_store_size);
+		Disk(Genode::Env &, Motherboard &, char *, Genode::size_t);
 
 		void handle_disk(unsigned);
 

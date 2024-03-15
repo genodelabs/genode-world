@@ -18,12 +18,10 @@
 #include "audio.h"
 
 
-Seoul::Audio::Audio(Genode::Env &env, Synced_motherboard &motherboard,
-                    Motherboard &unsynch_motherboard)
+Seoul::Audio::Audio(Genode::Env &env, Motherboard &mb)
 :
 	_sigh_processed(env.ep(), *this, &Audio::_audio_out),
-	_motherboard(motherboard),
-	_unsynchronized_motherboard(unsynch_motherboard),
+	_mb(mb),
 	_audio_left (env, "front left",  false, false),
 	_audio_right(env, "front right", false, false)
 {
@@ -50,7 +48,7 @@ void Seoul::Audio::_audio_out()
 
 		_mutex.release();
 
-		_motherboard()->bus_audio.send(msg);
+		_mb.bus_audio.send(msg);
 
 		_mutex.acquire();
 

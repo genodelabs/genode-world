@@ -34,20 +34,18 @@ static Genode::Heap * disk_heap(Genode::Ram_allocator *ram = nullptr,
 }
 
 
-Seoul::Disk::Disk(Genode::Env &env, Synced_motherboard &mb,
-                  Motherboard &unsync_mb, char * backing_store_base,
-                  Genode::size_t backing_store_size)
+Seoul::Disk::Disk(Genode::Env &env, Motherboard &mb,
+                  char * backing_store_base, Genode::size_t backing_store_size)
 :
 	_env(env),
-	_motherboard(mb),
-	_unsynchronized_motherboard(unsync_mb),
+	_mb(mb),
 	_backing_store_base(backing_store_base),
 	_backing_store_size(backing_store_size)
 {
 	/* initialize disk heap */
 	disk_heap(&env.ram(), &env.rm());
 
-	unsync_mb.bus_disk.add(this, receive_static<MessageDisk>);
+	mb.bus_disk.add(this, receive_static<MessageDisk>);
 }
 
 
@@ -108,7 +106,7 @@ void Seoul::Disk::handle_disk(unsigned disknr)
 		_mutex.release();
 
 		MessageDiskCommit mdc(disknr, user_tag, disk_answer);
-		_motherboard()->bus_diskcommit.send(mdc);
+		_mb.bus_diskcommit.send(mdc);
 
 		_mutex.acquire();
 
@@ -121,7 +119,7 @@ void Seoul::Disk::handle_disk(unsigned disknr)
 		_mutex.release();
 
 		MessageDiskCommit msg(disknr, ~0U, MessageDisk::DISK_STATUS_RESUME);
-		_motherboard()->bus_diskcommit.send(msg);
+		_mb.bus_diskcommit.send(msg);
 
 		_mutex.acquire();
 
@@ -195,7 +193,7 @@ bool Seoul::Disk::receive(MessageDisk &msg)
 			/* nevertheless confirm that commit got processed */
 			Genode::warning("write denied to r/o disk", msg.disknr);
 			MessageDiskCommit ro(msg.disknr, msg.usertag, MessageDisk::DISK_OK);
-			_unsynchronized_motherboard.bus_diskcommit.send(ro);
+			_mb.bus_diskcommit.send(ro);
 			return true;
 		}
 

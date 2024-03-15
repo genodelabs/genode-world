@@ -7,7 +7,7 @@
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2023 Genode Labs GmbH
+ * Copyright (C) 2013-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -110,25 +110,7 @@ void Seoul::Keyboard::handle_keycode_press(unsigned keycode)
 		return;
 
 	MessageInput msg(0x10000, _flags | keycode);
-
-	/* debug */
-	if ((_flags & KBFLAG_LWIN) && orig_keycode == Input::KEY_INSERT) {
-		Logging::printf("DEBUG key\n");
-
-		/* we send an empty event */
-		CpuEvent msg(VCpu::EVENT_DEBUG);
-		for (VCpu *vcpu = _motherboard()->last_vcpu; vcpu; vcpu=vcpu->get_last())
-			vcpu->bus_event.send(msg);
-	}
-
-	/* reset */
-	else if ((_flags & KBFLAG_LWIN) && orig_keycode == Input::KEY_END) {
-		Logging::printf("Reset VM\n");
-		MessageLegacy msg2(MessageLegacy::RESET, 0);
-		_motherboard()->bus_legacy.send_fifo(msg2);
-	}
-
-	else _motherboard()->bus_input.send(msg);
+	_motherboard.bus_input.send(msg);
 
 	_flags &= ~(KBFLAG_EXTEND0 | KBFLAG_RELEASE | KBFLAG_EXTEND1);
 }
@@ -142,7 +124,7 @@ void Seoul::Keyboard::handle_keycode_release(unsigned keycode)
 		return;
 
 	MessageInput msg(0x10000, _flags | keycode);
-	_motherboard()->bus_input.send(msg);
+	_motherboard.bus_input.send(msg);
 
 	_flags &= ~(KBFLAG_EXTEND0 | KBFLAG_RELEASE | KBFLAG_EXTEND1);
 }

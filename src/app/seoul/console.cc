@@ -32,10 +32,6 @@
 
 extern char _binary_mono_tff_start[];
 
-static struct {
-	bool active = false;
-} cpu_state;
-
 
 /**
  * Layout of PS/2 mouse packet
@@ -96,9 +92,8 @@ unsigned Seoul::Console::_input_to_ps2mouse(Input::Event const &ev)
 	int ry = 0;
 
 	ev.handle_absolute_motion([&] (int x, int y) {
-		static int ox = 0, oy = 0;
-		rx = x - ox; ry = y - oy;
-		ox = x; oy = y;
+		rx = x - _ox; ry = y - _oy;
+		_ox = x; _oy = y;
 	});
 
 	ev.handle_relative_motion([&] (int x, int y) { rx = x; ry = y; });
@@ -132,7 +127,7 @@ void Seoul::Console::_input_to_ps2(Input::Event const &ev)
 
 	/* update PS2 mouse model */
 	MessageInput msg(0x10001, _input_to_ps2mouse(ev), _input_to_ps2wheel(ev));
-	if (_motherboard()->bus_input.send(msg) && !_relative)
+	if (_mb.bus_input.send(msg) && !_relative)
 		_relative = true;
 }
 
@@ -178,21 +173,21 @@ void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 			if (ty > _input_absolute.h()) ty = _input_absolute.h();
 
 			MessageInput msg(0x10002, tx & mask, ty & mask);
-			if (_motherboard()->bus_input.send(msg)) {
+			if (_mb.bus_input.send(msg)) {
 				_absolute = true;
 				_input_absolute = Gui::Area(msg.data, msg.data2);
 			}
 		});
 		ev.handle_wheel([&](int, int z) {
 			MessageInput msg(0x10002, 1u << 28, z);
-			_motherboard()->bus_input.send(msg);
+			_mb.bus_input.send(msg);
 		});
 
 		return;
 	}
 
 	MessageInput msg(0x10002, data, data2);
-	_motherboard()->bus_input.send(msg);
+	_mb.bus_input.send(msg);
 }
 
 
@@ -274,20 +269,14 @@ bool Seoul::Console::receive(MessageConsole &msg)
 					return false;
 				}
 
-				Genode::Ram_dataspace_capability ds { };
 				try {
-					msg.ptr  = nullptr;
+					auto &buffer = *new (_alloc) Backend_gui::Pixel_buffer(_env, gui.pixel_buffers, { msg.view }, msg.size);
 
-					ds = _env.ram().alloc(msg.size);
-					msg.ptr = _env.rm().attach(ds);
-
-					new (_alloc) Backend_gui::Pixel_buffer(gui.pixel_buffers, Backend_gui::Pixel_buffer::Id { msg.view }, ds);
+					msg.ptr = buffer.ram.local_addr<char>();
 
 					return true;
 				} catch (...) {
 					Genode::error("insufficient resources to create buffer");
-					if (ds.valid())
-						_env.ram().free(ds);
 					return false;
 				}
 			}
@@ -302,9 +291,7 @@ bool Seoul::Console::receive(MessageConsole &msg)
 
 		return apply_msg(msg.id, [&](auto &gui) {
 
-			Backend_gui::Pixel_buffer::Id const id { msg.view };
-			gui.free_buffer(id, [&](Backend_gui::Pixel_buffer &buffer) {
-				_env.ram().free(buffer.ds);
+			gui.free_buffer({ msg.view }, [&](auto &buffer) {
 				Genode::destroy(_alloc, &buffer);
 			});
 
@@ -329,9 +316,14 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			return _vga_vesa.mode_info(msg, gui);
 		});
 	case MessageConsole::TYPE_PAUSE: /* all CPUs go idle */
+	{
 		_handle_fb(); /* refresh before going to sleep */
-		cpu_state.active = false;
+
+		Genode::Mutex::Guard guard(_mutex);
+		_cpus_active = false;
+
 		return true;
+	}
 	case MessageConsole::TYPE_RESUME: /* first of all sleeping CPUs woke up */
 	{
 		bool visible_vga_vesa = false;
@@ -389,8 +381,9 @@ bool Seoul::Console::receive(MessageConsole &msg)
 		});
 
 		/* if the fb updating was off, reactivate timer - move into vga/vesa class XXX */
-		if (msg.id == ID_VGA_VESA && !cpu_state.active)
-			_reactivate_periodic_timer();
+		if (msg.id == ID_VGA_VESA) {
+			_reactivate_periodic_timer(true);
+		}
 
 		if (!found)
 			Genode::error("unknown graphical backend ", msg.id);
@@ -403,12 +396,20 @@ bool Seoul::Console::receive(MessageConsole &msg)
 }
 
 
-void Seoul::Console::_reactivate_periodic_timer()
+void Seoul::Console::_reactivate_periodic_timer(bool only_if_non_active)
 {
-	cpu_state.active = true;
+	{
+		Genode::Mutex::Guard guard(_mutex);
 
-	MessageTimer msg(_timer, _unsynchronized_motherboard.clock()->abstime(1, 1000));
-	_unsynchronized_motherboard.bus_timer.send(msg);
+		if (only_if_non_active && _cpus_active)
+			return;
+
+		if (!_cpus_active)
+			_cpus_active = true;
+	}
+
+	MessageTimer msg(_timer, _mb.clock()->abstime(1, 1000));
+	_mb.bus_timer.send(msg);
 }
 
 
@@ -465,7 +466,7 @@ void Seoul::Console::_handle_gui_change()
 		msg.x = msg.y = 0;
 		msg.width  = gui_mode.area.w();
 		msg.height = gui_mode.area.h();
-		_motherboard()->bus_console.send(msg);
+		_mb.bus_console.send(msg);
 	});
 }
 
@@ -475,7 +476,7 @@ Genode::Milliseconds Seoul::Console::_handle_fb()
 	Milliseconds reprogram_timer(0ULL);
 
 	apply_msg(ID_VGA_VESA, [&](auto &gui) {
-		reprogram_timer = _vga_vesa.handle_fb_gui(gui, cpu_state.active);
+		reprogram_timer = _vga_vesa.handle_fb_gui(gui, _cpus_active);
 		return true;
 	});
 
@@ -516,25 +517,20 @@ void Seoul::Console::_handle_input()
 	if (!valid_key)
 		return;
 
-	if (!cpu_state.active || _vga_vesa.reactivate_key_pressed()) {
-		cpu_state.active = true;
-		MessageTimer msg(_timer, _motherboard()->clock()->abstime(1, 1000));
-		_motherboard()->bus_timer.send(msg);
+	bool program_timeout = false;
+
+	{
+		Genode::Mutex::Guard guard(_mutex);
+
+		program_timeout = !_cpus_active || _vga_vesa.reactivate_key_pressed();
+		if (program_timeout)
+			_cpus_active = true;
 	}
-}
 
-
-void Seoul::Console::register_host_operations(Motherboard &motherboard)
-{
-	motherboard.bus_console  .add(this, receive_static<MessageConsole>);
-	motherboard.bus_memregion.add(this, receive_static<MessageMemRegion>);
-	motherboard.bus_timeout  .add(this, receive_static<MessageTimeout>);
-
-	MessageTimer msg;
-	if (!motherboard.bus_timer.send(msg))
-		Logging::panic("%s can't get a timer", __PRETTY_FUNCTION__);
-
-	_timer = msg.nr;
+	if (program_timeout) {
+		MessageTimer msg(_timer, _mb.clock()->abstime(1, 1000));
+		_mb.bus_timer.send(msg);
+	}
 }
 
 
@@ -546,8 +542,8 @@ bool Seoul::Console::receive(MessageTimeout &msg)
 	Milliseconds const timeout = _handle_fb();
 
 	if (timeout.value) {
-		MessageTimer msg_t(_timer, _unsynchronized_motherboard.clock()->abstime(timeout.value, 1000));
-		_unsynchronized_motherboard.bus_timer.send(msg_t);
+		MessageTimer msg_t(_timer, _mb.clock()->abstime(timeout.value, 1000));
+		_mb.bus_timer.send(msg_t);
 	}
 
 	return true;
@@ -555,17 +551,24 @@ bool Seoul::Console::receive(MessageTimeout &msg)
 
 
 Seoul::Console::Console(Genode::Env &env, Genode::Allocator &alloc,
-                        Synced_motherboard &mb,
-                        Motherboard &unsynchronized_motherboard,
-                        Gui::Area const area,
+                        Motherboard &mb, Gui::Area const area,
                         Seoul::Guest_memory &guest_memory)
 :
 	_env(env),
-	_unsynchronized_motherboard(unsynchronized_motherboard),
-	_motherboard(mb),
+	_mb(mb),
 	_alloc(alloc),
 	_memory(guest_memory),
 	_gui_vesa(area), _gui_non_vesa(area), _gui_non_vesa_ack(area),
 	_input_absolute(area),
 	_vga_vesa(_memory, _binary_mono_tff_start)
-{ }
+{
+	mb.bus_console  .add(this, receive_static<MessageConsole>);
+	mb.bus_memregion.add(this, receive_static<MessageMemRegion>);
+	mb.bus_timeout  .add(this, receive_static<MessageTimeout>);
+
+	MessageTimer msg { };
+	if (!mb.bus_timer.send(msg))
+		Logging::panic("%s can't get a timer", __PRETTY_FUNCTION__);
+
+	_timer = msg.nr;
+}

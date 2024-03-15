@@ -1,12 +1,13 @@
 /*
  * \brief  Keyboard manager
  * \author Markus Partheymueller
+ * \author Alexander Boettcher
  * \date   2012-07-31
  */
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2017 Genode Labs GmbH
+ * Copyright (C) 2013-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -27,8 +28,7 @@
 #include <input/event.h>
 #include <input/keycodes.h>
 
-/* local includes */
-#include "synced_motherboard.h"
+#include <nul/motherboard.h>
 
 namespace Seoul {
 	class Keyboard;
@@ -38,15 +38,15 @@ class Seoul::Keyboard
 {
 	private:
 
-		Synced_motherboard &_motherboard;
-		unsigned            _flags { };
-		unsigned            _last_keycode { };
+		Motherboard   & _motherboard;
+		unsigned        _flags { };
+		unsigned        _last_keycode { };
 
 		bool _map_keycode(unsigned &, bool);
 
 	public:
 
-		Keyboard(Synced_motherboard &mb) : _motherboard(mb) { }
+		Keyboard(Motherboard &mb) : _motherboard(mb) { }
 
 		void handle_keycode_press(unsigned keycode);
 		void handle_keycode_release(unsigned keycode);
