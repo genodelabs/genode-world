@@ -109,6 +109,25 @@ void Seoul::Keyboard::handle_keycode_press(unsigned keycode)
 	if (!_map_keycode(keycode, true))
 		return;
 
+#if 0
+	Genode::error("keycode ", orig_keycode, "->", keycode, " ",
+	              orig_keycode == Input::KEY_END);
+
+	bool const trigger_suspend = orig_keycode == Input::KEY_END;
+
+	if (trigger_suspend) {
+		enum {
+			BUTTON_POWER = 1U << 8,
+			BUTTON_SLEEP = 1U << 9
+		};
+
+		MessageAcpiEvent event(MessageAcpiEvent::EventType::ACPI_EVENT_FIXED,
+		                       BUTTON_POWER);
+
+		_motherboard.bus_acpi_event.send(event);
+	}
+#endif
+
 	MessageInput msg(0x10000, _flags | keycode);
 	_motherboard.bus_input.send(msg);
 

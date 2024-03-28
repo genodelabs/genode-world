@@ -84,12 +84,12 @@ MODEL_INFO(pcihostbridge, "bus_num", "bus_count", "io_base", "mem_base")
 MODEL_INFO(intel82576vf, "promisc", "mem_mmio", "mem_msix", "txpoll_us", "rx_map", "verbose")
 MODEL_INFO(rtl8029, "bdf", "irq", "port")
 
-MODEL_INFO(virtio_input, "bdf", "irq", "resolution_x", "resolution_y")
-MODEL_INFO(virtio_gpu,   "bdf", "irq")
-MODEL_INFO(virtio_sound, "bdf", "irq")
+MODEL_INFO(virtio_input, "mem", "bdf", "resolution_x", "resolution_y")
+MODEL_INFO(virtio_gpu,   "mem", "bdf")
+MODEL_INFO(virtio_sound, "mem", "bdf")
 
 MODEL_INFO(ide, "port0", "port1", "irq", "bdf", "disk")
-MODEL_INFO(ahci, "mem", "irq", "bdf")
+MODEL_INFO(ahci, "mem", "bdf")
 MODEL_INFO(drive, "sigma0drive", "controller", "port", "verbose")
 
 MODEL_INFO(vbios_multiboot, "modaddr", "lowmem")
@@ -105,5 +105,6 @@ MODEL_INFO_NO_ARG(vcpu)
 MODEL_INFO_NO_ARG(halifax)
 MODEL_INFO_NO_ARG(vbios)
 MODEL_INFO_NO_ARG(lapic)
+MODEL_INFO_NO_ARG(acpimodel)
 
 MODEL_INFO(hostsink, "host_dev", "buffer")

@@ -235,14 +235,20 @@ class Vcpu : public StaticReceiver<Vcpu>
 			_vcpu.executor.add(this, receive_static<CpuMessage>);
 		}
 
-		void start() { _started.up(); }
-		void block() { _block.down(); }
+		void start()   { _started.up(); }
+		void block()   { _block.down(); }
 		void unblock() { _block.up(); }
+		void off()     { _seoul_state.head.cpuid = ~0U; recall(); }
 
 		void recall() { _handler.local_submit(); }
 
 		void _handle_vm_exception()
 		{
+			if (_seoul_state.head.cpuid == ~0U) {
+				Genode::sleep_forever();
+				return;
+			}
+
 			_vm_vcpu.with_state([this](Genode::Vcpu_state &state) -> bool {
 				unsigned const exit = state.exit_reason;
 
@@ -795,6 +801,8 @@ class Machine : public StaticReceiver<Machine>
 		Machine(Machine const &);
 		Machine &operator = (Machine const &);
 
+		bool powered() { return !!_vcpus_up; }
+
 	public:
 
 		/*********************************************
@@ -940,6 +948,9 @@ class Machine : public StaticReceiver<Machine>
 					if (verbose_debug)
 						Genode::log("- OP_VCPU_BLOCK ", Genode::Thread::myself()->name());
 
+					if (!powered())
+						Genode::sleep_forever();
+
 					auto const vcpu_id = msg.value;
 					if ((_vcpus_up >= sizeof(_vcpus)/sizeof(_vcpus[0])))
 						return false;
@@ -960,6 +971,9 @@ class Machine : public StaticReceiver<Machine>
 					}
 
 					_vcpus[vcpu_id]->block();
+
+					if (!powered())
+						Genode::sleep_forever();
 
 					{
 						Genode::Mutex::Guard guard(_mutex);
@@ -1057,6 +1071,16 @@ class Machine : public StaticReceiver<Machine>
 					Logging::printf("Creating network connection failed\n");
 					return false;
 				}
+
+				return true;
+			}
+			case MessageHostOp::OP_VM_OFF:
+			{
+				for (auto &vcpu : _vcpus) { if (vcpu) vcpu->off(); }
+
+				_vcpus_up = 0;
+
+				_env.parent().exit(0);
 
 				return true;
 			}

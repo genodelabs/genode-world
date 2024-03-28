@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2011-2023 Genode Labs GmbH
+ * Copyright (C) 2011-2024 Genode Labs GmbH
  * Copyright (C) 2012 Intel Corporation
  *
  * This file is distributed under the terms of the GNU General Public License
@@ -362,7 +362,10 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			}
 
 			if (msg.view == 0) {
-				gui.refresh(msg.x, msg.y, msg.width, msg.height);
+				if (msg.hide)
+					gui.hide();
+				else
+					gui.refresh(msg.x, msg.y, msg.width, msg.height);
 			}
 			else if (msg.view == 1) {
 				int hot_x = 0, hot_y = 0;
@@ -460,6 +463,20 @@ void Seoul::Console::_handle_gui_change()
 
 		if (!_sufficient_ram(gui.fb_mode.area, gui_mode.area))
 			return;
+
+		if (!gui_mode.area.valid()) {
+			enum {
+				BUTTON_POWER = 1U << 8,
+				BUTTON_SLEEP = 1U << 9
+			};
+
+			log("trigger ACPI button power");
+
+			MessageAcpiEvent event(MessageAcpiEvent::EventType::ACPI_EVENT_FIXED,
+			                       BUTTON_POWER);
+
+			_mb.bus_acpi_event.send(event);
+		}
 
 		/* send notification about new mode */
 		MessageConsole msg(MessageConsole::TYPE_MODEINFO_UPDATE, gui.id);

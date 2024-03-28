@@ -292,7 +292,9 @@ puts $vm_cfg_fd {	 <machine verbose="no">
 		<rtc io_base="0x70" irq="8"/>
 		<serial io_base="0x3f8" irq="0x4" host_serial="0x4711"/>
 		<hostsink host_dev="0x4712" buffer="80"/>
-		<vga io_base="0x03c0"/>}
+		<vga io_base="0x03c0"/>
+
+		<acpimodel/>}
 
 if {!$use_multiboot} {
 	puts $vm_cfg_fd "		<vbios_disk boot_disknr=\"0\" disk_count=\"$use_disk_count\"/>"
@@ -328,7 +330,7 @@ if {!$use_multiboot} {
 
 	if {$use_model_ahci} {
 		puts $vm_cfg_fd {
-		<ahci mem="0xe0800000" irq="14" bdf="0x30"/>
+		<ahci mem="0xe0800000"/>
 		<drive sigma0drive="0" controller="0" port="0"/>
 		}
 
@@ -353,20 +355,20 @@ if {!$use_multiboot} {
 if {$use_nic_session} {
 	puts $vm_cfg_fd {
 		<!-- <rtl8029 irq="9" port="0x300"/> -->
-		<intel82576vf/>
+		<intel82576vf mem_mmio="0xe0100000" mem_msix="0xe0120000"/>
 	}
 }
 
 if {$use_virtio} {
 	puts $vm_cfg_fd {
-		<virtio_input irq="11"/>
-		<virtio_gpu   irq="13"/>
+		<virtio_input mem="0xe0200000"/>
+		<virtio_gpu   mem="0xe0400000"/>
 	}
 }
 
 if {$use_audio} {
 	puts $vm_cfg_fd {
-		<virtio_sound irq="15"/>
+		<virtio_sound mem="0xe0600000"/>
 	}
 }
 
