@@ -17,8 +17,8 @@
 		<report label="clipboard"/>
 		<rom label="clipboard"/>
 		<rtc/>
-		<audio_out/>
-		<audio_in/>
+		<play/>
+		<record/>
 		<capture/>
 		<gpu/>
 		<rom label="mesa_gpu_drv.lib.so"/>
@@ -89,7 +89,7 @@
 		<rom label="vfs_capture.lib.so"/>
 		<rom label="vfs_gpu.lib.so"/>
 		<rom label="vfs_jitterentropy.lib.so"/>
-		<rom label="vfs_legacy_oss.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
 		<rom label="vfs_lwip.lib.so"/>
 		<rom label="vfs_pipe.lib.so"/>
 		<rom label="vfs_qtwebengine_shm.lib.so"/>

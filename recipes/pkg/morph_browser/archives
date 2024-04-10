@@ -26,7 +26,7 @@ _/src/vfs_capture
 _/src/vfs_gpu
 _/src/vfs_jitterentropy
 _/src/vfs_lwip
-_/src/vfs_legacy_oss
+_/src/vfs_oss
 _/src/vfs_pipe
 _/src/vfs_qtwebengine_shm
 _/src/zlib
