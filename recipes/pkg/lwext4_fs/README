@@ -1,6 +1,0 @@
-
-   Ext2/3/4 file system server based on lwext4
-
-
-The default configuration allows read-only access to the file system for
-any client.
