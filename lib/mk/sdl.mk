@@ -21,7 +21,6 @@ endif
 # backends
 SRC_CC   = video/SDL_genode_fb_video.cc \
            video/SDL_genode_fb_events.cc \
-           audio/SDL_genodeaudio.cc \
            loadso/SDL_loadso.cc
 
 INC_DIR += $(REP_DIR)/include/SDL \
@@ -65,8 +64,12 @@ SRC_C += $(addprefix events/,$(notdir $(wildcard $(SDL_DIR)/src/events/*.c)))
 INC_DIR += $(SDL_DIR)/src/events
 
 # audio subsystem
-SRC_C += $(addprefix audio/,$(notdir $(wildcard $(SDL_DIR)/src/audio/*.c)))
-INC_DIR += $(SDL_DIR)/src/audio
+SRC_C += $(addprefix audio/,$(notdir $(wildcard $(SDL_DIR)/src/audio/*.c))) \
+         audio/dma/SDL_dmaaudio.c \
+         audio/dsp/SDL_dspaudio.c
+INC_DIR += $(SDL_DIR)/src/audio \
+           $(SDL_DIR)/src/audio/dma \
+           $(SDL_DIR)/src/audio/dsp
 
 # file I/O subsystem
 SRC_C   += file/SDL_rwops.c

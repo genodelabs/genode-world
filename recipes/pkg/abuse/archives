@@ -8,5 +8,6 @@ _/src/sdl_mixer
 _/src/sdl_net
 _/src/stdcxx
 _/src/vfs
+_/src/vfs_oss
 _/src/libpng
 _/src/zlib

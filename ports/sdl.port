@@ -8,7 +8,7 @@ SIG(sdl) := ${URL(sdl)}.sig
 KEY(sdl) := 1528635D8053A57F77D1E08630A59377A7763BE6
 DIR(sdl) := src/lib/sdl
 
-PATCHES   := src/lib/sdl/SDL_video.patch src/lib/sdl/SDL_audio.patch
+PATCHES   := src/lib/sdl/SDL_video.patch
 
 # wipe original 'SDL_config.h' file because it conflicts with out version
 _dirs: remove_default_config

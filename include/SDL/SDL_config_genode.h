@@ -38,8 +38,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-/* Enable the Genode audio driver */
-#define SDL_AUDIO_DRIVER_GENODE 1
+/* Enable the OSS audio driver */
+#define SDL_AUDIO_DRIVER_OSS 1
 
 /* Enable the stub cdrom driver (src/cdrom/dummy/\*.c) */
 #define SDL_CDROM_DUMMY 1

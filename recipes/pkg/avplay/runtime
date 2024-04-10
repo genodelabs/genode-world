@@ -3,7 +3,7 @@
 	<requires>
 		<file_system label="input"/>
 		<gui/>
-		<audio_out/>
+		<play/>
 		<timer/>
 	</requires>
 
@@ -11,6 +11,7 @@
 		<rom label="avplay"/>
 		<rom label="libc.lib.so"/>
 		<rom label="vfs.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
 		<rom label="libm.lib.so"/>
 		<rom label="zlib.lib.so"/>
 		<rom label="sdl.lib.so"/>
@@ -26,11 +27,11 @@
 	<config>
 		<arg value="avplay"/>
 		<arg value="input/mediafile"/>
-		<sdl_audio_volume value="100"/>
 		<libc rtc="/dev/rtc" stdout="/dev/log" stderr="/dev/log"/>
 		<vfs>
 			<dir name="dev">
 				<log/> <inline name="rtc">2000-01-01 00:00</inline>
+				<oss name="dsp" record_enabled="false"/>
 			</dir>
 			<dir name="input"> <fs label="input"/> </dir>
 		</vfs>

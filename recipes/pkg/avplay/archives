@@ -3,4 +3,5 @@ _/src/libc
 _/src/libav
 _/src/sdl
 _/src/vfs
+_/src/vfs_oss
 _/src/zlib

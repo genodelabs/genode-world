@@ -1,7 +1,7 @@
 <runtime ram="64M" caps="512" binary="opentyrian">
 
 	<requires>
-		<audio_out/>
+		<play/>
 		<file_system/>
 		<gui/>
 		<timer/>
@@ -17,6 +17,7 @@
 		<rom label="sdl_net.lib.so"/>
 		<rom label="tyrian.tar"/>
 		<rom label="vfs.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
 	</content>
 
 	<config>
@@ -26,6 +27,7 @@
 			<fs/>
 			<dir name="dev">
 				<log/> <rtc/>
+				<oss name="dsp" record_enabled="false"/>
 			</dir>
 		</vfs>
 	</config>

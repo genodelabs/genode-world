@@ -3,7 +3,6 @@ os
 so
 libc
 zlib
-audio_out_session
 framebuffer_session
 input_session
 gui_session
