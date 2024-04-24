@@ -40,6 +40,8 @@ class Seoul::Audio
 		Genode::Mutex     _mutex { };
 		Timer::Connection _timer;
 
+		Genode::uint64_t  _tsc_prev { };
+
 		unsigned _samples { };
 		unsigned _data_id { 1 };
 

@@ -37,8 +37,25 @@ void Seoul::Audio::_audio_out()
 	{
 		Genode::Mutex::Guard guard(_mutex);
 
-		if (_samples < max_samples())
+		static unsigned counter = 0;
+
+		auto tsc = Genode::Trace::timestamp();
+
+		auto tsc_diff = (tsc - _tsc_prev) / 2712;
+
+		if (_tsc_prev && (tsc_diff > _period_us + 3000 || tsc_diff < _period_us - 1000))
+			Genode::error(__func__, " ", counter, " ",
+			              tsc_diff, "!=", _period_us, " ",
+			              Genode::int64_t(tsc_diff) - Genode::int64_t(_period_us), " ",
+			              _time_window.start, "-", _time_window.end, " ", _time_window.end - _time_window.start);
+
+		counter ++;
+		_tsc_prev = tsc;
+
+		if (_samples < max_samples()) {
+			Genode::error("samples < max_samples ", _samples, "<", max_samples());
 			return;
+		}
 
 		if (_audio_running) {
 			_time_window = _left.schedule_and_enqueue(_time_window, { _period_us }, [&] (auto &submit) {
@@ -86,7 +103,7 @@ bool Seoul::Audio::receive(MessageAudio &msg)
 			_period_us = _frames_per_period * 1'000'000u / 44'100;
 		}
 
-		if (false)
+		if (true)
 			Genode::log("start ", msg.period_bytes(), " -> ",
 			            _frames_per_period, " frames -> ", _period_us, " us");
 
@@ -97,7 +114,7 @@ bool Seoul::Audio::receive(MessageAudio &msg)
 		_audio_stop();
 		_timer.trigger_periodic(0);
 
-		if (false)
+		if (true)
 			Genode::log("stop");
 
 		return true;
