@@ -334,24 +334,46 @@ bool Seoul::Console::receive(MessageConsole &msg)
 	{
 		bool visible_vga_vesa = false;
 		bool visible_others   = false;
+		bool exists_others    = false;
 
 		for_each_gui([&](auto &gui) {
 			if (gui.id == ID_VGA_VESA && gui.visible)
 				visible_vga_vesa = true;
+			if (gui.id != ID_VGA_VESA)
+				exists_others = true;
 			if (gui.id != ID_VGA_VESA && gui.visible)
-				visible_others   = true;
+				visible_others = true;
 		});
 
-		if (visible_others && visible_vga_vesa && _vga_vesa.idle()) {
-			apply_msg(ID_VGA_VESA, [&](auto &gui) {
-				Genode::log("hide vga_vesa window due to inactivity");
-				gui.hide();
-				return true;
+		if (visible_vga_vesa && _vga_vesa.idle() &&
+		    exists_others && !visible_others) {
+			for_each_gui([&](auto &gui) {
+				if (gui.id == ID_VGA_VESA)
+					return;
+
+				/* unhide virtio gpu -  still required - */
+				//Genode::log("unhide virtio gpu");
+				gui.refresh(0, 0, 1, 1);
 			});
 		}
 
-		if (visible_vga_vesa)
-			_reactivate_periodic_timer();
+		if (visible_vga_vesa) {
+			if (visible_others && _vga_vesa.idle()) {
+				apply_msg(ID_VGA_VESA, [&](auto &gui) {
+					Genode::log("hide vga_vesa window due to inactivity");
+					gui.hide();
+					return true;
+				});
+			} else {
+				/* trigger "artificial" wakeup if vga/vesa idle */
+				if (_vga_vesa.reactivate_key_pressed())
+					_reactivate_periodic_timer();
+			}
+		}
+
+		Genode::Mutex::Guard guard(_mutex);
+
+		_cpus_active = true;
 
 		return true;
 	}
@@ -368,10 +390,22 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			}
 
 			if (msg.view == 0) {
-				if (msg.hide)
-					gui.hide();
-				else
+				if (!msg.hide) {
 					gui.refresh(msg.x, msg.y, msg.width, msg.height);
+					return true;
+				}
+
+				if (msg.id != ID_VGA_VESA) {
+					Genode::log("gui.hide() called");
+					gui.hide();
+
+					/* trigger "artificial" wakeup if vga/vesa idle */
+					if (_vga_vesa.reactivate_key_pressed()) {
+						/* trigger handle fb update with timeout programming */
+						auto msg = MessageTimeout(_timer, 1000);
+						receive(msg);
+					}
+				}
 			}
 			else if (msg.view == 1) {
 				int hot_x = 0, hot_y = 0;
@@ -389,11 +423,6 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			return true;
 		});
 
-		/* if the fb updating was off, reactivate timer - move into vga/vesa class XXX */
-		if (msg.id == ID_VGA_VESA) {
-			_reactivate_periodic_timer(true);
-		}
-
 		if (!found)
 			Genode::error("unknown graphical backend ", msg.id);
 
@@ -405,13 +434,10 @@ bool Seoul::Console::receive(MessageConsole &msg)
 }
 
 
-void Seoul::Console::_reactivate_periodic_timer(bool only_if_non_active)
+void Seoul::Console::_reactivate_periodic_timer()
 {
 	{
 		Genode::Mutex::Guard guard(_mutex);
-
-		if (only_if_non_active && _cpus_active)
-			return;
 
 		if (!_cpus_active)
 			_cpus_active = true;

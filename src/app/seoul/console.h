@@ -89,7 +89,7 @@ class Seoul::Console : public StaticReceiver<Seoul::Console>
 		unsigned     _handle_fb_gui(bool, Backend_gui &, bool);
 		bool         _sufficient_ram(Gui::Area const &, Gui::Area const &);
 
-		void _reactivate_periodic_timer(bool = false);
+		void _reactivate_periodic_timer();
 
 		Genode::Signal_handler<Console> _signal_input
 			= { _env.ep(), *this, &Console::_handle_input };

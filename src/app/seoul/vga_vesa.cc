@@ -8,7 +8,7 @@
 
 /*
  * Copyright (C) 2012 Intel Corporation
- * Copyright (C) 2013-2022 Genode Labs GmbH
+ * Copyright (C) 2013-2024 Genode Labs GmbH
  *
  * This file is distributed under the terms of the GNU General Public License
  * version 2.
@@ -26,41 +26,57 @@
 Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
                                                        bool const cpus_active)
 {
-	Genode::Color cursor_color { 255, 255, 255, 255 };
-	bool          cursor_show = false;
-	int           cursor_x    = 0;
-	int           cursor_y    = 0;
+	static Genode::Color cursor_color { 255, 255, 255, 255 };
+	static Genode::Color cursor_clear {   0,   0,   0,   0 };
 
-	if (_fb_state.vga_off || !cpus_active) {
-		_fb_state.idle ++;
-		return Milliseconds(0ULL);
-	} else
-		_fb_state.idle = 0;
+	bool cursor_show = false;
+	int  cursor_x    = 0;
+	int  cursor_y    = 0;
 
 	/* calculate cursor position, get color during loop below */
-	if (_regs->cursor_pos > _regs->offset) {
+	if (_regs && _regs->cursor_pos > _regs->offset) {
 		int pos = int(_regs->cursor_pos - _regs->offset);
 		cursor_x = pos % 80;
 		cursor_y = pos / 80;
 
 		cursor_show = cursor_y < 25;
+
+		if (cursor_color == cursor_clear) {
+			cursor_color = { 255, 255, 255, 255 };
+			cursor_clear = {   0,   0,   0,   0 };
+		}
 	}
+
+	Genode::Surface<Pixel_rgb888> surface(reinterpret_cast<Pixel_rgb888 *>(gui.pixels),
+	                                      gui.fb_mode.area);
+
+	if (_fb_state.vga_off || !cpus_active) {
+		_fb_state.idle ++;
+
+		if (cursor_show) {
+			_print_cursor(cursor_color, cursor_clear, surface, cursor_x, cursor_y);
+
+			gui.refresh(_last_cursor.x * 8  + 0,
+			            _last_cursor.y * 15 + 7, 8, 2);
+
+		}
+
+		return Milliseconds(1000ULL);
+	} else
+		_fb_state.idle = 0;
 
 	if (_fb_state.cmp_even)
 		_fb_state.checksum1 = 0;
 	else
 		_fb_state.checksum2 = 0;
 
-	Genode::Surface<Pixel_rgb888> _surface(reinterpret_cast<Pixel_rgb888 *>(gui.pixels),
-	                                       gui.fb_mode.area);
-
 	auto color_from_palette_index = [&] (auto const idx) -> Color
 	{
-		uint8_t const lum = ((idx & 0x8) >> 3)*127;
+		uint8_t const lum = ((idx & 0x8) >> 3) * 127;
 		return {
-			.r = uint8_t(((idx & 0x4) >> 2)*127+lum), /* R+luminosity */
-			.g = uint8_t(((idx & 0x2) >> 1)*127+lum), /* G+luminosity */
-			.b = uint8_t(((idx & 0x1) >> 0)*127+lum), /* B+luminosity */
+			.r = uint8_t(((idx & 0x4) >> 2) * 127 + lum), /* R+luminosity */
+			.g = uint8_t(((idx & 0x2) >> 1) * 127 + lum), /* G+luminosity */
+			.b = uint8_t(((idx & 0x1) >> 0) * 127 + lum), /* B+luminosity */
 			.a = 255
 		};
 	};
@@ -82,7 +98,13 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 
 				Gui::Rect rect(Gui::Point(x * 8, y * 15),
 				               Gui::Area(8, 15));
-				Box_painter::paint(_surface, rect, color_from_palette_index(bg));
+
+				auto color = color_from_palette_index(bg);
+				Box_painter::paint(surface, rect, color);
+
+				/* get cursor color */
+				if (cursor_x == x && cursor_y == y)
+					cursor_clear = color;
 			}
 
 			char fg = colorvalue & 0xf;
@@ -97,58 +119,58 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 			switch (character) {
 			case 0xb3: { /* | */
 				Gui::Rect rect(Gui::Point(x*8 + 2, y*15 + 0), Gui::Area(2, 15));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xb4: { /* -| */
 				Gui::Rect rect(Gui::Point(x*8 + 0, y*15 + 7), Gui::Area(3, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				rect = Gui::Rect(Gui::Point(x*8 + 2, y*15 + 0), Gui::Area(2, 15));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xbf: { /* -. */
 				Gui::Rect rect(Gui::Point(x*8 + 0, y*15 + 7), Gui::Area(3, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				rect = Gui::Rect(Gui::Point(x*8 + 2, y*15 + 8), Gui::Area(2, 8));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xc3: { /* |- */
 				Gui::Rect rect(Gui::Point(x*8 + 2, y*15 + 7), Gui::Area(6, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				rect = Gui::Rect(Gui::Point(x*8 + 2, y*15 + 0), Gui::Area(2, 15));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xc4: { /* - */
 				Gui::Rect rect(Gui::Point(x*8 + 0, y*15 + 7), Gui::Area(8, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xc0: { /* '- */
 				Gui::Rect rect(Gui::Point(x*8 + 2, y*15 + 7), Gui::Area(6, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				rect = Gui::Rect(Gui::Point(x*8 + 2, y*15), Gui::Area(2, 8));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xda: { /* .- */
 				Gui::Rect rect(Gui::Point(x*8 + 2, y*15 + 7), Gui::Area(6, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				rect = Gui::Rect(Gui::Point(x*8 + 2, y*15 + 8), Gui::Area(2, 8));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			case 0xd9: { /* -' */
 				Gui::Rect rect(Gui::Point(x*8 + 0, y*15 + 7), Gui::Area(3, 2));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				rect = Gui::Rect(Gui::Point(x*8 + 2, y*15), Gui::Area(2, 8));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(surface, rect, color);
 				break;
 			}
 			default:
-				Text_painter::paint(_surface, where, _default_font, color, buffer);
+				Text_painter::paint(surface, where, _default_font, color, buffer);
 				break;
 			}
 
@@ -160,20 +182,8 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 		}
 	}
 
-	if (cursor_show) {
-		bool show = !_last_cursor.blink;
-		if (_last_cursor.x != cursor_x || _last_cursor.y != cursor_y ||
-		    show) {
-			/* - */
-			Gui::Rect rect(Gui::Point(cursor_x * 8 + 0,
-			                          cursor_y * 15 + 7), Gui::Area(8, 2));
-			Box_painter::paint(_surface, rect, cursor_color);
-
-			show = true;
-		}
-
-		_last_cursor = { .x = cursor_x, .y = cursor_y, .blink = show };
-	}
+	if (cursor_show)
+		_print_cursor(cursor_color, cursor_clear, surface, cursor_x, cursor_y);
 
 	_fb_state.cmp_even = !_fb_state.cmp_even;
 
@@ -200,7 +210,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 
 	gui.refresh(0, 0, gui.fb_mode.area.w, gui.fb_mode.area.h);
 
-	return Milliseconds(0ULL);
+	return Milliseconds(1000ULL);
 }
 
 
@@ -245,7 +255,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vesa_mode(Backend_gui &gui,
 			_fb_state.vesa_off = true;
 			_fb_state.unchanged = 0;
 
-			log("disable vga_vesa update to due same content");
+			log("disable vga_vesa update due to same content");
 			return Milliseconds(0ULL);
 		}
 
