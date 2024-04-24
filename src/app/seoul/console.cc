@@ -362,9 +362,11 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			}
 
 			if (msg.view == 0) {
+#if 0
 				if (msg.hide)
 					gui.hide();
 				else
+#endif
 					gui.refresh(msg.x, msg.y, msg.width, msg.height);
 			}
 			else if (msg.view == 1) {
