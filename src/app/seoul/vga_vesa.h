@@ -139,6 +139,22 @@ class Seoul::Vga_vesa
 			info._phys_size         = unsigned(area.count() * host_bytes);
 		}
 
+		void _print_cursor(auto const &cursor_color, auto const &cursor_clear,
+		                   auto &surface, int cursor_x, int cursor_y)
+		{
+			bool show =  _last_cursor.x != cursor_x ||
+			             _last_cursor.y != cursor_y ||
+			            !_last_cursor.blink;
+
+			/* - */
+			Gui::Rect rect(Gui::Point(cursor_x * 8 + 0, cursor_y * 15 + 7),
+			               Gui::Area(8, 2));
+			Box_painter::paint(surface, rect, show ? cursor_color
+			                                       : cursor_clear);
+
+			_last_cursor = { .x = cursor_x, .y = cursor_y, .blink = show };
+		}
+
 	public:
 
 		Vga_vesa(Guest_memory &memory, char * binary_mono_ttf_start)
