@@ -1,5 +1,5 @@
 LICENSE := LGPL
-VERSION := xenial-genode
+VERSION := issue365
 
 DOWNLOADS := ubuntu-ui-toolkit.git
 
