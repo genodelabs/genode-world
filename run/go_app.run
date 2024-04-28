@@ -20,7 +20,7 @@ set executable "go_app"
 # could be like test to refer make target test/go_app
 set executable_place "test"
 
-set executable_mem "120M"
+set executable_mem "250M"
 set executable_caps "300"
 
 # any modules for executable above should be listed here
