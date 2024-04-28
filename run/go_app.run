@@ -13,6 +13,8 @@ set arena_mem_size "1610612736"
 # pipe is mandatory for netpoll which is compiled now into libgo bu default
 set need_pipe 1
 
+set use_rtc 1
+
 # TARGET= from target.mk
 set executable "go_app"
 # could be like test to refer make target test/go_app
@@ -31,12 +33,28 @@ set conf_ld_verbose "yes"
 
 # build section
 set build_components {
-	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs
+	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs drivers/rtc
 }
 
 lappend build_components "$executable_place/$executable"
 
 append_if $need_pipe build_components { lib/vfs_pipe }
+
+set depot_pkgs { }
+lappend depot_pkgs [depot_user]/src/[base_src]
+lappend depot_pkgs [depot_user]/src/init
+
+if [have_board linux] {
+        lappend_if $use_rtc depot_pkgs [depot_user]/src/linux_rtc_drv
+} else {
+        if [have_board pc] {
+                lappend_if $use_rtc depot_pkgs [depot_user]/src/rtc_drv
+        } else  {
+                lappend_if $use_rtc depot_pkgs [depot_user]/src/dummy_rtc_drv
+        }
+}
+
+import_from_depot $depot_pkgs
 
 build $build_components
 
@@ -73,6 +91,19 @@ append config {
 	</start>
 }
 
+append_if [expr [have_board linux] && $use_rtc] config {
+	<start name="linux_rtc_drv" caps="200" ld="no">}
+append_if [expr [have_board pc] && $use_rtc] config {
+	<start name="rtc_drv" caps="200">}
+append_if [expr ![have_board pc] && ![have_board linux] && $use_rtc] config {
+	<start name="dummy_rtc_drv" caps="200">}
+
+append_if $use_rtc  config {
+		<resource name="RAM" quantum="6M"/>
+		<provides> <service name="Rtc"/> </provides>
+	</start>
+}
+
 # main golang executable
 append config {
 	<start name="} $executable {" caps="} $executable_caps {">
@@ -80,7 +111,7 @@ append config {
 		<config verbose="} $conf_verbose {"  ld_verbose="} $conf_ld_verbose {">
 			<arg value="} $executable {" />
 			<vfs>
-				<dir name="dev"> <log/> </dir>
+				<dir name="dev"> <log/> <inline name="rtc">2020-01-01 00:00</inline> </dir>
 }
 
 # add every library/binaries (mandatory for golang stack unwind)
@@ -104,6 +135,8 @@ append_if $need_pipe config {
 append config {
 			</vfs>
 				<libc stdout="/dev/log" stderr="/dev/log"
+				rtc="/dev/rtc"
+
 }
 
 append_if $need_pipe config {

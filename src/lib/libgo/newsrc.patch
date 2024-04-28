@@ -475,7 +475,7 @@ diff -uwBrN gcc.libgo_etalon/libgo/go/runtime/os_genode.go libgo-27ecc7632f6a601
 +func semasleep(ns int64) int32 {
 +	_m_ := getg().m
 +	if ns >= 0 {
-+		const CLOCK_REALTIME int64 = 9
++		const CLOCK_REALTIME int64 = 0
 +		var ts timespec
 +
 +		if clock_gettime(CLOCK_REALTIME, &ts) != 0 {
