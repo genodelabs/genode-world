@@ -24,6 +24,7 @@ for stack it use alloc_secondary_stack() from Genode.
 	Installation instruction
 	========================
 0. setup genode on appropriate platform using https://github.com/tor-m6/genode-world.git, 
+use branch wich corresponds to version (or latest), e.g for Genode 24.02 use branch 24.02
 configure toolchain and prepare  code to compile, setup environment, e.g. (replace by your own dirs):
 #!/bin/sh
 ARCH=aarch64
@@ -137,13 +138,13 @@ References included into run file, as well as parameters like 'arena size' (virt
 virtual address space used, not always necessary correspond to physical RAM size (probably not significantly
 less).
 
-For network and tcp setup please take a look for go_http.run exapmple file.
+For network and tcp setup please take a look for go_http.run example file.
 In this moment it support lwip and lxip (need different setup for linux vs others, see run file).
 
 	Current limitations
 	===================
   -	tested nominally up to 4 CPU (you could setup it in go_app.run/go_http.run parameters)
-  -	it works on x86_64, tested on nova, foc, linux, sel4 kernels (sel4 support for Jun 23 seems to be broken);
+  -	it works on x86_64, tested on nova, foc, linux, sel4 kernels (sel4 support for May 24 seems to be broken in stack unwind);
 	genode do not have makecontex/setcontext/gencontext family while it is crucial to support because of goroutine model;
 	I have to port it from FreeBSD libc (can be done for RISCV if need). It is machine and platform-dependent;
   -	it works on ARM V8A (64 bit), tested on foc and hw kernels, probably work for others.
