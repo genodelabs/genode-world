@@ -137,7 +137,7 @@ type Customer struct {
 }
 
 func (c *Customer) String() string {
-	return fmt.Sprintf("%p", c)[7:]
+	return fmt.Sprintf("%7p", c)[7:]
 }
 
 func NewBarber() (b *Barber) {
