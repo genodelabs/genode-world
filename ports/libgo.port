@@ -30,7 +30,7 @@ TAR_OPT(gcc) := gcc-$(VERSION)/libgo \
                 gcc-$(VERSION)/move-if-change \
                 --strip-components=1
 
-PATCHES   := src/lib/libgo/*.patch src/lib/libatomic/*.patch
+PATCHES   := $(sort $(wildcard src/lib/libgo/*.patch src/lib/libatomic/*.patch))
 PATCH_OPT := -p1 -d src/lib/gcc
 
 DIRS := include
