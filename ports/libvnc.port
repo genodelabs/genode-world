@@ -7,6 +7,7 @@ SHA(libvnc) := f5f9f87f23f8f81260e071dac89169357b69f60dd61f537578b2613bc5fb60af
 DIR(libvnc) := src/lib/vnc
 
 PATCHES := src/app/sdl_vnc/vnc_pwd.patch \
+           src/app/sdl_vnc/SDLvncviewer.patch \
            src/lib/libvnc/socket.patch
 
 #avoid 100% cpu utilization, our libc caps timeout values < 1ms to 0

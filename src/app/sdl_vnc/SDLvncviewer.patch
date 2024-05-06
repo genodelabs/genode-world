@@ -1,0 +1,28 @@
++++ src/lib/vnc/client_examples/SDLvncviewer.c
+@@ -153,6 +153,11 @@
+ 	case SDLK_BREAK: k = XK_Break; break;
+ 	default: break;
+ 	}
++
++	if (k == 0) {
++		if (e->keysym.unicode < 0x100)
++			k = e->keysym.unicode;
++	}
+ 	/* both SDL and X11 keysyms match ASCII in the range 0x01-0x7f */
+ 	if (k == 0 && sym > 0x0 && sym < 0x100) {
+ 		k = sym;
+@@ -163,12 +168,8 @@
+ 				k &= ~0x20;
+ 		}
+ 	}
+-	if (k == 0) {
+-		if (e->keysym.unicode < 0x100)
+-			k = e->keysym.unicode;
+-		else
+-			rfbClientLog("Unknown keysym: %d\n", sym);
+-	}
++	else
++		rfbClientLog("Unknown keysym: %d\n", sym);
+ 
+ 	return k;
+ }
