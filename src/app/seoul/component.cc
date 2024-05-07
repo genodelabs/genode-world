@@ -55,6 +55,7 @@
 #include "timeout_late.h"
 #include "gui.h"
 #include "audio.h"
+#include "xhci.h"
 
 
 enum { verbose_debug = false };
@@ -792,6 +793,8 @@ class Machine : public StaticReceiver<Machine>
 		Rtc::Session          *_rtc          { nullptr };
 		Seoul::Audio          *_audio        { nullptr };
 
+		Genode::Constructible<Seoul::Xhci> _xhci { };
+
 		Vcpu *                 _vcpus[16]    { nullptr };
 		Genode::Bit_array<64>  _vcpus_active { };
 
@@ -1218,13 +1221,13 @@ class Machine : public StaticReceiver<Machine>
 		 * Device models are instantiated in the order of appearance in the XML
 		 * configuration.
 		 */
-		void setup_devices(Genode::Xml_node const &machine_node)
+		void setup_devices(auto const &config, auto const &machine)
 		{
 			using namespace Genode;
 
-			bool const verbose = machine_node.attribute_value("verbose", false);
+			bool const verbose = machine.attribute_value("verbose", false);
 
-			machine_node.for_each_sub_node([&](auto const &node) {
+			machine.for_each_sub_node([&](auto const &node) {
 
 				typedef String<32> Model_name;
 
@@ -1232,6 +1235,15 @@ class Machine : public StaticReceiver<Machine>
 
 				if (verbose)
 					Genode::log("device: ", name);
+
+				if (name == "xhci") {
+					if (_xhci.constructed()) {
+						Logging::panic("xhci can only by instantiated once");
+						throw Config_error();
+					}
+
+					_xhci.construct(_env, _heap, config, _motherboard);
+				}
 
 				Device_model_info *dmi = device_model_registry()->lookup(name.string());
 
@@ -1448,7 +1460,7 @@ void Component::construct(Genode::Env &env)
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
 
-	machine.setup_devices(node.sub_node("machine"));
+	machine.setup_devices(node, node.sub_node("machine"));
 
 	Genode::log("\n--- Booting VM ---");
 

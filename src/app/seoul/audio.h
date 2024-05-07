@@ -81,6 +81,8 @@ class Seoul::Audio
 
 			_samples = 0;
 
+			_time_window = { };
+
 			_right.stop();
 			_left .stop();
 		}

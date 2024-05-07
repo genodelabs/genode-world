@@ -44,6 +44,7 @@ if {![info exists use_disk_count]} { set use_disk_count 1 }
 if {![info exists cpuid_native]}   { set cpuid_native   "no" }
 if {![info exists vdi_name]}       { set vdi_name       "guest.vdi" }
 if {![info exists image]}          { set image          "seoul-disc.raw" }
+if {![info exists use_model_xhci]} { set use_model_xhci 0 }
 
 if {$use_fs_rump   } { import_from_depot [depot_user]/src/rump }
 if {$use_part_block} { import_from_depot [depot_user]/src/part_block }
@@ -373,6 +374,12 @@ if {$use_audio} {
 	}
 }
 
+if {$use_model_xhci} {
+	puts $vm_cfg_fd {
+		<xhci mem="0xe0700000"/>
+	}
+}
+
 puts $vm_cfg_fd {
 	</machine>
 	<multiboot>}
@@ -497,6 +504,7 @@ append_if $use_usb config {
 		<config>
 			<report devices="yes"/>
 			<policy label_prefix="usb_hid_drv"> <device class="0x3"/> </policy>
+			<policy label_prefix="seoul"> <device/> </policy>
 		</config>
 		<route>
 			<service name="Report"> <child name="report_rom"/> </service>
@@ -715,6 +723,7 @@ append_if [expr $use_block_sata && $use_part_block] config {
 append config {
 			<service name="Gui"> <child name="wm"/> </service>
 			<service name="Rtc"> <child name="rtc_drv"/> </service>
+			<service name="Usb"> <child name="usb_drv"/> </service>
 			<service name="Report" label="shape"> <child name="wm"/> </service>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service><parent/><any-child/></any-service>
@@ -838,3 +847,9 @@ build_boot_image $boot_modules
 
 # A copy of the config is placed in the run folder.
 exec rm -f bin/vm_seoul.cfg
+
+if {$use_usb} {
+	append qemu_args " -device nec-usb-xhci,id=xhci"
+	append qemu_args " -device usb-kbd,bus=xhci.0"
+	append qemu_args " -device usb-mouse,bus=xhci.0"
+}

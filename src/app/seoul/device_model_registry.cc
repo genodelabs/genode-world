@@ -88,6 +88,8 @@ MODEL_INFO(virtio_input, "mem", "bdf", "resolution_x", "resolution_y")
 MODEL_INFO(virtio_gpu,   "mem", "bdf")
 MODEL_INFO(virtio_sound, "mem", "bdf")
 
+MODEL_INFO(xhci, "mem")
+
 MODEL_INFO(ide, "port0", "port1", "irq", "bdf", "disk")
 MODEL_INFO(ahci, "mem", "bdf")
 MODEL_INFO(drive, "sigma0drive", "controller", "port", "verbose")

@@ -20,7 +20,7 @@ src/include:
 		cp $(GENODE_DIR)/repos/base/$$file $$file; \
 	done
 
-MIRROR_FROM_WORLD_DIR := lib/mk/seoul_libc_support.mk
+MIRROR_FROM_WORLD_DIR := lib/mk/seoul_libc_support.mk lib/mk/seoul-qemu-usb.mk
 
 content: $(MIRROR_FROM_WORLD_DIR)
 
@@ -28,14 +28,28 @@ $(MIRROR_FROM_WORLD_DIR):
 	mkdir -p $(dir $@)
 	cp -r $(GENODE_DIR)/repos/world/$@ $(dir $@)
 
-
-MIRROR_FROM_LIBPORTS := lib/mk/libc-common.inc
+MIRROR_FROM_LIBPORTS := lib/mk/libc-common.inc \
+                        lib/import/import-qemu-usb_include.mk \
+                        lib/mk/qemu-usb_include.mk \
+                        lib/mk/qemu-usb.inc \
+                        include/qemu \
+                        src/lib/qemu-usb
 
 content: $(MIRROR_FROM_LIBPORTS)
 
 $(MIRROR_FROM_LIBPORTS):
 	mkdir -p $(dir $@)
 	cp -r $(GENODE_DIR)/repos/libports/$@ $(dir $@)
+
+QEMU_USB_PORT_DIR := $(call port_dir,$(GENODE_DIR)/repos/libports/ports/qemu-usb)
+
+MIRROR_FROM_QEMU_USB_PORT_DIR := src/lib/qemu
+
+content: $(MIRROR_FROM_QEMU_USB_PORT_DIR)
+
+$(MIRROR_FROM_QEMU_USB_PORT_DIR):
+	mkdir -p $(dir $@)
+	cp -r $(QEMU_USB_PORT_DIR)/$@ $(dir $@)
 
 content:
 

@@ -5,7 +5,8 @@ SEOUL_CONTRIB_DIR = $(call select_from_ports,seoul)/src/app/seoul
 SEOUL_GENODE_DIR  = $(SEOUL_CONTRIB_DIR)/genode
 
 LIBS   += base blit seoul_libc_support format
-SRC_CC  = component.cc user_env.cc device_model_registry.cc state.cc
+LIBS   += seoul-qemu-usb
+SRC_CC  = component.cc user_env.cc device_model_registry.cc state.cc xhci.cc
 SRC_CC += console.cc keyboard.cc network.cc disk.cc vga_vesa.cc audio.cc
 SRC_BIN = mono.tff
 
@@ -33,6 +34,9 @@ CC_OPT_model/rtl8029      := -mssse3
 CC_OPT_network            := -mssse3
 
 CC_OPT_PIC :=
+
+# due to Qemu::Timer_queue, Qemu:Pci_device, Qemu::Controller
+CC_OPT_xhci := -Wno-non-virtual-dtor
 
 vpath %.cc  $(SEOUL_CONTRIB_DIR)
 vpath %.cc  $(REP_DIR)/src/app/seoul
