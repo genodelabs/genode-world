@@ -134,6 +134,9 @@ void *operator new (size_t size)
 
 void operator delete[](void *ptr)
 {
+	if (!ptr)
+		return;
+
 	if (verbose_memory_leak)
 		Genode::warning("delete[] not implemented ", ptr);
 }
@@ -141,6 +144,9 @@ void operator delete[](void *ptr)
 
 void operator delete[](void *ptr, long unsigned int)
 {
+	if (!ptr)
+		return;
+
 	if (verbose_memory_leak)
 		Genode::warning("delete[] not implemented ", ptr);
 }
@@ -177,4 +183,15 @@ Genode::Fifo<Parameter> &Parameter::all_parameters()
   return _all_parameters;
 }
 
-// EOF
+extern "C" void * malloc(size_t)
+{
+	Genode::error(__func__, " called");
+	Genode::sleep_forever();
+	return nullptr;
+}
+
+extern "C" void free(void *)
+{
+	Genode::error(__func__, " called");
+	Genode::sleep_forever();
+}

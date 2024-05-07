@@ -55,6 +55,7 @@
 #include "timeout_late.h"
 #include "gui.h"
 #include "audio.h"
+#include "xhci.h"
 
 
 enum { verbose_debug = false };
@@ -1447,6 +1448,8 @@ void Component::construct(Genode::Env &env)
 	static Seoul::Disk vdisk(env, machine.motherboard(),
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
+
+	static Seoul::Xhci xhci(env, heap, node, machine.motherboard());
 
 	machine.setup_devices(node.sub_node("machine"));
 
