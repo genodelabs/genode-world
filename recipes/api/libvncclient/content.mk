@@ -14,4 +14,4 @@ include:
 	cp -r $(PORT_DIR)/src/lib/vnc/rfb/*.h $@/rfb/.
 
 LICENSE:
-	cp $(PORT_DIR)/src/lib/vnc/README LICENSE
+	cp $(PORT_DIR)/src/lib/vnc/COPYING LICENSE

@@ -15,4 +15,4 @@ lib/mk:
 	cp $(addprefix $(REP_DIR)/$@/,vncclient.mk) $@
 
 LICENSE:
-	cp $(PORT_DIR)/src/lib/vnc/README LICENSE
+	cp $(PORT_DIR)/src/lib/vnc/COPYING LICENSE

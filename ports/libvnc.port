@@ -1,14 +1,13 @@
 LICENSE := GPLv2
-VERSION := 0.9.9
+VERSION := 0.9.14
 DOWNLOADS := libvnc.archive
 
 URL(libvnc) := https://github.com/LibVNC/libvncserver/archive/LibVNCServer-$(VERSION).tar.gz
-SHA(libvnc) := f5f9f87f23f8f81260e071dac89169357b69f60dd61f537578b2613bc5fb60af
+SHA(libvnc) := 83104e4f7e28b02f8bf6b010d69b626fae591f887e949816305daebae527c9a5
 DIR(libvnc) := src/lib/vnc
 
 PATCHES := src/app/sdl_vnc/vnc_pwd.patch \
-           src/app/sdl_vnc/SDLvncviewer.patch \
-           src/lib/libvnc/socket.patch
+           src/app/sdl_vnc/SDLvncviewer.patch
 
 #avoid 100% cpu utilization, our libc caps timeout values < 1ms to 0
 default : additional_steps

@@ -1,4 +1,4 @@
-<runtime ram="48M" caps="400" binary="init">
+<runtime ram="55M" caps="400" binary="init">
 
 	<requires>
 		<nic/>
@@ -37,8 +37,8 @@
 			</route>
 		</start>
 
-		<start name="sdl_vnc" caps="150">
-			<resource name="RAM" quantum="36M"/>
+		<start name="sdl_vnc" caps="160">
+			<resource name="RAM" quantum="48M"/>
 <!--
 			<config>
 				<arg value="sdlvncviewer"/>
@@ -65,9 +65,18 @@
 		<rom label="vfs.lib.so"/>
 		<rom label="vfs_lwip.lib.so"/>
 		<rom label="vfs_lxip.lib.so"/>
+		<rom label="vfs_gpu.lib.so"/>
 		<rom label="lxip.lib.so"/>
 		<rom label="libc.lib.so"/>
-		<rom label="sdl.lib.so"/>
+		<rom label="sdl2.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="egl.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="libiconv.lib.so"/>
+		<rom label="libdrm.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="libm.lib.so"/>
 		<rom label="jpeg.lib.so"/>
 		<rom label="zlib.lib.so"/>
 		<rom label="init"/>

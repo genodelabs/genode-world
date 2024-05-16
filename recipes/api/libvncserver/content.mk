@@ -9,10 +9,9 @@ $(MIRROR_FROM_REP_DIR):
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/libvnc)
 
 include:
-	mkdir -p $@/rfb $@/x11vnc
+	mkdir -p $@/rfb
 	cp -r $(REP_DIR)/include/libvnc/* $@/.
 	cp -r $(PORT_DIR)/src/lib/vnc/rfb/*.h $@/rfb/.
-	cp -r $(PORT_DIR)/src/lib/vnc/x11vnc/nox11.h $@/x11vnc/.
 
 LICENSE:
-	cp $(PORT_DIR)/src/lib/vnc/README LICENSE
+	cp $(PORT_DIR)/src/lib/vnc/COPYING LICENSE
