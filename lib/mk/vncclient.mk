@@ -12,6 +12,8 @@ SRC_C := libvncclient/cursor.c \
          libvncclient/vncviewer.c \
          common/minilzo.c \
          common/turbojpeg.c \
+         common/crypto_included.c \
+         common/d3des.c \
          libvncclient/tls_none.c
 
 SHARED_LIB = yes

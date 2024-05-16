@@ -33,7 +33,8 @@ SRC_C := libvncserver/main.c \
          libvncserver/zrleoutstream.c \
          libvncserver/zrlepalettehelper.c \
          libvncserver/tight.c \
-         common/turbojpeg.c
+         common/turbojpeg.c \
+         common/crypto_included.c
 
 SHARED_LIB = yes
 
