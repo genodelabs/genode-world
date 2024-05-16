@@ -4,15 +4,16 @@ LIBS += libc zlib jpeg
 
 INC_DIR += $(LIBVNCCLIENT_PORT_DIR)/src/lib/vnc/common
 
-SRC_C := cursor.c \
-         listen.c \
-         rfbproto.c \
-         sockets.c \
-         vncviewer.c \
-         minilzo.c \
-         tls_none.c
+SRC_C := libvncclient/cursor.c \
+         libvncclient/listen.c \
+         libvncclient/rfbproto.c \
+         libvncclient/sockets.c \
+         common/sockets.c \
+         libvncclient/vncviewer.c \
+         common/minilzo.c \
+         common/turbojpeg.c \
+         libvncclient/tls_none.c
 
 SHARED_LIB = yes
 
-vpath minilzo.c $(LIBVNCCLIENT_PORT_DIR)/src/lib/vnc/common
-vpath %.c $(LIBVNCCLIENT_PORT_DIR)/src/lib/vnc/libvncclient
+vpath %.c $(LIBVNCCLIENT_PORT_DIR)/src/lib/vnc

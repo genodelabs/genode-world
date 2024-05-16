@@ -3,6 +3,8 @@ if {![have_include power_on/qemu]} {
 	exit 0
 }
 
+create_boot_directory
+
 import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/pkg/[drivers_nic_pkg] \
                   [depot_user]/src/init \
@@ -10,6 +12,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/nic_router \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_lwip \
+                  [depot_user]/src/vfs_pipe \
                   [depot_user]/src/jpeg \
                   [depot_user]/src/libpng \
                   [depot_user]/src/zlib \
@@ -17,7 +20,6 @@ import_from_depot [depot_user]/src/[base_src] \
 
 build { lib/vncserver test/vncserver }
 
-create_boot_directory
 
 install_config {
 <config>
@@ -38,12 +40,13 @@ install_config {
 	<start name="test-vncserver">
 		<resource name="RAM" quantum="20M"/>
 		<config>
-			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
+			<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log" socket="/socket" pipe="pipe"/>
 			<vfs>
 				<dir name="dev"> <log/> <null/> </dir>
 				<dir name="socket">
 					<lwip dhcp="yes"/>
 				</dir>
+				<dir name="pipe"> <pipe/> </dir>
 			</vfs>
 		</config>
 	</start>

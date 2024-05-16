@@ -6,7 +6,6 @@ src/app/sdl_vnc:
 	mkdir -p $@
 	cp -r $(REP_DIR)/$@/* $@/.
 	cp $(PORT_DIR)/src/lib/vnc/client_examples/SDLvncviewer.c $@/.
-	cp $(PORT_DIR)/src/lib/vnc/client_examples/scrap.* $@/.
 
 LICENSE:
-	cp $(PORT_DIR)/src/lib/vnc/README LICENSE
+	cp $(PORT_DIR)/src/lib/vnc/COPYING LICENSE

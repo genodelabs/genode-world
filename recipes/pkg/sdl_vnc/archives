@@ -5,7 +5,13 @@ _/src/fs_rom
 _/src/vfs
 _/src/vfs_lwip
 _/src/vfs_lxip
+_/src/vfs_gpu
 _/src/libc
-_/src/sdl
+_/src/sdl2
 _/src/jpeg
 _/src/zlib
+_/src/mesa
+_/src/libiconv
+_/src/libdrm
+_/src/expat
+_/src/stdcxx
