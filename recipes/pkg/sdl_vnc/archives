@@ -6,6 +6,7 @@ _/src/vfs
 _/src/vfs_lwip
 _/src/vfs_lxip
 _/src/vfs_gpu
+_/src/vfs_import
 _/src/libc
 _/src/sdl2
 _/src/jpeg

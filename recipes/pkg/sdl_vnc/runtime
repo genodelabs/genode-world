@@ -1,4 +1,4 @@
-<runtime ram="55M" caps="400" binary="init">
+<runtime ram="55M" caps="500" binary="init">
 
 	<requires>
 		<nic/>
@@ -27,32 +27,51 @@
 			<any-service> <parent/> <any-child/> </any-service>
 		</default-route>
 
+		<start name="vfs" caps="100">
+			<resource name="RAM" quantum="2M"/>
+			<provides> <service name="File_system"/> </provides>
+			<config>
+				<vfs>
+					<fs/>
+					<import>
+						<inline name="config"><config>
+	<arg value="sdlvncviewer"/>
+	<arg value="127.0.0.1:5901"/>
+<!--
+	<arg value="-password"/>
+	<arg value="secret"/>
+-->
+	<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
+	<vfs>
+		<dir name="dev">
+			<log/> <null/> <rtc/>
+			<inline name="random">01234567890123456789</inline>
+		</dir>
+		<dir name="socket"> <lwip dhcp="yes"/> </dir>
+	</vfs>
+</config></inline>
+					</import>
+				</vfs>
+				<policy label_prefix="fs_rom" root="/" writeable="no"/>
+			</config>
+			<route>
+				<service name="File_system"> <parent label="recall"/> </service>
+				<any-service> <parent /> </any-service>
+			</route>
+		</start>
+
 		<start name="fs_rom" caps="100">
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="ROM"/> </provides>
 			<config/>
 			<route>
-				<service name="File_system"> <parent label="recall"/> </service>
+				<service name="File_system"> <child name="vfs"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
 
 		<start name="sdl_vnc" caps="160">
 			<resource name="RAM" quantum="48M"/>
-<!--
-			<config>
-				<arg value="sdlvncviewer"/>
-				<arg value="127.0.0.1:5901"/>
-				<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket"/>
-				<vfs>
-					<dir name="dev">
-						<log/> <null/ <rtc/>
-						<inline name="random">01234567890123456789</inline>
-					</dir>
-					<dir name="socket"> <lwip dhcp="yes"/> </dir>
-				</vfs>
-			</config>
--->
 			<route>
 				<service name="ROM" label="config">
 					<child name="fs_rom" label="config"/> </service>
@@ -62,10 +81,12 @@
 	</config>
 
 	<content>
+		<rom label="vfs"/>
 		<rom label="vfs.lib.so"/>
 		<rom label="vfs_lwip.lib.so"/>
 		<rom label="vfs_lxip.lib.so"/>
 		<rom label="vfs_gpu.lib.so"/>
+		<rom label="vfs_import.lib.so"/>
 		<rom label="lxip.lib.so"/>
 		<rom label="libc.lib.so"/>
 		<rom label="sdl2.lib.so"/>
