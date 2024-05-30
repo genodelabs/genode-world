@@ -45,12 +45,12 @@ lappend depot_pkgs [depot_user]/src/[base_src]
 lappend depot_pkgs [depot_user]/src/init
 
 if [have_board linux] {
-        lappend_if $use_rtc depot_pkgs [depot_user]/src/linux_rtc_drv
+        lappend_if $use_rtc depot_pkgs [depot_user]/src/linux_rtc
 } else {
         if [have_board pc] {
-                lappend_if $use_rtc depot_pkgs [depot_user]/src/rtc_drv
+                lappend_if $use_rtc depot_pkgs [depot_user]/src/pc_rtc
         } else  {
-                lappend_if $use_rtc depot_pkgs [depot_user]/src/dummy_rtc_drv
+                lappend_if $use_rtc depot_pkgs [depot_user]/src/dummy_rtc
         }
 }
 
@@ -92,11 +92,11 @@ append config {
 }
 
 append_if [expr [have_board linux] && $use_rtc] config {
-	<start name="linux_rtc_drv" caps="200" ld="no">}
+	<start name="linux_rtc" caps="200" ld="no">}
 append_if [expr [have_board pc] && $use_rtc] config {
-	<start name="rtc_drv" caps="200">}
+	<start name="pc_rtc" caps="200">}
 append_if [expr ![have_board pc] && ![have_board linux] && $use_rtc] config {
-	<start name="dummy_rtc_drv" caps="200">}
+	<start name="dummy_rtc" caps="200">}
 
 append_if $use_rtc  config {
 		<resource name="RAM" quantum="6M"/>

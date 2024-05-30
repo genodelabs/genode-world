@@ -12,8 +12,8 @@ set build_components {
 	lib/vfs_lwip
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
+source ${genode_dir}/repos/base/run/platform.inc
+append_platform_build_components
 
 build $build_components
 
@@ -43,7 +43,7 @@ append config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>}
 
-append_platform_drv_config
+append_platform_config
 
 append config {
 	<start name="timer">
@@ -51,20 +51,20 @@ append config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 
-	<start name="nic_drv" caps="120">
-		<binary name="pc_nic_drv"/>
+	<start name="nic" caps="120">
+		<binary name="pc_nic"/>
 		<resource name="RAM" quantum="16M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
 
-	<start name="fb_drv" caps="200">
-		<binary name="vesa_fb_drv"/>
+	<start name="fb" caps="200">
+		<binary name="vesa_fb"/>
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="Framebuffer"/></provides>
 		<config buffered="yes"/>
 	</start>
 
-	<start name="ps2_drv">
+	<start name="ps2">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Input"/></provides>
 	</start>
@@ -84,7 +84,7 @@ append config {
 			</output>
 		</config>
 		<route>
-			<service name="Input" label="ps2"> <child name="ps2_drv"/> </service>
+			<service name="Input" label="ps2"> <child name="ps2"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -127,7 +127,7 @@ install_config $config
 
 # generic modules
 set boot_modules {
-	pc_nic_drv
+	pc_nic
 	libc.lib.so
 	libcrypto.lib.so
 	libm.lib.so
@@ -140,7 +140,7 @@ set boot_modules {
 }
 
 # platform-specific modules
-append_platform_drv_boot_modules
+append_platform_boot_modules
 build_boot_image $boot_modules
 
 append qemu_args " -object filter-dump,id=net0,netdev=net0,file=[run_dir].pcap"

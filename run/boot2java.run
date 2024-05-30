@@ -18,7 +18,6 @@ if {[expr ![have_include "power_on/qemu"] && [have_board pc]]} {
 
 source ${genode_dir}/repos/gems/run/sculpt.run
 
-# enable Qemu networking, usable via the nic_drv
 append qemu_args " -m 1024 "
 
 # attach small SATA disk to Qemu to experiment with file-system access

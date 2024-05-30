@@ -4,7 +4,7 @@
 # defined prior including this file:
 #
 # import       - depot archives content to include as boot modules
-# fb_config    - optional XML config to be passed to the fb_drv
+# fb_config    - optional XML config to be passed to the fb driver
 # boot_modules - supplemental boot modules
 # app_config   - start node(s) of init for running the application
 #
@@ -25,7 +25,7 @@ import_from_depot $import
 if {![info exists fb_config]} {
 	set fb_config {<config buffered="yes" width="640" height="480"/>} }
 
-set fd [open [run_dir]/genode/fb_drv.config w]
+set fd [open [run_dir]/genode/fb.config w]
 puts $fd $fb_config
 close $fd
 

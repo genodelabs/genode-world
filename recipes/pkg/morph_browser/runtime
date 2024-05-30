@@ -21,7 +21,7 @@
 		<record/>
 		<capture/>
 		<gpu/>
-		<rom label="mesa_gpu_drv.lib.so"/>
+		<rom label="mesa_gpu.lib.so"/>
 	</requires>
 
 	<content>

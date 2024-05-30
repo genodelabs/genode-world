@@ -5,7 +5,7 @@ if {[have_board linux]} {
 	exit 1
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
+source ${genode_dir}/repos/base/run/platform.inc
 
 set build_components {
 	app/drill
@@ -21,7 +21,7 @@ set build_components {
 	test/libc_getaddrinfo
 }
 
-append_platform_drv_build_components
+append_platform_build_components
 
 build $build_components
 
@@ -45,19 +45,19 @@ append config {
 	</default-route>
 	<default caps="128"/>}
 
-append_platform_drv_config
+append_platform_config
 
 append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="rtc_drv">
+	<start name="pc_rtc">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
-	<start name="nic_drv">
-		<binary name="pc_nic_drv"/>
+	<start name="nic">
+		<binary name="pc_nic"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
@@ -95,7 +95,7 @@ append config {
 			</domain>
 		</config>
 		<route>
-			<service name="Nic"> <child name="nic_drv"/> </service>
+			<service name="Nic"> <child name="nic"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -180,8 +180,8 @@ set boot_modules {
 	libssl.lib.so
 	lxip.lib.so vfs_lxip.lib.so
 	nic_router
-	pc_nic_drv
-	rtc_drv
+	pc_nic
+	pc_rtc
 	sequence
 	stubby
 	timer
@@ -191,7 +191,7 @@ set boot_modules {
 }
 
 # platform-specific modules
-append_platform_drv_boot_modules
+append_platform_boot_modules
 
 build_boot_image $boot_modules
 

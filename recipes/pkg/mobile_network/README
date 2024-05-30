@@ -1,7 +1,7 @@
 
          Subsystem providing access to a mobile LTE network
 
-This package deploys the usb_net_drv, mbimcli and nic_router components
+This package deploys the usb_net driver, mbimcli and nic_router components
 among other utility components. It serves as a standalone variant for providing
 network access via a supported USB LTE modem.
 
@@ -15,7 +15,7 @@ After successful connection, the mbimcli component creates a config for the
 package-internal nic_router. By default, this config advises the nic_router
 to provide a default domain as a 'Nic' server and to provide another domain
 as a 'Nic' client. The latter allows a cascaded setup with Sculpt's central
-nic_router. Both domains will be forwarded and NATed to the usb_net_drv.
+nic_router. Both domains will be forwarded and NATed to the usb_net driver.
 
 The package-internal nic_router operates a DHCP server on both domains. The
 interface's IP address of the default domain and the address range for the DHCP
@@ -54,5 +54,5 @@ Furthermore, TCP, UDP and ICMP packets are forwarded from the default domain to
 the mobile_uplink domain where they are NATed.
 
 Note, that this config is compatible with an already existing uplink domain
-(e.g. from a 'nic_drv' or 'wifi_drv'). You can easily switch the router's
+(e.g. from a NIC or wifi driver). You can easily switch the router's
 internal routing by changing the 'domain' attributes in the default domain.

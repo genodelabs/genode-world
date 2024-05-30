@@ -12,11 +12,11 @@ set sftp_user         "leon"
 set sftp_password     "noel"
 
 
-proc rtc_drv { } {
+proc rtc_driver { } {
 	switch [board] {
-		linux   { return "linux_rtc_drv" }
-		pc      { return "rtc_drv" }
-		default { return "dummy_rtc_drv" }
+		linux   { return "linux_rtc" }
+		pc      { return "pc_rtc" }
+		default { return "dummy_rtc" }
 	}
 }
 
@@ -45,7 +45,7 @@ proc uplink_domain_node { } {
 
 lappend depot_archives [depot_user]/src/[base_src]
 lappend depot_archives [depot_user]/pkg/[drivers_nic_pkg]
-lappend depot_archives [depot_user]/src/[rtc_drv]
+lappend depot_archives [depot_user]/src/[rtc_driver]
 lappend depot_archives [depot_user]/src/bash
 lappend depot_archives [depot_user]/src/coreutils-minimal
 lappend depot_archives [depot_user]/src/fs_rom
@@ -102,9 +102,9 @@ append config {<config>
 		</route>
 	</start>
 
-	<start name="rtc_drv" ld="} [expr [have_board linux] ? "no" : "yes"] {">
+	<start name="rtc" ld="} [expr [have_board linux] ? "no" : "yes"] {">
 		<resource name="RAM" quantum="1M"/>
-		<binary name="} [rtc_drv] {"/>
+		<binary name="} [rtc_driver] {"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
 
@@ -183,7 +183,7 @@ append config {<config>
 			<service name="File_system"> <child name="sftp_fs"/> </service>
 			<service name="Nic"> <child name="nic_router"/> </service>
 			<service name="Report"> <child name="report_rom"/> </service>
-			<service name="Rtc"> <child name="rtc_drv"/> </service>
+			<service name="Rtc"> <child name="rtc"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>

@@ -29,8 +29,8 @@ set build_components {
 	server/nic_router
 }
 
-source ${genode_dir}/repos/base/run/platform_drv.inc
-append_platform_drv_build_components
+source ${genode_dir}/repos/base/run/platform.inc
+append_platform_build_components
 
 build $build_components
 
@@ -68,8 +68,8 @@ set config {
 		<config verbose="yes"/>
 	</start>
 
-	<start name="nic_drv">
-		<binary name="pc_nic_drv"/>
+	<start name="nic">
+		<binary name="pc_nic"/>
 		<resource name="RAM" quantum="8M"/>
 		<config mode="uplink_client"/>
 		<route>
@@ -87,7 +87,7 @@ set config {
 		<config verbose_domain_state="yes">
 
 			<policy label_prefix="ssh_server" domain="downlink"/>
-			<policy label_prefix="nic_drv"    domain="uplink"/>
+			<policy label_prefix="nic"        domain="uplink"/>
 
 			<domain name="uplink">
 
@@ -113,7 +113,7 @@ set config {
 		</config>
 	</start>
 
-	<start name="rtc_drv">
+	<start name="pc_rtc">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
@@ -204,7 +204,7 @@ set config {
 	</start>
 }
 
-append_platform_drv_config
+append_platform_config
 
 append config {
 </config>}
@@ -224,7 +224,7 @@ if {![file exists bin/ed25519_key]} {
 
 # generic modules
 set boot_modules {
-	core ld.lib.so init timer pc_nic_drv rtc_drv report_rom vfs fs_rom
+	core ld.lib.so init timer pc_nic pc_rtc report_rom vfs fs_rom
 	test-terminal_echo nic_router
 
 	libc.lib.so libm.lib.so vfs.lib.so
@@ -236,7 +236,7 @@ set boot_modules {
 }
 
 # platform-specific modules
-append_platform_drv_boot_modules
+append_platform_boot_modules
 
 build_boot_image $boot_modules
 

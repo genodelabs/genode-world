@@ -40,7 +40,7 @@ install_config {
 		<resource name="RAM" quantum="2M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="pc_uart_drv" caps="200">
+	<start name="pc_uart" caps="200">
 		<resource name="RAM" quantum="2M" />
 		<provides>
 			<service name="Uart"/>

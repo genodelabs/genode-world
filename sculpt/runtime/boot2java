@@ -14,7 +14,7 @@
 	<!-- networking -->
 
 	<start name="nic_inner" caps="120">
-		<binary name="pc_nic_drv"/>
+		<binary name="pc_nic"/>
 		<resource name="RAM" quantum="8M"/>
 		<route>
 			<service name="Platform"> <parent/> </service>
@@ -29,7 +29,7 @@
 	</start>
 
 	<start name="nic_outer" caps="120">
-		<binary name="pc_nic_drv"/>
+		<binary name="pc_nic"/>
 		<resource name="RAM" quantum="8M"/>
 		<route>
 			<service name="Platform"> <parent/> </service>
@@ -82,7 +82,7 @@
 
 	<!-- logging onto file system -->
 
-	<start name="ahci_drv">
+	<start name="ahci">
 		<resource name="RAM" quantum="10M" />
 		<provides><service name="Block" /></provides>
 		<config>
@@ -98,7 +98,7 @@
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="File_system"/> </provides>
 		<route>
-			<service name="Block"> <child name="ahci_drv"/> </service>
+			<service name="Block"> <child name="ahci"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 		<config>

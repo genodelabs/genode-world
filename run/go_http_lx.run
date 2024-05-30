@@ -66,7 +66,7 @@ install_config {
 		<config verbose="yes"/>
 	</start>
 
-	<start name="linux_nic_drv" ld="no">
+	<start name="linux_nic" ld="no">
 		<resource name="RAM" quantum="8M"/>
 		<config>
 			<report mac_address="true"/>
@@ -79,7 +79,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="rtc_drv" caps="200">
+	<start name="pc_rtc" caps="200">
 		<resource name="RAM" quantum="6M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
@@ -96,8 +96,8 @@ install_config {
 		        verbose_packet_drop="yes">
 
 			<policy label_prefix="go_http" domain="downlink" />
-			<policy label_prefix="linux_nic_drv"     domain="uplink" />
-			<!-- <policy label_prefix="nic_drv"  domain="uplink"/> -->
+			<policy label_prefix="linux_nic" domain="uplink" />
+			<!-- <policy label_prefix="nic"  domain="uplink"/> -->
 
 			<domain name="uplink" interface="10.0.2.55/24" gateway="10.0.2.1">
 

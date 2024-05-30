@@ -1,4 +1,4 @@
-TARGET    = imx53_tablet_input_drv
+TARGET    = imx53_tablet_input
 REQUIRES  = arm_v7
 SRC_CC    = main.cc
 LIBS      = base

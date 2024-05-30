@@ -81,12 +81,12 @@ set packages "
 append_if [expr !$use_lxip] packages " [depot_user]/src/vfs_lwip          "
 append_if $use_lxip         packages " [depot_user]/src/vfs_lxip          "
 append_if $use_nic_bridge   packages " [depot_user]/src/nic_bridge        "
-append_if $use_usb_driver   packages " [depot_user]/src/platform_drv      "
-append_if $use_usb_driver   packages " [depot_user]/src/usb_drv           "
+append_if $use_usb_driver   packages " [depot_user]/src/platform          "
+append_if $use_usb_driver   packages " [depot_user]/src/usb               "
 append_if $use_wifi_driver  packages " [depot_user]/src/fs_rom            "
 append_if $use_wifi_driver  packages " [depot_user]/src/vfs_import        "
 append_if $use_wifi_driver  packages " [depot_user]/src/report_rom        "
-append_if $use_wifi_driver  packages " [depot_user]/src/wifi_drv          "
+append_if $use_wifi_driver  packages " [depot_user]/src/wifi              "
 append_if $use_wifi_driver  packages " [depot_user]/src/openssl           "
 append_if $use_wifi_driver  packages " [depot_user]/src/vfs_jitterentropy "
 append_if $use_wifi_driver  packages " [depot_user]/raw/wifi_firmware     "
@@ -101,11 +101,11 @@ build { app/iperf }
 
 set lx_ip_addr "10.0.2.55"
 
-proc platform_drv_policy {} {
+proc platform_policy {} {
 	global use_wifi_driver
 	if { $use_wifi_driver } {
-		return {<policy label_prefix="nic_drv"> <pci class="WIFI"/> </policy>}}
-	return {<policy label_prefix="nic_drv"> <pci class="USB"/> </policy>}
+		return {<policy label_prefix="nic"> <pci class="WIFI"/> </policy>}}
+	return {<policy label_prefix="nic"> <pci class="USB"/> </policy>}
 }
 
 set config {
@@ -131,7 +131,7 @@ set config {
 	</start> }
 
 if { $use_wifi_driver } {
-	append_platform_drv_config
+	append_platform_config
 	append config {
 	<start name="report_rom">
 		<resource name="RAM" quantum="2M"/>
@@ -168,8 +168,8 @@ append  config { </wifi_config>
 		</route>
 	</start>
 
-	<start name="nic_drv" caps="300">
-		<binary name="wifi_drv"/>
+	<start name="nic" caps="300">
+		<binary name="wifi"/>
 		<resource name="RAM" quantum="32M"/>
 		<config mode="uplink_client">
 			<libc stdout="/dev/null" stderr="/dev/log" rtc="/dev/rtc"/>
@@ -193,9 +193,9 @@ append  config { </wifi_config>
 	</start>}
 
 } elseif { $use_usb_driver } {
-	append_platform_drv_config
+	append_platform_config
 	append config {
-	<start name="nic_drv" caps="150">
+	<start name="nic" caps="150">
 		<binary name="usb_drv"/>
 		<resource name="RAM" quantum="18M"/>
 		<provides><service name="Nic"/></provides>
@@ -205,7 +205,7 @@ append  config { </wifi_config>
 	</start> }
 } else {
 append config {
-	<start name="nic_drv" caps="1000" managing_system="yes">
+	<start name="nic" caps="1000" managing_system="yes">
 		<resource name="RAM" quantum="32M"/>
 		<binary name="init"/>
 		<route>
@@ -227,12 +227,12 @@ append config {
 		</provides>
 		<config verbose_domain_state="yes"> }
 if {$use_nic_bridge} { append config {
-			<policy label_prefix="nic_bridge"       domain="server"/> }
+			<policy label_prefix="nic_bridge" domain="server"/> }
 } else { append config {
 			<policy label_prefix="iperf_genode" domain="server"/> }
 }
 append config {
-			<policy label_prefix="nic_drv"          domain="uplink"/>
+			<policy label_prefix="nic" domain="uplink"/>
 			<domain name="uplink" }
 append_if [have_spec linux] config "
 			        interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""

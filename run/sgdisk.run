@@ -1,12 +1,12 @@
 create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
-                  [depot_user]/src/acpi_drv \
-                  [depot_user]/src/ahci_drv \
+                  [depot_user]/src/acpi \
+                  [depot_user]/src/ahci \
                   [depot_user]/src/init \
                   [depot_user]/src/libc \
                   [depot_user]/src/ncurses \
-                  [depot_user]/src/platform_drv \
+                  [depot_user]/src/platform \
                   [depot_user]/src/posix \
                   [depot_user]/src/report_rom \
                   [depot_user]/src/stdcxx \
@@ -44,28 +44,28 @@ install_config {
 				<service name="ROM"/>
 			</provides>
 			<config verbose="yes">
-				<policy label="platform_drv -> acpi" report="acpi_drv -> acpi"/>
+				<policy label="platform -> acpi" report="acpi -> acpi"/>
 			</config>
 			<route>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
 
-		<start name="acpi_drv" caps="300">
+		<start name="acpi" caps="300">
 			<resource name="RAM" quantum="4M"/>
 			<route>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
 
-		<start name="platform_drv" caps="200" managing_system="yes">
+		<start name="platform" caps="200" managing_system="yes">
 			<resource name="RAM" quantum="3M"/>
 			<provides>
 				<service name="Platform"/>
 				<service name="Acpi"/>
 			</provides>
 			<config>
-				<policy label_prefix="ahci_drv"> <pci class="AHCI"/> </policy>
+				<policy label_prefix="ahci"> <pci class="AHCI"/> </policy>
 			</config>
 			<route>
 				<service name="ROM" label="acpi"> <child name="report_rom"/> </service>
@@ -73,7 +73,7 @@ install_config {
 			</route>
 		</start>
 
-		<start name="ahci_drv" caps="100">
+		<start name="ahci" caps="100">
 			<resource name="RAM" quantum="10M"/>
 			<provides>
 				<service name="Block"/>

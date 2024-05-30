@@ -22,11 +22,11 @@ set packages "
 	[depot_user]/src/vfs_pipe
 "
 
-proc rtc_drv { } {
+proc rtc_driver { } {
 	switch [board] {
-		linux   { return "linux_rtc_drv" }
-		pc      { return "rtc_drv" }
-		default { return "dummy_rtc_drv" }
+		linux   { return "linux_rtc" }
+		pc      { return "pc_rtc" }
+		default { return "dummy_rtc" }
 	}
 }
 
@@ -40,8 +40,8 @@ build { app/chrony drivers/rtc/spec/x86 lib/nettle lib/gnutls }
 
 set lx_ip_addr "10.0.2.55"
 
-proc platform_drv_policy {} {
-	return {<policy label_prefix="nic_drv"> <pci class="USB"/> </policy>}
+proc platform_policy {} {
+	return {<policy label_prefix="nic"> <pci class="USB"/> </policy>}
 }
 
 set config {
@@ -65,7 +65,7 @@ set config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start> 
-	<start name="nic_drv" caps="1500" managing_system="yes">
+	<start name="nic" caps="1500" managing_system="yes">
 		<resource name="RAM" quantum="32M"/>
 		<binary name="init"/>
 		<route>
@@ -83,9 +83,9 @@ append config {
 			<policy label_suffix="set_rtc" report="chrony_daemon -> set_rtc"/>
 		</config>
 	</start>
-	<start name="rtc_drv" ld="} [expr [have_board linux] ? "no" : "yes"] {">
+	<start name="rtc" ld="} [expr [have_board linux] ? "no" : "yes"] {">
 		<resource name="RAM" quantum="1M"/>
-		<binary name="} [rtc_drv] {"/>
+		<binary name="} [rtc_driver] {"/>
 		<config verbose="yes" allow_setting_rtc="yes" />
 		<provides> <service name="Rtc"/> </provides>
 		<route>
@@ -104,7 +104,7 @@ append config {
 		</provides>
 		<config verbose="yes" verbose_domain_state="yes" verbose_packets="yes"> 
 			<policy label_prefix="chrony_daemon" domain="server"/> 
-			<policy label_prefix="nic_drv"          domain="uplink"/>
+			<policy label_prefix="nic"           domain="uplink"/>
 			<domain name="uplink" }
 append_if [have_spec linux] config " interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
 append config { >
@@ -131,7 +131,7 @@ append config { >
 		<route>
 			<service name="ROM" label="set_rtc"> <child name="report_rom"/> </service>
 			<service name="Timer"> <child name="timer"/> </service>
-			<service name="Rtc"> <child name="rtc_drv"/> </service>
+			<service name="Rtc"> <child name="rtc"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
 	</start>
@@ -242,4 +242,4 @@ append qemu_args "  -nographic "
 
 append_qemu_nic_args "hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153"
 
-run_genode_until "init -> rtc_drv] set time to" 900
+run_genode_until "init -> rtc] set time to" 900

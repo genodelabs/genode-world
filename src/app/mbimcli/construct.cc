@@ -958,7 +958,7 @@ class Mbim
 					});
 
 					xml.node("policy", [&] () {
-						xml.attribute("label_prefix", "usb_net_drv");
+						xml.attribute("label_prefix", "usb_net");
 						xml.attribute("domain", "uplink");
 					});
 

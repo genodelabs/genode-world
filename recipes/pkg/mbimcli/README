@@ -8,7 +8,7 @@ ROM, it is best used with a launcher file such as:
 <launcher pkg="<depot-user>/pkg/mbimcli/<version>">
 	<route>
 		<service name="Terminal">
-			<child name="usb_net_drv"/>
+			<child name="usb_net"/>
 		</service>
 		<service name="Report" label="nic_router.config">
 			<parent/>

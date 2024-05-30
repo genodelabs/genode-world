@@ -115,13 +115,13 @@ append config {
 
 		</config>
 		<route>
-			<service name="Nic"> <child name="nic_drv"/> </service>
+			<service name="Nic"> <child name="nic"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
 
-	<start name="nic_drv" ld="no">
-		<binary name="linux_nic_drv"/>
+	<start name="nic" ld="no">
+		<binary name="linux_nic"/>
 		<resource name="RAM" quantum="4M"/>
 		<provides>
 			<service name="Nic"/>
@@ -146,7 +146,7 @@ set boot_modules {
 	grpc.lib.so
 	libc_pipe.lib.so
 	vfs_lwip.lib.so
-	linux_nic_drv
+	linux_nic
 }
 
 

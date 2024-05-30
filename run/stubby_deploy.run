@@ -15,7 +15,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/fs_rom \
                   [depot_user]/src/vfs \
                   [depot_user]/src/init \
-                  [depot_user]/src/rtc_drv \
+                  [depot_user]/src/pc_rtc \
                   [depot_user]/src/posix \
                   [depot_user]/src/libc \
                   [depot_user]/src/vfs_lxip \
@@ -48,7 +48,7 @@ install_config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 
-	<start name="nic_drv" caps="1000">
+	<start name="nic" caps="1000">
 		<resource name="RAM" quantum="32M" constrain_phys="yes"/>
 		<binary name="init"/>
 		<route>
@@ -59,7 +59,7 @@ install_config {
 		<provides> <service name="Nic"/> </provides>
 	</start>
 
-	<start name="rtc_drv">
+	<start name="pc_rtc">
 		<resource name="RAM" quantum="6M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
@@ -174,7 +174,7 @@ install_config {
 			<service name="ROM">   <child name="fs_rom"/> </service>
 			<service name="Timer"> <child name="timer"/>  </service>
 			<service name="File_system"> <child name="ram_fs"/> </service>
-			<service name="Nic"> <child name="nic_drv"/> </service>
+			<service name="Nic"> <child name="nic"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>

@@ -83,12 +83,12 @@ lappend depot_pkgs [depot_user]/src/nic_router
 lappend depot_pkgs [depot_user]/src/init
 
 if [have_board linux] {
-        lappend_if $use_rtc depot_pkgs [depot_user]/src/linux_rtc_drv
+        lappend_if $use_rtc depot_pkgs [depot_user]/src/linux_rtc
 } else {
         if [have_board pc] {
-                lappend_if $use_rtc depot_pkgs [depot_user]/src/rtc_drv
+                lappend_if $use_rtc depot_pkgs [depot_user]/src/pc_rtc
         } else  {
-                lappend_if $use_rtc depot_pkgs [depot_user]/src/dummy_rtc_drv
+                lappend_if $use_rtc depot_pkgs [depot_user]/src/dummy_rtc
         }
 }
 
@@ -128,7 +128,7 @@ append config {
 }
 
 append_if $use_nic config {
-	<start name="nic_drv" ld="} $ld_nic {" caps="1000" managing_system="yes" >
+	<start name="nic" ld="} $ld_nic {" caps="1000" managing_system="yes" >
 		<resource name="RAM" quantum="20M"/>
 		<binary name="init"/>
 		<route>
@@ -141,11 +141,11 @@ append_if $use_nic config {
 }
 
 append_if [expr [have_board linux] && $use_rtc] config {
-	<start name="linux_rtc_drv" caps="200" ld="no">}
+	<start name="linux_rtc" caps="200" ld="no">}
 append_if [expr [have_board pc] && $use_rtc] config {
-	<start name="rtc_drv" caps="200">}
+	<start name="pc_rtc" caps="200">}
 append_if [expr ![have_board pc] && ![have_board linux] && $use_rtc] config {
-	<start name="dummy_rtc_drv" caps="200">}
+	<start name="dummy_rtc" caps="200">}
 
 append_if $use_rtc  config {
 		<resource name="RAM" quantum="6M"/>
@@ -167,7 +167,7 @@ append_if $use_nic_router config {
 		<config>
 
 			<policy label_prefix="} $executable {" domain="client" />
-			<policy label_prefix="nic_drv"  domain="uplink"/>
+			<policy label_prefix="nic" domain="uplink"/>
 
 			<domain name="uplink"}
 append_if [expr $use_nic_router && [have_board linux]] config {
@@ -196,7 +196,7 @@ append_if $use_nic_router config {>
 		<route>}
 
 append_if [expr $use_nic_router && $use_nic] config {
-			<service name="Nic"> <child name="nic_drv"/> </service>}
+			<service name="Nic"> <child name="nic"/> </service>}
 
 append_if $use_nic_router config {
 			<any-service> <parent/> <any-child/> </any-service>

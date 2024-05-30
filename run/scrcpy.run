@@ -40,7 +40,7 @@ if {[have_board linux]} { set ld_nic "no" }
 
 set use_interactive_pkg 1
 if { [have_board pc] && ![have_include "power_on/qemu"] } {
-	# use intel_fb_drv on x86 to get max resolution
+	# use intel_fb on x86 to get max resolution
 	set use_interactive_pkg 0
 }
 
@@ -77,11 +77,11 @@ proc socket_fs_plugin {} {
 	return lwip
 }
 
-proc binary_nic_drv { } {
-	if {[have_board linux]}     { return "linux_nic_drv" }
-	if {[have_board pc]}        { return "pc_nic_drv" }
-	if {[have_board imx8q_evk]} { return "fec_nic_drv" }
-	return "unknown_nic_drv"
+proc binary_nic { } {
+	if {[have_board linux]}     { return "linux_nic" }
+	if {[have_board pc]}        { return "pc_nic" }
+	if {[have_board imx8q_evk]} { return "fec_nic" }
+	return "unknown_nic_driver"
 }
 
 proc binary_nic_config { } {
@@ -112,7 +112,7 @@ proc wifi_psk { } {
 }
 
 #
-# widi_drv config generator (supporting a network list)
+# wifi-driver config generator (supporting a network list)
 #
 # You may script your tests with this function in the dynamic_rom config below.
 # The syntax for the networks parameter is
@@ -181,8 +181,8 @@ set build_components { }
 
 if { !$use_interactive_pkg } {
 	append build_components drivers/framebuffer
-	source ${genode_dir}/repos/base/run/platform_drv.inc
-	append_platform_drv_build_components
+	source ${genode_dir}/repos/base/run/platform.inc
+	append_platform_build_components
 }
 
 lappend_if $use_nic      build_components drivers/nic
@@ -246,10 +246,10 @@ append_if $use_interactive_pkg config {
 	</start>}
 
 if { !$use_interactive_pkg } {
-	append_platform_drv_config
+	append_platform_config
 
 	append_if [have_board pc] config {
-		<start name="intel_fb_drv" caps="1000">
+		<start name="intel_fb" caps="1000">
 			<resource name="RAM" quantum="60M"/>
 			<route>
 				<any-service> <parent/> <any-child /> </any-service>
@@ -257,7 +257,7 @@ if { !$use_interactive_pkg } {
 		</start>}
 
 	append_if [have_board pc] config {
-		<start name="ps2_drv">
+		<start name="ps2">
 			<resource name="RAM" quantum="2M"/>
 			<provides><service name="Input"/></provides>
 			<config/>
@@ -268,8 +268,8 @@ if { !$use_interactive_pkg } {
 }
 
 append_if $use_nic config {
-	<start name="nic_drv" ld="} $ld_nic {" caps="130">
-		<binary name="} [binary_nic_drv] {"/>
+	<start name="nic" ld="} $ld_nic {" caps="130">
+		<binary name="} [binary_nic] {"/>
 		<resource name="RAM" quantum="20M"/>
 		<resource name="CPU" quantum="20"/>
 		<provides> <service name="Nic"/> </provides>
@@ -320,10 +320,10 @@ append_if $use_nic_router config {>
 		<route>}
 
 append_if [expr $use_nic_router && $use_nic] config {
-			<service name="Nic"> <child name="nic_drv"/> </service>}
+			<service name="Nic"> <child name="nic"/> </service>}
 
 append_if [expr $use_nic_router && $use_wifi] config {
-			<service name="Nic"> <child name="wifi_drv"/> </service>}
+			<service name="Nic"> <child name="wifi"/> </service>}
 
 append_if $use_nic_router config {
 			<any-service> <parent/> <any-child/> </any-service>
@@ -477,12 +477,12 @@ append_if $use_top_view config {
 	</start>}
 
 append_if $use_wifi config {
-	<start name="rtc_drv">
+	<start name="pc_rtc">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Rtc"/> </provides>
 	</start>
 
-	<start name="wifi_drv" caps="200">
+	<start name="wifi" caps="200">
 		<resource name="RAM" quantum="24M"/>
 		<provides> <service name="Nic"/> </provides>
 		<config ld_verbose="no">
@@ -567,19 +567,19 @@ set firmware_modules {
 set boot_modules { }
 
 if { !$use_interactive_pkg } {
-	append_platform_drv_boot_modules
-	append_if [have_board pc] boot_modules { intel_fb_drv }
+	append_platform_boot_modules
+	append_if [have_board pc] boot_modules { intel_fb }
 }
 
-lappend_if $use_nic  boot_modules [binary_nic_drv]
-append_if  $use_wifi boot_modules { wifi_drv
+lappend_if $use_nic  boot_modules [binary_nic]
+append_if  $use_wifi boot_modules { wifi
                                     libcrypto.lib.so
                                     libssl.lib.so
                                     wifi.lib.so
                                     wpa_driver_nl80211.lib.so
                                     wpa_supplicant.lib.so }
 append_if $use_wifi boot_modules $firmware_modules
-lappend_if $use_wifi     boot_modules rtc_drv
+lappend_if $use_wifi     boot_modules pc_rtc
 lappend_if $use_wifi     boot_modules wifi_config
 lappend_if $use_ping     boot_modules ping
 lappend_if $use_top      boot_modules top

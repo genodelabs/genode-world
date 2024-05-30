@@ -1,6 +1,6 @@
 _/src/init
 _/src/nic_router
-_/src/usb_net_drv
+_/src/usb_net
 _/src/report_rom
 _/src/fs_rom
 _/src/libmbim

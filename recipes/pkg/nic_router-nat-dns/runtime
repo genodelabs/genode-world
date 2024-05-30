@@ -84,7 +84,7 @@ listen_addresses:
 		<rom label="libssl.lib.so"/>
 		<rom label="lxip.lib.so"/>
 		<rom label="posix.lib.so"/>
-		<rom label="rtc_drv"/>
+		<rom label="pc_rtc"/>
 		<rom label="stubby"/>
 		<rom label="vfs_jitterentropy.lib.so"/>
 		<rom label="lxip.lib.so"/>

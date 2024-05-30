@@ -10,8 +10,8 @@ set use_fs_rump $use_block_vdi
 if {![info exists use_ahci]} { set use_ahci 0 }
 
 # for uefi boot_fb works
-# set display_drv "boot_fb_drv"
-set display_drv "vesa_fb_drv"
+# set fb_name "boot_fb"
+set fb_name "vesa_fb"
 
 set use_drv_ahci  [expr  $use_ahci && ($use_block_vdi || $use_block_sata)]
 set use_drv_nvme  [expr !$use_ahci && ($use_block_vdi || $use_block_sata)]
@@ -23,19 +23,19 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/event_filter \
                   [depot_user]/src/init \
                   [depot_user]/src/nitpicker \
-                  [depot_user]/src/pc_usb_host_drv \
-                  [depot_user]/src/usb_hid_drv \
+                  [depot_user]/src/pc_usb_host \
+                  [depot_user]/src/usb_hid \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_import \
-                  [depot_user]/src/ps2_drv \
+                  [depot_user]/src/ps2 \
                   [depot_user]/raw/drivers_interactive-pc \
                   [depot_user]/pkg/themed_wm \
                   [depot_user]/src/report_rom \
-                  [depot_user]/src/platform_drv \
-                  [depot_user]/src/acpi_drv \
+                  [depot_user]/src/platform \
+                  [depot_user]/src/acpi \
                   [depot_user]/src/pci_decode \
-                  [depot_user]/src/vesa_drv \
-                  [depot_user]/src/boot_fb_drv
+                  [depot_user]/src/vesa_fb \
+                  [depot_user]/src/boot_fb
 
 if {![info exists use_usb]}        { set use_usb        1 }
 if {![info exists use_virtio]}     { set use_virtio     0 }
@@ -48,9 +48,9 @@ if {![info exists use_model_xhci]} { set use_model_xhci 0 }
 
 if {$use_fs_rump   } { import_from_depot [depot_user]/src/rump }
 if {$use_part_block} { import_from_depot [depot_user]/src/part_block }
-if {$use_drv_ahci  } { import_from_depot [depot_user]/src/ahci_drv }
-if {$use_drv_nvme  } { import_from_depot [depot_user]/src/nvme_drv }
-if {$use_audio     } { import_from_depot [depot_user]/src/bsd_audio_drv }
+if {$use_drv_ahci  } { import_from_depot [depot_user]/src/ahci }
+if {$use_drv_nvme  } { import_from_depot [depot_user]/src/nvme }
+if {$use_audio     } { import_from_depot [depot_user]/src/bsd_audio }
 
 if {[have_include power_on/qemu] && $use_block_vdi} {
 	if {![file exists bin/seoul-disc-vdi.raw]} {
@@ -113,7 +113,7 @@ proc config_ahci { } {
 	}
 
 	append config_ahci {
-	<start name="ahci_drv" priority="-2">
+	<start name="ahci" priority="-2">
 		<resource name="RAM" quantum="10M" />
 		<provides><service name="Block"/></provides>
 		<config>}
@@ -153,7 +153,7 @@ proc config_nvme { } {
 
 	append config_nvme {
 
-	<start name="nvme_drv" caps="120" priority="-2">
+	<start name="nvme" caps="120" priority="-2">
 		<resource name="RAM" quantum="24M"/>
 		<provides> <service name="Block"/> </provides>
 		<config max_hmb_size="16M" verbose_regs="yes" verbose_identify="yes">}
@@ -206,8 +206,8 @@ proc config_part_block { } {
 	if {!$use_block_vdi} { set partition_rump 10000 }
 	if { $use_block_vdi} { set partition_raw  10000 }
 
-	if {$use_drv_nvme} { set drv_name "nvme_drv" }
-	if {$use_drv_ahci} { set drv_name "ahci_drv" }
+	if {$use_drv_nvme} { set drv_name "nvme" }
+	if {$use_drv_ahci} { set drv_name "ahci" }
 
 	append config_part_block {
 
@@ -429,13 +429,13 @@ set config {
 			<service name="ROM"/>
 		</provides>
 		<config>
-			<policy label="pci_decode -> system" report="acpi_drv -> acpi"/>
-			<policy label="platform_drv -> devices" report="pci_decode -> devices"/>
-			<policy label="usb_hid_drv -> report" report="usb_drv -> devices"/>
+			<policy label="pci_decode -> system" report="acpi -> acpi"/>
+			<policy label="platform -> devices"  report="pci_decode -> devices"/>
+			<policy label="usb_hid -> report"    report="usb -> devices"/>
 		</config>
 	</start>
 
-	<start name="acpi_drv" caps="350" priority="-1">
+	<start name="acpi" caps="350" priority="-1">
 		<resource name="RAM" quantum="4M"/>
 		<route>
 			<service name="Report"> <child name="platform_reports"/> </service>
@@ -452,20 +452,20 @@ set config {
 		</route>
 	</start>
 
-	<start name="platform_drv" caps="400" managing_system="yes" priority="-2">
+	<start name="platform" caps="400" managing_system="yes" priority="-2">
 		<resource name="RAM" quantum="6M"/>
 		<provides>
 			<service name="Platform"/>
 		</provides>
 		<config>
-			<policy label_prefix="ps2_drv">             <device name="ps2"/>    </policy>
-			<policy label_prefix="ahci_drv">            <pci class="AHCI"/>     </policy>
-			<policy label_prefix="nvme_drv" info="yes"> <pci class="NVME"/>     </policy>
-			<policy label_prefix="nic_drv"  info="yes"> <pci class="ETHERNET"/> </policy>
-			<policy label_prefix="audio_drv">
+			<policy label_prefix="ps2">             <device name="ps2"/>    </policy>
+			<policy label_prefix="ahci">            <pci class="AHCI"/>     </policy>
+			<policy label_prefix="nvme" info="yes"> <pci class="NVME"/>     </policy>
+			<policy label_prefix="nic"  info="yes"> <pci class="ETHERNET"/> </policy>
+			<policy label_prefix="audio">
 				<pci class="AUDIO"/> <pci class="HDAUDIO"/> </policy>
-			<policy label_prefix="fb_drv"  info="yes"> <pci class="VGA"/> </policy>
-			<policy label_prefix="usb_drv" info="yes"> <pci class="USB"/> </policy>
+			<policy label_prefix="fb"  info="yes"> <pci class="VGA"/> </policy>
+			<policy label_prefix="usb" info="yes"> <pci class="USB"/> </policy>
 		</config>
 		<route>
 			<service name="ROM" label="devices"> <child name="platform_reports"/> </service>
@@ -473,12 +473,12 @@ set config {
 		</route>
 	</start>
 
-	<start name="rtc_drv" priority="-2">
+	<start name="pc_rtc" priority="-2">
 		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Rtc"/></provides>
 	</start>
 
-	<start name="ps2_drv" priority="-2">
+	<start name="ps2" priority="-2">
 		<resource name="RAM" quantum="3M"/>
 		<config/>
 		<route>
@@ -497,13 +497,13 @@ set config {
 	</start>}
 
 append_if $use_usb config {
-	<start name="usb_drv" priority="-2" caps="200">
-		<binary name="pc_usb_host_drv"/>
+	<start name="usb" priority="-2" caps="200">
+		<binary name="pc_usb_host"/>
 		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Usb"/> </provides>
 		<config>
 			<report devices="yes"/>
-			<policy label_prefix="usb_hid_drv"> <device class="0x3"/> </policy>
+			<policy label_prefix="usb_hid"> <device class="0x3"/> </policy>
 			<policy label_prefix="seoul"> <device/> </policy>
 		</config>
 		<route>
@@ -512,14 +512,14 @@ append_if $use_usb config {
 		</route>
 	</start>
 
-	<start name="usb_hid_drv" priority="-2" caps="140">
+	<start name="usb_hid" priority="-2" caps="140">
 		<resource name="RAM" quantum="11M"/>
 		<config use_report="yes"/>
 		<route>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<service name="Event"> <child name="event_filter" label="usb"/> </service>
 			<service name="ROM" label="report"> <child name="report_rom"/> </service>
-			<service name="Usb"> <child name="usb_drv"/> </service>
+			<service name="Usb"> <child name="usb"/> </service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
 	</start>}
@@ -543,8 +543,8 @@ append_if $use_audio config {
 		</route>
 	</start>
 
-	<start name="audio_drv" priority="-1">
-		<binary name="pci_audio_drv"/>
+	<start name="audio" priority="-1">
+		<binary name="pci_audio"/>
 		<resource name="RAM" quantum="8M"/>
 		<provides>
 			<service name="Audio_in"/>
@@ -597,9 +597,9 @@ append_if $use_fs_rump config {
 append_if [expr $use_fs_rump && $use_part_block] config {
 			<service name="Block"><child name="part_block"/></service>}
 append_if [expr $use_fs_rump && !$use_part_block && $use_drv_ahci] config {
-			<service name="Block"><child name="ahci_drv"/></service>}
+			<service name="Block"><child name="ahci"/></service>}
 append_if [expr $use_fs_rump && !$use_part_block && $use_drv_nvme] config {
-			<service name="Block"><child name="nvme_drv"/></service>}
+			<service name="Block"><child name="nvme"/></service>}
 
 append_if $use_fs_rump config {
 			<any-service> <parent/> </any-service>
@@ -643,8 +643,8 @@ append_if $use_genode_iso config {
 
 append_if $use_nic_session config {
 
-	<start name="nic_drv" caps="150" priority="-3">
-		<binary name="pc_nic_drv"/>
+	<start name="nic" caps="150" priority="-3">
+		<binary name="pc_nic"/>
 		<resource name="RAM" quantum="16M"/>
 		<route>
 			<service name="Uplink"><child name="nic_router"/></service>
@@ -660,8 +660,8 @@ append_if $use_nic_session config {
 		</provides>
 		<config verbose_domain_state="yes">
 
-			<policy label_prefix="seoul"      domain="downlink"/>
-			<policy label_prefix="nic_drv"    domain="uplink"/>
+			<policy label_prefix="seoul" domain="downlink"/>
+			<policy label_prefix="nic"   domain="uplink"/>
 
 			<domain name="uplink">
 
@@ -687,8 +687,8 @@ append_if $use_nic_session config {
 }
 
 append config {
-	<start name="fb_drv" priority="-2" caps="200">
-		<binary name="} $display_drv {"/>
+	<start name="fb" priority="-2" caps="200">
+		<binary name="} $fb_name {"/>
 		<resource name="RAM" quantum="20M"/>
 		<route>
 			<service name="Timer">    <child name="timer"/></service>
@@ -722,8 +722,8 @@ append_if [expr $use_block_sata && $use_part_block] config {
 			<service name="Block"><child name="part_block"/></service>}
 append config {
 			<service name="Gui"> <child name="wm"/> </service>
-			<service name="Rtc"> <child name="rtc_drv"/> </service>
-			<service name="Usb"> <child name="usb_drv"/> </service>
+			<service name="Rtc"> <child name="pc_rtc"/> </service>
+			<service name="Usb"> <child name="usb"/> </service>
 			<service name="Report" label="shape"> <child name="wm"/> </service>
 			<service name="Report"> <child name="report_rom"/> </service>
 			<any-service><parent/><any-child/></any-service>
@@ -769,9 +769,9 @@ append config {
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
-			<policy label="pointer -> hover" report="nitpicker -> hover"/>
-			<policy label="pointer -> xray"  report="nitpicker -> xray"/>
-			<policy label="usb_hid_drv -> report" report="usb_drv -> devices"/>
+			<policy label="pointer -> hover"  report="nitpicker -> hover"/>
+			<policy label="pointer -> xray"   report="nitpicker -> xray"/>
+			<policy label="usb_hid -> report" report="usb -> devices"/>
 		</config>
 	</start>
 

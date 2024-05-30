@@ -1,7 +1,7 @@
 create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
-                  [depot_user]/pkg/test_usb_host_drv-[board] \
+                  [depot_user]/pkg/test_usb_host-[board] \
                   [depot_user]/src/glib \
                   [depot_user]/src/init \
                   [depot_user]/src/libc \
@@ -9,7 +9,7 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/nic_router \
                   [depot_user]/src/posix \
                   [depot_user]/src/report_rom \
-                  [depot_user]/src/usb_net_drv \
+                  [depot_user]/src/usb_net \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_pipe \
                   [depot_user]/src/ffi \
@@ -53,8 +53,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="usb_net_drv">
-		<binary name="usb_net_drv"/>
+	<start name="usb_net">
 		<resource name="RAM" quantum="16M"/>
 		<provides>
 			<service name="Terminal"/>
@@ -67,7 +66,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="usb_drv" caps="1500" managing_system="yes">
+	<start name="usb" caps="1500" managing_system="yes">
 		<binary name="init"/>
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="Usb"/> </provides>
@@ -129,13 +128,12 @@ install_config {
 #
 set config {<config bios_handoff="no">}
 #
-# Huawai ME906e, change to your modem and adjust "configuration" for
-# 'usb_net_drv'
+# Huawai ME906e, change to your modem and adjust "configuration" for 'usb_net'
 #
-append config {	<policy label_prefix="usb_net_drv" vendor_id="0x12d1" product_id="0x15c1"/>}
+append config {	<policy label_prefix="usb_net" vendor_id="0x12d1" product_id="0x15c1"/>}
 append config {</config>}
 
-set fd [open [run_dir]/genode/usb_host_drv.config w]
+set fd [open [run_dir]/genode/usb_host.config w]
 puts $fd $config
 close $fd
 
