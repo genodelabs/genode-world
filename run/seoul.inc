@@ -260,14 +260,14 @@ if {[have_spec foc]} {
 }
 
 set build_components {
-	drivers/rtc
+	driver/rtc
 	app/seoul
 	server/record_play_mixer
 }
 
 lappend_if $use_block_vdi       build_components server/vdi_block
 lappend_if $use_vfs_block       build_components server/vfs_block
-lappend_if $use_nic_session     build_components drivers/nic
+lappend_if $use_nic_session     build_components driver/nic
 lappend_if $use_nic_session     build_components server/nic_router
 lappend_if $use_genode_iso      build_components server/iso9660
 lappend_if $use_top             build_components app/top

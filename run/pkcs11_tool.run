@@ -59,7 +59,7 @@ set build_components {
 	core
 	init
 	timer
-	drivers/usb_host
+	driver/usb_host
 	server/report_rom
 	lib/vfs_pipe
 }

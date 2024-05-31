@@ -180,14 +180,14 @@ import_from_depot [depot_user]/src/[base_src] \
 set build_components { }
 
 if { !$use_interactive_pkg } {
-	append build_components drivers/framebuffer
+	append build_components driver/framebuffer
 	source ${genode_dir}/repos/base/run/platform.inc
 	append_platform_build_components
 }
 
-lappend_if $use_nic      build_components drivers/nic
-lappend_if $use_wifi     build_components drivers/wifi
-lappend_if $use_wifi     build_components drivers/rtc
+lappend_if $use_nic      build_components driver/nic
+lappend_if $use_wifi     build_components driver/wifi
+lappend_if $use_wifi     build_components driver/rtc
 lappend_if $use_ping     build_components app/ping
 lappend_if $use_top      build_components app/top
 append_if  $use_top_view build_components { app/menu_view app/top_view

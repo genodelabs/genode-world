@@ -36,7 +36,7 @@ import_from_depot [depot_user]/src/zlib
 
 
 set build_components {
-	drivers/nic
+	driver/nic
 	test/grpc/server
 }
 

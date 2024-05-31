@@ -7,7 +7,7 @@ assert_spec x86
 
 set build_components {
 	app/ssh_client
-	drivers/nic
+	driver/nic
 	lib/vfs_import
 	lib/vfs_lwip
 }

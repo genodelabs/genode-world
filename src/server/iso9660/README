@@ -10,7 +10,7 @@ Usage
 -----
 
 The server requires an ATAPI-block device as back-end. Please have a look at
-'os/src/drivers/atapi'. The front-end of the server is implemented as a ROM
+'os/src/driver/atapi'. The front-end of the server is implemented as a ROM
 session server. In order to access this server from your application, you need
 to route the ROM session to the ISO-ROM-session server in Genode's configuration
 file:

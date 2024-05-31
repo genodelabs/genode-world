@@ -6,7 +6,7 @@ if {[have_board linux]} {
 build {
 	core lib/ld init timer
 	lib/libc lib/vfs lib/libm lib/posix lib/stdcxx lib/gmock lib/gtest
-	drivers/rtc
+	driver/rtc
 	server/vfs
 	test/gmock
 }

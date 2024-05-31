@@ -33,7 +33,7 @@ set conf_ld_verbose "yes"
 
 # build section
 set build_components {
-	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs drivers/rtc
+	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs driver/rtc
 }
 
 lappend build_components "$executable_place/$executable"

@@ -14,8 +14,8 @@ if {[have_spec linux]} {
 
 set build_components {
 	core init timer
-	drivers/nic
-	drivers/rtc
+	driver/nic
+	driver/rtc
 	server/ssh_server
 	server/fs_rom
 	server/report_rom

@@ -35,7 +35,7 @@ proc rtc_driver { } {
 
 import_from_depot $packages
 
-build { app/chrony drivers/rtc/spec/x86 lib/nettle lib/gnutls }
+build { app/chrony driver/rtc/spec/x86 lib/nettle lib/gnutls }
 
 #
 # Generate config

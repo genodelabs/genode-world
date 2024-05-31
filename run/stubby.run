@@ -12,8 +12,8 @@ set build_components {
 	app/sequence
 	app/stubby
 	core init timer
-	drivers/nic
-	drivers/rtc
+	driver/nic
+	driver/rtc
 	lib/vfs_jitterentropy
 	lib/vfs_lxip
 	server/nic_router

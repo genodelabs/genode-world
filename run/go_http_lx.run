@@ -23,10 +23,10 @@ proc socket_fs_plugin { } {
 build {
 	core init timer lib/ld lib/libc lib/libm lib/posix lib/stdcxx lib/vfs
 	lib/vfs_lwip
-	drivers/rtc
+	driver/rtc
 	test/go_http
 
-	drivers/nic
+	driver/nic
 	server/nic_router
 	server/report_rom
 }
