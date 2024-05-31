@@ -1,10 +1,3 @@
-proc nic_drv_opt {} {
-	if {[have_board linux]} {
-		return "ld=\"no\""
-	}
-	return ""
-}
-
 create_boot_directory
 build { proxy/remote_rom/backend/nic_ip }
 import_from_depot [depot_user]/src/[base_src] \
