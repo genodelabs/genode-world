@@ -85,9 +85,9 @@ struct Flif_view::Main
 	template <typename PT, typename FN>
 	void apply_to_texture(unsigned width, unsigned height, FN const &fn)
 	{
-		if (gui_mode.area.w() < width || gui_mode.area.h() < height) {
-			Mode new_mode { .area = { max(gui_mode.area.w(), width),
-			                          max(gui_mode.area.h(), height) } };
+		if (gui_mode.area.w < width || gui_mode.area.h < height) {
+			Mode new_mode { .area = { max(gui_mode.area.w, width),
+			                          max(gui_mode.area.h, height) } };
 			Genode::log("resize gui buffer to ", new_mode);
 			if (nit_ds.constructed())
 				nit_ds.destruct();
@@ -322,7 +322,7 @@ bool Flif_view::Main::render_page()
 	}
 
 	flif_dec = flif_create_decoder();
-	flif_decoder_set_resize(flif_dec, gui_mode.area.w(), gui_mode.area.h());
+	flif_decoder_set_resize(flif_dec, gui_mode.area.w, gui_mode.area.h);
 	flif_decoder_set_callback(flif_dec, &(progressive_render), this);
 
 	gui.enqueue<Gui::Session::Command::Title>(view_handle, filename);

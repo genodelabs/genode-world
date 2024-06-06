@@ -180,7 +180,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 	/* compare checksums to detect changed buffer */
 	if (_fb_state.checksum1 != _fb_state.checksum2) {
 		_fb_state.unchanged = 0;
-		gui.refresh(0, 0, gui.fb_mode.area.w(), gui.fb_mode.area.h());
+		gui.refresh(0, 0, gui.fb_mode.area.w, gui.fb_mode.area.h);
 		return Milliseconds(100ULL);
 	}
 
@@ -198,7 +198,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 	_fb_state.vga_off = true;
 	_fb_state.unchanged = 0;
 
-	gui.refresh(0, 0, gui.fb_mode.area.w(), gui.fb_mode.area.h());
+	gui.refresh(0, 0, gui.fb_mode.area.w, gui.fb_mode.area.h);
 
 	return Milliseconds(0ULL);
 }
@@ -254,7 +254,7 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vesa_mode(Backend_gui &gui,
 
 	_fb_state.idle = 0;
 
-	gui.refresh(0, 0, gui.fb_mode.area.w(), gui.fb_mode.area.h());
+	gui.refresh(0, 0, gui.fb_mode.area.w, gui.fb_mode.area.h);
 
 	_fb_state.unchanged++;
 

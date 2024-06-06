@@ -106,10 +106,10 @@ class Seoul::Vga_vesa
 			if (_fb_phys_base >= 1ull << 32)
 				Logging::panic("vesa phys address too large");
 
-			if ((area.w()              >= (1u << 16)) ||
-			    (area.h()              >= (1u << 16)) ||
-			    (area.w() * host_bytes >= (1u << 16)) ||
-			    (host_bytes * 8        >= (1u << 8)))
+			if ((area.w              >= (1u << 16)) ||
+			    (area.h              >= (1u << 16)) ||
+			    (area.w * host_bytes >= (1u << 16)) ||
+			    (host_bytes * 8      >= (1u << 8)))
 				Logging::panic("resolution too large for vesa");
 
 			/*
@@ -120,10 +120,10 @@ class Seoul::Vga_vesa
 
 			info._vesa_mode         = vesa_mode;
 			info.attr               = 0x39f;
-			info.resolution[0]      = uint16(area.w());
-			info.resolution[1]      = uint16(area.h());
-			info.bytes_per_scanline = uint16(area.w() * area_bytes);
-			info.bytes_scanline     = uint16(fb.w()   * host_bytes);
+			info.resolution[0]      = uint16(area.w);
+			info.resolution[1]      = uint16(area.h);
+			info.bytes_per_scanline = uint16(area.w * area_bytes);
+			info.bytes_scanline     = uint16(fb.w   * host_bytes);
 			info.bpp                = uint8 (area_bytes * 8);
 			info.memory_model       = MEMORY_MODEL_DIRECT_COLOR;
 			info.vbe1[0]            =  0x8; /* red mask size */

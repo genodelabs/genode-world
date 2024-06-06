@@ -45,7 +45,7 @@ class NativeStateGenode : public NativeState
 
 			void refresh()
 			{
-				gui.framebuffer()->refresh(0, 0, mode.area.w(), mode.area.h());
+				gui.framebuffer()->refresh(0, 0, mode.area.w, mode.area.h);
 			}
 
 			void mode_change()

@@ -163,14 +163,14 @@ void Seoul::Console::_input_to_virtio(Input::Event const &ev)
 	} else {
 		ev.handle_absolute_motion([&] (int x, int y) {
 			unsigned const mask = (0xfu << 28) - 1;
-			unsigned tx = _input_absolute.w() * x / _gui_non_vesa_ack.w();
-			unsigned ty = _input_absolute.h() * y / _gui_non_vesa_ack.h();
+			unsigned tx = _input_absolute.w * x / _gui_non_vesa_ack.w;
+			unsigned ty = _input_absolute.h * y / _gui_non_vesa_ack.h;
 
 			if (x < 0 || y < 0)
 				return;
 
-			if (tx > _input_absolute.w()) tx = _input_absolute.w();
-			if (ty > _input_absolute.h()) ty = _input_absolute.h();
+			if (tx > _input_absolute.w) tx = _input_absolute.w;
+			if (ty > _input_absolute.h) ty = _input_absolute.h;
 
 			MessageInput msg(0x10002, tx & mask, ty & mask);
 			if (_mb.bus_input.send(msg)) {
@@ -481,8 +481,8 @@ void Seoul::Console::_handle_gui_change()
 		/* send notification about new mode */
 		MessageConsole msg(MessageConsole::TYPE_MODEINFO_UPDATE, gui.id);
 		msg.x = msg.y = 0;
-		msg.width  = gui_mode.area.w();
-		msg.height = gui_mode.area.h();
+		msg.width  = gui_mode.area.w;
+		msg.height = gui_mode.area.h;
 		_mb.bus_console.send(msg);
 	});
 }

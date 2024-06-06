@@ -130,9 +130,9 @@ class Flif_capture::Encoder
 				return;
 			}
 
-			RGBA row[mode.area.w()];
+			RGBA row[mode.area.w];
 
-			_image = flif_create_image(mode.area.w(), mode.area.h());
+			_image = flif_create_image(mode.area.w, mode.area.h);
 			if (!_image) {
 				Genode::error("failed to create image buffer");
 				return;
@@ -141,9 +141,9 @@ class Flif_capture::Encoder
 			using Pixel = Pixel_rgb888;
 			Pixel const *pixels = fb_ds.local_addr<Pixel const>();
 
-			for (unsigned y = 0; y < mode.area.h(); y++) {
-				for (unsigned x = 0; x < mode.area.w(); x++) {
-					Pixel const px = pixels[y*mode.area.w()+x];
+			for (unsigned y = 0; y < mode.area.h; y++) {
+				for (unsigned x = 0; x < mode.area.w; x++) {
+					Pixel const px = pixels[y*mode.area.w+x];
 					row[x] = RGBA { (uint8_t)px.r(),
 					                (uint8_t)px.g(),
 					                (uint8_t)px.b(),

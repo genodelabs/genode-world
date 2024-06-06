@@ -71,12 +71,12 @@ extern "C" {
 			Genode::Mutex::Guard guard(event_mutex);
 
 			Framebuffer::Mode mode = _gui.mode();
-			df_mode.w = mode.area.w();
-			df_mode.h = mode.area.h();
+			df_mode.w = mode.area.w;
+			df_mode.h = mode.area.h;
 
 			video_events.resize_pending = true;
-			video_events.width  = mode.area.w();
-			video_events.height = mode.area.h();
+			video_events.width  = mode.area.w;
+			video_events.height = mode.area.h;
 		}
 
 		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
@@ -88,7 +88,7 @@ extern "C" {
 		{
 			_gui.mode_sigh(_mode_handler);
 
-			using namespace Gui;
+			using Session = Gui::Session;
 			_gui.enqueue<Session::Command::To_front>(_view, Session::View_handle());
 			_gui.execute();
 		}
@@ -104,14 +104,12 @@ extern "C" {
 
 			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
 
-			using namespace Gui;
-			Area area(
-				Genode::min(mode.area.w(), width),
-				Genode::min(mode.area.h(), height));
+			Gui::Area area(Genode::min(mode.area.w, width),
+			               Genode::min(mode.area.h, height));
 
-			typedef Gui::Session::Command Command;
-			_gui.enqueue<Command::Geometry>(
-				_view, Rect(Point(0, 0), area));
+			using Command = Gui::Session::Command;
+
+			_gui.enqueue<Command::Geometry>(_view, Gui::Rect({ 0, 0 }, area));
 			_gui.execute();
 
 			return _gui.framebuffer()->dataspace();
@@ -269,7 +267,7 @@ extern "C" {
 			return false;
 		}
 
-		Genode_egl_window egl_window { (int)scr_mode.area.w(), (int)scr_mode.area.h(),
+		Genode_egl_window egl_window { (int)scr_mode.area.w, (int)scr_mode.area.h,
 		                               (unsigned char*)t->hidden->buffer };
 
 		screen_surf = __eglCreatePixmapSurface(display, config, &egl_window, NULL);
@@ -393,8 +391,8 @@ extern "C" {
 		/* Get the framebuffer size and mode infos */
 		scr_mode = framebuffer->mode();
 
-		t->info.current_w = scr_mode.area.w();
-		t->info.current_h = scr_mode.area.h();
+		t->info.current_w = scr_mode.area.w;
+		t->info.current_h = scr_mode.area.h;
 		Genode::log("Framebuffer has "
 		            "width=",  t->info.current_w, " "
 		            "height=", t->info.current_h);
@@ -406,8 +404,8 @@ extern "C" {
 		vformat->Gmask = 0x0000ff00;
 		vformat->Bmask = 0x000000ff;
 		modes[0] = &df_mode;
-		df_mode.w = scr_mode.area.w();
-		df_mode.h = scr_mode.area.h();
+		df_mode.w = scr_mode.area.w;
+		df_mode.h = scr_mode.area.h;
 		modes[1] = 0;
 
 		t->hidden->buffer = 0;
@@ -599,7 +597,7 @@ extern "C" {
 #if defined(SDL_VIDEO_OPENGL)
 		__eglWaitClient();
 		__eglSwapBuffers(display, screen_surf);
-		framebuffer->refresh(0, 0, scr_mode.area.w(), scr_mode.area.h());
+		framebuffer->refresh(0, 0, scr_mode.area.w, scr_mode.area.h);
 #endif
 	}
 

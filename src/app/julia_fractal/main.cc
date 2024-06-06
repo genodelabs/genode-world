@@ -60,10 +60,10 @@ class window {
   View_handle            _view{};
 
   void _draw_frame() {
-    _draw.paint(_ds->local_addr<Genode::Pixel_rgb888>(), _mode.area.w(), _mode.area.h()); }
+    _draw.paint(_ds->local_addr<Genode::Pixel_rgb888>(), _mode.area.w, _mode.area.h); }
 
   void _refresh() {
-    _npconn.framebuffer()->refresh(0, 0, _mode.area.w(), _mode.area.h()); }
+    _npconn.framebuffer()->refresh(0, 0, _mode.area.w, _mode.area.h); }
 
   void _new_mode() {
     _mode = _npconn.mode();

@@ -94,8 +94,8 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			Framebuffer::Mode mode = _gui.mode();
 
 			video_events.resize_pending = true;
-			video_events.width  = mode.area.w();
-			video_events.height = mode.area.h();
+			video_events.width  = mode.area.w;
+			video_events.height = mode.area.h;
 		}
 
 		/* XXX not being an Io_signal_handler prevents receiving of the
@@ -110,7 +110,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		{
 			_gui.mode_sigh(_mode_handler);
 
-			using namespace Gui;
+			using Session = Gui::Session;
 			_gui.enqueue<Session::Command::To_front>(_view, Session::View_handle());
 			_gui.execute();
 		}
@@ -148,14 +148,11 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
 
-			using namespace Gui;
-			Area area(
-				Genode::min(mode.area.w(), width),
-				Genode::min(mode.area.h(), height));
+			Gui::Area area(Genode::min(mode.area.w, width),
+			               Genode::min(mode.area.h, height));
 
-			typedef Gui::Session::Command Command;
-			_gui.enqueue<Command::Geometry>(
-				_view, Rect(Point(0, 0), area));
+			using Command = Gui::Session::Command;
+			_gui.enqueue<Command::Geometry>(_view, Gui::Rect({ 0, 0 }, area));
 			_gui.execute();
 
 			return _gui.framebuffer()->dataspace();
@@ -351,8 +348,8 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		SDL_DisplayMode mode {
 			.format = SDL_PIXELFORMAT_ARGB8888,
-			.w = drv.scr_mode.area.w(),
-			.h = drv.scr_mode.area.h(),
+			.w = drv.scr_mode.area.w,
+			.h = drv.scr_mode.area.h,
 			.refresh_rate = 0,
 			.driverdata = nullptr
 		};

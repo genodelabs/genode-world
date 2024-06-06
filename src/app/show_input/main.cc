@@ -66,12 +66,12 @@ struct Show_input::Main
 
 	typedef Pixel_rgb888 PT;
 
-	Surface_base::Area _size { _fb.mode().area.w(),
+	Surface_base::Area _size { _fb.mode().area.w,
 	                           (unsigned)_font.height() };
 
 	Surface<PT> _surface { _fb_ds.local_addr<PT>(), _size };
 
-	void _refresh() { _fb.refresh(0, 0, _size.w(), _size.h()); }
+	void _refresh() { _fb.refresh(0, 0, _size.w, _size.h); }
 
 	Signal_handler<Main> _input_sigh {
 		_env.ep(), *this, &Main::_handle_input };
