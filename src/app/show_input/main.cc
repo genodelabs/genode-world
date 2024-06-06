@@ -91,14 +91,14 @@ struct Show_input::Main
 				Box_painter::paint(
 					_surface,
 					Rect(Point(), _size),
-					Color(0, 0, 0));
+					Color::black());
 
 
 				Text_painter::paint(
 					_surface,
 					Text_painter::Position(0, 0),
 					_font,
-					Color(255, 255, 255),
+					Color::rgb(255, 255, 255),
 					info.string());
 				refresh = true;
 

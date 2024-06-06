@@ -26,7 +26,7 @@
 Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
                                                        bool const cpus_active)
 {
-	Genode::Color cursor_color(255,255,255);
+	Genode::Color cursor_color { 255, 255, 255, 255 };
 	bool          cursor_show = false;
 	int           cursor_x    = 0;
 	int           cursor_y    = 0;
@@ -54,6 +54,17 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 	Genode::Surface<Pixel_rgb888> _surface(reinterpret_cast<Pixel_rgb888 *>(gui.pixels),
 	                                       gui.fb_mode.area);
 
+	auto color_from_palette_index = [&] (auto const idx) -> Color
+	{
+		uint8_t const lum = ((idx & 0x8) >> 3)*127;
+		return {
+			.r = uint8_t(((idx & 0x4) >> 2)*127+lum), /* R+luminosity */
+			.g = uint8_t(((idx & 0x2) >> 1)*127+lum), /* G+luminosity */
+			.b = uint8_t(((idx & 0x1) >> 0)*127+lum), /* B+luminosity */
+			.a = 255
+		};
+	};
+
 	for (int y = 0, prev = 0; y < 25; y++) {
 		for (int x = 0; x < 80; x++) {
 
@@ -69,22 +80,15 @@ Genode::Milliseconds Seoul::Vga_vesa::_handle_vga_mode(Backend_gui &gui,
 				char bg = (colorvalue & 0xf0) >> 4;
 				if (bg == 0x8) bg = 0x7;
 
-				unsigned lum = ((bg & 0x8) >> 3)*127;
-				Genode::Color color(((bg & 0x4) >> 2)*127+lum, /* R+luminosity */
-				                    ((bg & 0x2) >> 1)*127+lum, /* G+luminosity */
-				                    ((bg & 0x1) >> 0)*127+lum  /* B+luminosity */);
-
 				Gui::Rect rect(Gui::Point(x * 8, y * 15),
 				               Gui::Area(8, 15));
-				Box_painter::paint(_surface, rect, color);
+				Box_painter::paint(_surface, rect, color_from_palette_index(bg));
 			}
 
 			char fg = colorvalue & 0xf;
 			if (fg == 0x8) fg = 0x7;
-			unsigned lum = ((fg & 0x8) >> 3)*127;
-			Genode::Color color(((fg & 0x4) >> 2)*127+lum, /* R+luminosity */
-			                    ((fg & 0x2) >> 1)*127+lum, /* G+luminosity */
-			                    ((fg & 0x1) >> 0)*127+lum  /* B+luminosity */);
+
+			Color const color = color_from_palette_index(fg);
 
 			/* get cursor color */
 			if (cursor_x == x && cursor_y == y)
