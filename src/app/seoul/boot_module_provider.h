@@ -132,7 +132,6 @@ class Boot_module_provider
 				throw Module_loading_failed();
 			}
 			catch (Xml_node::Nonexistent_sub_node) { }
-			catch (Xml_node::Nonexistent_attribute) { }
 			catch (Destination_buffer_too_small) {
 				error("Boot_module_provider: destination buffer too small"); }
 			catch (Region_map::Region_conflict) {
