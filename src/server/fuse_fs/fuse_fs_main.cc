@@ -479,6 +479,8 @@ class Fuse_fs::Session_component : public Session_rpc_object
 				throw Invalid_handle();
 			}
 		}
+
+		unsigned num_entries(File_system::Dir_handle) { return 0; }
 };
 
 
@@ -512,28 +514,23 @@ class Fuse_fs::Root : public Root_component<Session_component>
 				 * Determine directory that is used as root directory of
 				 * the session.
 				 */
-				try {
-					root = policy.attribute_value("root", Root_path());
+				if (!policy.has_attribute("root"))
+					Genode::warning("missing \"root\" attribute in policy definition");
+
+				root = policy.attribute_value("root", Root_path());
 
 					/*
 					 * Make sure the root path is specified with a
 					 * leading path delimiter. For performing the
 					 * lookup, we skip the first character.
 					 */
-					if (root.string() && root.string()[0] != '/')
-						throw Lookup_failed();
+					if (root.string() && root.string()[0] != '/') {
+						Genode::error("session root directory \"",
+						              root, "\" does not exist");
+						throw Service_denied();
+					}
 
 					root_dir = root.string();
-				}
-				catch (Xml_node::Nonexistent_attribute) {
-					Genode::error("missing \"root\" attribute in policy definition");
-					throw Service_denied();
-				}
-				catch (Lookup_failed) {
-					Genode::error("session root directory \"",
-					              root, "\" does not exist");
-					throw Service_denied();
-				}
 
 				/*
 				 * Determine if write access is permitted for the session.
