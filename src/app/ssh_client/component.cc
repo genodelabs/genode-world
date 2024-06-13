@@ -184,25 +184,22 @@ struct Ssh_client::Main
 		size_t n = fread(buf,	1, sizeof(buf), f);
 		fclose(f);
 
-		Xml_node host_cfg(buf, n);
-		try {
-			host_cfg.attribute("name").value(_hostname);
-			ssh_options_set(_session, SSH_OPTIONS_HOST,
-				_hostname.string());
-			ssh_options_set(_session, SSH_OPTIONS_PORT_STR,
-				string_attr(host_cfg, "port").string());
-			ssh_options_set(_session, SSH_OPTIONS_USER,
-				string_attr(host_cfg, "user").string());
-			_password = host_cfg.attribute_value("pass", String());
-			_host_known = host_cfg.attribute_value("known", true);
-		}
-		catch (...) {
+		Xml_node const host_cfg(buf, n);
+		if (!host_cfg.has_attribute("name")) {
 			error("failed to parse host configuration");
 			error(host_cfg);
 			_log_host_usage();
-			throw;
 			_exit(~0);
 		}
+		_hostname = host_cfg.attribute_value("name", String());
+		ssh_options_set(_session, SSH_OPTIONS_HOST,
+			_hostname.string());
+		ssh_options_set(_session, SSH_OPTIONS_PORT_STR,
+			string_attr(host_cfg, "port").string());
+		ssh_options_set(_session, SSH_OPTIONS_USER,
+			string_attr(host_cfg, "user").string());
+		_password = host_cfg.attribute_value("pass", String());
+		_host_known = host_cfg.attribute_value("known", true);
 	}
 
 	void _authenticate_public_key()
