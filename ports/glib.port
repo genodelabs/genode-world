@@ -1,9 +1,9 @@
 LICENSE   := GPLv2
-VERSION   := 2.52.2
+VERSION   := 2.54.3
 DOWNLOADS := glib.archive
 
-URL(glib) := https://download.gnome.org/sources/glib/2.52/glib-$(VERSION).tar.xz
-SHA(glib) := f00e5d9e2a2948b1da25fcba734a6b7a40f556de8bc9f528a53f6569969ac5d0
+URL(glib) := https://download.gnome.org/sources/glib/2.54/glib-$(VERSION).tar.xz
+SHA(glib) := 963fdc6685dc3da8e5381dfb9f15ca4b5709b28be84d9d05a9bb8e446abac0a8
 DIR(glib) := src/lib/glib
 
 $(call check_tool,sed)

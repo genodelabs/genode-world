@@ -2406,6 +2406,7 @@ g_proxy_resolver_lookup_finish T
 g_proxy_resolver_portal_get_type T
 g_proxy_supports_hostname T
 g_ptr_array_add T
+g_ptr_array_find_with_equal_func T
 g_ptr_array_foreach T
 g_ptr_array_free T
 g_ptr_array_get_type T
