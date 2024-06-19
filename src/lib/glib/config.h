@@ -180,3 +180,6 @@
 #define THREADS_POSIX
 
 #define USE_STATFS 1
+
+/* Define to 1 if you have the `mmap' function. */
+#define HAVE_MMAP 1

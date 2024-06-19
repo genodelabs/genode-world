@@ -7,7 +7,7 @@ GLIB_SRC_DIR = $(GLIB_PORT_DIR)/src/lib/glib/glib
 LIBS += libc libiconv zlib ffi
 
 CC_DEF += \
-	-DGLIB_MAJOR_VERSION=2 -DGLIB_MINOR_VERSION=54 -DGLIB_MICRO_VERSION=3 \
+	-DGLIB_MAJOR_VERSION=2 -DGLIB_MINOR_VERSION=56 -DGLIB_MICRO_VERSION=4 \
 	-DGLIB_BINARY_AGE=5302 -DGLIB_INTERFACE_AGE=0 \
 	-DGLIB_COMPILATION \
 	-DSUPPORT_UCP \
@@ -28,9 +28,10 @@ CC_DEF += \
 CC_DEF += -DGIO_COMPILATION=1
 CC_DEF += -DGOBJECT_COMPILATION=1
 
-CC_DEF += -DPACKAGE_VERSION=\"2.54.3\"
+CC_DEF += -DPACKAGE_VERSION=\"2.56.4\"
 CC_DEF += -DGLIB_LOCALE_DIR=\"\"
 CC_DEF += -DGIO_MODULE_DIR=\"/lib/gio/modules\"
+CC_DEF += -DGLIB_CHARSETALIAS_DIR=\"/\"
 
 
 CC_WARN += -Wno-unused-function -Wno-deprecated-declarations
@@ -78,7 +79,7 @@ GLIB_GIO_FILTER := \
 	gnetworkmonitornetlink.c gnextstepsettingsbackend.c \
 	gosxappinfo.c gosxcontenttype.c gregistrysettingsbackend.c \
 	gwin32outputstream.c gwin32mount.c gwin32inputstream.c gwin32appinfo.c \
-	gwin32volumemonitor.c gwin32registrykey.c \
+	gwin32volumemonitor.c gwin32registrykey.c gwin32networkmonitor.c \
 	gapplication-tool.c \
 	gio-tool-cat.c gio-tool-info.c gio-tool-mime.c gio-tool-monitor.c \
 	gio-tool-move.c gio-tool-remove.c gio-tool-save.c gio-tool-trash.c \
