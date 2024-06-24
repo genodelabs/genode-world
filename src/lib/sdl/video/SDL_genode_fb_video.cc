@@ -426,7 +426,7 @@ extern "C" {
 		}
 
 		if (t->hidden->buffer) {
-			global_env().rm().detach(t->hidden->buffer);
+			global_env().rm().detach(Genode::addr_t(t->hidden->buffer));
 			t->hidden->buffer = nullptr;
 		}
 	}
@@ -439,7 +439,7 @@ extern "C" {
 	                               SDL_PixelFormat *format,
 	                               Uint32 flags)
 	{
-		return (SDL_Rect **)((format->BitsPerPixel == 32) ? -1 : 0);
+		return (SDL_Rect **)((format->BitsPerPixel == 32) ? -1L : 0L);
 	}
 
 
@@ -482,10 +482,17 @@ extern "C" {
 		}
 
 		if (t->hidden->buffer) {
-			global_env().rm().detach(t->hidden->buffer);
+			global_env().rm().detach(Genode::addr_t(t->hidden->buffer));
 		}
 
-		t->hidden->buffer = global_env().rm().attach(fb_ds_cap);
+		t->hidden->buffer = global_env().rm().attach(fb_ds_cap, {
+			.size       = { },  .offset    = { },
+			.use_at     = { },  .at        = { },
+			.executable = { },  .writeable = true
+		}).convert<void *>(
+			[&] (Genode::Region_map::Range range)  { return (void *)range.start; },
+			[&] (Genode::Region_map::Attach_error) { return nullptr; }
+		);
 
 		if (!t->hidden->buffer) {
 			Genode::error("no buffer for requested mode");
