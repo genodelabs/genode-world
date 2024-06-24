@@ -4,7 +4,7 @@ HOTSPOT_BASE = $(call select_from_ports,jdk)/src/app/jdk/hotspot/src
 
 CC_CXX_WARN_STRICT =
 
-CC_CXX_OPT_STD = -std=gnu++17
+CC_CXX_OPT_STD = -std=gnu++17 -fconcepts
 
 include $(REP_DIR)/lib/mk/jdk_version.inc
 
