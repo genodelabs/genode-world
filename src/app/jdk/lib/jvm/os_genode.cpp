@@ -4324,18 +4324,29 @@ namespace Genode {
 
 class Genode::Vm_region_map
 {
-	public:
-
-		typedef Region_map_client::Local_addr Local_addr;
-
 	private:
 
 		enum { VM_SIZE = (sizeof(long) == 8 ? 2048ul : 512ul) * 1024 * 1024 };
 		Env               &_env;
 		Rm_connection      _rm_connection { _env };
 		Region_map_client  _rm { _rm_connection.create(VM_SIZE) };
-		addr_t       const _base {
-			_env.rm().attach(_rm.dataspace(), 0, 0, false, nullptr, true, true) };
+
+		addr_t const _base =
+			_env.rm().attach(_rm.dataspace(), {
+				.size       = { },
+				.offset     = { },
+				.use_at     = { },
+				.at         = { },
+				.executable = true,
+				.writeable  = true
+			}). convert<addr_t>(
+				[&] (Region_map::Range range)   { return range.start; },
+				[&] (Region_map::Attach_error) {
+					error("Vm_region_map failed to attach managed dataspace");
+					return 0UL;
+				}
+			);
+
 		Allocator_avl      _range;
 
 	public:
@@ -4357,31 +4368,23 @@ class Genode::Vm_region_map
 
 		void free_region(addr_t vaddr) { _range.free((void *)vaddr); }
 
-		Local_addr attach_at(Dataspace_capability ds, addr_t local_addr)
+		using Attach_result = Region_map::Attach_result;
+		using Attach_error  = Region_map::Attach_error;
+
+		Attach_result attach(Dataspace_capability ds, Region_map::Attr const &orig_attr)
 		{
-			return retry<Genode::Out_of_ram>(
-				[&] () {
-					return retry<Genode::Out_of_caps>(
-						[&] () { return _rm.attach_at(ds, local_addr - _base); },
-						[&] () { _rm_connection.upgrade_caps(2); },
-						~0u);
-				},
-				[&] () { _rm_connection.upgrade_ram(8*1024); });
+			Region_map::Attr attr = orig_attr;
+			attr.at -= _base;
+			for (;;) {
+				Attach_result const result = _rm.attach(ds, attr);
+				if      (result == Attach_error::OUT_OF_RAM)  _rm_connection.upgrade_ram(8*1024);
+				else if (result == Attach_error::OUT_OF_CAPS) _rm_connection.upgrade_caps(2);
+				else
+					return result;
+			}
 		}
 
-		Local_addr attach_rwx(Dataspace_capability ds, addr_t local_addr)
-		{
-			return retry<Genode::Out_of_ram>(
-				[&] () {
-					return retry<Genode::Out_of_caps>(
-						[&] () { return _rm.attach_rwx(ds, local_addr - _base); },
-						[&] () { _rm_connection.upgrade_caps(2); },
-						~0u);
-				},
-				[&] () { _rm_connection.upgrade_ram(8*1024); });
-		}
-
-		void detach(Local_addr local_addr) { _rm.detach((addr_t)local_addr - _base); }
+		void detach(addr_t at) { _rm.detach(at - _base); }
 };
 
 class Genode::Vm_area
@@ -4428,10 +4431,14 @@ class Genode::Vm_area
 
 			Ram_dataspace_capability ds = _env.ram().alloc(size);
 
-			if (executable)
-				_rm.attach_rwx(ds, base);
-			else
-				_rm.attach_at(ds, base);
+			if (_rm.attach(ds, {
+				.size       = { },
+				.offset     = { },
+				.use_at     = true,
+				.at         = base,
+				.executable = executable,
+				.writeable  = true
+			}).failed()) error("Vm_area failed to locally attach dataspace");
 
 			new (_heap) Vm_handle(_ds, base, size, ds);
 
