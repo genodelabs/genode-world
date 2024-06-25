@@ -100,19 +100,8 @@ class Boot_module_provider
 						throw Destination_buffer_too_small();
 					}
 
-					void * const src = env.rm().attach(ds);
-
-					/*
-					 * Copy content to destination buffer
-					 */
-					Genode::memcpy(dst, src, src_len);
-
-					/*
-					 * Detach ROM dataspace from local address space. The ROM
-					 * session will be closed automatically when we leave the
-					 * current scope and the 'rom' object gets destructed.
-					 */
-					env.rm().detach(src);
+					Attached_dataspace tmp(env.rm(), ds);
+					Genode::memcpy(dst, tmp.local_addr<void>(), src_len);
 
 					return src_len;
 
@@ -134,12 +123,6 @@ class Boot_module_provider
 			catch (Xml_node::Nonexistent_sub_node) { }
 			catch (Destination_buffer_too_small) {
 				error("Boot_module_provider: destination buffer too small"); }
-			catch (Region_map::Region_conflict) {
-				error("Boot_module_provider: Region_map::Region_conflict");
-				throw Module_loading_failed(); }
-			catch (Region_map::Invalid_dataspace) {
-				error("Boot_module_provider: Region_map::Invalid_dataspace");
-				throw Module_loading_failed(); }
 			catch (Rom_connection::Rom_connection_failed) {
 				error("Boot_module_provider: Rom_connection_failed"); }
 			catch (...) {

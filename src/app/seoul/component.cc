@@ -822,23 +822,30 @@ class Machine : public StaticReceiver<Machine>
 				if (msg.len & 0xfff)
 					return false;
 
-				Genode::addr_t const guest_addr = msg.value;
-				try {
-					Genode::Dataspace_capability ds = _env.ram().alloc(msg.len);
-					Genode::addr_t local_addr = _env.rm().attach(ds);
+				using namespace Genode;
 
-					auto alloc_size = msg.type == MessageHostOp::OP_ALLOC_IOMEM_SMALL ?
-					                  msg.len_short : msg.len;
-					bool ok = _guest_memory.add_region(_heap, guest_addr,
-					                                   local_addr, ds,
-					                                   alloc_size);
-					if (ok)
-						msg.ptr = reinterpret_cast<char *>(local_addr);
+				auto const guest_addr = msg.value;
 
-					return ok;
-				} catch (...) {
+				Region_map::Attr attr { };
+				attr.writeable = true;
+
+				auto const ds = _env.ram().alloc(msg.len);
+				auto const local_addr = _env.rm().attach(ds, attr).convert<addr_t>(
+					[&] (Region_map::Range range) { return range.start; },
+					[&] (Region_map::Attach_error e) -> addr_t { return 0ul; });
+
+				if (!local_addr)
 					return false;
-				}
+
+				auto alloc_size = msg.type == MessageHostOp::OP_ALLOC_IOMEM_SMALL ?
+				                  msg.len_short : msg.len;
+				bool ok = _guest_memory.add_region(_heap, guest_addr,
+				                                   local_addr, ds,
+				                                   alloc_size);
+				if (ok)
+					msg.ptr = reinterpret_cast<char *>(local_addr);
+
+				return ok;
 			}
 			/**
 			 * Request available guest memory starting at specified address

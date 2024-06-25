@@ -47,22 +47,36 @@ class Seoul::Guest_memory
 		bool                  _io_mem_gap   { false };
 		bool           const  _verbose;
 
-		Region_map::Local_addr _reserve_local_range()
+		addr_t _attach_at(Dataspace_capability const &ds, addr_t const at)
 		{
-			auto const ds = _rm_reserve.create(size_t(_guest_size + (_io_mem_gap ? _io_mem_size : 0)));
+			return _env.rm().attach(ds, {
+				.size       = { },   .offset    = { },
+				.use_at     = true,  .at        = at,
+				.executable = { },   .writeable = { },
+			}).convert<addr_t>(
+				[&] (Region_map::Range range) { return range.start; },
+				[&] (Region_map::Attach_error e) -> addr_t { return 0ul; });
+		}
 
-			Region_map_client rm(ds);
-			auto const backing_store = (addr_t)_env.rm().attach(rm.dataspace());
-			_env.rm().detach(backing_store);
-			_rm_reserve.destroy(ds);
+		addr_t _reserve_local_range()
+		{
+			addr_t backing_store { };
+
+			{
+				auto const ds = _rm_reserve.create(size_t(_guest_size + (_io_mem_gap ? _io_mem_size : 0)));
+				Region_map_client rm(ds);
+				Attached_dataspace tmp(_env.rm(), rm.dataspace());
+				backing_store = (addr_t)tmp.local_addr<void>();
+				_rm_reserve.destroy(ds);
+			}
 
 			/* reserve gap not to be used by dynamic allocations */
 			if (_io_mem_gap) {
 				auto const ds = _rm_reserve.create(_io_mem_size);
 
 				Region_map_client rm(ds);
-				auto const check = (addr_t)_env.rm().attach_at(rm.dataspace(),
-				                                               backing_store + _io_mem_alloc);
+				auto const check = _attach_at(rm.dataspace(),
+				                              backing_store + _io_mem_alloc);
 
 				if (check != backing_store + _io_mem_alloc)
 					Logging::panic("reserved range attachment failed");
@@ -190,10 +204,12 @@ class Seoul::Guest_memory
 			for_each_region([&](auto &region) {
 
 				region._local_addr = _local_addr + region._guest_addr;
-				env.rm().attach(region._ds, 0 /* size */, 0 /* offset */,
-				                true /* use local addr */,
-				                region._local_addr,
-				                true /* writeable */);
+
+				_env.rm().attach(region._ds, {
+					.size       =     0, .offset    = 0,
+					.use_at     =  true, .at        = region._local_addr,
+					.executable = false, .writeable = true,
+				});
 			});
 		}
 

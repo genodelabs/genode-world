@@ -220,6 +220,12 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			auto &gui = *new (_alloc) Backend_gui(_env, _guis, msg.id, gui_area,
 			                                      _signal_input, name.string());
 
+			if (!gui.pixels) {
+				_guis.remove(&gui);
+				Genode::destroy(_alloc, &gui);
+				return false;
+			}
+
 			if (msg.id != ID_VGA_VESA)
 				gui.gui.mode_sigh(_signal_gui);
 		}
@@ -233,7 +239,7 @@ bool Seoul::Console::receive(MessageConsole &msg)
 
 			msg.ptr  = (char *)gui.pixels;
 			msg.size = gui.fb_size();
-			return true;
+			return !!gui.pixels;
 		});
 
 		return true;

@@ -40,6 +40,19 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 
 	bool visible { false };
 
+	void _attach_fb_ds(Genode::Env &env, Genode::Dataspace_capability ds)
+	{
+		Genode::Region_map::Attr attr { };
+		attr.writeable = true;
+
+		pixels = env.rm().attach(ds, attr).convert<Genode::addr_t>(
+			[&] (auto const &range) { return range.start; },
+			[&] (auto const &error) {
+				Genode::error("gui creation failed");
+				return 0ul;
+			});
+	}
+
 	Backend_gui(Genode::Env &env,
 	            Genode::List<Backend_gui> &guis,
 	            unsigned short id, Gui::Area area,
@@ -56,7 +69,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		fb_ds   = gui.framebuffer()->dataspace();
 		fb_mode = gui.framebuffer()->mode();
 
-		pixels = env.rm().attach(fb_ds);
+		_attach_fb_ds(env, fb_ds);
 
 		input.sigh(input_signal);
 		guis.insert(this);
@@ -87,7 +100,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		gui.enqueue<Command::Geometry>(view, rect);
 		gui.execute();
 
-		pixels = env.rm().attach(fb_ds);
+		_attach_fb_ds(env, fb_ds);
 	}
 
 	void refresh(unsigned x, unsigned y, unsigned width, unsigned height)
