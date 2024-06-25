@@ -16,6 +16,7 @@
 
 /* Genode includes */
 #include <base/attached_ram_dataspace.h>
+#include <base/attached_dataspace.h>
 #include <rm_session/connection.h>
 #include <region_map/client.h>
 #include <dataspace/client.h>
@@ -51,7 +52,8 @@ class Genode::Magic_ring_buffer
 		Region_map_client _rm { _rm_connection.create(_ds_size*2) };
 
 		/* attach map to global region map */
-		TYPE *_buffer = (TYPE *)_env.rm().attach(_rm.dataspace());
+		Attached_dataspace _managed_ds { _env.rm(), _rm.dataspace() };
+		TYPE *_buffer = _managed_ds.local_addr<TYPE>();
 
 		size_t _wpos = 0;
 		size_t _rpos = 0;
@@ -87,19 +89,24 @@ class Genode::Magic_ring_buffer
 				throw Exception();
 			}
 
+			auto attach_at = [&] (addr_t const offset)
+			{
+				_rm.attach(_buffer_ds, {
+					.size       = _ds_size,  .offset    = offset,
+					.use_at     = { },       .at        = { },
+					.executable = { },       .writeable = true });
+			};
+
 			/* attach buffer dataspace twice into reserved region */
-			_rm.attach_at(_buffer_ds, 0, _ds_size);
-			_rm.attach_at(_buffer_ds, _ds_size, _ds_size);
+			attach_at(0);
+			attach_at(_ds_size);
 		}
 
 		~Magic_ring_buffer()
 		{
 			/* detach dataspace from reserved region */
-			_rm.detach((addr_t)_ds_size);
-			_rm.detach((addr_t)0);
-
-			/* detach reserved region */
-			_env.rm().detach((addr_t)_buffer);
+			_rm.detach(_ds_size);
+			_rm.detach(0);
 
 			/* free buffer */
 			_env.ram().free(_buffer_ds);
