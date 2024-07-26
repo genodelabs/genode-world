@@ -69,6 +69,9 @@ enum {
 };
 
 
+extern void heap_init_env(Genode::Heap *);
+
+
 using Genode::Attached_rom_dataspace;
 
 
@@ -185,10 +188,6 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		Genode::Vm_connection              &_vm_con;
 		Genode::Vcpu_handler<Vcpu>          _handler;
-		bool const                          _vmx;
-		bool const                          _svm;
-		bool const                          _map_small;
-		bool const                          _rdtsc_exit;
 		Genode::Vm_connection::Exit_config  _exit_config { };
 		Genode::Vm_connection::Vcpu         _vm_vcpu;
 
@@ -200,6 +199,12 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		Genode::Semaphore                   _block   { 0 };
 		Genode::Semaphore                   _started { 0 };
+
+		bool const                          _vmx;
+		bool const                          _svm;
+		bool const                          _map_small;
+		bool const                          _rdtsc_exit;
+		bool const                          _cpuid_native;
 
 	public:
 
@@ -214,17 +219,19 @@ class Vcpu : public StaticReceiver<Vcpu>
 		     bool     const          vmx,
 		     bool     const          svm,
 		     bool     const          map_small,
-		     bool     const          rdtsc)
+		     bool     const          rdtsc,
+		     bool     const          cpuid_native)
 		:
 			_vm_con(vm_con),
 			_handler(ep, *this, &Vcpu::_handle_vm_exception),
 //			         vmx ? &Vcpu::exit_config_intel :
 //			         svm ? &Vcpu::exit_config_amd : nullptr),
-			_vmx(vmx), _svm(svm), _map_small(map_small), _rdtsc_exit(rdtsc),
 			_vm_vcpu(_vm_con, alloc, _handler, _exit_config),
 			_guest_memory(guest_memory),
 			_motherboard(motherboard),
-			_vcpu(vcpu)
+			_vcpu(vcpu),
+			_vmx(vmx), _svm(svm), _map_small(map_small), _rdtsc_exit(rdtsc),
+			_cpuid_native(cpuid_native)
 		{
 			if (!_svm && !_vmx)
 				Logging::panic("no SVM/VMX available, sorry");
@@ -264,6 +271,13 @@ class Vcpu : public StaticReceiver<Vcpu>
 					case 0x7b: _svm_ioio(state); break;
 					case 0x7c: _svm_msr(state); break;
 					case 0x7f: _triple(state); break;
+					case 0x8d:
+						state.discharge();
+						state.  ip.charge(state.ip.value() + 3);
+						state.xcr0.charge(uint64(state.dx.value()) << 32 |
+						                  uint64(unsigned(state.ax.value())));
+
+						break;
 					case 0xfd: _svm_invalid(state); break;
 					case 0xfc: _svm_npt(state); break;
 					case 0xfe: _svm_startup(state); break;
@@ -274,6 +288,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 						return false;
 					}
 				}
+
 				if (_vmx) {
 					switch (exit) {
 					case 0x02: _triple(state); break;
@@ -290,6 +305,13 @@ class Vcpu : public StaticReceiver<Vcpu>
 					case 0x21: _vmx_invalid(state); break;
 					case 0x28: _vmx_pause(state); break;
 					case 0x30: _vmx_ept(state); break;
+					case 0x37:
+						state.discharge();
+						state.  ip.charge(state.ip.value() + 3);
+						state.xcr0.charge(uint64(state.dx.value()) << 32 |
+						                  uint64(unsigned(state.ax.value())));
+
+						break;
 					case 0xfe: _vmx_startup(state); break;
 					case 0xff: _recall(state); break;
 					default:
@@ -580,7 +602,8 @@ class Vcpu : public StaticReceiver<Vcpu>
 			_started.down();
 
 			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_CHECK_IRQ);
-			state.ctrl_primary.charge(_rdtsc_exit ? (1U << 14) : 0);
+			state.ctrl_primary  .charge(_rdtsc_exit ? (1u << 14) : 0);
+			state.ctrl_secondary.charge((1u << 13) /* XSETBV */);
 		}
 
 		void _svm_npt(Genode::Vcpu_state & state)
@@ -597,8 +620,11 @@ class Vcpu : public StaticReceiver<Vcpu>
 		void _svm_invalid(Genode::Vcpu_state & state)
 		{
 			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_SINGLE_STEP);
-			state.ctrl_primary.charge(1 << 18 /* cpuid */ | (_rdtsc_exit ? (1U << 14) : 0));
-			state.ctrl_secondary.charge(1 << 0  /* vmrun */);
+			state.ctrl_primary.charge(state.ctrl_primary.value() |
+			                          (1u << 18) /* cpuid */ |
+			                          (_rdtsc_exit ? (1u << 14) : 0));
+			state.ctrl_secondary.charge(state.ctrl_secondary.value() |
+			                            (1u << 0) /* vmrun */);
 		}
 
 		void _svm_ioio(Genode::Vcpu_state & state)
@@ -704,7 +730,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 			handle_vcpu(state, NO_SKIP, CpuMessage::TYPE_HLT);
 			state.ctrl_primary.charge(_rdtsc_exit ? (1U << 12) : 0);
-			state.ctrl_secondary.charge(0);
+			state.ctrl_secondary.charge(1u << 20 /* XSAVE */);
 		}
 
 		void _vmx_ioio(Genode::Vcpu_state & state)
@@ -758,14 +784,43 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 		bool receive(CpuMessage &msg)
 		{
-			if (msg.type != CpuMessage::TYPE_CPUID)
+			if (msg.type != CpuMessage::TYPE_CPUID || !msg.cpu)
 				return false;
 
 			/*
-			 * handle_cpuid() in contrib vcpu.cc reset eax ... edx to 0
-			 * for all unknown CPUIDs. We may overwrite it here, if we have
-			 * a need for it.
+			 * handle_cpuid() in contrib vcpu.cc handles well known
+			 * cpuid and the one we set here explicitly with set_cpuid().
+			 *
+			 * All others are forwarded here and can be overwritten if
+			 * required
 			 */
+
+			auto &cpu = *msg.cpu;
+
+			if (!_cpuid_native) {
+				cpu.eax = cpu.ebx = cpu.ecx = cpu.edx = 0;
+				msg.mtr_out |= MTD_GPR_ACDB;
+				return true;
+			}
+
+			switch (cpu.eax) {
+			case 0xd:
+				/*
+				 * This cpuid contains a lot of FPU extended state information.
+				 * Special is that it contains of a lot of subleafs
+				 * (ecx=0...X). Provide all information from host by now.
+				 *
+				 * see Intel Spec
+				 *  "Table 3-8. Information Returned by CPUID Instruction"
+				 */
+				cpu.eax = Cpu::cpuid(cpu.eax, cpu.ebx, cpu.ecx, cpu.edx);
+				break;
+			default:
+				cpu.eax = cpu.ebx = cpu.ecx = cpu.edx = 0;
+				break;
+			}
+
+			msg.mtr_out |= MTD_GPR_ACDB;
 			return true;
 		}
 };
@@ -790,6 +845,8 @@ class Machine : public StaticReceiver<Machine>
 		bool                   _map_small    { false   };
 		bool                   _rdtsc_exit   { false   };
 		bool                   _same_cpu     { false   };
+		bool                   _cpuid_native { false   };
+
 		Rtc::Session          *_rtc          { nullptr };
 		Seoul::Audio          *_audio        { nullptr };
 
@@ -807,6 +864,8 @@ class Machine : public StaticReceiver<Machine>
 		bool powered() { return !!_vcpus_up; }
 
 	public:
+
+		Motherboard &motherboard() { return _motherboard; }
 
 		/*********************************************
 		 ** Callbacks registered at the motherboard **
@@ -917,10 +976,11 @@ class Machine : public StaticReceiver<Machine>
 
 					_vcpus_active.set(_vcpus_up, 1);
 
-					Vcpu * vcpu = new Vcpu(*ep, _vm_con, _heap, _env, *msg.vcpu,
-					                       _guest_memory, _motherboard,
-					                       _vcpus_up, has_vmx, has_svm,
-					                       _map_small, _rdtsc_exit);
+					auto vcpu = new Vcpu(*ep, _vm_con, _heap, _env, *msg.vcpu,
+					                     _guest_memory, _motherboard,
+					                     _vcpus_up, has_vmx, has_svm,
+					                     _map_small, _rdtsc_exit,
+					                     _cpuid_native);
 
 					_vcpus[_vcpus_up] = vcpu;
 					msg.value = _vcpus_up;
@@ -1191,7 +1251,7 @@ class Machine : public StaticReceiver<Machine>
 		        Genode::Vm_connection &vm_con,
 		        Boot_module_provider &boot_modules,
 		        Seoul::Guest_memory &guest_memory,
-		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu)
+		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu, bool cpuid_native)
 		:
 			_env(env), _heap(heap), _vm_con(vm_con),
 			_clock(Attached_rom_dataspace(env, "platform_info").xml().sub_node("hardware").sub_node("tsc").attribute_value("freq_khz", 0ULL) * 1000ULL),
@@ -1200,7 +1260,8 @@ class Machine : public StaticReceiver<Machine>
 			_boot_modules(boot_modules),
 			_map_small(map_small),
 			_rdtsc_exit(rdtsc_exit),
-			_same_cpu(vmm_vcpu_same_cpu)
+			_same_cpu(vmm_vcpu_same_cpu),
+			_cpuid_native(cpuid_native)
 		{
 			/* register host operations, called back by the VMM */
 			_motherboard.bus_hostop.add  (this, receive_static<MessageHostOp>);
@@ -1291,106 +1352,199 @@ class Machine : public StaticReceiver<Machine>
 		/**
 		 * Reset the machine and unblock the VCPUs
 		 */
-		void boot(bool cpuid_native)
-		{
-			Genode::log("VM is starting with ", _vcpus_up, " vCPU",
-			            _vcpus_up > 1 ? "s" : "");
+		void boot(bool cpuid_native);
+};
 
-			unsigned apic_id = _vcpus_up - 1;
+void Machine::boot(bool const cpuid_native)
+{
+	Genode::log("VM is starting with ", _vcpus_up, " vCPU",
+	            _vcpus_up > 1 ? "s" : "");
 
-			/* init vCPUs */
-			for (VCpu *vcpu = _motherboard.last_vcpu; vcpu; vcpu = vcpu->get_last()) {
+	unsigned apic_id = _vcpus_up - 1;
 
-				enum { EAX = 0, EBX = 1, ECX = 2, EDX = 3 };
-				unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+	bool xsave = false;
 
-				bool ok = false;
+	/* init vCPUs */
+	for (VCpu *vcpu = _motherboard.last_vcpu; vcpu; vcpu = vcpu->get_last()) {
 
-				/* init CPU strings */
-				if (!cpuid_native) {
-					char const * const short_name_char = "NOVA microHV";
-					auto short_name = reinterpret_cast<unsigned const *>(short_name_char);
+		enum   { EAX = 0, EBX = 1, ECX = 2, EDX = 3 };
+		unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
 
-					ok = vcpu->set_cpuid(0, EBX, short_name[0]); assert(ok);
-					ok = vcpu->set_cpuid(0, EDX, short_name[1]); assert(ok);
-					ok = vcpu->set_cpuid(0, ECX, short_name[2]); assert(ok);
+		bool ok = false;
 
-					Cpu::cpuid(0, ebx, ecx, edx);
+		/* init CPU strings */
+		if (!cpuid_native) {
+			char const * const short_name_char = "NOVA microHV";
+			auto short_name = reinterpret_cast<unsigned const *>(short_name_char);
 
-					const char *long_name = "Seoul VMM proudly presents this VirtualCPU. ";
-					for (unsigned i=0; i<12; i++) {
-						ok = vcpu->set_cpuid(0x80000002 + (i / 4), i % 4, reinterpret_cast<const unsigned *>(long_name)[i]);
-						assert(ok);
-					}
-				} else {
+			ok = vcpu->set_cpuid(0, EBX, short_name[0]); assert(ok);
+			ok = vcpu->set_cpuid(0, EDX, short_name[1]); assert(ok);
+			ok = vcpu->set_cpuid(0, ECX, short_name[2]); assert(ok);
 
-					eax = Cpu::cpuid(0, ebx, ecx, edx);
+			Cpu::cpuid(0, ebx, ecx, edx);
 
-					/* eax specifies max CPUID - let it to default of 2 */
-					// ok = vcpu->set_cpuid(0, EAX, eax); assert(ok);
-					ok = vcpu->set_cpuid(0, EBX, ebx); assert(ok);
-					ok = vcpu->set_cpuid(0, EDX, edx); assert(ok);
-					ok = vcpu->set_cpuid(0, ECX, ecx); assert(ok);
-
-					for (unsigned id = 0x80000002u; id < 0x80000002u + 3; id++) {
-						eax = Cpu::cpuid(id, ebx, ecx, edx);
-
-						ok = vcpu->set_cpuid(id, EAX, eax); assert(ok);
-						ok = vcpu->set_cpuid(id, EBX, ebx); assert(ok);
-						ok = vcpu->set_cpuid(id, EDX, edx); assert(ok);
-						ok = vcpu->set_cpuid(id, ECX, ecx); assert(ok);
-					}
-				}
-
-				/* propagate feature flags from the host */
-				eax = Cpu::cpuid(1, ebx, ecx, edx);
-				ok  = vcpu->set_cpuid(1, EAX, eax);
+			const char *long_name = "Seoul VMM proudly presents this VirtualCPU. ";
+			for (unsigned i=0; i<12; i++) {
+				ok = vcpu->set_cpuid(0x80000002 + (i / 4), i % 4, reinterpret_cast<const unsigned *>(long_name)[i]);
 				assert(ok);
+			}
+		} else {
 
-				/* clflush size, apic_id */
-				ok = vcpu->set_cpuid(1, EBX, (apic_id << 24) | (ebx & 0xff00), 0xff00ff00u);
-				assert(ok);
+			xsave = true;
 
-				/* +SSE3,+SSSE3 */
-				ok = vcpu->set_cpuid(1, ECX, ecx, 0x00000201);
-				assert(ok);
+			eax = ebx = ecx = edx = 0;
+			eax = Cpu::cpuid(0, ebx, ecx, edx);
 
-				/* -PSE36, -MTRR,+MMX,+SSE,+SSE2,+CLFLUSH,+SEP */
-				ok = vcpu->set_cpuid(1, EDX, edx, 0x0f88a9bf |
-				                                  (1u << 28) |
-				                                  (1u <<  6) /* PAE */);
-				assert(ok);
+			/* eax specifies max CPUID - up to 0xd relevant for AVX */
+			ok = vcpu->set_cpuid(0, EAX, 0xd); assert(ok);
+			ok = vcpu->set_cpuid(0, EBX, ebx); assert(ok);
+			ok = vcpu->set_cpuid(0, EDX, edx); assert(ok);
+			ok = vcpu->set_cpuid(0, ECX, ecx); assert(ok);
 
-				/* +NX */
-				Cpu::cpuid(0x80000001, ebx, ecx, edx);
-				ok = vcpu->set_cpuid(0x80000001, EDX, edx,
-				                     (1u << 20) | /* NX */
-				                     (1u << 29)   /* Long Mode */ );
-				assert(ok);
+			for (unsigned id = 2; id < 4; id++) {
+				eax = ebx = ecx = edx = 0;
+				eax = Cpu::cpuid(id, ebx, ecx, edx);
 
-				apic_id = apic_id ? apic_id - 1 : _vcpus_up - 1;
+				ok = vcpu->set_cpuid(id, EAX, eax); assert(ok);
+				ok = vcpu->set_cpuid(id, EBX, ebx); assert(ok);
+				ok = vcpu->set_cpuid(id, EDX, edx); assert(ok);
+				ok = vcpu->set_cpuid(id, ECX, ecx); assert(ok);
 			}
 
-			if (verbose_debug)
-				Genode::log("RESET device state");
+			/* Intel - Table 3-8. Information Returned by CPUID Instruction */
+			for (unsigned subleaf = 0; subleaf < 3; subleaf++) {
+				eax = ebx = edx = 0;
+				ecx = subleaf;
 
-			MessageLegacy msg2(MessageLegacy::RESET, 0);
-			_motherboard.bus_legacy.send_fifo(msg2);
+				if (!xsave)
+					break;
 
-			if (verbose_debug)
-				Genode::log("INIT done");
+				eax = Cpu::cpuid(0x7, ebx, ecx, edx);
 
-			for (auto &vcpu : _vcpus) {
-				if (vcpu)
-					vcpu->start();
+				/* AVX */
+				auto avx_eax = (subleaf == 1)
+				             ? ((1u <<  4) | (1u <<  5))
+				             : 0u;
+				auto avx_ebx = (subleaf == 0)
+				             ? (1u <<  5) | /* AVX2 */
+				               (1u << 16) | (1u << 17) | (1u << 21) | /* AVX 512 */
+				               (1u << 26) | (1u << 27) | (1u << 28) |
+				               (1u << 30) | (1u << 31)
+				             : 0u;
+				auto avx_ecx = (subleaf == 0)
+				             ? (1u <<  1) | (1u <<  6) | (1u << 11) |
+				               (1u << 12) | (1u << 14)
+				             : 0u;
+				auto avx_edx = (subleaf == 0)
+                             ? (1u <<  2) | (1u <<  3) | (1u <<  8) |
+				               (1u << 23)
+				             : 0u;
+
+				auto mov_eax = (subleaf == 1) ? (1u << 10) | (1u << 11) | (1u << 12) : 0u;
+
+				auto fpu_ebx = (subleaf == 0) ? (1u <<  6) | (1u << 13) : 0u;
+
+				auto mov_ebx = (subleaf == 0) ? (1u <<  9) : 0u;
+				auto sha_ebx = (subleaf == 0) ? (1u << 29) : 0u;
+
+				/* enable mask */
+				auto mask_eax = avx_eax | mov_eax;
+				auto mask_ebx = avx_ebx | mov_ebx | fpu_ebx | sha_ebx;
+				auto mask_ecx = avx_ecx;
+				auto mask_edx = avx_edx;
+
+				ok = vcpu->set_cpuid(0x7, EAX + subleaf * 4, eax, mask_eax); assert(ok);
+				ok = vcpu->set_cpuid(0x7, EBX + subleaf * 4, ebx, mask_ebx); assert(ok);
+				ok = vcpu->set_cpuid(0x7, ECX + subleaf * 4, ecx, mask_ecx); assert(ok);
+				ok = vcpu->set_cpuid(0x7, EDX + subleaf * 4, edx, mask_edx); assert(ok);
+			}
+
+			for (unsigned id = 0x80000002u; id < 0x80000002u + 3; id++) {
+				eax = ebx = ecx = edx = 0;
+				eax = Cpu::cpuid(id, ebx, ecx, edx);
+
+				ok = vcpu->set_cpuid(id, EAX, eax); assert(ok);
+				ok = vcpu->set_cpuid(id, EBX, ebx); assert(ok);
+				ok = vcpu->set_cpuid(id, EDX, edx); assert(ok);
+				ok = vcpu->set_cpuid(id, ECX, ecx); assert(ok);
 			}
 		}
 
-		Motherboard &motherboard() { return _motherboard; }
-};
+		/* propagate feature flags from the host */
+		eax = ebx = ecx = edx = 0;
+		eax = Cpu::cpuid(1, ebx, ecx, edx);
+		ok  = vcpu->set_cpuid(1, EAX, eax); assert(ok);
 
+		/* clflush size, apic_id */
+		ok = vcpu->set_cpuid(1, EBX, (apic_id << 24) | (ebx & 0xff00), 0xff00ff00u);
+		assert(ok);
 
-extern void heap_init_env(Genode::Heap *);
+		ok = vcpu->set_cpuid(1, ECX, ecx, 1u <<  0 | /*  SSE3 */
+		                                  1u <<  1 | /* PCLMULQDQ */
+		                                  1u <<  2 | /* 64bit DS area */
+		                                  1u <<  9 | /* SSSE3 */
+		                                  1u << 10 | /* CNXT-ID */
+		                                  1u << 12 | /* FMA - extension to YMM */
+		                                  1u << 13 | /* CMPXCHG16b */
+		                                  1u << 17 | /* PCID */
+		                                  1u << 19 | /* SSE4.1 */
+		                                  1u << 20 | /* SSE4.2 */
+		                                  1u << 22 | /* MOVBE */
+		                                  1u << 23 | /* POPCNT */
+		                                  1u << 25 | /* AES */
+		 (!xsave ? 0 :                    1u << 26) | /* XSAVE */
+		 (!xsave ? 0 :                    1u << 27) | /* OSXSAVE */
+		 (!xsave ? 0 :                    1u << 28) | /* AVX */
+		                                  1u << 29 | /* F16C */
+		                                  1u << 30); /* RDRAND */
+		assert(ok);
+
+		/* -APIC, -MTRR, -MCA, -PAT, -PSE36, -PSN, -DS, -ACPI, -HTT, -TM, -PBE */
+		ok = vcpu->set_cpuid(1, EDX, edx, (1u <<  0) | /* FPU */
+		                                  (1u <<  1) | /* VME */
+		                                  (1u <<  2) | /*  DE */
+		                                  (1u <<  3) | /* PSE */
+		                                  (1u <<  4) | /* TSC */
+		                                  (1u <<  5) | /* MSR */
+		                                  (1u <<  6) | /* PAE */
+		                                  (1u <<  7) | /* MCE */
+		                                  (1u <<  8) | /* CX8 */
+		                                  (1u << 11) | /* SEP */
+		                                  (1u << 13) | /* PGE */
+		                                  (1u << 15) | /* CMOV */
+		                                  (1u << 19) | /* CLFSH */
+		                                  (1u << 23) | /* MMX */
+		                                  (1u << 24) | /* FXSR */
+		                                  (1u << 25) | /* SSE */
+		                                  (1u << 26) | /* SSE2 */
+		                                  (1u << 27)); /* SS */
+		assert(ok);
+
+		/* +NX */
+		eax = ebx = ecx = edx = 0;
+		Cpu::cpuid(0x80000001, ebx, ecx, edx);
+		ok = vcpu->set_cpuid(0x80000001, EDX, edx,
+		                     (1u << 20) | /* NX */
+		                     (1u << 29)   /* Long Mode */ );
+		assert(ok);
+
+		apic_id = apic_id ? apic_id - 1 : _vcpus_up - 1;
+	}
+
+	if (verbose_debug)
+		Genode::log("RESET device state");
+
+	MessageLegacy msg2(MessageLegacy::RESET, 0);
+	_motherboard.bus_legacy.send_fifo(msg2);
+
+	if (verbose_debug)
+		Genode::log("INIT done");
+
+	for (auto &vcpu : _vcpus) {
+		if (vcpu)
+			vcpu->start();
+	}
+}
 
 
 void Component::construct(Genode::Env &env)
@@ -1458,7 +1612,7 @@ void Component::construct(Genode::Env &env)
 
 	/* create the PC machine based on the configuration given */
 	static Machine machine(env, heap, vm_con, boot_modules, guest_memory,
-	                       map_small, rdtsc_exit, vmm_vcpu_same_cpu);
+	                       map_small, rdtsc_exit, vmm_vcpu_same_cpu, cpuid_native);
 
 	static Seoul::Console vcon(env, heap, machine.motherboard(),
 	                           Gui::Area(width, height), guest_memory);

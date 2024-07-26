@@ -10,8 +10,10 @@ set use_fs_rump $use_block_vdi
 if {![info exists use_ahci]} { set use_ahci 0 }
 
 # for uefi boot_fb works
-# set fb_name "boot_fb"
-set fb_name "vesa_fb"
+set fb_name "boot_fb"
+if {[have_include power_on/qemu] && ([have_include image/iso] || [have_include image/disk])} {
+	set fb_name "vesa_fb"
+}
 
 set use_drv_ahci  [expr  $use_ahci && ($use_block_vdi || $use_block_sata)]
 set use_drv_nvme  [expr !$use_ahci && ($use_block_vdi || $use_block_sata)]
