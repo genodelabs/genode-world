@@ -30,7 +30,12 @@ set use_virtio        0
 
 set cpuid_native      "yes"
 
-if {[have_include power_on/qemu]} {
+if {![have_include power_on/qemu]} {
+	set use_block_ram  1
+	set use_block_sata 0
+}
+
+if {[have_include power_on/qemu] || [expr $use_block_ram]} {
 	set uri   "http://depot.genode.org/alex-ab/images"
 	set image "seoul-disc-64.raw"
 

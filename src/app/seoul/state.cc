@@ -169,6 +169,12 @@ void Seoul::write_vcpu_state(CpuState &seoul, unsigned mtr, Genode::Vcpu_state &
 		mtr &= ~MTD_TSC;
 	}
 
+	if (mtr & MTD_XSAVE) {
+		state.xcr0.charge(seoul.xcr0);
+		state.xss.charge(seoul.xss);
+		mtr &= ~MTD_XSAVE;
+	}
+
 #ifdef __x86_64__
 	if (mtr & MTD_EFER) {
 		state.efer.charge(seoul.efer);
@@ -407,6 +413,16 @@ unsigned Seoul::read_vcpu_state(Genode::Vcpu_state &state, CpuState &seoul)
 		seoul.tsc_off   = state.tsc_offset.value();
 	}
 
+	if (state.xcr0.charged() || state.xss.charged()) {
+		if (!state.xcr0.charged() || !state.xss.charged())
+			Genode::warning("missing state ", __LINE__);
+
+		mtr |= MTD_XSAVE;
+
+		seoul.xcr0 = state.xcr0.value();
+		seoul.xss  = state.xss.value();
+	}
+
 	if (state.qual_primary.charged() || state.qual_secondary.charged()) {
 		if (!state.qual_primary.charged() || !state.qual_secondary.charged())
 			Genode::warning("missing state ", __LINE__);
@@ -626,6 +642,12 @@ void Seoul::dump(unsigned mtr, Genode::Vcpu_state const &state, CpuState const &
 		output_reg("tsc    ", state.tsc.value(),        seoul.tsc_value);
 		output_reg("tsc_off", state.tsc_offset.value(), seoul.tsc_off);
 		mtr &= ~MTD_TSC;
+	}
+
+	if (mtr & MTD_XSAVE) {
+		output_reg("xcr0", state.xcr0.value(), seoul.xcr0);
+		output_reg("xss", state.xss.value(), seoul.xss);
+		mtr &= ~MTD_XSAVE;
 	}
 
 #ifdef __x86_64__
