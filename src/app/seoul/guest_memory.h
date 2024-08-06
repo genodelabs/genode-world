@@ -20,6 +20,7 @@
 #ifndef _GUEST_MEMORY_H_
 #define _GUEST_MEMORY_H_
 
+#include <base/allocator.h>
 #include <base/sleep.h>
 #include <rm_session/connection.h>
 #include <vm_session/connection.h>

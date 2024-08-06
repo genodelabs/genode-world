@@ -41,8 +41,6 @@ struct Entropy_view::Main
 
 	Gui::Connection _gui { _env };
 
-	Framebuffer::Session &_fb = *_gui.framebuffer();
-
 	Terminal::Connection _entropy { _env, "entropy" };
 
 	Dataspace_capability _fb_ds_cap()
@@ -50,14 +48,14 @@ struct Entropy_view::Main
 		using Framebuffer::Mode;
 		Mode mode { .area = { WIDTH, HEIGHT } };
 		_gui.buffer(mode, false);
-		return _fb.dataspace();
+		return _gui.framebuffer.dataspace();
 	}
 
 	Attached_dataspace _fb_ds { _env.rm(), _fb_ds_cap() };
 
-	Gui::Session::View_handle _view = _gui.create_view();
+	Gui::Top_level_view _view { _gui, { { 0, 0 }, { WIDTH, HEIGHT } } };
 
-	void _refresh() { _fb.refresh(0, 0, WIDTH, HEIGHT); }
+	void _refresh() { _gui.framebuffer.refresh(0, 0, WIDTH, HEIGHT); }
 
 	void _plot()
 	{
@@ -81,14 +79,7 @@ struct Entropy_view::Main
 
 	Main(Env &env) : _env(env)
 	{
-		_gui.enqueue<Gui::Session::Command::Geometry>(
-			_view, Rect(Point(0, 0), Area (WIDTH, HEIGHT)));
-
-		_gui.enqueue<Gui::Session::Command::To_front>(
-			_view, Gui::Session::View_handle());
-		_gui.execute();
-
-		_fb.sync_sigh(_sync_handler);
+		_gui.framebuffer.sync_sigh(_sync_handler);
 	}
 };
 

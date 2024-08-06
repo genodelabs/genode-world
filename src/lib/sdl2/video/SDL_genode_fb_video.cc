@@ -81,9 +81,9 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 	struct Sdl_framebuffer
 	{
-		Genode::Env              &_env;
-		Gui::Connection          &_gui;
-		Gui::Session::View_handle _view { _gui.create_view() };
+		Genode::Env        &_env;
+		Gui::Connection    &_gui;
+		Gui::Top_level_view _view { _gui };
 
 		Genode::Attached_rom_dataspace _config_rom { _env, "config" };
 
@@ -109,10 +109,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			_env(env), _gui(gui)
 		{
 			_gui.mode_sigh(_mode_handler);
-
-			using Session = Gui::Session;
-			_gui.enqueue<Session::Command::To_front>(_view, Session::View_handle());
-			_gui.execute();
+			_view.front();
 		}
 
 		~Sdl_framebuffer()
@@ -120,7 +117,6 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			/* clean up and reduce noise about invalid signals */
 			_gui.mode_sigh(Genode::Signal_context_capability());
 			dataspace(0, 0);
-			_gui.destroy_view(_view);
 		}
 
 		Gui::Area initial_mode_area()
@@ -146,27 +142,23 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		{
 			_gui.buffer(::Framebuffer::Mode { .area = { width, height } }, false);
 
-			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
+			::Framebuffer::Mode mode = _gui.framebuffer.mode();
 
-			Gui::Area area(Genode::min(mode.area.w, width),
-			               Genode::min(mode.area.h, height));
+			_view.area({ Genode::min(mode.area.w, width),
+			             Genode::min(mode.area.h, height) });
 
-			using Command = Gui::Session::Command;
-			_gui.enqueue<Command::Geometry>(_view, Gui::Rect({ 0, 0 }, area));
-			_gui.execute();
-
-			return _gui.framebuffer()->dataspace();
+			return _gui.framebuffer.dataspace();
 		}
 
 		Framebuffer::Mode mode() const {
 			return _gui.mode(); }
 
 		void refresh(int x, int y, int w, int h) {
-			_gui.framebuffer()->refresh(x, y, w, h); }
+			_gui.framebuffer.refresh(x, y, w, h); }
 
 		void title(char const *string)
 		{
-			_gui.enqueue<Gui::Session::Command::Title>(_view, string);
+			_gui.enqueue<Gui::Session::Command::Title>(_view.id(), string);
 			_gui.execute();
 		}
 	};

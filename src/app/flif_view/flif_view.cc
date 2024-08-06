@@ -92,12 +92,12 @@ struct Flif_view::Main
 			if (nit_ds.constructed())
 				nit_ds.destruct();
 			gui.buffer(new_mode, false);
-			nit_ds.construct(env.rm(), gui.framebuffer()->dataspace());
+			nit_ds.construct(env.rm(), gui.framebuffer.dataspace());
 			gui_mode = gui.mode();
 			Genode::log("rebuffering complete");
 		} else if (!nit_ds.constructed()) {
 			gui.buffer(gui_mode, false);
-			nit_ds.construct(env.rm(), gui.framebuffer()->dataspace());
+			nit_ds.construct(env.rm(), gui.framebuffer.dataspace());
 		}
 
 		Genode::size_t const buffer_size =
@@ -123,16 +123,14 @@ struct Flif_view::Main
 			Texture_painter::SOLID, true);
 
 		gui.enqueue<Command::Geometry>(
-			view_handle, Gui::Rect(Gui::Point(), img_area));
-		gui.enqueue<Command::To_front>(view_handle);
+			view.id(), Gui::Rect(Gui::Point(), img_area));
+		gui.enqueue<Command::Front>(view.id());
 		gui.execute();
 
-		gui.framebuffer()->sync_sigh(Signal_context_capability());
+		gui.framebuffer.sync_sigh(Signal_context_capability());
 	}
 
 	Genode::Attached_rom_dataspace config_rom { env, "config" };
-
-	Input::Session_client &input = *gui.input();
 
 	Timer::Connection timer { env, "animation" };
 
@@ -141,7 +139,7 @@ struct Flif_view::Main
 	Timer::One_shot_timeout<Main> render_timeout {
 		timer, *this, &Main::render_animation };
 
-	Gui::Session::View_handle view_handle = gui.create_view();
+	Gui::Top_level_view view { gui };
 
 	void render(FLIF_IMAGE *img);
 
@@ -227,7 +225,7 @@ struct Flif_view::Main
 	 */
 	void handle_input_signal()
 	{
-		input.for_each_event([&] (Input::Event const &ev) {
+		gui.input.for_each_event([&] (Input::Event const &ev) {
 			if (ev.key_press(Input::KEY_PAGEDOWN)) {
 				++pending_page_index;
 				app_transmitter.submit();
@@ -241,7 +239,7 @@ struct Flif_view::Main
 
 	Main(Libc::Env &env) : env(env)
 	{
-		input.sigh(input_handler);
+		gui.input.sigh(input_handler);
 		config_rom.sigh(config_handler);
 
 		handle_config();
@@ -305,7 +303,7 @@ void Flif_view::Main::render(FLIF_IMAGE *img)
 
 	/* flush to surface on next sync signal */
 	img_area = Surface_base::Area(f_width, f_height);
-	gui.framebuffer()->sync_sigh(sync_handler);
+	gui.framebuffer.sync_sigh(sync_handler);
 }
 
 
@@ -325,7 +323,7 @@ bool Flif_view::Main::render_page()
 	flif_decoder_set_resize(flif_dec, gui_mode.area.w, gui_mode.area.h);
 	flif_decoder_set_callback(flif_dec, &(progressive_render), this);
 
-	gui.enqueue<Gui::Session::Command::Title>(view_handle, filename);
+	gui.enqueue<Gui::Session::Command::Title>(view.id(), filename);
 
 	if (verbose)
 		last_ms = timer.elapsed_ms();

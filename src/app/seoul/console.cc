@@ -538,7 +538,7 @@ void Seoul::Console::_handle_input()
 	bool valid_key = false;
 
 	for_each_gui([&](auto &gui) {
-		gui.input.for_each_event([&] (Input::Event const &ev) {
+		gui.gui.input.for_each_event([&] (Input::Event const &ev) {
 
 			valid_key = true;
 

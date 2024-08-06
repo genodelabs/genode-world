@@ -195,7 +195,7 @@ extern "C" {
 	{
 		try {
 			input.construct(_global_env->rm(),
-			                _global_gui->input_session());
+			                _global_gui->cap().call<Gui::Session::Rpc_input>());
 		} catch (...) {
 			Genode::error("no input driver available!");
 			return;

@@ -23,17 +23,14 @@
 
 struct Backend_gui : Genode::List<Backend_gui>::Element
 {
-	typedef Gui::Session::View_handle View_handle;
-	typedef Gui::Session::Command     Command;
+	typedef Gui::Session::Command Command;
 
 	Gui::Connection              gui;
 	unsigned short         const id;
 	Framebuffer::Mode            fb_mode { };
 	Genode::Dataspace_capability fb_ds   { };
 	Genode::addr_t               pixels  { };
-	View_handle                  view    { };
-
-	Input::Session_client       &input;
+	Gui::View_id           const view    { };
 
 	Report::Connection         shape_report;
 	Genode::Attached_dataspace shape_attached;
@@ -60,18 +57,17 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	            char const *name)
 	:
 		gui(env, name), id(id),
-		input(*gui.input()),
 		shape_report(env, "shape", sizeof(Pointer::Shape_report)),
 		shape_attached(env.rm(), shape_report.dataspace())
 	{
 		gui.buffer(Framebuffer::Mode { .area = area }, false);
 
-		fb_ds   = gui.framebuffer()->dataspace();
-		fb_mode = gui.framebuffer()->mode();
+		fb_ds   = gui.framebuffer.dataspace();
+		fb_mode = gui.framebuffer.mode();
 
 		_attach_fb_ds(env, fb_ds);
 
-		input.sigh(input_signal);
+		gui.input.sigh(input_signal);
 		guis.insert(this);
 	}
 
@@ -93,7 +89,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 
 		gui.buffer(fb_mode, false);
 
-		fb_ds = gui.framebuffer()->dataspace();
+		fb_ds = gui.framebuffer.dataspace();
 
 		Gui::Rect rect(Gui::Point(0, 0), fb_mode.area);
 
@@ -106,17 +102,13 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	void refresh(unsigned x, unsigned y, unsigned width, unsigned height)
 	{
 		if (!visible) {
-			view = gui.create_view();
-			Gui::Rect rect(Gui::Point(0, 0), fb_mode.area);
-
-			gui.enqueue<Command::Geometry>(view, rect);
-			gui.enqueue<Command::To_front>(view, View_handle());
-			gui.execute();
-
+			gui.view(view, { .title = "",
+			                 .rect  = { { 0, 0 }, fb_mode.area },
+			                 .front = true });
 			visible = true;
 		}
 
-		gui.framebuffer()->refresh(x, y, width, height);
+		gui.framebuffer.refresh(x, y, width, height);
 	}
 
 	void hide()

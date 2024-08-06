@@ -62,9 +62,9 @@ extern "C" {
 
 	struct Sdl_framebuffer
 	{
-		Genode::Env              &_env;
-		Gui::Connection          &_gui;
-		Gui::Session::View_handle _view { _gui.create_view() };
+		Genode::Env        &_env;
+		Gui::Connection    &_gui;
+		Gui::Top_level_view _view { _gui };
 
 		void _handle_mode_change()
 		{
@@ -87,10 +87,7 @@ extern "C" {
 			_env(env), _gui(gui)
 		{
 			_gui.mode_sigh(_mode_handler);
-
-			using Session = Gui::Session;
-			_gui.enqueue<Session::Command::To_front>(_view, Session::View_handle());
-			_gui.execute();
+			_view.front();
 		}
 
 
@@ -102,28 +99,23 @@ extern "C" {
 		{
 			_gui.buffer(::Framebuffer::Mode { .area = { width, height } }, false);
 
-			::Framebuffer::Mode mode = _gui.framebuffer()->mode();
+			::Framebuffer::Mode mode = _gui.framebuffer.mode();
 
-			Gui::Area area(Genode::min(mode.area.w, width),
-			               Genode::min(mode.area.h, height));
+			_view.area({ Genode::min(mode.area.w, width),
+			             Genode::min(mode.area.h, height) });
 
-			using Command = Gui::Session::Command;
-
-			_gui.enqueue<Command::Geometry>(_view, Gui::Rect({ 0, 0 }, area));
-			_gui.execute();
-
-			return _gui.framebuffer()->dataspace();
+			return _gui.framebuffer.dataspace();
 		}
 
 		Framebuffer::Mode mode() const {
 			return _gui.mode(); }
 
 		void refresh(int x, int y, int w, int h) {
-			_gui.framebuffer()->refresh(x, y, w, h); }
+			_gui.framebuffer.refresh(x, y, w, h); }
 
 		void title(char const *string)
 		{
-			_gui.enqueue<Gui::Session::Command::Title>(_view, string);
+			_gui.enqueue<Gui::Session::Command::Title>(_view.id(), string);
 			_gui.execute();
 		}
 	};

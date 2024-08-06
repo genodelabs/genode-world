@@ -18,7 +18,7 @@ lappend import [depot_user]/src/[base_src] \
                [depot_user]/pkg/[drivers_interactive_pkg] \
                [depot_user]/src/init \
                [depot_user]/src/nitpicker \
-               [depot_user]/pkg/motif_wm
+               [depot_user]/pkg/themed_wm
 
 import_from_depot $import
 

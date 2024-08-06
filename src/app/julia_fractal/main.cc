@@ -49,7 +49,6 @@ struct Painter_T {
 };
 
 class window {
-  using View_handle            = Gui::Session::View_handle;
   using Reattachable_dataspace = Genode::Constructible<Genode::Attached_dataspace>;
 
   Genode::Env&           _env;
@@ -57,24 +56,21 @@ class window {
   Framebuffer::Mode      _mode;
   Painter_T&             _draw;
   Reattachable_dataspace _ds{};
-  View_handle            _view{};
+  Gui::Top_level_view    _view { _npconn };
 
   void _draw_frame() {
     _draw.paint(_ds->local_addr<Genode::Pixel_rgb888>(), _mode.area.w, _mode.area.h); }
 
   void _refresh() {
-    _npconn.framebuffer()->refresh(0, 0, _mode.area.w, _mode.area.h); }
+    _npconn.framebuffer.refresh(0, 0, _mode.area.w, _mode.area.h); }
 
   void _new_mode() {
     _mode = _npconn.mode();
     _npconn.buffer(_mode, false);
-    _ds.construct(_env.rm(), _npconn.framebuffer()->dataspace());
+    _ds.construct(_env.rm(), _npconn.framebuffer.dataspace());
     _draw_frame();
     _refresh();
-
-    auto rect = Gui::Rect{Gui::Point{0, 0}, _mode.area};
-    _npconn.enqueue<Gui::Session::Command::Geometry>(_view, rect);
-    _npconn.execute();
+    _view.area(_mode.area);
   }
 
   Genode::Signal_handler<window> _on_resize{_env.ep(), *this, &window::_new_mode};
@@ -92,12 +88,10 @@ public:
     using Gui::Session;
 
     _npconn.buffer(_mode, false);
-    _view = _npconn.create_view();
 
     _new_mode(); /* Get the newest mode+buffer and start drawing */
 
-    _npconn.enqueue<Session::Command::Title>(_view, title);
-    _npconn.enqueue<Session::Command::To_front>(_view, View_handle{});
+    _npconn.enqueue<Session::Command::Title>(_view.id(), title);
     _npconn.execute();
     _npconn.mode_sigh(_on_resize);
   }

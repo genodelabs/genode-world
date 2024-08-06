@@ -51,27 +51,24 @@ struct Show_input::Main
 
 	Gui::Connection _gui { _env };
 
-	Input::Session_client &_input = *_gui.input();
-	Framebuffer::Session  &_fb    = *_gui.framebuffer();
-
 	Dataspace_capability _fb_ds_cap()
 	{
 		_gui.buffer(_gui.mode(), false);
-		return _fb.dataspace();
+		return _gui.framebuffer.dataspace();
 	}
 
 	Attached_dataspace _fb_ds { _env.rm(), _fb_ds_cap() };
 
-	Gui::Session::View_handle _view = _gui.create_view();
-
 	typedef Pixel_rgb888 PT;
 
-	Surface_base::Area _size { _fb.mode().area.w,
+	Surface_base::Area _size { _gui.framebuffer.mode().area.w,
 	                           (unsigned)_font.height() };
+
+	Gui::Top_level_view _view { _gui, { { 0, 0 }, _size } };
 
 	Surface<PT> _surface { _fb_ds.local_addr<PT>(), _size };
 
-	void _refresh() { _fb.refresh(0, 0, _size.w, _size.h); }
+	void _refresh() { _gui.framebuffer.refresh(0, 0, _size.w, _size.h); }
 
 	Signal_handler<Main> _input_sigh {
 		_env.ep(), *this, &Main::_handle_input };
@@ -81,7 +78,7 @@ struct Show_input::Main
 		using namespace Input;
 		bool refresh = false;
 
-		_input.for_each_event([&] (Input::Event const &ev) {
+		_gui.input.for_each_event([&] (Input::Event const &ev) {
 			ev.handle_press([&] (Keycode key, Codepoint codepoint) {
 				String<128> info(
 					key_name(key), " ",
@@ -102,11 +99,10 @@ struct Show_input::Main
 					info.string());
 				refresh = true;
 
-				auto w = _font.string_width(info.string()).decimal();
-				auto h = _font.height();
+				unsigned w = _font.string_width(info.string()).decimal();
+				unsigned h = _font.height();
 
-				_gui.enqueue<Gui::Session::Command::Geometry>(
-					_view, Rect(Point(0, 0), Area(w*2, h*2)));
+				_view.area({ w*2, h*2 });
 			});
 		});
 
@@ -118,14 +114,7 @@ struct Show_input::Main
 
 	Main(Env &env) : _env(env)
 	{
-		_input.sigh(_input_sigh);
-
-		_gui.enqueue<Gui::Session::Command::Geometry>(
-			_view, Rect(Point(0, 0), _size));
-
-		_gui.enqueue<Gui::Session::Command::To_front>(
-			_view, Gui::Session::View_handle());
-		_gui.execute();
+		_gui.input.sigh(_input_sigh);
 
 		_surface.clip(Rect(Point(0, 0), _size));
 	}

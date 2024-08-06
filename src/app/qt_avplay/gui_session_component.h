@@ -41,7 +41,8 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 	Attached_ram_dataspace _command_ds;
 	Command_buffer &_command_buffer = *_command_ds.local_addr<Command_buffer>();
 
-	Gui::Session::View_handle _view_handle;
+	Gui::View_ref          _view_ref { };
+	Gui::View_ids::Element _view { _view_ref, _connection.view_ids };
 
 	Input::Session_component &input_component() { return _input_component; }
 
@@ -51,20 +52,23 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 
 			switch (command.opcode) {
 
-			case Command::OP_GEOMETRY:
+			case Command::GEOMETRY:
 				{
 					Gui::Rect rect = command.geometry.rect;
-					_genode_view_widget->setGenodeView(&_connection, _view_handle,
-				                                   	   0, 0, rect.w(), rect.h());
+					_genode_view_widget->setGenodeView(&_connection, _view.id(),
+					                                   0, 0, rect.w(), rect.h());
 					return;
 				}
 
-			case Command::OP_OFFSET:     return;
-			case Command::OP_TO_FRONT:   return;
-			case Command::OP_TO_BACK:    return;
-			case Command::OP_BACKGROUND: return;
-			case Command::OP_TITLE:      return;
-			case Command::OP_NOP:        return;
+			case Command::OFFSET:
+			case Command::FRONT:
+			case Command::BACK:
+			case Command::FRONT_OF:
+			case Command::BEHIND_OF:
+			case Command::BACKGROUND:
+			case Command::TITLE:
+			case Command::NOP:
+				return;
 			}
 		});
 	}
@@ -87,13 +91,13 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 		_env.ep().dissolve(_input_component);
 	}
 
-	Framebuffer::Session_capability framebuffer_session() override {
-		return _connection.framebuffer_session(); }
+	Framebuffer::Session_capability framebuffer() override {
+		return _connection.cap().call<Rpc_framebuffer>(); }
 
-	Input::Session_capability input_session() override {
+	Input::Session_capability input() override {
 		return _input_component.cap(); }
 
-	View_handle create_view(View_handle) override
+	View_result view(View_id /* ignored */, View_attr const &attr) override
 	{
 	 	Libc::with_libc([&] {
 
@@ -101,28 +105,37 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 				dynamic_cast<QGenodePlatformWindow*>(_genode_view_widget
 					->window()->windowHandle()->handle());
 
-			Gui::Session::View_handle parent_view_handle =
-				_connection.view_handle(platform_window->view_cap());
+			View_ref tmp_ref { };
+			View_ids::Element tmp { tmp_ref, _connection.view_ids };
 
-			_view_handle = _connection.create_view(parent_view_handle);
-
-			_connection.release_view_handle(parent_view_handle);
+			_connection.associate(tmp.id(), platform_window->view_cap());
+			_connection.child_view(_view.id(), tmp.id(), attr);
+			_connection.release_view_id(tmp.id());
 		});
 
-		return _view_handle;
+		return View_result::OK;
 	}
 
-	void destroy_view(View_handle view) override {
+	Child_view_result child_view(View_id, View_id, View_attr const &) override
+	{
+		warning("unexpected call of create_child_view");
+		return Child_view_result::OK;
+	}
+
+	void destroy_view(View_id view) override {
 		_connection.destroy_view(view); }
 
-	View_handle view_handle(View_capability view_cap, View_handle handle) override {
-		return _connection.view_handle(view_cap, handle); }
+	Associate_result associate(View_id id, View_capability cap) override
+	{
+		_connection.associate(id, cap);
+		return Associate_result::OK;
+	}
 
-	View_capability view_capability(View_handle view) override {
+	View_capability_result view_capability(View_id view) override {
 		return _connection.view_capability(view); }
 
-	void release_view_handle(View_handle view) override {
-		_connection.release_view_handle(view); }
+	void release_view_id(View_id view) override {
+		_connection.release_view_id(view); }
 
 	Dataspace_capability command_dataspace() override {
 		return _command_ds.cap(); }
@@ -149,8 +162,11 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 	void mode_sigh(Signal_context_capability sigh) override {
 		_connection.mode_sigh(sigh); }
 
-	void buffer(Framebuffer::Mode mode, bool use_alpha) override {
-		_connection.buffer(mode, use_alpha); }
+	Buffer_result buffer(Framebuffer::Mode mode, bool use_alpha) override
+	{
+		_connection.buffer(mode, use_alpha);
+		return Buffer_result::OK;
+	}
 
 	void focus(Capability<Gui::Session> session) override {
 		_connection.focus(session); }
