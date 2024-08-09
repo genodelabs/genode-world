@@ -265,7 +265,6 @@ set build_components {
 	driver/rtc
 	app/seoul
 	server/record_play_mixer
-	kernel/nova core lib/ld
 }
 
 lappend_if $use_block_vdi       build_components server/vdi_block
