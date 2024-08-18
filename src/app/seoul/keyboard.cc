@@ -42,11 +42,11 @@ bool Seoul::Keyboard::_map_keycode(unsigned &keycode, bool press)
 		break;
 	case Input::KEY_LEFTCTRL:   nflags |= KBFLAG_LCTRL;  keycode = 0x14; break;
 	case Input::KEY_RIGHTCTRL:  nflags |= KBFLAG_RCTRL;  keycode = 0x14; break;
-	case Input::KEY_LEFTMETA:   _flags |= KBFLAG_LWIN;   keycode = 0x1f;
-		if (press) return false;
+	case Input::KEY_LEFTMETA:   nflags |= KBFLAG_LWIN;   keycode = 0x1f;
+		_flags |= KBFLAG_EXTEND0;
 		break;
-	case Input::KEY_RIGHTMETA:  _flags |= KBFLAG_RWIN;   keycode = 0x27;
-		if (press) return false;
+	case Input::KEY_RIGHTMETA:  nflags |= KBFLAG_RWIN;   keycode = 0x27;
+		_flags |= KBFLAG_EXTEND0;
 		break;
 	case Input::KEY_KPSLASH:    _flags |= KBFLAG_EXTEND0;
 		keycode = GenericKeyboard::translate_sc1_to_sc2(0x35); break;
