@@ -1,4 +1,4 @@
-include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
+TARGET = ubuntu_ui_toolkit.qmake_target
 
 PORT_DIR := $(call select_from_ports,ubuntu-ui-toolkit)/src/lib/ubuntu-ui-toolkit
 
@@ -8,7 +8,7 @@ QT5_PORT_LIBS += libQt5Svg
 
 GENODE_QMAKE_CFLAGS += -Wno-deprecated -Wno-deprecated-declarations -Wno-deprecated-copy
 
-LIBS = libc libm mesa stdcxx $(QT5_PORT_LIBS)
+LIBS = qt5_qmake libc libm mesa stdcxx
 
 INSTALL_LIBS = lib/libUbuntuGestures.lib.so \
                lib/libUbuntuMetrics.lib.so \
@@ -21,14 +21,14 @@ INSTALL_LIBS = lib/libUbuntuGestures.lib.so \
 BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS)) \
                   ubuntu-ui-toolkit_qml.tar
 
-build: qmake_prepared.tag
+build: qmake_prepared.tag qt5_so_files
 
 	@#
 	@# run qmake
 	@#
 
 	$(VERBOSE)source env.sh && $(QMAKE) \
-		-qtconf qmake_root/mkspecs/$(QMAKE_PLATFORM)/qt.conf \
+		-qtconf build_dependencies/mkspecs/$(QT_PLATFORM)/qt.conf \
 		$(PORT_DIR)/ubuntu-sdk.pro \
 		$(QT5_OUTPUT_FILTER)
 
@@ -44,7 +44,7 @@ build: qmake_prepared.tag
 
 	$(VERBOSE)$(MAKE) INSTALL_ROOT=$(CURDIR)/install sub-src-install_subtargets $(QT5_OUTPUT_FILTER)
 
-	$(VERBOSE)ln -sf .$(CURDIR)/qmake_root install/qt
+	$(VERBOSE)ln -sf .$(CURDIR)/build_dependencies install/qt
 
 	@#
 	@# strip libs and create symlinks in 'bin' and 'debug' directories
@@ -68,6 +68,4 @@ build: qmake_prepared.tag
 
 .PHONY: build
 
-ifeq ($(called_from_lib_mk),yes)
-all: build
-endif
+QT5_TARGET_DEPS = build

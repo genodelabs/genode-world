@@ -1,4 +1,4 @@
-MIRROR_FROM_REP_DIR := lib/mk/ubuntu-ui-extras.mk
+MIRROR_FROM_REP_DIR := src/qt5/ubuntu-ui-extras/target.mk
 
 content: $(MIRROR_FROM_REP_DIR)
 

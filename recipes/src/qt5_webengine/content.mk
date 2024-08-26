@@ -1,6 +1,6 @@
-MIRROR_FROM_REP_DIR := lib/mk/qt5_webengine.inc \
-                       lib/mk/spec/arm_64/qt5_webengine.mk \
-                       lib/mk/spec/x86_64/qt5_webengine.mk
+MIRROR_FROM_REP_DIR := src/qt5/webengine/target.inc \
+                       src/qt5/webengine/spec/arm_64/target.mk \
+                       src/qt5/webengine/spec/x86_64/target.mk
 
 content: $(MIRROR_FROM_REP_DIR)
 

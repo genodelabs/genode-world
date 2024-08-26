@@ -1,22 +1,22 @@
-include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
+TARGET = qt5_webchannel.qmake_target
 
 QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network
 QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick
 
-LIBS = egl expat libc libm mesa stdcxx $(QT5_PORT_LIBS)
+LIBS = qt5_qmake egl expat libc libm mesa stdcxx
 
 INSTALL_LIBS = lib/libQt5WebChannel.lib.so
 
 BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS))
 
-build: qmake_prepared.tag
+build: qmake_prepared.tag qt5_so_files
 
 	@#
 	@# run qmake
 	@#
 
 	$(VERBOSE)source env.sh && $(QMAKE) \
-		-qtconf qmake_root/mkspecs/$(QMAKE_PLATFORM)/qt.conf \
+		-qtconf build_dependencies/mkspecs/$(QT_PLATFORM)/qt.conf \
 		$(QT_DIR)/qtwebchannel/qtwebchannel.pro \
 		$(QT5_OUTPUT_FILTER)
 
@@ -32,7 +32,7 @@ build: qmake_prepared.tag
 
 	$(VERBOSE)$(MAKE) INSTALL_ROOT=$(CURDIR)/install sub-src-install_subtargets $(QT5_OUTPUT_FILTER)
 
-	$(VERBOSE)ln -sf .$(CURDIR)/qmake_root install/qt
+	$(VERBOSE)ln -sf .$(CURDIR)/build_dependencies install/qt
 
 	@#
 	@# strip libs and create symlinks in 'bin' and 'debug' directories
@@ -50,6 +50,4 @@ build: qmake_prepared.tag
 
 .PHONY: build
 
-ifeq ($(called_from_lib_mk),yes)
-all: build
-endif
+QT5_TARGET_DEPS = build

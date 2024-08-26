@@ -1,4 +1,4 @@
-FALKON_DIR =  $(call select_from_ports,falkon)/src/app/falkon
+FALKON_DIR = $(call select_from_ports,falkon)/src/app/falkon
 
 QMAKE_PROJECT_FILE = $(FALKON_DIR)/falkon.pro
 
@@ -10,18 +10,15 @@ QT5_PORT_LIBS += libQt5Svg
 QT5_PORT_LIBS += libQt5WebChannel
 QT5_PORT_LIBS += libQt5WebEngine libQt5WebEngineCore libQt5WebEngineWidgets
 
-LIBS = libc libm mesa qt5_component stdcxx nss3 libcrypto $(QT5_PORT_LIBS)
+LIBS = qt5_qmake libc libm mesa qt5_component stdcxx nss3 libcrypto
 
-include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
+QT5_GENODE_LIBS_APP += libcrypto.lib.so nss3.lib.so
 
-QT5_GENODE_LIBS_APP += libcrypto.lib.so
-
-qmake_prepared.tag: qmake_root/lib/nss3.lib.so \
-                    qmake_root/lib/libcrypto.lib.so
+qmake_prepared.tag: $(addprefix build_dependencies/lib/,$(QT5_GENODE_LIBS_APP))
 
 $(BUILD_BASE_DIR)/bin/falkon_theme.tar:
 	$(VERBOSE)tar cf $@ --transform='s/themes/.local\/share\/falkon\/themes/' -C $(FALKON_DIR) themes/chrome
 
-$(TARGET): $(BUILD_BASE_DIR)/bin/falkon_theme.tar
+QT5_EXTRA_TARGET_DEPS = $(BUILD_BASE_DIR)/bin/falkon_theme.tar
 
 BUILD_ARTIFACTS += falkon_theme.tar

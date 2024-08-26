@@ -1,27 +1,27 @@
-include $(call select_from_repositories,lib/import/import-qt5_qmake.mk)
+TARGET = qt5_webengine.qmake_target
 
 ifeq ($(filter-out $(SPECS),arm_64),)
-GENODE_QMAKE_CFLAGS += -march=armv8-a+crc+crypto
+CC_MARCH = -march=armv8-a+crc+crypto
 endif
 
 QT5_PORT_LIBS += libQt5Core libQt5Gui libQt5Network libQt5Widgets
 QT5_PORT_LIBS += libQt5Qml libQt5QmlModels libQt5Quick libQt5QuickWidgets
 QT5_PORT_LIBS += libQt5WebChannel
 
-LIBS = egl expat libc libm mesa nss3 stdcxx $(QT5_PORT_LIBS)
+LIBS = qt5_qmake egl expat libc libm mesa nss3 stdcxx
 
 INSTALL_LIBS = lib/libQt5WebEngine.lib.so \
                lib/libQt5WebEngineCore.lib.so \
                lib/libQt5WebEngineWidgets.lib.so \
                qml/QtWebEngine/libqtwebengineplugin.lib.so
 
-BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS)) \
+BUILD_ARTIFACTS += $(notdir $(INSTALL_LIBS)) \
                   qt5_webengine_resources.tar \
                   qt5_webengine_translations.tar \
                   qt5_webengine_qml.tar
 
 QT5_GENODE_LIBS_SHLIB += nss3.lib.so
-qmake_prepared.tag: qmake_root/lib/nss3.lib.so
+qmake_prepared.tag: build_dependencies/lib/nss3.lib.so
 
 #
 # Limit the number of parallel ninja jobs to 16 by default to keep RAM
@@ -29,14 +29,14 @@ qmake_prepared.tag: qmake_root/lib/nss3.lib.so
 #
 NINJAJOBS ?= -j$(shell echo -e "$(shell nproc)\n16" | sort -g | head -n1)
 
-build: qmake_prepared.tag
+build: qmake_prepared.tag qt5_so_files
 
 	@#
 	@# run qmake
 	@#
 
 	$(VERBOSE)source env.sh && $(QMAKE) \
-		-qtconf qmake_root/mkspecs/$(QMAKE_PLATFORM)/qt.conf \
+		-qtconf build_dependencies/mkspecs/$(QT_PLATFORM)/qt.conf \
 		$(QT_DIR)/qtwebengine/qtwebengine.pro \
 		-- \
 		-no-feature-webengine-system-ninja \
@@ -73,7 +73,7 @@ build: qmake_prepared.tag
 
 	$(VERBOSE)$(MAKE) INSTALL_ROOT=$(CURDIR)/install sub-src-install_subtargets $(QT5_OUTPUT_FILTER)
 
-	$(VERBOSE)ln -sf .$(CURDIR)/qmake_root install/qt
+	$(VERBOSE)ln -sf .$(CURDIR)/build_dependencies install/qt
 
 	@#
 	@# strip libs and create symlinks in 'bin' and 'debug' directories
@@ -99,6 +99,4 @@ build: qmake_prepared.tag
 
 .PHONY: build
 
-ifeq ($(called_from_lib_mk),yes)
-all: build
-endif
+QT5_TARGET_DEPS = build
