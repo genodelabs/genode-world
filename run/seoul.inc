@@ -48,7 +48,7 @@ if {![info exists vdi_name]}       { set vdi_name       "guest.vdi" }
 if {![info exists image]}          { set image          "seoul-disc.raw" }
 if {![info exists use_model_xhci]} { set use_model_xhci 0 }
 
-if {$use_fs_rump   } { import_from_depot [depot_user]/src/rump }
+if {$use_fs_rump   } { import_from_depot [depot_user]/src/vfs_rump }
 if {$use_part_block} { import_from_depot [depot_user]/src/part_block }
 if {$use_drv_ahci  } { import_from_depot [depot_user]/src/ahci }
 if {$use_drv_nvme  } { import_from_depot [depot_user]/src/nvme }
