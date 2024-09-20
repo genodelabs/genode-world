@@ -70,9 +70,6 @@ struct Flif_view::Main
 	Io_signal_handler<Main> input_handler {
 		env.ep(), *this, &Main::handle_input_signal };
 
-	Io_signal_handler<Main> sync_handler {
-		env.ep(), *this, &Main::handle_sync_signal };
-
 	/* signal transmitter to wake application from input handling */
 	Signal_transmitter app_transmitter { app_handler };
 
@@ -109,25 +106,6 @@ struct Flif_view::Main
 		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, gui_mode.area);
 
 		fn(texture);
-	}
-
-	void handle_sync_signal()
-	{
-		typedef Pixel_rgb888 PT;
-
-		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, gui_mode.area);
-		Surface<PT> surface(nit_ds->local_addr<PT>(), gui_mode.area);
-
-		Texture_painter::paint(
-			surface, texture, Color(), Surface_base::Point(),
-			Texture_painter::SOLID, true);
-
-		gui.enqueue<Command::Geometry>(
-			view.id(), Gui::Rect(Gui::Point(), img_area));
-		gui.enqueue<Command::Front>(view.id());
-		gui.execute();
-
-		gui.framebuffer.sync_sigh(Signal_context_capability());
 	}
 
 	Genode::Attached_rom_dataspace config_rom { env, "config" };
@@ -303,7 +281,19 @@ void Flif_view::Main::render(FLIF_IMAGE *img)
 
 	/* flush to surface on next sync signal */
 	img_area = Surface_base::Area(f_width, f_height);
-	gui.framebuffer.sync_sigh(sync_handler);
+
+	using PT = Pixel_rgb888;
+
+	Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, gui_mode.area);
+	Surface<PT> surface(nit_ds->local_addr<PT>(), gui_mode.area);
+
+	Texture_painter::paint(
+		surface, texture, Color(), Surface_base::Point(),
+		Texture_painter::SOLID, true);
+
+	gui.enqueue<Command::Geometry>(view.id(), Gui::Rect(Gui::Point(), img_area));
+	gui.enqueue<Command::Front>(view.id());
+	gui.execute();
 }
 
 
