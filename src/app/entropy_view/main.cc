@@ -80,6 +80,7 @@ struct Entropy_view::Main
 	Main(Env &env) : _env(env)
 	{
 		_gui.framebuffer.sync_sigh(_sync_handler);
+		_sync_handler.local_submit();
 	}
 };
 
