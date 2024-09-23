@@ -140,7 +140,8 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		Genode::Dataspace_capability dataspace(unsigned width, unsigned height)
 		{
-			_gui.buffer(::Framebuffer::Mode { .area = { width, height } }, false);
+			_gui.buffer(::Framebuffer::Mode { .area  = { width, height },
+			                                  .alpha = false });
 
 			::Framebuffer::Mode mode = _gui.framebuffer.mode();
 

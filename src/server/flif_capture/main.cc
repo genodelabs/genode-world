@@ -125,7 +125,7 @@ class Flif_capture::Encoder
 
 			/* TODO: attach/detach each capture? */
 			Genode::Attached_dataspace fb_ds(_env.rm(), fb_cap);
-			if (fb_ds.size() < mode.area.count() * mode.bytes_per_pixel()) {
+			if (fb_ds.size() < mode.num_bytes()) {
 				Genode::error("invalid framebuffer for capture");
 				return;
 			}
@@ -214,6 +214,8 @@ class Flif_capture::Framebuffer_session_component
 		{
 			_parent.sync_sigh(sigh);
 		}
+
+		void sync_source(Genode::Session_label const &) override { }
 
 		Blit_result blit(Framebuffer::Blit_batch const &batch) override
 		{

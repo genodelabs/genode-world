@@ -79,26 +79,26 @@ struct Flif_view::Main
 
 	Constructible<Attached_dataspace> nit_ds { };
 
-	template <typename PT, typename FN>
-	void apply_to_texture(unsigned width, unsigned height, FN const &fn)
+	template <typename PT>
+	void apply_to_texture(unsigned width, unsigned height, auto const &fn)
 	{
 		if (gui_mode.area.w < width || gui_mode.area.h < height) {
-			Mode new_mode { .area = { max(gui_mode.area.w, width),
-			                          max(gui_mode.area.h, height) } };
-			Genode::log("resize gui buffer to ", new_mode);
+			Mode new_mode { .area  = { max(gui_mode.area.w, width),
+			                           max(gui_mode.area.h, height) },
+			                .alpha = false };
+			log("resize gui buffer to ", new_mode);
 			if (nit_ds.constructed())
 				nit_ds.destruct();
-			gui.buffer(new_mode, false);
+			gui.buffer(new_mode);
 			nit_ds.construct(env.rm(), gui.framebuffer.dataspace());
 			gui_mode = gui.mode();
-			Genode::log("rebuffering complete");
+			log("rebuffering complete");
 		} else if (!nit_ds.constructed()) {
-			gui.buffer(gui_mode, false);
+			gui.buffer(gui_mode);
 			nit_ds.construct(env.rm(), gui.framebuffer.dataspace());
 		}
 
-		Genode::size_t const buffer_size =
-			gui_mode.area.count() * gui_mode.bytes_per_pixel();
+		size_t const buffer_size = gui_mode.num_bytes();
 
 		if (buffer_size > back_ds.size())
 			back_ds.realloc(&env.pd(), buffer_size);
@@ -108,11 +108,11 @@ struct Flif_view::Main
 		fn(texture);
 	}
 
-	Genode::Attached_rom_dataspace config_rom { env, "config" };
+	Attached_rom_dataspace config_rom { env, "config" };
 
 	Timer::Connection timer { env, "animation" };
 
-	void render_animation(Genode::Duration);
+	void render_animation(Duration);
 
 	Timer::One_shot_timeout<Main> render_timeout {
 		timer, *this, &Main::render_animation };
@@ -253,7 +253,7 @@ static ::uint32_t progressive_render(::uint32_t quality, ::int64_t bytes_read, :
 }
 
 
-void Flif_view::Main::render_animation(Genode::Duration)
+void Flif_view::Main::render_animation(Duration)
 {
 	cur_frame = (cur_frame+1) % flif_decoder_num_images(flif_dec);
 
@@ -319,11 +319,11 @@ bool Flif_view::Main::render_page()
 		last_ms = timer.elapsed_ms();
 
 	if (!flif_decoder_decode_file(flif_dec, filename)) {
-		Genode::error("decode '", filename, "' failed");
+		error("decode '", filename, "' failed");
 		return false;
 	}
 
-	Genode::log(filename);
+	log(filename);
 
 	FLIF_IMAGE *img = flif_decoder_get_image(flif_dec, 0);
 	render(img);

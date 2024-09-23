@@ -97,7 +97,8 @@ extern "C" {
 
 		Genode::Dataspace_capability dataspace(unsigned width, unsigned height)
 		{
-			_gui.buffer(::Framebuffer::Mode { .area = { width, height } }, false);
+			_gui.buffer(::Framebuffer::Mode { .area  = { width, height },
+			                                  .alpha = false });
 
 			::Framebuffer::Mode mode = _gui.framebuffer.mode();
 
@@ -391,7 +392,7 @@ extern "C" {
 
 		/* set mode specific values */
 		vformat->BitsPerPixel  = 32;
-		vformat->BytesPerPixel = scr_mode.bytes_per_pixel();
+		vformat->BytesPerPixel = sizeof(Genode::Pixel_rgb888);
 		vformat->Rmask = 0x00ff0000;
 		vformat->Gmask = 0x0000ff00;
 		vformat->Bmask = 0x000000ff;

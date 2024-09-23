@@ -66,7 +66,7 @@ class window {
 
   void _new_mode() {
     _mode = _npconn.mode();
-    _npconn.buffer(_mode, false);
+    _npconn.buffer(_mode);
     _ds.construct(_env.rm(), _npconn.framebuffer.dataspace());
     _draw_frame();
     _refresh();
@@ -82,12 +82,12 @@ public:
   window(Genode::Env& env, Painter_T& painter,
          Title_String_T title, Gui::Area wsize)
     : _env{env}, _npconn{env},
-      _mode{ .area = wsize },
+      _mode{ .area = wsize, .alpha = false },
       _draw{painter}
   {
     using Gui::Session;
 
-    _npconn.buffer(_mode, false);
+    _npconn.buffer(_mode);
 
     _new_mode(); /* Get the newest mode+buffer and start drawing */
 
