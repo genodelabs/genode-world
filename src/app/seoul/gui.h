@@ -108,7 +108,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 			visible = true;
 		}
 
-		gui.framebuffer.refresh(x, y, width, height);
+		gui.framebuffer.refresh({ { int(x), int(y) }, { width, height } });
 	}
 
 	void hide()

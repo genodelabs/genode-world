@@ -153,8 +153,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		Framebuffer::Mode mode() const {
 			return _gui.mode(); }
 
-		void refresh(int x, int y, int w, int h) {
-			_gui.framebuffer.refresh(x, y, w, h); }
+		void refresh(Framebuffer::Rect rect) { _gui.framebuffer.refresh(rect); }
 
 		void title(char const *string)
 		{
@@ -292,8 +291,8 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 				       drv.fb_double->size());
 			}
 
-			drv.framebuffer->refresh(rects[i].x, rects[i].y,
-			                         rects[i].w, rects[i].h);
+			drv.framebuffer->refresh({ { rects[i].x, rects[i].y },
+			                           { rects[i].w, rects[i].h } });
 		}
 
 		return 0;
@@ -498,7 +497,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		if (SDL_EGL_SwapBuffers(_this, drv.egl_surface) < 0) {
 			return -1;
 		}
-		drv.framebuffer->refresh(0, 0, drv.egl_window.width, drv.egl_window.height);
+		drv.framebuffer->refresh({ { 0, 0 }, { drv.egl_window.width, drv.egl_window.height } });
 		return 0;
 	}
 

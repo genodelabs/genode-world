@@ -110,8 +110,8 @@ extern "C" {
 		Framebuffer::Mode mode() const {
 			return _gui.mode(); }
 
-		void refresh(int x, int y, int w, int h) {
-			_gui.framebuffer.refresh(x, y, w, h); }
+		void refresh(Framebuffer::Rect rect) {
+			_gui.framebuffer.refresh(rect); }
 
 		void title(char const *string)
 		{
@@ -560,10 +560,9 @@ extern "C" {
 	static void Genode_Fb_UpdateRects(SDL_VideoDevice *t, int numrects,
 	                                  SDL_Rect *rects)
 	{
-		int i;
-		for(i=0;i<numrects;i++) {
-			framebuffer->refresh(rects[i].x, rects[i].y, rects[i].w, rects[i].h);
-		}
+		for(unsigned i = 0; i < numrects; i++)
+			framebuffer->refresh({ { rects[i].x, rects[i].y },
+			                       { rects[i].w, rects[i].h } });
 	}
 
 
@@ -596,7 +595,7 @@ extern "C" {
 #if defined(SDL_VIDEO_OPENGL)
 		__eglWaitClient();
 		__eglSwapBuffers(display, screen_surf);
-		framebuffer->refresh(0, 0, scr_mode.area.w, scr_mode.area.h);
+		framebuffer->refresh({ { 0, 0 }, scr_mode.area });
 #endif
 	}
 

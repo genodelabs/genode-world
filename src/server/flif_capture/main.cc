@@ -203,9 +203,9 @@ class Flif_capture::Framebuffer_session_component
 			_parent.mode_sigh(sigh);
 		}
 
-		void refresh(int x, int y, int w, int h) override
+		void refresh(Framebuffer::Rect rect) override
 		{
-			_parent.refresh(x, y, w, h);
+			_parent.refresh(rect);
 			if (_encoder.capture_pending)
 				_encoder.queue(_dataspace, _mode);
 		}

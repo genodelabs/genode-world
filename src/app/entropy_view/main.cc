@@ -55,7 +55,7 @@ struct Entropy_view::Main
 
 	Gui::Top_level_view _view { _gui, { { 0, 0 }, { WIDTH, HEIGHT } } };
 
-	void _refresh() { _gui.framebuffer.refresh(0, 0, WIDTH, HEIGHT); }
+	void _refresh() { _gui.framebuffer.refresh({ { 0, 0 }, { WIDTH, HEIGHT } }); }
 
 	void _plot()
 	{
