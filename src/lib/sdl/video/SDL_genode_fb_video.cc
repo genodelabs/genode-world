@@ -97,7 +97,8 @@ extern "C" {
 
 		Genode::Dataspace_capability dataspace(unsigned width, unsigned height)
 		{
-			_gui.buffer(::Framebuffer::Mode { .area = { width, height } }, false);
+			_gui.buffer(::Framebuffer::Mode { .area  = { width, height },
+			                                  .alpha = false });
 
 			::Framebuffer::Mode mode = _gui.framebuffer.mode();
 
@@ -110,8 +111,8 @@ extern "C" {
 		Framebuffer::Mode mode() const {
 			return _gui.mode(); }
 
-		void refresh(int x, int y, int w, int h) {
-			_gui.framebuffer.refresh(x, y, w, h); }
+		void refresh(Framebuffer::Rect rect) {
+			_gui.framebuffer.refresh(rect); }
 
 		void title(char const *string)
 		{
@@ -391,7 +392,7 @@ extern "C" {
 
 		/* set mode specific values */
 		vformat->BitsPerPixel  = 32;
-		vformat->BytesPerPixel = scr_mode.bytes_per_pixel();
+		vformat->BytesPerPixel = sizeof(Genode::Pixel_rgb888);
 		vformat->Rmask = 0x00ff0000;
 		vformat->Gmask = 0x0000ff00;
 		vformat->Bmask = 0x000000ff;
@@ -560,10 +561,9 @@ extern "C" {
 	static void Genode_Fb_UpdateRects(SDL_VideoDevice *t, int numrects,
 	                                  SDL_Rect *rects)
 	{
-		int i;
-		for(i=0;i<numrects;i++) {
-			framebuffer->refresh(rects[i].x, rects[i].y, rects[i].w, rects[i].h);
-		}
+		for(unsigned i = 0; i < numrects; i++)
+			framebuffer->refresh({ { rects[i].x, rects[i].y },
+			                       { rects[i].w, rects[i].h } });
 	}
 
 
@@ -596,7 +596,7 @@ extern "C" {
 #if defined(SDL_VIDEO_OPENGL)
 		__eglWaitClient();
 		__eglSwapBuffers(display, screen_surf);
-		framebuffer->refresh(0, 0, scr_mode.area.w, scr_mode.area.h);
+		framebuffer->refresh({ { 0, 0 }, scr_mode.area });
 #endif
 	}
 

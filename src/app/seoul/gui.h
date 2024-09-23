@@ -60,7 +60,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		shape_report(env, "shape", sizeof(Pointer::Shape_report)),
 		shape_attached(env.rm(), shape_report.dataspace())
 	{
-		gui.buffer(Framebuffer::Mode { .area = area }, false);
+		gui.buffer(Framebuffer::Mode { .area = area, .alpha = false });
 
 		fb_ds   = gui.framebuffer.dataspace();
 		fb_mode = gui.framebuffer.mode();
@@ -73,8 +73,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 
 	size_t fb_size()
 	{
-		return Genode::align_addr(fb_mode.area.count() *
-		                          fb_mode.bytes_per_pixel(), 12);
+		return Genode::align_addr(fb_mode.num_bytes(), 12);
 	}
 
 	void resize(Genode::Env &env, Framebuffer::Mode const &mode)
@@ -87,7 +86,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		if (pixels)
 			env.rm().detach(pixels);
 
-		gui.buffer(fb_mode, false);
+		gui.buffer(fb_mode);
 
 		fb_ds = gui.framebuffer.dataspace();
 
@@ -108,7 +107,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 			visible = true;
 		}
 
-		gui.framebuffer.refresh(x, y, width, height);
+		gui.framebuffer.refresh({ { int(x), int(y) }, { width, height } });
 	}
 
 	void hide()

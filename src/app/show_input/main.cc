@@ -53,7 +53,7 @@ struct Show_input::Main
 
 	Dataspace_capability _fb_ds_cap()
 	{
-		_gui.buffer(_gui.mode(), false);
+		_gui.buffer(_gui.mode());
 		return _gui.framebuffer.dataspace();
 	}
 
@@ -68,7 +68,7 @@ struct Show_input::Main
 
 	Surface<PT> _surface { _fb_ds.local_addr<PT>(), _size };
 
-	void _refresh() { _gui.framebuffer.refresh(0, 0, _size.w, _size.h); }
+	void _refresh() { _gui.framebuffer.refresh({ { 0, 0 }, _size  }); }
 
 	Signal_handler<Main> _input_sigh {
 		_env.ep(), *this, &Main::_handle_input };

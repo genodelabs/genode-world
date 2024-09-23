@@ -154,17 +154,18 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 				Genode::min(connection_mode.area.w,
 				            (unsigned)_genode_view_widget->maximumWidth()),
 				Genode::min(connection_mode.area.h,
-				            (unsigned)_genode_view_widget->maximumHeight())
-			}};
+				            (unsigned)_genode_view_widget->maximumHeight()) },
+			.alpha = false
+		};
 		return new_mode;
 	}
 
 	void mode_sigh(Signal_context_capability sigh) override {
 		_connection.mode_sigh(sigh); }
 
-	Buffer_result buffer(Framebuffer::Mode mode, bool use_alpha) override
+	Buffer_result buffer(Framebuffer::Mode mode) override
 	{
-		_connection.buffer(mode, use_alpha);
+		_connection.buffer(mode);
 		return Buffer_result::OK;
 	}
 

@@ -33,7 +33,7 @@ namespace Entropy_view {
 
 struct Entropy_view::Main
 {
-	enum { WIDTH = 256, HEIGHT = 256 };
+	static constexpr Area _area { .w = 256, .h = 256 };
 
 	Genode::Env &_env;
 
@@ -45,29 +45,27 @@ struct Entropy_view::Main
 
 	Dataspace_capability _fb_ds_cap()
 	{
-		using Framebuffer::Mode;
-		Mode mode { .area = { WIDTH, HEIGHT } };
-		_gui.buffer(mode, false);
+		_gui.buffer({ .area = _area, .alpha = false });
 		return _gui.framebuffer.dataspace();
 	}
 
 	Attached_dataspace _fb_ds { _env.rm(), _fb_ds_cap() };
 
-	Gui::Top_level_view _view { _gui, { { 0, 0 }, { WIDTH, HEIGHT } } };
+	Gui::Top_level_view _view { _gui, { { 0, 0 }, _area } };
 
-	void _refresh() { _gui.framebuffer.refresh(0, 0, WIDTH, HEIGHT); }
+	void _refresh() { _gui.framebuffer.refresh({ { 0, 0 }, _area }); }
 
 	void _plot()
 	{
 		uint32_t *pixels = _fb_ds.local_addr<uint32_t>();
-		static uint8_t buf[HEIGHT];
+		static uint8_t buf[_area.h];
 		size_t n = _entropy.read(buf, sizeof(buf));
 		if (n != sizeof(buf)) {
 			Genode::error("read ", n, " bytes of entropy");
 		}
 
-		for (int i = 0; i < HEIGHT; ++i) {
-			uint32_t *row = &pixels[i*WIDTH];
+		for (unsigned i = 0; i < _area.h; ++i) {
+			uint32_t *row = &pixels[i*_area.w];
 			row[buf[i]] = ~row[buf[i]];
 		}
 

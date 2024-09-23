@@ -25,13 +25,13 @@ class NativeStateGenode : public NativeState
 
 			Window(Genode::Env &env, int w, int h)
 			:
-				env(env), mode { .area = Gui::Area(w, h) }
+				env(env), mode { .area = Gui::Area(w, h), .alpha = false }
 			{
 				width  = w;
 				height = h;
 				type   = WINDOW;
 
-				gui.buffer(mode, false);
+				gui.buffer(mode);
 				mode_change();
 
 				gui.enqueue<Gui::Session::Command::Title>(view.id(), "glMark2");
@@ -40,7 +40,7 @@ class NativeStateGenode : public NativeState
 
 			void refresh()
 			{
-				gui.framebuffer.refresh(0, 0, mode.area.w, mode.area.h);
+				gui.framebuffer.refresh({ { 0, 0 }, mode.area });
 			}
 
 			void mode_change()
