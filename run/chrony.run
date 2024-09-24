@@ -3,9 +3,11 @@
 # \author Roland Baer
 # \date   2021-12-29
 #
-# Note: to get a recent certificate run the following command on a linux system
+# Note: To get a recent certificate run the following command on a linux system
 #       with openssl installed:
-# $ openssl s_client ptbtime1.ptb.de:4460
+# $ openssl s_client -showcerts ptbtime1.ptb.de:4460 </dev/null
+#       From the given output select the certificate from Let's Encrypt
+#       (or whatever is the root of the given certificate chain).
 
 create_boot_directory
 
@@ -166,44 +168,43 @@ append config {
 				<dir name="etc">
 					<inline name="chrony.conf">
 server ptbtime1.ptb.de nts
-ntstrustedcerts /etc/cert1.crt
+ntstrustedcerts /etc/cert_lets_encrypt.crt
 makestep 1.0 3
 rtcsync
 driftfile /var/run/chrony/drift
 logdir /var/log
 log tracking
 </inline>
-					<inline name="cert1.crt">
+					<!-- see note on top to update certificate -->
+					<inline name="cert_lets_encrypt.crt">
 -----BEGIN CERTIFICATE-----
-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
+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
 -----END CERTIFICATE-----
 </inline>
 				</dir>
