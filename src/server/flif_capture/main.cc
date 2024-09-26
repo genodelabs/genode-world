@@ -214,6 +214,16 @@ class Flif_capture::Framebuffer_session_component
 		{
 			_parent.sync_sigh(sigh);
 		}
+
+		Blit_result blit(Framebuffer::Blit_batch const &batch) override
+		{
+			return _parent.blit(batch);
+		}
+
+		void panning(Framebuffer::Point pos) override
+		{
+			_parent.panning(pos);
+		}
 };
 
 
