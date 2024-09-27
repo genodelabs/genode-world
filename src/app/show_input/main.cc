@@ -53,7 +53,7 @@ struct Show_input::Main
 
 	Dataspace_capability _fb_ds_cap()
 	{
-		_gui.buffer(_gui.mode(), false);
+		_gui.buffer(_gui.mode());
 		return _gui.framebuffer.dataspace();
 	}
 
