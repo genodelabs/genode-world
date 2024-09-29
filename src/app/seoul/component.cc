@@ -186,10 +186,8 @@ class Vcpu : public StaticReceiver<Vcpu>
 
 	private:
 
-		Genode::Vm_connection              &_vm_con;
 		Genode::Vcpu_handler<Vcpu>          _handler;
 		Genode::Vm_connection::Exit_config  _exit_config { };
-		Genode::Vm_connection::Vcpu         _vm_vcpu;
 
 		Seoul::Guest_memory                &_guest_memory;
 		Motherboard                        &_motherboard;
@@ -205,6 +203,21 @@ class Vcpu : public StaticReceiver<Vcpu>
 		bool const                          _map_small;
 		bool const                          _rdtsc_exit;
 		bool const                          _cpuid_native;
+
+		/* initialize before other members, vCPU gets runnable immediately */
+		Genode::Vm_connection              &_vm_con;
+		Genode::Vm_connection::Vcpu         _vm_vcpu;
+
+		bool _init_cpuid_state(bool const cpuid_native, unsigned const vcpu_id)
+		{
+			_seoul_state.clear();
+			_seoul_state.head.cpuid = vcpu_id;
+
+			/* handle cpuid overrides */
+			_vcpu.executor.add(this, receive_static<CpuMessage>);
+
+			return cpuid_native;
+		}
 
 	public:
 
@@ -222,25 +235,21 @@ class Vcpu : public StaticReceiver<Vcpu>
 		     bool     const          rdtsc,
 		     bool     const          cpuid_native)
 		:
-			_vm_con(vm_con),
 			_handler(ep, *this, &Vcpu::_handle_vm_exception),
 //			         vmx ? &Vcpu::exit_config_intel :
 //			         svm ? &Vcpu::exit_config_amd : nullptr),
-			_vm_vcpu(_vm_con, alloc, _handler, _exit_config),
 			_guest_memory(guest_memory),
 			_motherboard(motherboard),
 			_vcpu(vcpu),
 			_vmx(vmx), _svm(svm), _map_small(map_small), _rdtsc_exit(rdtsc),
-			_cpuid_native(cpuid_native)
+			_cpuid_native(_init_cpuid_state(vcpu_id, cpuid_native)),
+			_vm_con(vm_con),
+			_vm_vcpu(_vm_con, alloc, _handler, _exit_config)
 		{
 			if (!_svm && !_vmx)
 				Logging::panic("no SVM/VMX available, sorry");
 
-			_seoul_state.clear();
-			_seoul_state.head.cpuid = vcpu_id;
-
-			/* handle cpuid overrides */
-			_vcpu.executor.add(this, receive_static<CpuMessage>);
+			/* note: don't initialize anything here, use _init_cpuid_native */
 		}
 
 		void start()   { _started.up(); }
