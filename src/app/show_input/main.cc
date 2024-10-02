@@ -51,9 +51,13 @@ struct Show_input::Main
 
 	Gui::Connection _gui { _env };
 
+	Gui::Rect _gui_win = _gui.window().convert<Gui::Rect>(
+		[&] (Gui::Rect r)    { return Gui::Rect { r.at, { r.w(), _font.height() } }; },
+		[&] (Gui::Undefined) { return Gui::Rect { { },  { 500,   _font.height() } }; });
+
 	Dataspace_capability _fb_ds_cap()
 	{
-		_gui.buffer(_gui.mode());
+		_gui.buffer({ .area = _gui_win.area, .alpha = false });
 		return _gui.framebuffer.dataspace();
 	}
 
@@ -61,14 +65,11 @@ struct Show_input::Main
 
 	typedef Pixel_rgb888 PT;
 
-	Surface_base::Area _size { _gui.framebuffer.mode().area.w,
-	                           (unsigned)_font.height() };
+	Gui::Top_level_view _view { _gui, _gui_win };
 
-	Gui::Top_level_view _view { _gui, { { 0, 0 }, _size } };
+	Surface<PT> _surface { _fb_ds.local_addr<PT>(), _gui_win.area };
 
-	Surface<PT> _surface { _fb_ds.local_addr<PT>(), _size };
-
-	void _refresh() { _gui.framebuffer.refresh({ { 0, 0 }, _size  }); }
+	void _refresh() { _gui.framebuffer.refresh({ { 0, 0 }, _gui_win.area }); }
 
 	Signal_handler<Main> _input_sigh {
 		_env.ep(), *this, &Main::_handle_input };
@@ -87,7 +88,7 @@ struct Show_input::Main
 
 				Box_painter::paint(
 					_surface,
-					Rect(Point(), _size),
+					Rect(Point(), _gui_win.area),
 					Color::black());
 
 
@@ -116,7 +117,7 @@ struct Show_input::Main
 	{
 		_gui.input.sigh(_input_sigh);
 
-		_surface.clip(Rect(Point(0, 0), _size));
+		_surface.clip(Rect(Point(0, 0), _gui_win.area));
 	}
 };
 

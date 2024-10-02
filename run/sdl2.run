@@ -5,12 +5,13 @@ lappend import [depot_user]/src/libc \
                [depot_user]/src/libdrm \
                [depot_user]/src/expat \
                [depot_user]/src/mesa \
+               [depot_user]/src/libiconv \
                [depot_user]/src/zlib
 
 build { lib/sdl2 test/sdl2 }
 
 set app_config {
-	<start name="test-sdl2" caps="128">
+	<start name="test-sdl2" caps="150">
 		<resource name="RAM" quantum="48M"/>
 		<config ld_verbose="yes">
 			<vfs> <dir name="dev"> <log/> </dir> </vfs>

@@ -87,20 +87,28 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		Genode::Attached_rom_dataspace _config_rom { _env, "config" };
 
+		Gui::Area _mode { };
+
 		void _handle_mode_change()
 		{
-			Genode::Mutex::Guard guard(event_mutex);
+			Gui::Rect const gui_win = _gui.window().convert<Gui::Rect>(
+				[&] (Gui::Rect rect) { return rect; },
+				[&] (Gui::Undefined) { return _gui.panorama().convert<Gui::Rect>(
+					[&] (Gui::Rect rect) { return rect; },
+					[&] (Gui::Undefined) { return Gui::Rect { }; }); });
 
-			Framebuffer::Mode mode = _gui.mode();
+			if (!gui_win.valid())
+				return;
 
-			video_events.resize_pending = true;
-			video_events.width  = mode.area.w;
-			video_events.height = mode.area.h;
+			_mode = gui_win.area;
+			{
+				Genode::Mutex::Guard guard(event_mutex);
+				video_events.resize_pending = true;
+				video_events.width  = _mode.w;
+				video_events.height = _mode.h;
+			}
 		}
 
-		/* XXX not being an Io_signal_handler prevents receiving of the
-		 *    signal...
-		 */
 		Genode::Io_signal_handler<Sdl_framebuffer> _mode_handler {
 			_env.ep(), *this, &Sdl_framebuffer::_handle_mode_change };
 
@@ -108,30 +116,26 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		:
 			_env(env), _gui(gui)
 		{
-			_gui.mode_sigh(_mode_handler);
+			_gui.info_sigh(_mode_handler);
 			_view.front();
+
+			for (;;) {
+				if (_mode.valid())
+					break;
+				_env.ep().wait_and_dispatch_one_io_signal();
+			}
+
+			_config_rom.update();
+			_config_rom.xml().with_optional_sub_node("initial",
+				[&] (Genode::Xml_node const &initial) {
+					_mode = Gui::Area::from_xml(initial); });
 		}
 
 		~Sdl_framebuffer()
 		{
 			/* clean up and reduce noise about invalid signals */
-			_gui.mode_sigh(Genode::Signal_context_capability());
+			_gui.info_sigh(Genode::Signal_context_capability());
 			dataspace(0, 0);
-		}
-
-		Gui::Area initial_mode_area()
-		{
-			_config_rom.update();
-			if (!_config_rom.valid())
-				return Gui::Area();
-
-			Gui::Area area { };
-
-			_config_rom.xml().with_optional_sub_node("initial",
-				[&] (Genode::Xml_node const &initial) {
-					area = Gui::Area::from_xml(initial); });
-
-			return area;
 		}
 
 		/************************************
@@ -140,19 +144,16 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		Genode::Dataspace_capability dataspace(unsigned width, unsigned height)
 		{
-			_gui.buffer(::Framebuffer::Mode { .area  = { width, height },
-			                                  .alpha = false });
+			_mode = { width, height };
 
-			::Framebuffer::Mode mode = _gui.framebuffer.mode();
+			_gui.buffer({ .area = _mode, .alpha = false });
 
-			_view.area({ Genode::min(mode.area.w, width),
-			             Genode::min(mode.area.h, height) });
+			_view.area({ width, height });
 
 			return _gui.framebuffer.dataspace();
 		}
 
-		Framebuffer::Mode mode() const {
-			return _gui.mode(); }
+		Gui::Area mode() const { return _mode; }
 
 		void refresh(Framebuffer::Rect rect) { _gui.framebuffer.refresh(rect); }
 
@@ -170,7 +171,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 		Genode::Constructible<Sdl_framebuffer>                framebuffer;
 		Genode::Constructible<Genode::Attached_dataspace>     fb_mem;
 		Genode::Constructible<Genode::Attached_ram_dataspace> fb_double;
-		Framebuffer::Mode                                     scr_mode;
+		Gui::Area                                             scr_mode;
 
 #if defined(SDL_VIDEO_OPENGL_EGL)
 		Genode_egl_window egl_window;
@@ -326,12 +327,7 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			return -1;
 		}
 
-		/* Get the framebuffer size and mode infos */
 		drv.scr_mode = drv.framebuffer->mode();
-
-		Gui::Area const initial = drv.framebuffer->initial_mode_area();
-		if (initial.valid())
-			drv.scr_mode.area = initial;
 
 		/* set mode specific values */
 		device->displays = (SDL_VideoDisplay *)(SDL_calloc(1, sizeof(*device->displays)));
@@ -340,8 +336,8 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		SDL_DisplayMode mode {
 			.format = SDL_PIXELFORMAT_ARGB8888,
-			.w = drv.scr_mode.area.w,
-			.h = drv.scr_mode.area.h,
+			.w = drv.scr_mode.w,
+			.h = drv.scr_mode.h,
 			.refresh_rate = 0,
 			.driverdata = nullptr
 		};

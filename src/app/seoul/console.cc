@@ -227,14 +227,15 @@ bool Seoul::Console::receive(MessageConsole &msg)
 			}
 
 			if (msg.id != ID_VGA_VESA)
-				gui.gui.mode_sigh(_signal_gui);
+				gui.gui.info_sigh(_signal_gui);
 		}
 
 		apply_msg(msg.id, [&](auto &gui) {
 			/* vga_vesa re-creation is not supported */
 			if (!create_new && msg.id != ID_VGA_VESA) {
-				gui.resize(_env, gui.gui.mode());
-				_gui_non_vesa = gui.gui.mode().area;
+				Gui::Rect const win = gui.gui_window();
+				gui.resize(_env, win.area);
+				_gui_non_vesa = win.area;
 			}
 
 			msg.ptr  = (char *)gui.pixels;
@@ -485,18 +486,18 @@ bool Seoul::Console::_sufficient_ram(Gui::Area const &cur, Gui::Area const &area
 void Seoul::Console::_handle_gui_change()
 {
 	for_each_gui([&](auto &gui) {
-		Framebuffer::Mode const gui_mode = gui.gui.mode();
+		Gui::Rect const gui_win = gui.gui_window();
 
 		if (gui.id == ID_VGA_VESA)
 			return;
 
-		if (gui_mode.area == gui.fb_mode.area)
+		if (gui_win.area == gui.fb_area)
 			return;
 
-		if (!_sufficient_ram(gui.fb_mode.area, gui_mode.area))
+		if (!_sufficient_ram(gui.fb_area, gui_win.area))
 			return;
 
-		if (!gui_mode.area.valid()) {
+		if (!gui_win.area.valid()) {
 			enum {
 				BUTTON_POWER = 1U << 8,
 				BUTTON_SLEEP = 1U << 9
@@ -513,8 +514,8 @@ void Seoul::Console::_handle_gui_change()
 		/* send notification about new mode */
 		MessageConsole msg(MessageConsole::TYPE_MODEINFO_UPDATE, gui.id);
 		msg.x = msg.y = 0;
-		msg.width  = gui_mode.area.w;
-		msg.height = gui_mode.area.h;
+		msg.width  = gui_win.area.w;
+		msg.height = gui_win.area.h;
 		_mb.bus_console.send(msg);
 	});
 }

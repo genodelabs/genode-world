@@ -73,7 +73,7 @@ struct Flif_view::Main
 	/* signal transmitter to wake application from input handling */
 	Signal_transmitter app_transmitter { app_handler };
 
-	Mode gui_mode = gui.mode();
+	Mode gui_mode { };
 
 	Surface_base::Area img_area { };
 
@@ -83,15 +83,14 @@ struct Flif_view::Main
 	void apply_to_texture(unsigned width, unsigned height, auto const &fn)
 	{
 		if (gui_mode.area.w < width || gui_mode.area.h < height) {
-			Mode new_mode { .area  = { max(gui_mode.area.w, width),
-			                           max(gui_mode.area.h, height) },
+			Mode new_mode { .area  = { width, height },
 			                .alpha = false };
 			log("resize gui buffer to ", new_mode);
 			if (nit_ds.constructed())
 				nit_ds.destruct();
 			gui.buffer(new_mode);
 			nit_ds.construct(env.rm(), gui.framebuffer.dataspace());
-			gui_mode = gui.mode();
+			gui_mode = new_mode;
 			log("rebuffering complete");
 		} else if (!nit_ds.constructed()) {
 			gui.buffer(gui_mode);

@@ -16,6 +16,7 @@
 
 /* Genode includes */
 #include <gui_session/connection.h>
+#include <os/dynamic_rom_session.h>
 
 /* Qt includes */
 #include <qpa_genode/qgenodeplatformwindow.h>
@@ -28,7 +29,8 @@ namespace Gui {
 }
 
 
-struct Gui::Session_component : Rpc_object<Gui::Session>
+struct Gui::Session_component : Rpc_object<Gui::Session>,
+                                private Dynamic_rom_session::Xml_producer
 {
 	Env               &_env;
 	QGenodeViewWidget *_genode_view_widget;
@@ -36,6 +38,8 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 	Gui::Connection _connection;
 
 	Input::Session_component _input_component { _env, _env.ram() };
+
+	Dynamic_rom_session _info_rom { _env.ep(), _env.ram(), _env.rm(), *this };
 
 	using Command_buffer = Gui::Session::Command_buffer;
 	Attached_ram_dataspace _command_ds;
@@ -45,6 +49,15 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 	Gui::View_ids::Element _view { _view_ref, _connection.view_ids };
 
 	Input::Session_component &input_component() { return _input_component; }
+
+	/**
+	 * Dynamic_rom_session::Xml_producer interface
+	 */
+	void produce_xml(Xml_generator &xml) override
+	{
+		xml.attribute("width",  _genode_view_widget->maximumWidth());
+		xml.attribute("height", _genode_view_widget->maximumHeight());
+	}
 
 	void _execute_command(Command const &command)
 	{
@@ -75,6 +88,7 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 
 	Session_component(Env &env, QGenodeViewWidget *genode_view_widget)
 	:
+		Dynamic_rom_session::Xml_producer("panorama"),
 		_env(env),
 		_genode_view_widget(genode_view_widget),
 		_connection(env),
@@ -146,22 +160,10 @@ struct Gui::Session_component : Rpc_object<Gui::Session>
 			_execute_command(_command_buffer.get(i));
 	}
 
-	Framebuffer::Mode mode() override
+	Info_result info() override
 	{
-		Framebuffer::Mode connection_mode { _connection.mode() };
-		Framebuffer::Mode new_mode {
-			.area = {
-				Genode::min(connection_mode.area.w,
-				            (unsigned)_genode_view_widget->maximumWidth()),
-				Genode::min(connection_mode.area.h,
-				            (unsigned)_genode_view_widget->maximumHeight()) },
-			.alpha = false
-		};
-		return new_mode;
+		return _info_rom.cap();
 	}
-
-	void mode_sigh(Signal_context_capability sigh) override {
-		_connection.mode_sigh(sigh); }
 
 	Buffer_result buffer(Framebuffer::Mode mode) override
 	{

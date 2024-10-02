@@ -23,19 +23,19 @@
 
 struct Backend_gui : Genode::List<Backend_gui>::Element
 {
-	typedef Gui::Session::Command Command;
-
 	Gui::Connection              gui;
 	unsigned short         const id;
-	Framebuffer::Mode            fb_mode { };
-	Genode::Dataspace_capability fb_ds   { };
-	Genode::addr_t               pixels  { };
-	Gui::View_id           const view    { };
+	Gui::Area                    fb_area;
+	Genode::Dataspace_capability fb_ds  { };
+	Genode::addr_t               pixels { };
+	Gui::View_id           const view   { };
 
 	Report::Connection         shape_report;
 	Genode::Attached_dataspace shape_attached;
 
 	bool visible { false };
+
+	Framebuffer::Mode _mode() const { return { .area = fb_area, .alpha = false }; }
 
 	void _attach_fb_ds(Genode::Env &env, Genode::Dataspace_capability ds)
 	{
@@ -50,35 +50,38 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 			});
 	}
 
+	Gui::Rect gui_window()
+	{
+		return gui.window().convert<Gui::Rect>(
+			[&] (Gui::Rect rect) { return rect; },
+			[&] (Gui::Undefined) { return gui.panorama().convert<Gui::Rect>(
+				[&] (Gui::Rect rect) { return rect; },
+				[&] (Gui::Undefined) { return Gui::Rect { { }, { 640, 480 } }; }); });
+	}
+
 	Backend_gui(Genode::Env &env,
 	            Genode::List<Backend_gui> &guis,
 	            unsigned short id, Gui::Area area,
 	            Genode::Signal_context_capability const input_signal,
 	            char const *name)
 	:
-		gui(env, name), id(id),
+		gui(env, name), id(id), fb_area(area),
 		shape_report(env, "shape", sizeof(Pointer::Shape_report)),
 		shape_attached(env.rm(), shape_report.dataspace())
 	{
-		gui.buffer(Framebuffer::Mode { .area = area, .alpha = false });
-
-		fb_ds   = gui.framebuffer.dataspace();
-		fb_mode = gui.framebuffer.mode();
-
+		gui.buffer(_mode());
+		fb_ds = gui.framebuffer.dataspace();
 		_attach_fb_ds(env, fb_ds);
 
 		gui.input.sigh(input_signal);
 		guis.insert(this);
 	}
 
-	size_t fb_size()
-	{
-		return Genode::align_addr(fb_mode.num_bytes(), 12);
-	}
+	size_t fb_size() { return Genode::align_addr(_mode().num_bytes(), 12); }
 
-	void resize(Genode::Env &env, Framebuffer::Mode const &mode)
+	void resize(Genode::Env &env, Gui::Area const area)
 	{
-		fb_mode = mode;
+		fb_area = area;
 
 		if (!visible)
 			refresh(0, 0, 1, 1);
@@ -86,13 +89,13 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		if (pixels)
 			env.rm().detach(pixels);
 
-		gui.buffer(fb_mode);
+		gui.buffer({ .area = area, .alpha = false });
 
 		fb_ds = gui.framebuffer.dataspace();
 
-		Gui::Rect rect(Gui::Point(0, 0), fb_mode.area);
+		Gui::Rect rect(Gui::Point(0, 0), area);
 
-		gui.enqueue<Command::Geometry>(view, rect);
+		gui.enqueue<Gui::Session::Command::Geometry>(view, rect);
 		gui.execute();
 
 		_attach_fb_ds(env, fb_ds);
@@ -102,7 +105,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 	{
 		if (!visible) {
 			gui.view(view, { .title = "",
-			                 .rect  = { { 0, 0 }, fb_mode.area },
+			                 .rect  = { { 0, 0 }, fb_area },
 			                 .front = true });
 			visible = true;
 		}

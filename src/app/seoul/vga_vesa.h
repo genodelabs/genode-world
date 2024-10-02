@@ -239,14 +239,14 @@ class Seoul::Vga_vesa
 			} else if (msg.index == 1) {
 
 				/* max resolution as configured */
-				_generate_info(msg, gui.fb_mode.area, gui.fb_mode.area, 0x138, 4);
+				_generate_info(msg, gui.fb_area, gui.fb_area, 0x138, 4);
 				return true;
 
 			} else if (msg.index == 2) {
 
-				auto area = gui.fb_mode.area;
+				auto area = gui.fb_area;
 				/* 0x114 is 800x600 actually, but linux accepts any resolution */
-				_generate_info(msg, gui.fb_mode.area, area, 0x114, 4);
+				_generate_info(msg, gui.fb_area, area, 0x114, 4);
 				return true;
 #if 0
 			} else if (msg.index == 3) {

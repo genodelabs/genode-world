@@ -60,34 +60,59 @@ extern "C" {
 
 	static SDL_Rect df_mode;
 
+	static Gui::Rect scr_rect;
+	static SDL_Rect *modes[2];
+
 	struct Sdl_framebuffer
 	{
 		Genode::Env        &_env;
 		Gui::Connection    &_gui;
 		Gui::Top_level_view _view { _gui };
+		Genode::Semaphore   _scr_valid_sem { };
+
+		Gui::Rect _gui_window()
+		{
+			return _gui.window().convert<Gui::Rect>(
+				[&] (Gui::Rect rect) { return rect; },
+				[&] (Gui::Undefined) { return _gui.panorama().convert<Gui::Rect>(
+					[&] (Gui::Rect rect) { return rect; },
+					[&] (Gui::Undefined) { return Gui::Rect { }; }); });
+		}
 
 		void _handle_mode_change()
 		{
-			Genode::Mutex::Guard guard(event_mutex);
+			Gui::Rect const rect = _gui_window();
+			if (!rect.valid())
+				return;
 
-			Framebuffer::Mode mode = _gui.mode();
-			df_mode.w = mode.area.w;
-			df_mode.h = mode.area.h;
+			scr_rect = rect;
 
-			video_events.resize_pending = true;
-			video_events.width  = mode.area.w;
-			video_events.height = mode.area.h;
+			df_mode.w = scr_rect.w();
+			df_mode.h = scr_rect.h();
+
+			{
+				Genode::Mutex::Guard guard(event_mutex);
+
+				video_events.resize_pending = true;
+				video_events.width  = scr_rect.w();
+				video_events.height = scr_rect.h();
+			}
+
+			_scr_valid_sem.up();
 		}
 
-		Genode::Signal_handler<Sdl_framebuffer> _mode_handler {
+		Genode::Io_signal_handler<Sdl_framebuffer> _mode_handler {
 			_env.ep(), *this, &Sdl_framebuffer::_handle_mode_change };
 
 		Sdl_framebuffer(Genode::Env &env, Gui::Connection &gui)
 		:
 			_env(env), _gui(gui)
 		{
-			_gui.mode_sigh(_mode_handler);
+			_gui.info_sigh(_mode_handler);
 			_view.front();
+
+			while (!scr_rect.valid())
+				_scr_valid_sem.down();
 		}
 
 
@@ -108,9 +133,6 @@ extern "C" {
 			return _gui.framebuffer.dataspace();
 		}
 
-		Framebuffer::Mode mode() const {
-			return _gui.mode(); }
-
 		void refresh(Framebuffer::Rect rect) {
 			_gui.framebuffer.refresh(rect); }
 
@@ -122,8 +144,6 @@ extern "C" {
 	};
 
 	static Genode::Constructible<Sdl_framebuffer> framebuffer;
-	static Framebuffer::Mode scr_mode;
-	static SDL_Rect *modes[2];
 
 #if defined(SDL_VIDEO_OPENGL)
 
@@ -260,7 +280,7 @@ extern "C" {
 			return false;
 		}
 
-		Genode_egl_window egl_window { (int)scr_mode.area.w, (int)scr_mode.area.h,
+		Genode_egl_window egl_window { (int)scr_rect.w(), (int)scr_rect.h(),
 		                               (unsigned char*)t->hidden->buffer };
 
 		screen_surf = __eglCreatePixmapSurface(display, config, &egl_window, NULL);
@@ -292,12 +312,10 @@ extern "C" {
 		return 1;
 	}
 
-
 	static void Genode_Fb_DeleteDevice(SDL_VideoDevice *device)
 	{
-		if (framebuffer.constructed()) {
+		if (framebuffer.constructed())
 			framebuffer.destruct();
-		}
 	}
 
 	static void Genode_Fb_SetCaption(SDL_VideoDevice *device, const char *title, const char *icon)
@@ -381,11 +399,8 @@ extern "C" {
 			return -1;
 		}
 
-		/* Get the framebuffer size and mode infos */
-		scr_mode = framebuffer->mode();
-
-		t->info.current_w = scr_mode.area.w;
-		t->info.current_h = scr_mode.area.h;
+		t->info.current_w = scr_rect.w();
+		t->info.current_h = scr_rect.h();
 		Genode::log("Framebuffer has "
 		            "width=",  t->info.current_w, " "
 		            "height=", t->info.current_h);
@@ -397,8 +412,8 @@ extern "C" {
 		vformat->Gmask = 0x0000ff00;
 		vformat->Bmask = 0x000000ff;
 		modes[0] = &df_mode;
-		df_mode.w = scr_mode.area.w;
-		df_mode.h = scr_mode.area.h;
+		df_mode.w = scr_rect.w();
+		df_mode.h = scr_rect.h();
 		modes[1] = 0;
 
 		t->hidden->buffer = 0;
@@ -596,7 +611,7 @@ extern "C" {
 #if defined(SDL_VIDEO_OPENGL)
 		__eglWaitClient();
 		__eglSwapBuffers(display, screen_surf);
-		framebuffer->refresh({ { 0, 0 }, scr_mode.area });
+		framebuffer->refresh(scr_rect);
 #endif
 	}
 
