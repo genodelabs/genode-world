@@ -32,4 +32,9 @@
 #define GSIZE_TO_BE(val)	((gsize) GUINT64_TO_BE (val))
 #define GSSIZE_TO_BE(val)	((gssize) GINT64_TO_BE (val))
 
+#define G_DIR_SEPARATOR '/'
+#define G_DIR_SEPARATOR_S "/"
+#define G_SEARCHPATH_SEPARATOR ':'
+#define G_SEARCHPATH_SEPARATOR_S ":"
+
 #endif /* __G_LIBCONFIG_DEFS_H__ */
