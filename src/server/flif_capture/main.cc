@@ -229,7 +229,7 @@ class Flif_capture::Framebuffer_session_component
 };
 
 
-class Flif_capture::Main
+class Flif_capture::Main : private Input::Session_component::Action
 {
 	private:
 
@@ -258,10 +258,11 @@ class Flif_capture::Main
 			_env, _parent_fb, _encoder };
 
 		Input::Session_component _input_session {
-			_env, _env.ram() };
+			_env.ep(), _env.ram(), _env.rm(), *this };
+
+		void exclusive_input_requested(bool) override { };
 
 		Framebuffer::Session_capability _fb_cap { _service_ep.manage(_fb_session) };
-		Input::Session_capability    _input_cap { _service_ep.manage(_input_session) };
 
 		Genode::Signal_handler<Main> _input_handler {
 			_service_ep, *this, &Main::_handle_input };
@@ -289,8 +290,7 @@ class Flif_capture::Main
 		Genode::Static_root<Framebuffer::Session> _fb_root {
 			_service_ep.manage(_fb_session) };
 
-		Genode::Static_root<Input::Session> _input_root {
-			_service_ep.manage(_input_session) };
+		Genode::Static_root<Input::Session> _input_root { _input_session.cap() };
 
 	public:
 

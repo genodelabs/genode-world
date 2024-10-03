@@ -30,14 +30,21 @@ namespace Gui {
 
 
 struct Gui::Session_component : Rpc_object<Gui::Session>,
-                                private Dynamic_rom_session::Xml_producer
+                                private Dynamic_rom_session::Xml_producer,
+                                private Input::Session_component::Action
 {
 	Env               &_env;
 	QGenodeViewWidget *_genode_view_widget;
 
 	Gui::Connection _connection;
 
-	Input::Session_component _input_component { _env, _env.ram() };
+	Input::Session_component _input_component {
+		_env.ep(), _env.ram(), _env.rm(), *this };
+
+	/**
+	 * Input::Session_component::Action interface
+	 */
+	void exclusive_input_requested(bool) override { };
 
 	Dynamic_rom_session _info_rom { _env.ep(), _env.ram(), _env.rm(), *this };
 

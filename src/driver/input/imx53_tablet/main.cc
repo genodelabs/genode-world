@@ -27,13 +27,15 @@
 using namespace Genode;
 
 
-struct Main
+struct Main : Input::Session_component::Action
 {
 	Genode::Env &env;
 
-	Input::Session_component session  { env, env.ram() };
+	Input::Session_component session  { env.ep(), env.ram(), env.rm(), *this };
 	Input::Root_component    root     { env.ep().rpc_ep(), session };
 	Input::Tablet_driver     driver   { env, session.event_queue() };
+
+	void exclusive_input_requested(bool) override { };
 
 	Main(Genode::Env &env) : env(env) {
 		env.parent().announce(env.ep().manage(root)); }
