@@ -185,6 +185,14 @@ int main(int argc, char *argv[])
 				printf("%s\n", SDL_GetKeyName(event.key.keysym.sym));
 				done = SDL_TRUE;
 				break;
+			case SDL_WINDOWEVENT:
+				switch (event.window.event) {
+				case SDL_WINDOWEVENT_SIZE_CHANGED:
+					/* in case this call failed we exit below */
+					(void)SDL_GetWindowSurface(window);
+					break;
+				}
+				break;
 			}
 		}
 
