@@ -28,7 +28,7 @@ install_config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	} [qt5_start_nodes] {
-	<start name="qt_avplay" caps="400">
+	<start name="qt_avplay" caps="450">
 		<resource name="RAM" quantum="2G"/>
 		<config>
 			<vfs>
