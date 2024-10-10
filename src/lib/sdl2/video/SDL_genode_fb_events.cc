@@ -167,11 +167,13 @@ extern "C" {
 				return key >= Input::BTN_MISC && key <= Input::BTN_GEAR_UP; };
 
 			curr.handle_press([&] (Input::Keycode key, Genode::Codepoint codepoint) {
+
 				if (mouse_button(key))
 					SDL_SendMouseButton(window, mouse_id, SDL_PRESSED, buttonmap[key]);
-				else if (skipcode(codepoint) || !SDL_IsTextInputActive())
+				else
 					SDL_SendKeyboardKey(SDL_PRESSED, getscancode(key));
-				else {
+
+				if (SDL_EventState(SDL_TEXTINPUT, SDL_QUERY) && !skipcode(codepoint)) {
 					Genode::String<5> text(codepoint);
 					if (text.valid())
 						SDL_SendKeyboardText(text.string());
