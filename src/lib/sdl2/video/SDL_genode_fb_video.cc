@@ -87,13 +87,18 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 
 		Genode::Attached_rom_dataspace _config_rom { _env, "config" };
 
+		Gui::Area _initial_mode { };
 		Gui::Area _mode { };
 
 		void _handle_mode_change()
 		{
 			Gui::Rect const gui_win = _gui.window().convert<Gui::Rect>(
 				[&] (Gui::Rect rect) { return rect; },
-				[&] (Gui::Undefined) { return _gui.panorama().convert<Gui::Rect>(
+				[&] (Gui::Undefined) {
+					if (_initial_mode.valid())
+						return Gui::Rect { { }, _initial_mode };
+
+				return _gui.panorama().convert<Gui::Rect>(
 					[&] (Gui::Rect rect) { return rect; },
 					[&] (Gui::Undefined) { return Gui::Rect { }; }); });
 
@@ -119,16 +124,17 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			_gui.info_sigh(_mode_handler);
 			_view.front();
 
+			_config_rom.update();
+			_config_rom.xml().with_optional_sub_node("initial",
+				[&] (Genode::Xml_node const &initial) {
+					_initial_mode = Gui::Area::from_xml(initial);
+				});
+
 			for (;;) {
 				if (_mode.valid())
 					break;
 				_env.ep().wait_and_dispatch_one_io_signal();
 			}
-
-			_config_rom.update();
-			_config_rom.xml().with_optional_sub_node("initial",
-				[&] (Genode::Xml_node const &initial) {
-					_mode = Gui::Area::from_xml(initial); });
 		}
 
 		~Sdl_framebuffer()
