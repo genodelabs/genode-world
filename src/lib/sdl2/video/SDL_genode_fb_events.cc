@@ -30,8 +30,9 @@
  */
 
 /* Genode includes */
-#include <gui_session/connection.h>
+#include <base/attached_rom_dataspace.h>
 #include <base/log.h>
+#include <gui_session/connection.h>
 #include <input_session/connection.h>
 #include <input/event.h>
 #include <input/keycodes.h>
@@ -196,6 +197,13 @@ extern "C" {
 		try {
 			input.construct(_global_env->rm(),
 			                _global_gui->cap().call<Gui::Session::Rpc_input>());
+
+			{
+				Genode::Attached_rom_dataspace config_rom { *_global_env, "config" };
+				config_rom.update();
+				if (config_rom.xml().attribute_value("mouse_grab", false))
+					input->exclusive(true);
+			}
 		} catch (...) {
 			Genode::error("no input driver available!");
 			return;
