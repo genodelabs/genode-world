@@ -70,7 +70,7 @@
 			</route>
 		</start>
 
-		<start name="sdl_vnc" caps="160">
+		<start name="sdl_vnc" caps="170">
 			<resource name="RAM" quantum="48M"/>
 			<route>
 				<service name="ROM" label="config">
