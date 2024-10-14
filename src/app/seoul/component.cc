@@ -204,7 +204,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 		bool const                          _rdtsc_exit;
 		bool const                          _cpuid_native;
 
-		/* initialize before other members, vCPU gets runnable immediately */
+		/* initialize after other members, vCPU gets runnable immediately */
 		Genode::Vm_connection              &_vm_con;
 		Genode::Vm_connection::Vcpu         _vm_vcpu;
 
@@ -242,7 +242,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			_motherboard(motherboard),
 			_vcpu(vcpu),
 			_vmx(vmx), _svm(svm), _map_small(map_small), _rdtsc_exit(rdtsc),
-			_cpuid_native(_init_cpuid_state(vcpu_id, cpuid_native)),
+			_cpuid_native(_init_cpuid_state(cpuid_native, vcpu_id)),
 			_vm_con(vm_con),
 			_vm_vcpu(_vm_con, alloc, _handler, _exit_config)
 		{
