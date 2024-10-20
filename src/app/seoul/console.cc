@@ -494,9 +494,6 @@ void Seoul::Console::_handle_gui_change()
 		if (gui_win.area == gui.fb_area)
 			return;
 
-		if (!_sufficient_ram(gui.fb_area, gui_win.area))
-			return;
-
 		if (!gui_win.area.valid()) {
 			enum {
 				BUTTON_POWER = 1U << 8,
@@ -510,6 +507,12 @@ void Seoul::Console::_handle_gui_change()
 
 			_mb.bus_acpi_event.send(event);
 		}
+
+		if (!gui.visible)
+			return;
+
+		if (!_sufficient_ram(gui.fb_area, gui_win.area))
+			return;
 
 		/* send notification about new mode */
 		MessageConsole msg(MessageConsole::TYPE_MODEINFO_UPDATE, gui.id);
