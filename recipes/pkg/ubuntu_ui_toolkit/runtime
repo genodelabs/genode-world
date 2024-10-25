@@ -24,7 +24,6 @@
 		<rom label="libQt5Test.lib.so"/>
 		<rom label="libQt5Widgets.lib.so"/>
 		<rom label="libqgenode.lib.so"/>
-		<rom label="qt5_quickcontrols.lib.so"/>
 		<rom label="qt5_component.lib.so"/>
 
 		<rom label="liblabsanimationplugin.lib.so"/>
