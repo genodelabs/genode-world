@@ -50,12 +50,13 @@ class Genode::Slave::Policy : public Child_policy
 		typedef Registered<Genode::Parent_service> Parent_service;
 		typedef Registry<Parent_service>           Parent_services;
 
+		Pd_session                   &ref_pd;
+		Pd_session_capability   const ref_pd_cap;
+
 	private:
 
 		Label                   const _label;
 		Binary_name             const _binary_name;
-		Pd_session                   &_ref_pd;
-		Pd_session_capability         _ref_pd_cap;
 		Genode::Parent_service        _binary_service;
 		Cap_quota               const _cap_quota;
 		Ram_quota               const _ram_quota;
@@ -113,8 +114,8 @@ class Genode::Slave::Policy : public Child_policy
 		       Cap_quota             cap_quota,
 		       Ram_quota             ram_quota)
 		:
+			ref_pd(env.pd()), ref_pd_cap(env.pd_session_cap()),
 			_label(label), _binary_name(binary_name),
-			_ref_pd(env.pd()), _ref_pd_cap(env.pd_session_cap()),
 			_binary_service(env, Rom_session::service_name()),
 			_cap_quota(cap_quota), _ram_quota(ram_quota),
 			_parent_services(parent_services), _ep(ep),
@@ -153,14 +154,16 @@ class Genode::Slave::Policy : public Child_policy
 
 		Binary_name binary_name() const override { return _binary_name; }
 
-		Pd_session           &ref_pd()           override { return _ref_pd; }
-		Pd_session_capability ref_pd_cap() const override { return _ref_pd_cap; }
+		Ram_allocator &session_md_ram() override { return ref_pd; }
+
+		Pd_account            &ref_account()           override { return ref_pd; }
+		Capability<Pd_account> ref_account_cap() const override { return ref_pd_cap; }
 
 		void init(Pd_session &session, Pd_session_capability cap) override
 		{
-			session.ref_account(_ref_pd_cap);
-			_ref_pd.transfer_quota(cap, _cap_quota);
-			_ref_pd.transfer_quota(cap, _ram_quota);
+			session.ref_account(ref_pd_cap);
+			ref_pd.transfer_quota(cap, _cap_quota);
+			ref_pd.transfer_quota(cap, _ram_quota);
 		}
 
 		Route resolve_session_request(Service::Name const &name,
@@ -254,7 +257,7 @@ class Genode::Slave::Connection_base
 			 */
 			void transfer(Pd_session_capability to, Ram_quota amount) override
 			{
-				if (to.valid()) _policy.ref_pd().transfer_quota(to, amount);
+				if (to.valid()) _policy.ref_account().transfer_quota(to, amount);
 			}
 
 			/**
@@ -262,7 +265,7 @@ class Genode::Slave::Connection_base
 			 */
 			Pd_session_capability cap(Ram_quota) const override
 			{
-				return _policy.ref_pd_cap();
+				return _policy.ref_pd_cap;
 			}
 
 			/**
@@ -270,7 +273,7 @@ class Genode::Slave::Connection_base
 			 */
 			void transfer(Pd_session_capability to, Cap_quota amount) override
 			{
-				if (to.valid()) _policy.ref_pd().transfer_quota(to, amount);
+				if (to.valid()) _policy.ref_account().transfer_quota(to, amount);
 			}
 
 			/**
@@ -278,7 +281,7 @@ class Genode::Slave::Connection_base
 			 */
 			Pd_session_capability cap(Cap_quota) const override
 			{
-				return _policy.ref_pd_cap();
+				return _policy.ref_pd_cap;
 			}
 
 		} _service;
