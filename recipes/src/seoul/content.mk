@@ -11,8 +11,7 @@ $(SRC_DIR):
 	cp $(PORT_DIR_SEOUL)/$@/LICENSE .
 
 BASE_SRC_INCLUDE := src/include/base/internal/crt0.h \
-                    src/include/base/internal/globals.h \
-                    src/include/base/internal/unmanaged_singleton.h
+                    src/include/base/internal/globals.h
 
 src/include:
 	mkdir -p $@/base/internal
