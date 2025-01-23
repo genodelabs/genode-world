@@ -1,18 +1,21 @@
 LICENSE   := Apache
-VERSION   := 2.2.0
+VERSION   := 2.28.0
 DOWNLOADS := mbedtls.archive
 
 URL(mbedtls) := https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/mbedtls-$(VERSION).tar.gz
-SHA(mbedtls) := 75494361e412444b38ebb9c908b7e17a5fb582eb9c3fadb2fe9b21e96f1bf8cb
+SHA(mbedtls) := f644248f23cf04315cf9bb58d88c4c9471c16ca0533ecf33f86fb7749a3e5fa6
 DIR(mbedtls) := src/lib/mbedtls
 
 DIRS := include/mbedtls
-DIR_CONTENT(include/mbedtls) := ${DIR(mbedtls)}/include/mbedtls
+DIRS += include/psa
 
-default: patch_config.h
-patch_config.h: _dirs
-patch_config.h:
-	$(VERBOSE)sed -i 's:^//#define MBEDTLS_NO_PLATFORM_ENTROPY:#define MBEDTLS_NO_PLATFORM_ENTROPY:' \
-	          include/mbedtls/mbedtls/config.h
-	$(VERBOSE)sed -i 's:^#define MBEDTLS_HAVE_TIME_DATE://#define MBEDTLS_HAVE_TIME_DATE:' \
-	          include/mbedtls/mbedtls/config.h
+DIR_CONTENT(include/mbedtls) := ${DIR(mbedtls)}/include/mbedtls
+DIR_CONTENT(include/psa)     := ${DIR(mbedtls)}/include/psa
+
+PATCHES_DIR := src/lib/mbedtls/patches
+PATCH_DEST  := src/lib/mbedtls
+
+PATCHES += $(PATCHES_DIR)/01-add-genode-support.patch
+PATCH_OPT($(PATCHES_DIR)/01-add-genode-support.patch) := -p1 -d $(PATCH_DEST)
+
+# vim: ft=make
