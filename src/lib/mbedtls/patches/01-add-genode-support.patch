@@ -1,0 +1,52 @@
+From baaf9e2e10a8c1f42812756e910ce4e14669a0d7 Mon Sep 17 00:00:00 2001
+From: Pirmin Duss <pirmin.duss@gapfruit.com>
+Date: Thu, 23 Jan 2025 14:00:50 +0100
+Subject: [PATCH] add Genode support
+
+---
+ library/entropy_poll.c | 2 +-
+ library/net_sockets.c  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/library/entropy_poll.c b/library/entropy_poll.c
+index 2c1e093..2ad8bfe 100644
+--- a/library/entropy_poll.c
++++ b/library/entropy_poll.c
+@@ -46,7 +46,7 @@
+ 
+ #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
+     !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__) && \
+-    !defined(__HAIKU__) && !defined(__midipix__)
++    !defined(__HAIKU__) && !defined(__midipix__) && !defined(__GENODE__)
+ #error "Platform entropy sources only work on Unix and Windows, see MBEDTLS_NO_PLATFORM_ENTROPY in config.h"
+ #endif
+ 
+diff --git a/library/net_sockets.c b/library/net_sockets.c
+index 5fbe1f7..9ec0354 100644
+--- a/library/net_sockets.c
++++ b/library/net_sockets.c
+@@ -33,7 +33,7 @@
+ 
+ #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
+     !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__) && \
+-    !defined(__HAIKU__) && !defined(__midipix__)
++    !defined(__HAIKU__) && !defined(__midipix__) && !defined(__GENODE__)
+ #error "This module only works on Unix and Windows, see MBEDTLS_NET_C in config.h"
+ #endif
+ 
+diff --git a/library/timing.c b/library/timing.c
+index eb41461..cb2e151 100644
+--- a/library/timing.c
++++ b/library/timing.c
+@@ -34,7 +34,7 @@
+
+ #if !defined(unix) && !defined(__unix__) && !defined(__unix) && \
+     !defined(__APPLE__) && !defined(_WIN32) && !defined(__QNXNTO__) && \
+-    !defined(__HAIKU__) && !defined(__midipix__)
++    !defined(__HAIKU__) && !defined(__midipix__) && !defined(__GENODE__)
+ #error "This module only works on Unix and Windows, see MBEDTLS_TIMING_C in config.h"
+ #endif
+ 
+-- 
+2.39.5
+
