@@ -44,7 +44,7 @@ install_config {
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<vfs> <ram/> </vfs>
-			<policy label="gmock -> " root="/" writeable="yes" />
+			<policy label_prefix="gmock ->" root="/" writeable="yes" />
 		</config>
 	</start>
 

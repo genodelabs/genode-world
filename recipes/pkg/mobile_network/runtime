@@ -51,7 +51,7 @@
 				<policy label_prefix="fs_rom" root="/" writeable="no"/>
 			</config>
 			<route>
-				<service name="File_system"> <parent label="config"/> </service>
+				<service name="File_system"> <parent identity="config"/> </service>
 				<service name="ROM" label="mbimcli.config">
 					<parent label="mbimcli_cascaded_router.config"/>
 				</service>

@@ -29,7 +29,7 @@
 				<service name="ROM" label="user.remap">
 					<child name="rom_filter"/>
 				</service>
-				<service name="File_system"> <parent label="keyboard"/> </service>
+				<service name="File_system"> <parent identity="keyboard"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>
@@ -75,7 +75,7 @@
 			<resource name="RAM" quantum="1M"/>
 			<provides> <service name="ROM"/> </provides>
 			<route>
-				<service name="File_system"> <parent label="keyboard"/> </service>
+				<service name="File_system"> <parent identity="keyboard"/> </service>
 				<any-service> <parent/> </any-service>
 			</route>
 		</start>

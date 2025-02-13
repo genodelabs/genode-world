@@ -149,7 +149,7 @@ void Exec_terminal::Main::_gen_sub_init_config(Xml_generator &xml, Xml_node cons
 				xml.node("tar",[&] () { xml.attribute("name", "vim-minimal.tar"); });
 				xml.node("dir",[&] () {
 					xml.attribute("name", "rw");
-					xml.node("fs",[&] () { xml.attribute("label", "rw"); });
+					xml.node("fs",[&] () { xml.attribute("label", "rw -> /"); });
 				});
 				xml.node("dir", [&] () {
 					xml.attribute("name", "dev");
@@ -223,7 +223,7 @@ void Exec_terminal::Main::_gen_sub_init_config(Xml_generator &xml, Xml_node cons
 			});
 
 			xml.node("vfs",[&] () {
-				xml.node("fs",[&] () { xml.attribute("label", "rw"); });
+				xml.node("fs",[&] () { xml.attribute("label", "rw -> /"); });
 				xml.node("dir", [&] () {
 					xml.attribute("name", "dev");
 					xml.node("null", [&] () { });

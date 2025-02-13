@@ -80,8 +80,8 @@ install_config {
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<vfs> <tar name="depot.tar"/> </vfs>
-			<policy label="depot_query -> depot" root="/" />
-			<policy label="fs_rom -> "           root="/" />
+			<policy label_prefix="depot_query -> depot ->" root="/" />
+			<policy label_prefix="fs_rom ->"               root="/" />
 		</config>
 	</start>
 

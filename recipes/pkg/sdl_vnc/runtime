@@ -55,7 +55,7 @@
 				<policy label_prefix="fs_rom" root="/" writeable="no"/>
 			</config>
 			<route>
-				<service name="File_system"> <parent label="recall"/> </service>
+				<service name="File_system"> <parent identity="recall"/> </service>
 				<any-service> <parent /> </any-service>
 			</route>
 		</start>

@@ -50,7 +50,7 @@
 				<vfs> <dir name="fonts"> <fs/> </dir> </vfs>
 			</config>
 			<route>
-				<service name="File_system"> <parent label="fonts"/> </service>
+				<service name="File_system"> <parent identity="fonts"/> </service>
 				<service name="Report" label="clipboard"> <parent label="clipboard"/> </service>
 				<service name="ROM"    label="clipboard"> <parent label="clipboard"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
@@ -72,7 +72,7 @@
 				<libc stdout="/dev/log" stderr="/dev/log" socket="/socket"/>
 			</config>
 			<route>
-				<service name="File_system"> <parent label="ssh"/> </service>
+				<service name="File_system"> <parent identity="ssh"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
 		</start>
