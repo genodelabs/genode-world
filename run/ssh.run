@@ -257,7 +257,7 @@ append config {<config>
 			<env key="TERM" value="screen"/>
 		</config>
 		<route>
-			<service name="File_system" label="sftp_fs"> <child name="sftp_fs"/> </service>
+			<service name="File_system" label_prefix="sftp_fs"> <child name="sftp_fs"/> </service>
 			<service name="File_system"> <child name="vfs"/> </service>
 			<service name="ROM" label_last="/bin/bash"> <child name="fs_rom"/> </service>
 			<service name="ROM" label_prefix="/bin"> <child name="fs_rom"/> </service>

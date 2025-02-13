@@ -32,7 +32,7 @@ install_config {
 		<provides> <service name="File_system"/> </provides>
 		<config>
 			<vfs> <ram/> </vfs>
-			<policy label="gtest -> " root="/" writeable="yes" />
+			<policy label_prefix="gtest ->" root="/" writeable="yes" />
 		</config>
 	</start>
 

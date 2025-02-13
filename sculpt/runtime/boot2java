@@ -171,10 +171,10 @@
 			<service name="ROM" label="net.lib.so">
 				<parent label="jnet.lib.so" />
 			</service>
-			<service name="File_system" label="nic">
+			<service name="File_system" label_prefix="nic ->">
 				<child name="vfs_nic"/>
 			</service>
-			<service name="File_system" label="block">
+			<service name="File_system" label_prefix="block ->">
 				<child name="logging_fs"/>
 			</service>
 			<any-service> <parent/> </any-service>
@@ -222,8 +222,8 @@
 				<rom name="net.lib.so" />
 				<rom name="management.lib.so"/>
 				<rom name="Genode - Genode News.htm"/>
-				<fs label="nic"/>
-				<fs label="block" buffer_size="524288"/>
+				<fs label="nic -> "/>
+				<fs label="block -> /" buffer_size="524288"/>
 				<ram/>
 			</vfs>
 		</config>

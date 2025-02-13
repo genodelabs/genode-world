@@ -439,7 +439,7 @@ append_if $use_top_view config {
 		<route>
 			<service name="ROM" label="dialog"> <child name="report_rom" /> </service>
 			<service name="Report" label="hover"> <child name="report_rom"/> </service>
-			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
+			<service name="File_system" label_prefix="fonts ->"> <child name="fonts_fs"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -458,7 +458,7 @@ append_if $use_top_view config {
 			<service name="ROM" label="hover"> <child name="report_rom" /> </service>
 			<service name="Report" label="dialog"> <child name="report_rom" /> </service>
 			<service name="Report" label="graph"> <child name="report_rom" /> </service>
-			<service name="File_system" label="store"> <child name="ram_fs"/> </service>
+			<service name="File_system" label_prefix="store ->"> <child name="ram_fs"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -470,8 +470,8 @@ append_if $use_top_view config {
 		</config>
 		<route>
 			<service name="ROM" label="graph"> <child name="report_rom" /> </service>
-			<service name="File_system" label="fonts"> <child name="fonts_fs"/> </service>
-			<service name="File_system" label="load">  <child name="ram_fs"/> </service>
+			<service name="File_system" label_prefix="fonts ->"> <child name="fonts_fs"/> </service>
+			<service name="File_system" label_prefix="load ->">  <child name="ram_fs"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>}
