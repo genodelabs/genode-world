@@ -1,0 +1,15 @@
+genode_theme.patch
+
+diff --git a/src/lib/app/qzcommon.h b/src/lib/app/qzcommon.h
+index 92a453c52..c7aed1e35 100644
+--- a/src/lib/app/qzcommon.h
++++ b/src/lib/app/qzcommon.h
+@@ -118,7 +118,7 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(Qz::NewTabPositionFlags)
+ #elif defined(Q_OS_MACOS)
+ #define DEFAULT_THEME_NAME QSL("mac")
+ #elif defined(Q_OS_UNIX)
+-#define DEFAULT_THEME_NAME QSL("linux")
++#define DEFAULT_THEME_NAME QSL("chrome")
+ #else
+ #define DEFAULT_THEME_NAME QSL("default")
+ #endif

@@ -1,0 +1,33 @@
+genode_settings.patch
+
+diff --git a/src/lib/app/mainapplication.cpp b/src/lib/app/mainapplication.cpp
+index 9837d5939..818d2d7fb 100644
+--- a/src/lib/app/mainapplication.cpp
++++ b/src/lib/app/mainapplication.cpp
+@@ -954,11 +954,12 @@ void MainApplication::loadSettings()
+     webSettings->setAttribute(QWebEngineSettings::XSSAuditingEnabled, settings.value(QSL("XSSAuditing"), false).toBool());
+     webSettings->setAttribute(QWebEngineSettings::PrintElementBackgrounds, settings.value(QSL("PrintElementBackground"), true).toBool());
+     webSettings->setAttribute(QWebEngineSettings::SpatialNavigationEnabled, settings.value(QSL("SpatialNavigation"), false).toBool());
+-    webSettings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, settings.value(QSL("AnimateScrolling"), true).toBool());
++    webSettings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, settings.value(QSL("AnimateScrolling"), false).toBool());
+     webSettings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
+     webSettings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
+     webSettings->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+     webSettings->setAttribute(QWebEngineSettings::FocusOnNavigationEnabled, false);
++    webSettings->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, false);
+ 
+ #if QTWEBENGINEWIDGETS_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+     webSettings->setAttribute(QWebEngineSettings::AllowWindowActivationFromJavaScript, settings.value(QSL("allowJavaScriptActivateWindow"), false).toBool());
+diff --git a/src/lib/preferences/preferences.cpp b/src/lib/preferences/preferences.cpp
+index a0d2cdf7a..ffed77393 100644
+--- a/src/lib/preferences/preferences.cpp
++++ b/src/lib/preferences/preferences.cpp
+@@ -297,7 +297,7 @@ Preferences::Preferences(BrowserWindow* window)
+     ui->allowJavaScript->setChecked(settings.value("allowJavaScript", true).toBool());
+     ui->linksInFocusChain->setChecked(settings.value("IncludeLinkInFocusChain", false).toBool());
+     ui->spatialNavigation->setChecked(settings.value("SpatialNavigation", false).toBool());
+-    ui->animateScrolling->setChecked(settings.value("AnimateScrolling", true).toBool());
++    ui->animateScrolling->setChecked(settings.value("AnimateScrolling", false).toBool());
+     ui->wheelScroll->setValue(settings.value("wheelScrollLines", qApp->wheelScrollLines()).toInt());
+     ui->xssAuditing->setChecked(settings.value("XSSAuditing", false).toBool());
+     ui->printEBackground->setChecked(settings.value("PrintElementBackground", true).toBool());

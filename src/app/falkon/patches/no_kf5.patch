@@ -1,0 +1,53 @@
+no_kf5.patch
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 75057476d..2c8f0c098 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -91,7 +91,7 @@ endif()
+ find_package(OpenSSL REQUIRED)
+ 
+ # Mandatory: KF5
+-find_package(KF5 REQUIRED COMPONENTS Archive)
++#find_package(KF5 REQUIRED COMPONENTS Archive)
+ 
+ # KF5I18n: Mandatory with downloaded translations (only for ki18n_install)
+ if (EXISTS "${CMAKE_SOURCE_DIR}/po")
+diff --git a/src/lib/CMakeLists.txt b/src/lib/CMakeLists.txt
+index 3b7efff04..70416b47d 100644
+--- a/src/lib/CMakeLists.txt
++++ b/src/lib/CMakeLists.txt
+@@ -156,7 +156,6 @@ set(SRCS ${SRCS}
+     plugins/pluginproxy.cpp
+     plugins/plugins.cpp
+     plugins/speeddial.cpp
+-    plugins/ocssupport.cpp
+     plugins/qml/qmlpluginloader.cpp
+     plugins/qml/qmlplugin.cpp
+     plugins/qml/qmlplugins.cpp
+@@ -352,7 +351,6 @@ target_link_libraries(FalkonPrivate
+     Qt5::PrintSupport
+     Qt5::QuickWidgets
+     Qt5::WebChannel
+-    KF5::Archive
+     ${OPENSSL_CRYPTO_LIBRARY}
+ )
+ 
+diff --git a/src/lib/webengine/webpage.cpp b/src/lib/webengine/webpage.cpp
+index 5037b1cba..994908fe7 100644
+--- a/src/lib/webengine/webpage.cpp
++++ b/src/lib/webengine/webpage.cpp
+@@ -453,11 +453,11 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, QWebEnginePage::Navigatio
+ #endif
+         }
+     }
+-
++#if 0
+     if (url.scheme() == QL1S("ocs") && OcsSupport::instance()->handleUrl(url)) {
+         return false;
+     }
+-
++#endif
+     const bool result = QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
+ 
+     if (result) {
