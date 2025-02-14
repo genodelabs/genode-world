@@ -1,2 +1,8 @@
-revert_remove_qmake_build_files.patch
-genode.patch
+no_plugins.patch
+no_kf5.patch
+no_ecm.patch
+genode_cmake.patch
+genode_no_qprocess.patch
+genode_no_show_version.patch
+genode_theme.patch
+genode_settings.patch

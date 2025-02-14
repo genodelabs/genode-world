@@ -1,0 +1,22 @@
+genode_cmake.patch
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f580c69c5..c2a2f8388 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ # CMake version required. This must be the very first line, because it sets default policies affecting everything else
+-cmake_minimum_required(VERSION 3.1)
++cmake_minimum_required(VERSION 3.10)
+ 
+ # Project name and version
+ project(Falkon VERSION 3.2.0)
+@@ -88,7 +88,7 @@ if (WIN32)
+ endif()
+ 
+ # Mandatory: OpenSSL
+-find_package(OpenSSL REQUIRED)
++#find_package(OpenSSL REQUIRED)
+ 
+ # Mandatory: KF5
+ #find_package(KF5 REQUIRED COMPONENTS Archive)

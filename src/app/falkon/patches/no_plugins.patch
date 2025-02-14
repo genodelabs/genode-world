@@ -1,0 +1,12 @@
+no_plugins.patch
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index f0f8c1614..77a17ef18 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1,4 +1,4 @@
+ add_subdirectory(lib)
+ add_subdirectory(main)
+-add_subdirectory(plugins)
++#add_subdirectory(plugins)
+ add_subdirectory(scripts)

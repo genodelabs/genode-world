@@ -1,0 +1,21 @@
+genode_no_show_version.patch
+
+diff --git a/src/lib/app/commandlineoptions.cpp b/src/lib/app/commandlineoptions.cpp
+index e09847ad8..09b819790 100644
+--- a/src/lib/app/commandlineoptions.cpp
++++ b/src/lib/app/commandlineoptions.cpp
+@@ -105,11 +105,12 @@ void CommandLineOptions::parseActions()
+     if (parser.isSet(helpOption)) {
+         parser.showHelp();
+     }
+-
++#if 0
++    /* the Chromium '--v' option was detected here and caused Falkon to quit */
+     if (parser.isSet(versionOption)) {
+         parser.showVersion();
+     }
+-
++#endif
+     if (parser.isSet(authorsOption)) {
+         std::cout << "David Rosca <nowrep@gmail.com>" << std::endl;
+ 

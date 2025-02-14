@@ -1,0 +1,100 @@
+no_ecm.patch
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2c8f0c098..f580c69c5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,20 +6,20 @@ project(Falkon VERSION 3.2.0)
+ 
+ # Find ECM, with nice error handling in case of failure
+ include(FeatureSummary)
+-find_package(ECM 5.27.0 CONFIG)
++#find_package(ECM 5.27.0 CONFIG)
+ set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://commits.kde.org/extra-cmake-modules")
+ feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
+ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+ 
+ # Many includes from ECM, to get all the nice cmake functions and settings
+-include(KDEInstallDirs)
+-include(KDECMakeSettings)
+-include(KDECompilerSettings NO_POLICY_SCOPE)
+-include(ECMInstallIcons)
+-include(ECMSetupVersion)
+-include(ECMAddAppIcon)
+-include(ECMQtDeclareLoggingCategory)
+-include(ECMPoQmTools)
++#include(KDEInstallDirs)
++#include(KDECMakeSettings)
++#include(KDECompilerSettings NO_POLICY_SCOPE)
++#include(ECMInstallIcons)
++#include(ECMSetupVersion)
++#include(ECMAddAppIcon)
++#include(ECMQtDeclareLoggingCategory)
++#include(ECMPoQmTools)
+ 
+ # Output dirs (like ECM 5.38 does)
+ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+diff --git a/src/lib/CMakeLists.txt b/src/lib/CMakeLists.txt
+index 70416b47d..d1d696cc6 100644
+--- a/src/lib/CMakeLists.txt
++++ b/src/lib/CMakeLists.txt
+@@ -268,7 +268,7 @@ set(SRCS ${SRCS}
+ )
+ 
+ # add the logging category for FALKON
+-ecm_qt_declare_logging_category(LOGGING_SRCS HEADER falkon_private_debug.h IDENTIFIER "FALKON_PRIVATE_LOG" CATEGORY_NAME "org.kde.falkon")
++#ecm_qt_declare_logging_category(LOGGING_SRCS HEADER falkon_private_debug.h IDENTIFIER "FALKON_PRIVATE_LOG" CATEGORY_NAME "org.kde.falkon")
+ 
+ if (HAVE_LIBINTL)
+     set(SRCS ${SRCS} plugins/qml/api/i18n/qmli18n.cpp)
+diff --git a/src/main/CMakeLists.txt b/src/main/CMakeLists.txt
+index 835d48d11..ebb5c286e 100644
+--- a/src/main/CMakeLists.txt
++++ b/src/main/CMakeLists.txt
+@@ -10,7 +10,7 @@ if (WIN32)
+     set(SRCS ${SRCS} version.rc)
+     configure_file(falkonversion.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/falkonversion.h)
+ endif()
+-ecm_create_qm_loader(SRCS falkon_qt)
++#ecm_create_qm_loader(SRCS falkon_qt)
+ add_executable(falkon ${SRCS})
+ 
+ target_link_libraries(falkon FalkonPrivate)
+@@ -35,21 +35,21 @@ if (UNIX AND NOT APPLE)
+     if (KF5I18n_FOUND)
+         ki18n_install(${CMAKE_SOURCE_DIR}/po)
+     endif()
+-    ecm_install_po_files_as_qm(${CMAKE_SOURCE_DIR}/poqm)
+-
+-    install(PROGRAMS ../../linux/applications/org.kde.falkon.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+-
+-    ecm_install_icons(ICONS
+-        ../../linux/hicolor/16-apps-falkon.png
+-        ../../linux/hicolor/32-apps-falkon.png
+-        ../../linux/hicolor/48-apps-falkon.png
+-        ../../linux/hicolor/64-apps-falkon.png
+-        ../../linux/hicolor/128-apps-falkon.png
+-        ../../linux/hicolor/256-apps-falkon.png
+-        ../../linux/hicolor/sc-apps-falkon.svg
+-        DESTINATION ${KDE_INSTALL_ICONDIR} THEME hicolor)
+-
+-    install(FILES ../../linux/completion/falkon DESTINATION ${KDE_INSTALL_DATADIR}/bash-completion/completions)
+-    install(FILES ../../linux/appdata/org.kde.falkon.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
++#    ecm_install_po_files_as_qm(${CMAKE_SOURCE_DIR}/poqm)
++
++#    install(PROGRAMS ../../linux/applications/org.kde.falkon.desktop DESTINATION ${KDE_INSTALL_APPDIR})
++
++#    ecm_install_icons(ICONS
++#        ../../linux/hicolor/16-apps-falkon.png
++#        ../../linux/hicolor/32-apps-falkon.png
++#        ../../linux/hicolor/48-apps-falkon.png
++#        ../../linux/hicolor/64-apps-falkon.png
++#        ../../linux/hicolor/128-apps-falkon.png
++#        ../../linux/hicolor/256-apps-falkon.png
++#        ../../linux/hicolor/sc-apps-falkon.svg
++#        DESTINATION ${KDE_INSTALL_ICONDIR} THEME hicolor)
++
++#    install(FILES ../../linux/completion/falkon DESTINATION ${KDE_INSTALL_DATADIR}/bash-completion/completions)
++#    install(FILES ../../linux/appdata/org.kde.falkon.appdata.xml DESTINATION ${KDE_INSTALL_METAINFODIR})
+ endif()
+ 
