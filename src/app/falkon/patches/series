@@ -1,6 +1,7 @@
 no_plugins.patch
-no_kf5.patch
+no_kf.patch
 no_ecm.patch
+chromium_flags.patch
 genode_cmake.patch
 genode_no_qprocess.patch
 genode_no_show_version.patch

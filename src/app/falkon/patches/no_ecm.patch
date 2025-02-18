@@ -1,18 +1,19 @@
 no_ecm.patch
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 2c8f0c098..f580c69c5 100644
+index 2ed63ab07..5f591f370 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -6,20 +6,20 @@ project(Falkon VERSION 3.2.0)
+@@ -12,20 +12,20 @@ project(Falkon VERSION ${RELEASE_SERVICE_VERSION})
  
  # Find ECM, with nice error handling in case of failure
  include(FeatureSummary)
--find_package(ECM 5.27.0 CONFIG)
-+#find_package(ECM 5.27.0 CONFIG)
- set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://commits.kde.org/extra-cmake-modules")
+-find_package(ECM 5.78.0 CONFIG)
+-set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://invent.kde.org/frameworks/extra-cmake-modules")
++#find_package(ECM 5.78.0 CONFIG)
++#set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://invent.kde.org/frameworks/extra-cmake-modules")
  feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
- set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+ set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
  
  # Many includes from ECM, to get all the nice cmake functions and settings
 -include(KDEInstallDirs)
@@ -31,14 +32,14 @@ index 2c8f0c098..f580c69c5 100644
 +#include(ECMAddAppIcon)
 +#include(ECMQtDeclareLoggingCategory)
 +#include(ECMPoQmTools)
- 
- # Output dirs (like ECM 5.38 does)
- set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+ if (QT_MAJOR_VERSION STREQUAL "6")
+     set(QT_MIN_VERSION "6.4.0")
+     set(KF_MIN_VERSION "5.240.0")
 diff --git a/src/lib/CMakeLists.txt b/src/lib/CMakeLists.txt
-index 70416b47d..d1d696cc6 100644
+index 764701ff0..29173103a 100644
 --- a/src/lib/CMakeLists.txt
 +++ b/src/lib/CMakeLists.txt
-@@ -268,7 +268,7 @@ set(SRCS ${SRCS}
+@@ -501,7 +501,7 @@ set(SRCS ${SRCS}
  )
  
  # add the logging category for FALKON
@@ -46,9 +47,9 @@ index 70416b47d..d1d696cc6 100644
 +#ecm_qt_declare_logging_category(LOGGING_SRCS HEADER falkon_private_debug.h IDENTIFIER "FALKON_PRIVATE_LOG" CATEGORY_NAME "org.kde.falkon")
  
  if (HAVE_LIBINTL)
-     set(SRCS ${SRCS} plugins/qml/api/i18n/qmli18n.cpp)
+     set(SRCS ${SRCS} plugins/qml/api/i18n/qmli18n.cpp plugins/qml/api/i18n/qmli18n.h)
 diff --git a/src/main/CMakeLists.txt b/src/main/CMakeLists.txt
-index 835d48d11..ebb5c286e 100644
+index b5ad441f9..5ebc06322 100644
 --- a/src/main/CMakeLists.txt
 +++ b/src/main/CMakeLists.txt
 @@ -10,7 +10,7 @@ if (WIN32)
@@ -61,7 +62,7 @@ index 835d48d11..ebb5c286e 100644
  
  target_link_libraries(falkon FalkonPrivate)
 @@ -35,21 +35,21 @@ if (UNIX AND NOT APPLE)
-     if (KF5I18n_FOUND)
+     if (KF${KF_MAJOR_VERSION}I18n_FOUND)
          ki18n_install(${CMAKE_SOURCE_DIR}/po)
      endif()
 -    ecm_install_po_files_as_qm(${CMAKE_SOURCE_DIR}/poqm)

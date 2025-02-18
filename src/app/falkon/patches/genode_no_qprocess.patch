@@ -1,10 +1,10 @@
 genode_no_qprocess.patch
 
 diff --git a/src/lib/app/mainapplication.cpp b/src/lib/app/mainapplication.cpp
-index 88d78709b..9837d5939 100644
+index 959d60a68..670187de3 100644
 --- a/src/lib/app/mainapplication.cpp
 +++ b/src/lib/app/mainapplication.cpp
-@@ -258,7 +258,7 @@ MainApplication::MainApplication(int &argc, char** argv)
+@@ -268,7 +268,7 @@ MainApplication::MainApplication(int &argc, char** argv)
      if (messages.isEmpty()) {
          messages.append(QStringLiteral(" "));
      }
@@ -13,7 +13,7 @@ index 88d78709b..9837d5939 100644
      if (isRunning()) {
          m_isClosing = true;
          for (const QString &message : qAsConst(messages)) {
-@@ -266,6 +266,7 @@ MainApplication::MainApplication(int &argc, char** argv)
+@@ -276,6 +276,7 @@ MainApplication::MainApplication(int &argc, char** argv)
          }
          return;
      }
@@ -21,7 +21,7 @@ index 88d78709b..9837d5939 100644
  
  #ifdef Q_OS_MACOS
      setQuitOnLastWindowClosed(false);
-@@ -694,9 +695,9 @@ void MainApplication::startPrivateBrowsing(const QUrl &startUrl)
+@@ -721,9 +722,9 @@ void MainApplication::startPrivateBrowsing(const QUrl &startUrl)
          args << url.toEncoded();
      }
  
@@ -34,10 +34,10 @@ index 88d78709b..9837d5939 100644
  
  void MainApplication::reloadUserStyleSheet()
 diff --git a/src/lib/tools/qztools.cpp b/src/lib/tools/qztools.cpp
-index fbdad97da..e05c2fc23 100644
+index 1f7a19230..0f3e0a2e7 100644
 --- a/src/lib/tools/qztools.cpp
 +++ b/src/lib/tools/qztools.cpp
-@@ -847,6 +847,7 @@ QStringList QzTools::splitCommandArguments(const QString &command)
+@@ -853,6 +853,7 @@ QStringList QzTools::splitCommandArguments(const QString &command)
  
  bool QzTools::startExternalProcess(const QString &executable, const QString &args)
  {
@@ -45,7 +45,7 @@ index fbdad97da..e05c2fc23 100644
      const QStringList arguments = splitCommandArguments(args);
  
      bool success = QProcess::startDetached(executable, arguments);
-@@ -861,6 +862,9 @@ bool QzTools::startExternalProcess(const QString &executable, const QString &arg
+@@ -867,6 +868,9 @@ bool QzTools::startExternalProcess(const QString &executable, const QString &arg
      }
  
      return success;
@@ -54,4 +54,4 @@ index fbdad97da..e05c2fc23 100644
 +#endif
  }
  
- void QzTools::setWmClass(const QString &name, const QWidget* widget)
+ #ifdef QZ_WS_X11

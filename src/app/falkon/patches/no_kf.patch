@@ -1,0 +1,77 @@
+no_kf.patch
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 55f3f8821..2ed63ab07 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -116,12 +116,12 @@ endif()
+ find_package(OpenSSL REQUIRED)
+ 
+ # Mandatory: KF5/6
+-find_package(KF${KF_MAJOR_VERSION} REQUIRED COMPONENTS Archive)
++#find_package(KF${KF_MAJOR_VERSION} REQUIRED COMPONENTS Archive)
+ 
+ # KF5I18n: Mandatory with downloaded translations (only for ki18n_install)
+-if (EXISTS "${CMAKE_SOURCE_DIR}/po")
+-    find_package(KF${KF_MAJOR_VERSION}I18n REQUIRED)
+-endif()
++#if (EXISTS "${CMAKE_SOURCE_DIR}/po")
++#    find_package(KF${KF_MAJOR_VERSION}I18n REQUIRED)
++#endif()
+ 
+ # Optional: GnomeKeyring
+ find_package(PkgConfig)
+diff --git a/src/lib/CMakeLists.txt b/src/lib/CMakeLists.txt
+index 964370d07..764701ff0 100644
+--- a/src/lib/CMakeLists.txt
++++ b/src/lib/CMakeLists.txt
+@@ -158,7 +158,6 @@ set(SRCS ${SRCS}
+     plugins/pluginproxy.cpp
+     plugins/plugins.cpp
+     plugins/speeddial.cpp
+-    plugins/ocssupport.cpp
+     plugins/qml/qmlpluginloader.cpp
+     plugins/qml/qmlplugin.cpp
+     plugins/qml/qmlplugins.cpp
+@@ -388,7 +387,6 @@ set(SRCS ${SRCS}
+     plugins/pluginproxy.h
+     plugins/plugins.h
+     plugins/speeddial.h
+-    plugins/ocssupport.h
+     plugins/qml/qmlpluginloader.h
+     plugins/qml/qmlplugin.h
+     plugins/qml/qmlplugins.h
+@@ -596,7 +594,6 @@ if (QT_MAJOR_VERSION STREQUAL "6")
+         Qt6::QuickWidgets
+         Qt6::WebChannel
+         Qt6::Core5Compat
+-        KF6::Archive
+         ${OPENSSL_CRYPTO_LIBRARY}
+     )
+ else()
+@@ -608,7 +605,6 @@ else()
+         Qt::PrintSupport
+         Qt::QuickWidgets
+         Qt::WebChannel
+-        KF5::Archive
+         ${OPENSSL_CRYPTO_LIBRARY}
+     )
+ endif()
+diff --git a/src/lib/webengine/webpage.cpp b/src/lib/webengine/webpage.cpp
+index d4e553d8a..48165431a 100644
+--- a/src/lib/webengine/webpage.cpp
++++ b/src/lib/webengine/webpage.cpp
+@@ -461,11 +461,11 @@ bool WebPage::acceptNavigationRequest(const QUrl &url, QWebEnginePage::Navigatio
+ #endif
+         }
+     }
+-
++#if 0
+     if (url.scheme() == QL1S("ocs") && OcsSupport::instance()->handleUrl(url)) {
+         return false;
+     }
+-
++#endif
+     const bool result = QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
+ 
+     if (result) {

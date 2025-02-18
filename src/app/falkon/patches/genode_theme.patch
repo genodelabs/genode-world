@@ -1,7 +1,7 @@
 genode_theme.patch
 
 diff --git a/src/lib/app/qzcommon.h b/src/lib/app/qzcommon.h
-index 92a453c52..c7aed1e35 100644
+index 3d43426ca..0b8c38385 100644
 --- a/src/lib/app/qzcommon.h
 +++ b/src/lib/app/qzcommon.h
 @@ -118,7 +118,7 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(Qz::NewTabPositionFlags)
