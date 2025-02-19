@@ -1,10 +1,16 @@
 LICENSE   := GPLv2
 VERSION   := 2.33.2
-DOWNLOADS := util-linux.git
+DOWNLOADS := util-linux.archive
 
-URL(util-linux) := https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git/
-REV(util-linux) := v$(VERSION)
+URL(util-linux) := https://www.kernel.org/pub/linux/utils/util-linux/v2.33/util-linux-$(VERSION).tar.gz
+SHA(util-linux) := 681cea3257d0220178bd7e6ab9902671501c57dda42d00157988da51274df348
 DIR(util-linux) := src/lib/util-linux
+
+TAR_OPT(util-linux) = --strip-components=1
+TAR_OPT(util-linux) += util-linux-$(VERSION)/libuuid
+TAR_OPT(util-linux) += util-linux-$(VERSION)/lib
+TAR_OPT(util-linux) += util-linux-$(VERSION)/include
+TAR_OPT(util-linux) += util-linux-$(VERSION)/COPYING
 
 PATCH_OPT := -p1 -d src/lib/util-linux/
 PATCHES   := src/lib/libuuid/patches/*.patch
