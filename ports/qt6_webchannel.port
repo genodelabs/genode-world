@@ -1,0 +1,8 @@
+LICENSE := LGPL
+VERSION := 6.6.2
+
+DOWNLOADS := qt6_webchannel.archive
+
+URL(qt6_webchannel) := https://download.qt.io/archive/qt/6.6/6.6.2/submodules/qtwebchannel-everywhere-src-6.6.2.tar.xz
+SHA(qt6_webchannel) := 3d7c7d3999a394aa337bf575e33e526b058922e3760b34c942e5c8c174dcccc6
+DIR(qt6_webchannel) := src/lib/qt6_webchannel

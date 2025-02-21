@@ -1,0 +1,8 @@
+LICENSE := LGPL
+VERSION := 6.6.2
+
+DOWNLOADS := qt6_webengine.git
+
+URL(qt6_webengine) := https://github.com/cproc/qt6_webengine.git
+REV(qt6_webengine) := issue391_2
+DIR(qt6_webengine) := src/lib/qt6_webengine
