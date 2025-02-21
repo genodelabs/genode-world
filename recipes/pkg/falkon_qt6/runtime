@@ -1,0 +1,89 @@
+<!-- A sub-init is needed to be able to relabel the ROM session for the EGL driver. -->
+<runtime ram="2G" caps="10000" binary="init" config="init.config">
+
+	<requires>
+		<nic/>
+		<file_system label="config"/>
+		<file_system label="downloads"/>
+		<gui/>
+		<!--
+		  The shape report label cannot be renamed to 'shape' because then it
+		  would not match anymore with the label of the 'Gui' session. The
+		  label of the 'Gui' session cannot be renamed because there can be
+		  multiple Qt windows with individual labels which need to be
+		  distinguishable for the window manager.
+		-->
+		<report label="falkon -> shape"/>
+		<report label="clipboard"/>
+		<rom label="clipboard"/>
+		<rtc/>
+		<record/>
+		<play/>
+		<capture/>
+	</requires>
+
+	<content>
+
+		<rom label="falkon"/>
+		<rom label="egl.lib.so"/>
+		<rom label="mesa_gpu-softpipe.lib.so"/>
+		<rom label="expat.lib.so"/>
+		<rom label="freebl3.lib.so"/>
+		<rom label="glapi.lib.so"/>
+		<rom label="jitter_sponge"/>
+		<rom label="libFalkonPrivate.lib.so"/>
+		<rom label="libQt6Core.lib.so"/>
+		<rom label="libQt6Core5Compat.lib.so"/>
+		<rom label="libQt6Gui.lib.so"/>
+		<rom label="libQt6Network.lib.so"/>
+		<rom label="libQt6OpenGL.lib.so"/>
+		<rom label="libQt6PrintSupport.lib.so"/>
+		<rom label="libQt6Qml.lib.so"/>
+		<rom label="libQt6QmlModels.lib.so"/>
+		<rom label="libQt6Quick.lib.so"/>
+		<rom label="libQt6QuickWidgets.lib.so"/>
+		<rom label="libQt6Sql.lib.so"/>
+		<rom label="libQt6Svg.lib.so"/>
+		<rom label="libQt6WebChannel.lib.so"/>
+		<rom label="libQt6WebEngineCore.lib.so"/>
+		<rom label="libQt6WebEngineWidgets.lib.so"/>
+		<rom label="libQt6Widgets.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libcrypto.lib.so"/>
+		<rom label="libdrm.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libqgenode.lib.so"/>
+		<rom label="libqjpeg.lib.so"/>
+		<rom label="libqsqlite.lib.so"/>
+		<rom label="libqsvg.lib.so"/>
+		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="mesa.lib.so"/>
+		<rom label="nss3.lib.so"/>
+		<rom label="nssckbi.lib.so"/>
+		<rom label="qt6_component.lib.so"/>
+		<rom label="softokn3.lib.so"/>
+		<rom label="stdcxx.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_capture.lib.so"/>
+		<rom label="vfs_gpu.lib.so"/>
+		<rom label="vfs_jitterentropy.lib.so"/>
+		<rom label="vfs_lwip.lib.so"/>
+		<rom label="vfs_oss.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="vfs_qtwebengine_shm.lib.so"/>
+		<rom label="zlib.lib.so"/>
+		<rom label="qt6_declarative_qml.tar"/>
+		<rom label="qt6_dejavusans.tar"/>
+		<rom label="qt6_libqgenode.tar"/>
+		<rom label="qt6_libqsqlite.tar"/>
+		<rom label="qt6_libqsvg.tar"/>
+		<rom label="qt6_webengine_qml.tar"/>
+		<rom label="qt6_webengine_resources.tar"/>
+		<rom label="qt6_webengine_translations.tar"/>
+		<rom label="falkon_theme.tar"/>
+		<rom label="init.config"/>
+		<rom label="init"/>
+
+	</content>
+
+</runtime>

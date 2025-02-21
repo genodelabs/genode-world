@@ -1,0 +1,32 @@
+Qt6 - Fix Session restore
+
+From: Juraj Oravec <jurajoravec@mailo.com>
+
+Signed-off-by: Juraj Oravec <jurajoravec@mailo.com>
+
+diff --git a/src/lib/app/browserwindow.cpp b/src/lib/app/browserwindow.cpp
+index b4b5feec3..87640ac18 100644
+--- a/src/lib/app/browserwindow.cpp
++++ b/src/lib/app/browserwindow.cpp
+@@ -151,7 +151,7 @@ QDataStream &operator<<(QDataStream &stream, const BrowserWindow::SavedWindow &w
+     stream << window.windowGeometry;
+     stream << window.virtualDesktop;
+     stream << window.currentTab;
+-    stream << window.tabs.count();
++    stream << static_cast<int>(window.tabs.count());
+ 
+     for (int i = 0; i < window.tabs.count(); ++i) {
+         stream << window.tabs.at(i);
+diff --git a/src/lib/session/restoremanager.cpp b/src/lib/session/restoremanager.cpp
+index f2a7af60d..6c2e6bcb9 100644
+--- a/src/lib/session/restoremanager.cpp
++++ b/src/lib/session/restoremanager.cpp
+@@ -43,7 +43,7 @@ void RestoreData::clear()
+ 
+ QDataStream &operator<<(QDataStream &stream, const RestoreData &data)
+ {
+-    stream << data.windows.count();
++    stream << static_cast<int>(data.windows.count());
+     for (const BrowserWindow::SavedWindow &window : qAsConst(data.windows)) {
+         stream << window;
+     }

@@ -1,0 +1,13 @@
+libc
+mesa
+nss3
+openssl
+qt6_base
+qt6_component
+qt6_declarative
+qt6_qt5compat
+qt6_svg
+qt6_webchannel
+qt6_webengine
+so
+stdcxx

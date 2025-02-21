@@ -1,0 +1,33 @@
+Fix crash when starting new session after crash
+
+From: Juraj Oravec <jurajoravec@mailo.com>
+
+BUG: 408701
+FIXED-IN: 23.08.4
+
+Signed-off-by: Juraj Oravec <jurajoravec@mailo.com>
+
+diff --git a/src/lib/session/recoveryjsobject.cpp b/src/lib/session/recoveryjsobject.cpp
+index 3097f3ce2..92dc01588 100644
+--- a/src/lib/session/recoveryjsobject.cpp
++++ b/src/lib/session/recoveryjsobject.cpp
+@@ -74,7 +74,18 @@ QJsonArray RecoveryJsObject::restoreData() const
+ 
+ void RecoveryJsObject::startNewSession()
+ {
+-    closeTab();
++    auto *view = qobject_cast<TabbedWebView*>(m_page->view());
++    if (!view) {
++        return;
++    }
++
++    if (view->browserWindow()->tabCount() > 1) {
++        view->closeView();
++    } else {
++        auto *oldWindow = view->browserWindow();
++        mApp->createWindow(Qz::BW_NewWindow);
++        oldWindow->close();
++    }
+ 
+     mApp->restoreManager()->clearRestoreData();
+     mApp->destroyRestoreManager();

@@ -1,3 +1,5 @@
+qt6_fix_session_restore.patch
+fix_new_session_crash.patch
 no_plugins.patch
 no_kf.patch
 no_ecm.patch
