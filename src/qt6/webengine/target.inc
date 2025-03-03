@@ -34,6 +34,12 @@ else ifeq ($(filter-out $(SPECS),x86_64),)
 GENODE_CMAKE_SYSTEM_PROCESSOR="x86_64"
 endif
 
+#
+# Limit the number of parallel ninja jobs to 16 by default to keep RAM
+# demand below 32 GiB.
+#
+export NINJAFLAGS ?= -j$(shell echo -e "$(shell nproc)\n16" | sort -g | head -n1)
+
 build: cmake_prepared.tag qt6_so_files
 
 	@#
