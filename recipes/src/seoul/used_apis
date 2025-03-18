@@ -5,7 +5,6 @@ format
 framebuffer_session
 gui_session
 input_session
-libc
 nic_session
 nitpicker_gfx
 os

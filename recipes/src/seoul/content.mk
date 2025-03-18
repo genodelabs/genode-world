@@ -19,7 +19,7 @@ src/include:
 		cp $(GENODE_DIR)/repos/base/$$file $$file; \
 	done
 
-MIRROR_FROM_WORLD_DIR := lib/mk/seoul_libc_support.mk lib/mk/seoul-qemu-usb.mk
+MIRROR_FROM_WORLD_DIR := lib/mk/seoul-qemu-usb.mk
 
 content: $(MIRROR_FROM_WORLD_DIR)
 
@@ -27,8 +27,7 @@ $(MIRROR_FROM_WORLD_DIR):
 	mkdir -p $(dir $@)
 	cp -r $(GENODE_DIR)/repos/world/$@ $(dir $@)
 
-MIRROR_FROM_LIBPORTS := lib/mk/libc-common.inc \
-                        lib/import/import-qemu-usb_include.mk \
+MIRROR_FROM_LIBPORTS := lib/import/import-qemu-usb_include.mk \
                         lib/mk/qemu-usb_include.mk \
                         lib/mk/qemu-usb.inc \
                         include/qemu \
@@ -60,24 +59,10 @@ $(MIRROR_FROM_BASE):
 	mkdir -p $(dir $@)
 	cp -r $(GENODE_DIR)/repos/base/$@ $(dir $@)
 
-PORT_DIR := $(call port_dir,$(GENODE_DIR)/repos/libports/ports/libc)
-
-include $(REP_DIR)/lib/mk/seoul_libc_support.mk
-
-MIRROR_FROM_LIBC := $(addprefix src/lib/libc/lib/libc/,$(SRC_C)) \
-                    src/lib/libc/lib/libc/locale/mblocal.h \
-                    src/lib/libc/lib/libc/locale/xlocale_private.h \
-                    src/lib/libc/lib/libc/locale/setlocale.h \
-                    src/lib/libc/lib/libc/include/libc_private.h \
-
 MIRROR_FROM_OS := include/pointer/shape_report.h
 
-content: $(MIRROR_FROM_LIBC) $(MIRROR_FROM_OS)
+content: $(MIRROR_FROM_OS)
 
 $(MIRROR_FROM_OS):
 	mkdir -p $(dir $@)
 	cp -r $(GENODE_DIR)/repos/os/$@ $(dir $@)
-
-$(MIRROR_FROM_LIBC):
-	mkdir -p $(dir $@)
-	cp -r $(PORT_DIR)/$@ $(dir $@)

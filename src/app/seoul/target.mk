@@ -4,7 +4,7 @@ REQUIRES = x86
 SEOUL_CONTRIB_DIR = $(call select_from_ports,seoul)/src/app/seoul
 SEOUL_GENODE_DIR  = $(SEOUL_CONTRIB_DIR)/genode
 
-LIBS   += base blit seoul_libc_support format
+LIBS   += base blit format
 LIBS   += seoul-qemu-usb
 SRC_CC  = component.cc user_env.cc device_model_registry.cc state.cc xhci.cc
 SRC_CC += console.cc keyboard.cc network.cc disk.cc vga_vesa.cc audio.cc
@@ -19,11 +19,11 @@ endif
 
 SRC_CC += $(filter-out $(FILTER_OUT),$(addprefix model/,$(MODEL_SRC_CC)))
 SRC_CC += $(filter-out $(FILTER_OUT),$(addprefix executor/,$(EXECUTOR_SRC_CC)))
+SRC_CC += $(filter-out $(FILTER_OUT),base/lib/runtime/string.cc)
 
 INC_DIR += $(SEOUL_CONTRIB_DIR)/include
 INC_DIR += $(SEOUL_GENODE_DIR)/include
 INC_DIR += $(REP_DIR)/src/app/seoul/include
-include $(call select_from_repositories,lib/mk/libc-common.inc)
 
 CC_WARN += -Wno-unused
 
