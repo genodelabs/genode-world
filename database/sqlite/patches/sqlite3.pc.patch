@@ -1,0 +1,5 @@
++++ src/sqlite3.pc	2025-10-01 13:46:59.000000000 +0200
+@@ -0,0 +1,3 @@
++Name: SQLite
++Description: SQL database engine
++Libs: -l:sqlite.lib.so

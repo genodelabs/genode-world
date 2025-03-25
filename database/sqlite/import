@@ -1,0 +1,13 @@
+LICENSE   := PublicDomain
+VERSION   := 3500400
+DOWNLOADS := sqlite.archive
+
+# don't forget to bump the year in the url!
+URL(sqlite) := https://sqlite.org/2025/sqlite-amalgamation-$(VERSION).zip
+SHA(sqlite) := 1d3049dd0f830a025a53105fc79fd2ab9431aea99e137809d064d8ee8356b032
+DIR(sqlite) := src
+
+UNZIP_OPT(sqlite) := -j
+
+PATCHES := $(addprefix patches/, Makefile.patch sqlite3.pc.patch)
+PATCH_OPT := -p1 -d src

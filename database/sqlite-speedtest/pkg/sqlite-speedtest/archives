@@ -1,0 +1,4 @@
+genodelabs/src/libc
+genodelabs/src/vfs
+genodelabs/src/posix
+genodelabs/src/sqlite

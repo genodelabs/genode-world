@@ -1,0 +1,2 @@
+set version(genodelabs/api/sqlite) 3.50.4-2025-09-18
+set version(genodelabs/src/sqlite) 3.50.4-2025-09-18

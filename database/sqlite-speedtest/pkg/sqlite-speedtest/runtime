@@ -1,0 +1,32 @@
+<runtime ram="512M" caps="500" binary="speedtest">
+	<requires>
+		<timer/>
+                <rtc />
+	</requires>
+	<config verbose="yes">
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+		<vfs>
+			<ram />
+			<dir name="dev">
+				<rtc/>
+				<log/>
+				<null/>
+			</dir>
+		</vfs>
+		<arg value="speedtest"/>
+		<arg value="--verify"/>
+	</config>
+	<content>
+		<!-- Components -->
+		<rom label="speedtest"/>
+		<rom label="vfs"/>
+
+		<!-- Libraries -->
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="sqlite.lib.so"/>
+		<rom label="posix.lib.so"/>
+	</content>
+</runtime>

@@ -1,0 +1,10 @@
+LICENSE   := PublicDomain
+VERSION   := 3500400
+DOWNLOADS := speedtest.file
+
+URL(speedtest)  := https://raw.githubusercontent.com/sqlite/sqlite/version-3.50.4/test/speedtest1.c
+SHA(speedtest)  := f495cd1c3f727ebf6270d967b43f11a14304053ae4532d6338dbfea65c1a5a78
+NAME(speedtest) := src/speedtest1.c
+
+DIRS := src
+DIR_CONTENT(src) := $(addprefix $(REP_DIR)/files/,Makefile)
