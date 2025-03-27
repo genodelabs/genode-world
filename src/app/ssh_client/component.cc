@@ -163,7 +163,7 @@ struct Ssh_client::Main
 	{
 		using namespace Genode;
 
-		_env.config([&] (Xml_node const &config) {
+		_env.with_config([&] (Xml_node const &config) {
 			int verbosity = config.attribute_value("verbose", false)
 				? SSH_LOG_FUNCTIONS : SSH_LOG_NOLOG;
 			ssh_options_set(_session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
