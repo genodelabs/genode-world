@@ -64,7 +64,7 @@ class Udp_log::Session_component : public Genode::Rpc_object<Log_session>
 
 		Session_component(Genode::Env &env, Logger<String,Prefix> &logger,
 		                  Genode::Session_label const &label,
-		                  Xml_node policy)
+		                  Xml_node const &policy)
 		:
 			_env(env), _logger(logger), _prefix("[", label.string(), "] "),
 			_dst_mac (policy.attribute_value("mac",  _default_mac_address)),
