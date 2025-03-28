@@ -34,7 +34,7 @@ class Boot_module_provider
 {
 	private:
 
-		Genode::Xml_node const _multiboot_node;
+		Genode::Xml_node const & _multiboot_node;
 
 		enum { MODULE_NAME_MAX_LEN = 48 };
 
