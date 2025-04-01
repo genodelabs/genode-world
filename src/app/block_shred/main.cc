@@ -57,7 +57,7 @@ struct Blk_shred::Main
 
 	Timer::Connection timer { env };
 
-	Heap heap { env.pd(), env.rm() };
+	Heap heap { env.ram(), env.rm() };
 
 	Allocator_avl packet_alloc { &heap };
 

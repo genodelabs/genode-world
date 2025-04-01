@@ -288,7 +288,7 @@ class Mp3_audio_sink::Terminal_component :
 		Terminal_component(Genode::Env &env, Decoder &decoder)
 		:
 			_decoder(decoder),
-			_io_buffer(env.pd(), env.rm(), _decoder.feedbuffer_size())
+			_io_buffer(env.ram(), env.rm(), _decoder.feedbuffer_size())
 		{ }
 
 

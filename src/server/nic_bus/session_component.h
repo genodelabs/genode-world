@@ -46,7 +46,7 @@ class Nic_bus::Session_resources
 
 		Genode::Ram_quota_guard           _ram_guard;
 		Genode::Cap_quota_guard           _cap_guard;
-		Genode::Constrained_ram_allocator _ram_alloc;
+		Genode::Accounted_ram_allocator   _ram_alloc;
 		Genode::Attached_ram_dataspace    _tx_ds, _rx_ds;
 		Genode::Heap                      _alloc;
 		Nic::Packet_allocator             _rx_pkt_alloc { &_alloc };

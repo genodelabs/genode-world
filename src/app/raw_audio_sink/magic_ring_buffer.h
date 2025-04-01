@@ -82,7 +82,7 @@ class Genode::Magic_ring_buffer
 		 *
 		 */
 		Magic_ring_buffer(Genode::Env &env, size_t num_bytes)
-		: _env(env), _buffer_ds(_env.pd().alloc(num_bytes))
+		: _env(env), _buffer_ds(_env.ram().alloc(num_bytes))
 		{
 			if (_ds_size % sizeof(TYPE)) {
 				error("Magic_ring_buffer cannot hold unaligned TYPE");

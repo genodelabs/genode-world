@@ -122,7 +122,7 @@ class Jitter_sponge::Session_component final : public Genode::Rpc_object<Termina
 		                  Generator &generator)
 		:
 			_sessions_elem(*this, space, id),
-			_io_buffer(env.pd(), env.rm(), 0x1000),
+			_io_buffer(env.ram(), env.rm(), 0x1000),
 			_generator(generator)
 		{ }
 
@@ -160,8 +160,8 @@ class Jitter_sponge::Session_component final : public Genode::Rpc_object<Termina
 struct Jitter_sponge::Main : Session_request_handler
 {
 	Genode::Env  &_env;
-	Heap          _entropy_heap { _env.pd(), _env.rm() };
-	Sliced_heap   _session_heap { _env.pd(), _env.rm() };
+	Heap          _entropy_heap { _env.ram(), _env.rm() };
+	Sliced_heap   _session_heap { _env.ram(), _env.rm() };
 	Generator     _generator    { _entropy_heap };
 	Session_space _sessions     { };
 

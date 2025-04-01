@@ -57,7 +57,7 @@ struct Flif_view::Main
 
 	Libc::Env &env;
 
-	Attached_ram_dataspace back_ds { env.pd(), env.rm(), 0 };
+	Attached_ram_dataspace back_ds { env.ram(), env.rm(), 0 };
 
 	Gui::Connection gui { env };
 
@@ -100,7 +100,7 @@ struct Flif_view::Main
 		size_t const buffer_size = gui_mode.num_bytes();
 
 		if (buffer_size > back_ds.size())
-			back_ds.realloc(&env.pd(), buffer_size);
+			back_ds.realloc(&env.ram(), buffer_size);
 
 		Texture<PT> texture(back_ds.local_addr<PT>(), nullptr, gui_mode.area);
 

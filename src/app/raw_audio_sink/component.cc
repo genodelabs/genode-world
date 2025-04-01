@@ -157,7 +157,7 @@ class Raw_audio::Terminal_component :
 	public:
 
 		Terminal_component(Genode::Env &env, Sink &sink)
-		: _sink(sink), _io_buffer(env.pd(), env.rm(), AUDIO_OUT_BUFFER_SIZE) { }
+		: _sink(sink), _io_buffer(env.ram(), env.rm(), AUDIO_OUT_BUFFER_SIZE) { }
 
 
 		/********************************

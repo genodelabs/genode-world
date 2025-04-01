@@ -62,6 +62,7 @@ class Genode::Slave::Policy : public Child_policy
 		Ram_quota               const _ram_quota;
 		Parent_services              &_parent_services;
 		Rpc_entrypoint               &_ep;
+		Ram_allocator                &_env_ram;
 		Child_policy_dynamic_rom_file _config_policy;
 		Session_requester             _session_requester;
 
@@ -118,9 +119,9 @@ class Genode::Slave::Policy : public Child_policy
 			_label(label), _binary_name(binary_name),
 			_binary_service(env, Rom_session::service_name()),
 			_cap_quota(cap_quota), _ram_quota(ram_quota),
-			_parent_services(parent_services), _ep(ep),
-			_config_policy(env.rm(), "config", _ep, &env.pd()),
-			_session_requester(ep, env.pd(), env.rm())
+			_parent_services(parent_services), _ep(ep), _env_ram(env.ram()),
+			_config_policy(env.rm(), "config", _ep, &env.ram()),
+			_session_requester(ep, env.ram(), env.rm())
 		{
 			configure("<config/>");
 		}
@@ -154,7 +155,7 @@ class Genode::Slave::Policy : public Child_policy
 
 		Binary_name binary_name() const override { return _binary_name; }
 
-		Ram_allocator &session_md_ram() override { return ref_pd; }
+		Ram_allocator &session_md_ram() override { return _env_ram; }
 
 		Pd_account            &ref_account()           override { return ref_pd; }
 		Capability<Pd_account> ref_account_cap() const override { return ref_pd_cap; }
