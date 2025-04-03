@@ -1005,7 +1005,7 @@ class Machine : public StaticReceiver<Machine>
 			case MessageHostOp::OP_VCPU_RELEASE:
 			{
 				if (verbose_debug)
-					Genode::log("- OP_VCPU_RELEASE ", Genode::Thread::myself()->name());
+					Genode::log("- OP_VCPU_RELEASE ", Genode::Thread::myself()->name);
 
 				auto const vcpu_id = msg.value;
 				if ((_vcpus_up >= sizeof(_vcpus)/sizeof(_vcpus[0])))
@@ -1025,7 +1025,7 @@ class Machine : public StaticReceiver<Machine>
 			case MessageHostOp::OP_VCPU_BLOCK:
 				{
 					if (verbose_debug)
-						Genode::log("- OP_VCPU_BLOCK ", Genode::Thread::myself()->name());
+						Genode::log("- OP_VCPU_BLOCK ", Genode::Thread::myself()->name);
 
 					if (!powered())
 						Genode::sleep_forever();
