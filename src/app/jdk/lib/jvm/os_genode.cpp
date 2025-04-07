@@ -4360,8 +4360,10 @@ class Genode::Vm_region_map
 		addr_t alloc_region(size_t size, int align)
 		{
 			return _range.alloc_aligned(size, align > 12 ? align : 12).convert<addr_t>(
-				[&] (void *ptr) { return (addr_t)ptr; },
-				[&] (Range_allocator::Alloc_error) -> addr_t {
+				[&] (Range_allocator::Allocation &a) {
+					a.deallocate = false;
+					return (addr_t)a.ptr; },
+				[&] (Alloc_error) -> addr_t {
 					error("Vm_region_map::alloc_region failed");
 					throw -1; });
 		}
