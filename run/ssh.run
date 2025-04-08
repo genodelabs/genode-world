@@ -331,7 +331,7 @@ run_genode_until {.*ssh_server\] --- SSH terminal started.*\n} 5 serial_id
 set options "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o BatchMode=no"
 
 set count 0
-if {[get_cmd_switch --autopilot]} {
+if {[have_cmd_switch --autopilot]} {
 	set count 5
 }
 
@@ -364,7 +364,7 @@ puts "or `sftp -p $port $sftp_user@$host` (password: $sftp_password)"
 puts "for remote file transfer session."
 puts ""
 
-if {![get_cmd_switch --autopilot]} {
+if {![have_cmd_switch --autopilot]} {
 	run_genode_until forever 0 $serial_id
 }
 

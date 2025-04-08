@@ -26,21 +26,14 @@
 # the script.
 #
 
-if {[expr ![have_include power_on/qemu]]} {
-	puts "Run script is not supported on this platform."
-	exit 0
-}
+assert {[have_include power_on/qemu]}
 
-if {![info exists ::env(USB_BUS_ADDR)]} {
-	puts "\nPlease define the USB_BUS_ADDR environment variable\n"
-	exit 0
-}
+assert {[info exists ::env(USB_BUS_ADDR)]} \
+	"Please define the USB_BUS_ADDR environment variable."
 set usb_bus_addr $::env(USB_BUS_ADDR)
 
-if {![info exists ::env(USB_DEV_ADDR)]} {
-	puts "\nPlease define the USB_DEV_ADDR environment variable\n"
-	exit 0
-}
+assert {[info exists ::env(USB_DEV_ADDR)]} \
+	"Please define the USB_DEV_ADDR environment variable."
 set usb_dev_addr $::env(USB_DEV_ADDR)
 
 #

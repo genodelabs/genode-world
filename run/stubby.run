@@ -1,9 +1,7 @@
-assert_spec x86
+assert {[have_spec x86]}
 
-if {[have_board linux]} {
-	puts "The [run_name] scenario requires QEMU networking."
-	exit 1
-}
+assert {![have_board linux]} \
+	"The [run_name] scenario requires QEMU networking."
 
 source ${genode_dir}/repos/base/run/platform.inc
 

@@ -2,12 +2,8 @@
 # \brief  Test for the SSH terminal
 #
 
-assert_spec x86
-
-if {[have_spec linux]} {
-	puts "Run script is not supported on this platform."
-	exit 0
-}
+assert {[have_spec x86]}
+assert {![have_spec linux]}
 
 # Build
 #
@@ -249,7 +245,7 @@ append_qemu_nic_args "hostfwd=tcp::5555-:22"
 
 set lxip_match_string "ipaddr=(\[0-9\]+\.\[0-9\]+\.\[0-9\]+\.\[0-9\]+).*\n"
 
-if {[get_cmd_switch --autopilot]} {
+if {[have_cmd_switch --autopilot]} {
 	run_genode_until $lxip_match_string 60
 	set serial_id [output_spawn_id]
 

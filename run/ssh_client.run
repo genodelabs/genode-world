@@ -3,7 +3,7 @@
 # \author Emery Hemingway
 #
 
-assert_spec x86
+assert {[have_spec x86]}
 
 set build_components {
 	app/ssh_client

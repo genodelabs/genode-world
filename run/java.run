@@ -1,7 +1,6 @@
 if {![have_spec x86_64] && ![have_spec arm_v7] ||
 	[expr [have_spec sel4] && ![have_spec x86_64]]} {
-	puts "Java is not supported on this platform. Valid platforms are x86_64 and arm_v7a."
-	exit 0
+	assert {false} "Java is not supported on this platform. Valid platforms are x86_64 and arm_v7a."
 }
 
 build { core lib/ld init timer }

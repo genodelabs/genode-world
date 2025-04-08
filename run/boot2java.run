@@ -13,8 +13,7 @@ set ::env(LOG)    core
 
 set lynx [installed_command lynx]
 
-if {[expr ![have_include "power_on/qemu"] && [have_board pc]]} {
-	puts "\n Run script is not supported on this platform. \n"; exit 0 }
+assert {[have_include power_on/qemu] && [have_board pc]}
 
 source ${genode_dir}/repos/gems/run/sculpt.run
 

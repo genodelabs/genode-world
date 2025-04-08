@@ -1,7 +1,5 @@
-if {[have_board linux]} {
-	puts "Platform is unsupported. (rtc driver support)"
-	exit 0
-}
+
+assert {![have_board linux]}
 
 build {
 	core lib/ld init timer

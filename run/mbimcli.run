@@ -1,3 +1,6 @@
+assert {[have_recipe pkg/test_usb_host-[board]]} \
+	"Recipe for 'pkg/test_usb_host-[board]' not available."
+
 create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
@@ -142,8 +145,7 @@ build_boot_image [build_artifacts]
 if {[have_include "power_on/qemu"]} {
 	set USB_PORT 0
 	if [catch { set USB_PORT $env(USB_PORT)}] {
-		puts "No 'USB_PORT=<port>' environment variable set"
-		exit 0
+		assert {false} "No 'USB_PORT=<port>' environment variable set"
 	}
 	puts "Using USB_PORT=$USB_PORT"
 
@@ -152,7 +154,7 @@ if {[have_include "power_on/qemu"]} {
 	append qemu_args " -device usb-host,hostbus=1,hostaddr=$USB_PORT,bus=xhci.0 "
 }
 
-if {[expr ![get_cmd_switch --autopilot]]} {
+if {[expr ![have_cmd_switch --autopilot]]} {
 	run_genode_until forever
 } else {
 	run_genode_until {child "ping" exited with exit value 0} 60

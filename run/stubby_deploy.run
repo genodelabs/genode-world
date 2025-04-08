@@ -1,9 +1,6 @@
-assert_spec x86
+assert {[have_spec x86]}
 
-if {[have_board linux]} {
-	puts "Platform is unsupported."
-	exit 0
-}
+assert {![have_board linux]}
 
 create_boot_directory
 

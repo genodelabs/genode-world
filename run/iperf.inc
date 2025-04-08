@@ -4,30 +4,28 @@
 # \date   2020-08-04
 #
 
-if {[expr $use_nic_bridge && $use_nic_router]} {
-	puts "Cannot test with both NIC bridge and NIC router.";
-	exit 0
+assert {!($use_nic_bridge && $use_nic_router)} \
+	"Cannot test with both NIC bridge and NIC router."
+
+if {[have_cmd_switch --autopilot]} {
+	assert {![have_include power_on/qemu]} \
+		"Running netperf in autopilot on Qemu is not recommended."
 }
 
-if {[get_cmd_switch --autopilot] && [have_include "power_on/qemu"]} {
-	puts "\nRunning netperf in autopilot on Qemu is not recommended.\n"
-	exit
+if {[have_include power_on/qemu]} {
+	assert {!$use_nic_bridge &&
+		!$use_nic_router &&
+		!$use_usb_driver &&
+		!$use_wifi_driver} \
+		"Cannot test this configuration on qemu."
 }
 
-if {[have_include "power_on/qemu"] &&
-    [expr $use_nic_bridge || $use_nic_router || $use_usb_driver || $use_wifi_driver]} {
-	puts "Cannot test this configuration on qemu.";
-	exit 0
-}
+assert {![have_board imx53_qsb_tz]}
 
-if {[have_board imx53_qsb_tz]} {
-	puts "Run script is not supported on this platform."
-	exit 0
-}
 set bridge_mac "02:02:02:02:16:00"
 
 # autopilot: configure disjoint mac-address ranges for x86_32, x86_64, and others
-if {[get_cmd_switch --autopilot]} {
+if {[have_cmd_switch --autopilot]} {
 	if {[have_spec x86_32]} { set bridge_mac "02:02:02:02:32:00" }
 	if {[have_spec x86_64]} { set bridge_mac "02:02:02:02:64:00" }
 }

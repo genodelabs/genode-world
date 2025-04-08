@@ -1,7 +1,4 @@
-if {![have_include power_on/qemu]} {
-	puts "Run script is only supported on Qemu"
-	exit 0
-}
+assert {[have_include power_on/qemu]}
 
 create_boot_directory
 

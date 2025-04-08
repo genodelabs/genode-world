@@ -4,6 +4,9 @@
 # \date   2023-08-17
 #
 
+assert {[have_recipe pkg/test_usb_host-[board]]} \
+	"Recipe for 'pkg/test_usb_host-[board]' not available."
+
 proc ip_stack { } { return lxip }
 
 proc socket_fs_plugin { } {
@@ -175,8 +178,7 @@ build_boot_image [build_artifacts]
 if {[have_include "power_on/qemu"]} {
 	set USB_PORT 0
 	if [catch { set USB_PORT $env(USB_PORT)}] {
-		puts "No 'USB_PORT=<port>' environment variable set"
-		exit 0
+		assert {false} "No 'USB_PORT=<port>' environment variable set"
 	}
 	puts "Using USB_PORT=$USB_PORT"
 

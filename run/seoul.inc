@@ -14,7 +14,7 @@ set fb_name "boot_fb"
 if {[have_include power_on/qemu] && ([have_include image/iso] || [have_include image/disk])} {
 	set fb_name "vesa_fb"
 }
-if {[get_cmd_switch --autopilot]} {
+if {[have_cmd_switch --autopilot]} {
 	set fb_name "vesa_fb"
 }
 
@@ -241,7 +241,7 @@ proc config_part_block { } {
 # Build
 #
 
-assert_spec x86
+assert {[have_spec x86]}
 
 set map_small         "no"
 set vmm_vcpu_same_cpu "no"
@@ -251,10 +251,7 @@ if {[have_spec sel4]} {
 	set vmm_vcpu_same_cpu  "yes"
 
 	# seL4 has no AMD SVM support
-	if {[have_include "power_on/qemu"]} {
-		puts "\n Run script is not supported on this platform. \n";
-		exit 0
-	}
+	assert {![have_include power_on/qemu]}
 }
 
 

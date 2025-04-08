@@ -7,27 +7,19 @@
 # It assumes that the module files are present at '<build-dir>/bin/'
 #
 
-assert_spec x86
+assert {[have_spec x86]}
+assert {[have_spec foc] || [have_spec sel4] || [have_spec nova] || [have_spec hw]}
 
-if { [get_cmd_switch --autopilot] && [have_spec x86_32] } {
-	puts "\n Run script is not supported on this platform. \n";
-	exit 0
-}
+if {[have_cmd_switch --autopilot]} {
 
-if { [get_cmd_switch --autopilot] && [have_include "power_on/qemu"] } {
-	puts "\n Run script is not supported on this platform. \n";
-	exit 0
-}
+	assert {![have_spec x86_32]} \
+		"Autopilot mode is not supported on this platform."
 
-if { [get_cmd_switch --autopilot] && [have_spec hw] && ![have_include "power_on/qemu"] } {
-	puts "\n Run script is not supported on this platform. \n";
-	exit 0
-}
+	assert {![have_include power_on/qemu]} \
+		"Autopilot mode is not supported on this platform."	
 
-if {[have_spec foc] || [have_spec sel4] || [have_spec nova] || [have_spec hw]} {
-} else {
-	puts "\n Run script is not supported on this platform. \n";
-	exit 0
+	assert {!([have_spec hw] && ![have_include power_on/qemu])} \
+		"Autopilot mode is not supported on this platform."
 }
 
 set use_multiboot     0
@@ -43,7 +35,7 @@ set use_block_sata    0
 # The test machine in autopilot mode has a usb hid test device which
 # attach/detach several times and clutters the log.
 #
-set use_usb           [expr ![get_cmd_switch --autopilot]]
+set use_usb           [expr ![have_cmd_switch --autopilot]]
 
 set use_part_block    0
 
@@ -88,7 +80,7 @@ append qemu_args " -m 1536 "
 append qemu_args " -cpu EPYC "
 append_qemu_nic_args
 
-if { [get_cmd_switch --autopilot] } {
+if { [have_cmd_switch --autopilot] } {
 	append qemu_args " -nographic "
 	run_genode_until {\[init -\> seoul\] VMM: #   CPU: vendor_id} 60
 

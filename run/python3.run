@@ -5,10 +5,9 @@
 # \date   2011-11-22
 #
 
-if {![have_spec x86]} {
-	puts "Run script is only supported on x86"; exit 0 }
+assert {[have_spec x86]}
 
-proc depot_user {} { return [get_cmd_arg --depot-user local] }
+proc depot_user {} { return [cmd_arg --depot-user local] }
 
 create_boot_directory
 
