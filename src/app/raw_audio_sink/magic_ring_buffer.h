@@ -91,10 +91,14 @@ class Genode::Magic_ring_buffer
 
 			auto attach_at = [&] (addr_t const offset)
 			{
-				_rm.attach(_buffer_ds, {
+				auto result = _rm.attach(_buffer_ds, {
 					.size       = _ds_size,  .offset    = offset,
 					.use_at     = { },       .at        = { },
 					.executable = { },       .writeable = true });
+				if (result.failed()) {
+					error("Magic_ring_buffer out of resources");
+					throw Exception();
+				}
 			};
 
 			/* attach buffer dataspace twice into reserved region */
