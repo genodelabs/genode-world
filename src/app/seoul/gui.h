@@ -43,8 +43,9 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		attr.writeable = true;
 
 		pixels = env.rm().attach(ds, attr).convert<Genode::addr_t>(
-			[&] (auto const &range) { return range.start; },
-			[&] (auto const &error) {
+			[&] (Genode::Env::Local_rm::Attachment &a) {
+				a.deallocate = false; return Genode::addr_t(a.ptr); },
+			[&] (Genode::Env::Local_rm::Error) {
 				Genode::error("gui creation failed");
 				return 0ul;
 			});

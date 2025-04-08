@@ -55,7 +55,8 @@ class Seoul::Guest_memory
 				.use_at     = true,  .at        = at,
 				.executable = { },   .writeable = { },
 			}).convert<addr_t>(
-				[&] (Region_map::Range range) { return range.start; },
+				[&] (Env::Local_rm::Attachment &a) {
+					a.deallocate = false; return addr_t(a.ptr); },
 				[&] (Region_map::Attach_error e) -> addr_t { return 0ul; });
 		}
 
@@ -210,7 +211,10 @@ class Seoul::Guest_memory
 					.size       =     0, .offset    = 0,
 					.use_at     =  true, .at        = region._local_addr,
 					.executable = false, .writeable = true,
-				});
+				}).template convert<addr_t>(
+					[&] (Env::Local_rm::Attachment &a) {
+						a.deallocate = false; return addr_t(a.ptr); },
+					[&] (Region_map::Attach_error e) -> addr_t { return 0ul; });
 			});
 		}
 

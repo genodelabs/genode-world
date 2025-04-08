@@ -899,8 +899,9 @@ class Machine : public StaticReceiver<Machine>
 
 				auto const ds = _env.ram().alloc(msg.len);
 				auto const local_addr = _env.rm().attach(ds, attr).convert<addr_t>(
-					[&] (Region_map::Range range) { return range.start; },
-					[&] (Region_map::Attach_error e) -> addr_t { return 0ul; });
+					[&] (Env::Local_rm::Attachment &a) {
+						a.deallocate = false; return addr_t(a.ptr); },
+					[&] (Env::Local_rm::Error) -> addr_t { return 0ul; });
 
 				if (!local_addr)
 					return false;

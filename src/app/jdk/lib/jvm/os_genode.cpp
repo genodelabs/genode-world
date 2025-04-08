@@ -4340,8 +4340,9 @@ class Genode::Vm_region_map
 				.executable = true,
 				.writeable  = true
 			}). convert<addr_t>(
-				[&] (Region_map::Range range)   { return range.start; },
-				[&] (Region_map::Attach_error) {
+				[&] (Env::Local_rm::Attachment &a) {
+					a.deallocate = false; return addr_t(a.ptr); },
+				[&] (Env::Local_rm::Error) {
 					error("Vm_region_map failed to attach managed dataspace");
 					return 0UL;
 				}

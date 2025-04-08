@@ -27,7 +27,7 @@
 #include "disk.h"
 
 static Genode::Heap * disk_heap(Genode::Ram_allocator *ram = nullptr,
-                                Genode::Region_map *rm = nullptr)
+                                Genode::Env::Local_rm *rm = nullptr)
 {
 	static Genode::Heap heap(ram, rm);
 	return &heap;
