@@ -404,6 +404,17 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 #if defined(SDL_VIDEO_OPENGL_EGL)
 		if (window->flags & SDL_WINDOW_OPENGL) {
 
+			/*
+			 * For the time being attempt to destroy the current surface
+			 * first, which is a NOP in case the EGL surface was not
+			 * used before. EGL does not allow for the reuse of an already
+			 * initialized NativeSurface, which happens when we use the
+			 * same 'egl_window'.
+			 *
+			 * TODO: allow for multiple 'egl_window' objects.
+			 */
+			SDL_EGL_DestroySurface(_this, drv.egl_surface);
+
 			drv.egl_window.addr = (unsigned char *)fb_mem;
 			drv.egl_window.width = w;
 			drv.egl_window.height = h;
