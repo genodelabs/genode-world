@@ -71,7 +71,7 @@
 		</start>
 
 		<start name="sdl_vnc" caps="170">
-			<resource name="RAM" quantum="48M"/>
+			<resource name="RAM" quantum="64M"/>
 			<route>
 				<service name="ROM" label="config">
 					<child name="fs_rom" label="config"/> </service>
