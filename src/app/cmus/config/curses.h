@@ -1,7 +1,0 @@
-#ifndef CONFIG_CURSES_H
-#define CONFIG_CURSES_H
-
-#define HAVE_RESIZETERM 1
-#define HAVE_USE_DEFAULT_COLORS 1
-
-#endif

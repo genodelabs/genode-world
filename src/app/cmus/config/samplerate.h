@@ -1,6 +1,0 @@
-#ifndef CONFIG_SAMPLERATE_H
-#define CONFIG_SAMPLERATE_H
-
-/* #define HAVE_SAMPLERATE */
-
-#endif
