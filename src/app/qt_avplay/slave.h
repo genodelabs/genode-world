@@ -66,17 +66,26 @@ class Genode::Slave::Policy : public Child_policy
 		Child_policy_dynamic_rom_file _config_policy;
 		Session_requester             _session_requester;
 
-		Service &_matching_service(Service::Name const &service_name,
-		                           Session_label const &label)
+		void _with_matching_service(Service::Name const &service_name,
+		                            Session_label const &label,
+		                            auto const &fn, auto const &denied_fn)
 		{
 			/* check for config file request */
-			if (Service *s = _config_policy.resolve_session_request(service_name, label))
-				return *s;
+			if (Service *s = _config_policy.resolve_session_request(service_name, label)) {
+				fn(*s);
+				return;
+			}
 
 			if (service_name == "ROM") {
 				Session_label const rom_name(label.last_element());
-				if (rom_name == _binary_name)       return _binary_service;
-				if (rom_name == "session_requests") return _session_requester.service();
+				if (rom_name == _binary_name) {
+					fn(_binary_service);
+					return;
+				}
+				if (rom_name == "session_requests") {
+					fn(_session_requester.service());
+					return;
+				}
 			}
 
 			/* fill parent service registry on demand */
@@ -88,10 +97,10 @@ class Genode::Slave::Policy : public Child_policy
 			if (!service) {
 				error(name(), ": illegal session request of "
 				      "service \"", service_name, "\" (", label, ")");
-				throw Service_denied();
+				denied_fn();
+				return;
 			}
-
-			return *service;
+			fn(*service);
 		}
 
 	public:
@@ -167,13 +176,17 @@ class Genode::Slave::Policy : public Child_policy
 			ref_pd.transfer_quota(cap, _ram_quota);
 		}
 
-		Route resolve_session_request(Service::Name const &name,
-		                              Session_label const &label,
-		                              Session::Diag const  diag) override
+		void _with_route(Service::Name     const &name,
+		                 Session_label     const &label,
+		                 Session::Diag     const  diag,
+		                 With_route::Ft    const &fn,
+		                 With_no_route::Ft const &denied_fn) override
 		{
-			return Route { .service = _matching_service(name, label),
-			               .label   = label,
-			               .diag    = diag };
+			_with_matching_service(name, label,
+				[&] (Service &service) { fn(Route { .service = service,
+				                                    .label   = label,
+				                                    .diag    = diag }); },
+				denied_fn);
 		}
 
 		Id_space<Parent::Server> &server_id_space() override {

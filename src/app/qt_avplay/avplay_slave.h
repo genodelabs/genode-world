@@ -118,12 +118,14 @@ class Avplay_slave : public QObject
 				static Genode::Ram_quota _ram_quota() { return { 64*1024*1024 }; }
 				static Name              _name()      { return "avplay"; }
 
-				Genode::Service &_matching_service(Genode::Service::Name const &name)
+				void _with_matching_service(Genode::Service::Name const &name,
+				                            auto const &fn, auto const &denied_fn)
 				{
-					if (name == "Gui")
-						return _gui_service;
-
-					throw Genode::Service_denied();
+					if (name == "Gui") {
+						fn(_gui_service);
+						return;
+					}
+					denied_fn();
 				}
 
 			public:
@@ -144,18 +146,22 @@ class Avplay_slave : public QObject
 					configure(_config());
 				}
 
-				Route resolve_session_request(Genode::Service::Name const &name,
-				                              Genode::Session_label const &label,
-				                              Genode::Session::Diag const  diag) override
+				void _with_route(Genode::Service::Name     const &name,
+				                 Genode::Session_label     const &label,
+				                 Genode::Session::Diag     const  diag,
+				                 With_route::Ft    const &fn,
+				                 With_no_route::Ft const &denied_fn) override
 				{
-					try {
-						return Route { .service = _matching_service(name),
-						               .label   = label,
-						               .diag    = diag };
-					}
-					catch (Genode::Service_denied) { }
+					using namespace Genode;
 
-					return Genode::Slave::Policy::resolve_session_request(name, label, diag);
+					_with_matching_service(name,
+						[&] (Service &service) { fn(Route { .service = service,
+						                                    .label   = label,
+						                                    .diag    = diag }); },
+						[&] /* denied */ {
+							Slave::Policy::_with_route(name, label, diag,
+							                           fn, denied_fn); }
+					);
 				}
 
 				void volume_changed(int value)
