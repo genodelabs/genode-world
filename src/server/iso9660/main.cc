@@ -146,7 +146,7 @@ class Iso::Root : public Iso::Root_component
 
 	protected:
 
-		Rom_component *_create_session(const char *args) override
+		Create_result _create_session(const char *args) override
 		{
 			size_t ram_quota =
 				Arg_string::find_arg(args, "ram_quota").ulong_value(0);
@@ -165,7 +165,7 @@ class Iso::Root : public Iso::Root_component
 				Genode::log("Request for file ", Cstring(_path), " len ", strlen(_path));
 
 			try {
-				return new (_alloc) Rom_component(_env, _alloc, _cache, _block, _path);
+				return *new (_alloc) Rom_component(_env, _alloc, _cache, _block, _path);
 			}
 			catch (Io_error)       { throw Service_denied(); }
 			catch (Non_data_disc)  { throw Service_denied(); }

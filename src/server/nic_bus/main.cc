@@ -40,7 +40,7 @@ class Nic_bus::Root : public Genode::Root_component<Nic_bus::Session_component>
 
 	protected:
 
-		Session_component *_create_session(const char *args) override
+		Create_result _create_session(const char *args) override
 		{
 			using namespace Genode;
 
@@ -49,7 +49,7 @@ class Nic_bus::Root : public Genode::Root_component<Nic_bus::Session_component>
 			Session_label  label  { label_from_args(args) };
 			Session_policy policy { label, _config_rom.xml() };
 
-			return new (md_alloc())
+			return *new (md_alloc())
 				Session_component(_env.ep(), _env.ram(), _env.rm(),
 				                  ram_quota_from_args(args),
 				                  cap_quota_from_args(args),

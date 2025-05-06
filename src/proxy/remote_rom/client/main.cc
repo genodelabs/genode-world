@@ -177,7 +177,7 @@ class Remote_rom::Root : public Genode::Root_component<Session_component>
 
 	protected:
 
-		Session_component *_create_session(const char *) override
+		Create_result _create_session(const char *) override
 		{
 			using namespace Genode;
 
@@ -185,7 +185,7 @@ class Remote_rom::Root : public Genode::Root_component<Session_component>
 			 * TODO compare requested module name with provided module name (config)
 			 * */
 
-			return new (Root::md_alloc())
+			return *new (Root::md_alloc())
 			            Session_component(_env, _sessions, _rom_module);
 		}
 

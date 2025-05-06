@@ -68,7 +68,7 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 
 	protected:
 
-		Session_component *_create_session(const char *args)
+		Create_result _create_session(const char *args)
 		{
 			try {
 				Session_label const label = label_from_args(args);
@@ -83,7 +83,7 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 
 				try {
 					Libc::with_libc([&] () { _server.attach_terminal(*s); });
-					return s;
+					return *s;
 				} catch (...) {
 					Genode::destroy(md_alloc(), s);
 					throw;
@@ -91,10 +91,10 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 			} catch (...) { throw Service_denied(); }
 		}
 
-		void _destroy_session(Session_component *s)
+		void _destroy_session(Session_component &s)
 		{
-			Libc::with_libc([&] () { _server.detach_terminal(*s); });
-			Genode::destroy(md_alloc(), s);
+			Libc::with_libc([&] () { _server.detach_terminal(s); });
+			Genode::destroy(md_alloc(), *s);
 		}
 
 	public:

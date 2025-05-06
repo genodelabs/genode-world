@@ -106,7 +106,7 @@ class Udp_log::Root : public Genode::Root_component<Session_component>
 
 	protected:
 
-		Session_component *_create_session(const char *args) override
+		Create_result _create_session(const char *args) override
 		{
 			using namespace Genode;
 
@@ -114,8 +114,8 @@ class Udp_log::Root : public Genode::Root_component<Session_component>
 				Session_label const label = label_from_args(args);
 				Session_policy policy(label, _config.xml());
 				
-				return new (Root::md_alloc())
-				            Session_component(_env, _logger, label, policy);
+				return *new (Root::md_alloc())
+				             Session_component(_env, _logger, label, policy);
 			}
 			catch (Session_policy::No_policy_defined) {
 				Genode::warning("Missing policy.");

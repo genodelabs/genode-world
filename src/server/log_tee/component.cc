@@ -71,10 +71,10 @@ class Log_tee::Root_component :
 
 	protected:
 
-		Log_tee::Session_component *_create_session(char const *args) override
+		Create_result _create_session(char const *args) override
 		{
 			Session_label const label = label_from_args(args);
-			return new (md_alloc()) Session_component(_env, label, args);
+			return *new (md_alloc()) Session_component(_env, label, args);
 		}
 
 	public:

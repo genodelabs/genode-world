@@ -208,7 +208,7 @@ class Root : public Genode::Root_component<Openvpn_component, Genode::Single_cli
 
 	protected:
 
-		Openvpn_component *_create_session(const char *args)
+		Create_result _create_session(const char *args)
 		{
 			using namespace Genode;
 			using Genode::size_t;
@@ -228,7 +228,7 @@ class Root : public Genode::Root_component<Openvpn_component, Genode::Single_cli
 				throw Genode::Insufficient_ram_quota();
 			}
 
-			Openvpn_component *component = new (Root::md_alloc())
+			Openvpn_component &component = *new (Root::md_alloc())
 			                               Openvpn_component(tx_buf_size,
 			                                                 rx_buf_size,
 			                                                 _heap, _env);
@@ -237,7 +237,7 @@ class Root : public Genode::Root_component<Openvpn_component, Genode::Single_cli
 			 * to be valid before OpenVPN calls open_tun(), which unfortunatly
 			 * is early.
 			 */
-			_tuntap_dev = component;
+			_tuntap_dev = &component;
 
 			_thread = new (_heap) Openvpn_thread(_env, genode_argc, genode_argv);
 			_thread->start();
@@ -248,9 +248,9 @@ class Root : public Genode::Root_component<Openvpn_component, Genode::Single_cli
 			return component;
 		}
 
-		void _destroy_session(Openvpn_component *session)
+		void _destroy_session(Openvpn_component &session)
 		{
-			Genode::destroy(Root::md_alloc(), session);
+			Genode::destroy(Root::md_alloc(), &session);
 			Genode::destroy(Root::md_alloc(), _thread);
 			_thread = nullptr;
 		}

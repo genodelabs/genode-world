@@ -493,7 +493,7 @@ class Fuse_fs::Root : public Root_component<Session_component>
 
 	protected:
 
-		Session_component *_create_session(const char *args) override
+		Create_result _create_session(const char *args) override
 		{
 			/*
 			 * Determine client-specific policy defined implicitly by
@@ -563,7 +563,7 @@ class Fuse_fs::Root : public Root_component<Session_component>
 				              "need ", tx_buf_size);
 				throw Insufficient_ram_quota();
 			}
-			return new (md_alloc())
+			return *new (md_alloc())
 				Session_component(tx_buf_size, _env, root_dir, writeable, *md_alloc());
 		}
 
