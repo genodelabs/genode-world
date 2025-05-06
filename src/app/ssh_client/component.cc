@@ -148,15 +148,19 @@ struct Ssh_client::Main
 	static void _log_host_usage()
 	{
 		char buf[1024];
-		Xml_generator gen(buf, sizeof(buf), "host", [&gen] () {
-			gen.attribute("name", "...");
-			gen.attribute("port", 22);
-			gen.attribute("user", "...");
-			gen.attribute("pass", "...");
-			gen.attribute("known", "yes");
+		Xml_generator::generate({ buf, sizeof(buf) }, "host",
+			[&] (Xml_generator &gen) {
+				gen.attribute("name", "...");
+				gen.attribute("port", 22);
+				gen.attribute("user", "...");
+				gen.attribute("pass", "...");
+				gen.attribute("known", "yes");
+		}).with_result(
+			[&] (size_t used) {
+				log("host file format: ", Xml_node(buf, used)); },
+			[&] (Buffer_error) {
+				warning("host info exceeds maximum buffer size");
 		});
-
-		log("host file format: ", Xml_node(buf, gen.used()));
 	}
 
 	void _configure()

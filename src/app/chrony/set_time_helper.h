@@ -17,12 +17,12 @@
 class set_time_helper
 {
 private:
-	Genode::Constructible<Genode::Reporter> _set_time_reporter { };
+	Genode::Constructible<Genode::Expanding_reporter> _set_time_reporter { };
 
-	void _set_rtc(Genode::Reporter &reporter, Rtc::Timestamp const &ts)
+	void _set_rtc(Genode::Expanding_reporter &reporter, Rtc::Timestamp const &ts)
 	{
 		Genode::log("_set_rtc");
-		Genode::Reporter::Xml_generator xml(reporter, [&] () {
+		reporter.generate([&] (Genode::Xml_generator &xml) {
 			xml.attribute("year",   ts.year);
 			xml.attribute("month",  ts.month);
 			xml.attribute("day",    ts.day);

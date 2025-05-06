@@ -26,7 +26,6 @@ set_time_helper::~set_time_helper()
 void set_time_helper::init(Libc::Env &env)
 {
 	_set_time_reporter.construct(env, "set_rtc");
-	_set_time_reporter->enabled(true);
 }
 
 

@@ -890,7 +890,7 @@ class Mbim
 		{
 			_state_reporter.enabled(true);
 			try {
-				Genode::Reporter::Xml_generator xml(_state_reporter, [&]() {
+				(void)_state_reporter.generate([&] (Genode::Xml_generator &xml) {
 					xml.node("device", [&] () {
 						xml.attribute("sim", _state_report.sim);
 					});
@@ -925,7 +925,7 @@ class Mbim
 			/* handle intermediate disconnect */
 			if (!_connection.connected) {
 				_config_reporter.enabled(true);
-				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
+				(void)_config_reporter.generate([&] (Genode::Xml_generator &xml) {
 					xml.attribute("verbose", "no");
 					xml.attribute("verbose_packets", "no");
 					xml.attribute("verbose_domain_state", "yes");
@@ -947,8 +947,7 @@ class Mbim
 			} catch (...) { }
 
 			_config_reporter.enabled(true);
-			try {
-				Genode::Reporter::Xml_generator xml(_config_reporter, [&]() {
+			_config_reporter.generate([&] (Genode::Xml_generator &xml) {
 				xml.attribute("verbose", "no");
 				xml.attribute("verbose_packets", "no");
 				xml.attribute("verbose_domain_state", "yes");
@@ -1066,9 +1065,9 @@ class Mbim
 							xml.attribute("domain", "uplink");
 						});
 					});
-				}); /* reporter */
-			}
-			catch (...) { Genode::warning("Could not report NIC router configuration"); }
+				}).with_error([] (Genode::Buffer_error) {
+					Genode::warning("Could not report NIC router configuration");
+				});
 		}
 
 	public:
