@@ -3,6 +3,7 @@ include $(call select_from_repositories,lib/import/import-nss3.mk)
 NSS_PORT_DIR := $(call select_from_ports,nss3)/src/lib
 
 CC_OPT += -DFREEBSD
+CC_OPT += -DHAVE_SOCKLEN_T
 CC_OPT += -DHAVE_STRERROR
 CC_OPT += -DHAVE_BSD_FLOCK
 CC_OPT += -DXP_UNIX
