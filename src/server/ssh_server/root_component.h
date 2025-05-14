@@ -68,7 +68,7 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 
 	protected:
 
-		Create_result _create_session(const char *args)
+		Create_result _create_session(char const * const args)
 		{
 			try {
 				Session_label const label = label_from_args(args);
@@ -78,14 +78,14 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 					= policy.attribute_value("terminal_name", Ssh::Terminal_name());
 				if (!term_name.valid()) { throw -1; }
 
-				Session_component *s = nullptr;
-					s = new (md_alloc()) Session_component(_env, 4096, term_name);
+				auto s = new (md_alloc()) Session_component(_env, 4096, term_name);
 
 				try {
-					Libc::with_libc([&] () { _server.attach_terminal(*s); });
+					Libc::with_libc([&] () {
+						_server.attach_terminal(*s); });
 					return *s;
 				} catch (...) {
-					Genode::destroy(md_alloc(), s);
+					_destroy_session(*s);
 					throw;
 				}
 			} catch (...) { throw Service_denied(); }
@@ -94,7 +94,7 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 		void _destroy_session(Session_component &s)
 		{
 			Libc::with_libc([&] () { _server.detach_terminal(s); });
-			Genode::destroy(md_alloc(), *s);
+			Genode::destroy(md_alloc(), &s);
 		}
 
 	public:
