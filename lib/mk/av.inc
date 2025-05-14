@@ -6,6 +6,9 @@ CC_C_OPT += -std=c99 -DPIC
 # Therefore, switch off _all_ warnings.
 CC_WARN += -w
 
+# Prevent errors about incompatible pointer types with GCC 14.
+CC_WARN += -Wno-incompatible-pointer-types
+
 # Some source files do not build with -O0 due to conflicting register
 # allocation and inline assembler constrains. We enforce optimization for these
 # files.
