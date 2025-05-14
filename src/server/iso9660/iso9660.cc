@@ -321,12 +321,15 @@ class Volume_descriptor : public Iso::Iso_base
 		{
 			return alloc.try_alloc(ROOT_SIZE).convert<Directory_record *>(
 
-				[&] (void *ptr) -> Directory_record * {
-					memcpy(ptr, root_record(), ROOT_SIZE);
-					return (Directory_record *)ptr; },
+				[&] (auto & a) -> Directory_record * {
+					a.deallocate = false;
+					memcpy(a.ptr, root_record(), ROOT_SIZE);
+					return (Directory_record *)a.ptr; },
 
-				[&] (Allocator::Alloc_error e) -> Directory_record * {
-					Allocator::throw_alloc_error(e); }
+				[&] (auto) -> Directory_record * {
+					error("copy_root_record failed");
+					return nullptr;
+				}
 			);
 		}
 };
