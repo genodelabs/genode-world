@@ -12,7 +12,7 @@ CC_OPT += -fpermissive -fno-delete-null-pointer-checks \
           -Wno-comment -Wno-reorder -Wno-switch -Wno-unused-variable \
           -Wno-delete-non-virtual-dtor -Wno-unused-function -Wno-format \
           -Wno-unused-local-typedefs -Wno-unused-but-set-variable \
-          -Wno-parentheses
+          -Wno-parentheses -Wno-template-id-cdtor -Wno-nonnull
 
 CC_OPT += -D__GENODE__
 
@@ -674,6 +674,20 @@ SRC_CC += $(SRC_CONE) $(SRC_CTWO) \
           share/vm/utilities/xmlstream.cpp
 
 CC_OPT_share/vm/utilities/vmError += -Wno-narrowing
+
+# error for gnu++17 in base/include/base/memory.h
+#
+# in Genode::Memory::Constrained_obj_allocator
+#
+# using Result     = Allocation::Attempt;
+#
+# error: need ‘typename’ before
+# ‘Genode::Memory::Constrained_obj_allocator< <template-parameter-1-1> >::Allocation::Attempt’
+# because ‘Genode::Memory::Constrained_obj_allocator< <template-parameter-1-1> >::Allocation’
+# is a dependent scope
+#
+# -> use gnu++20 for this file
+CC_OPT_os_genode += -std=gnu++20
 
 vpath os_genode.cpp $(REP_DIR)/src/app/jdk/lib/jvm
 vpath dummies.cpp $(REP_DIR)/src/app/jdk/lib/jvm

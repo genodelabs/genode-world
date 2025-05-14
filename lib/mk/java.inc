@@ -27,6 +27,12 @@ CC_C_OPT = $(JDK_VERSION)
 CC_C_OPT += -D_ALLBSD_SOURCE -D__GENODE__
 CC_OPT_unix/native/libjava/TimeZone_md = -D__linux__
 
+CC_CXX_WARN_STRICT =
+
+CC_WARN += -Wno-unused-variable \
+           -Wno-int-conversion \
+           -Wno-maybe-uninitialized
+
 INC_DIR += $(REP_DIR)/src/app/jdk/lib/include \
            $(JDK_GENERATED)/include/java.base \
            $(JDK_BASE)/share/native/include \

@@ -13,4 +13,8 @@ INC_DIR += $(JDK_BASE)/share/native/include \
 
 CC_C_OPT = -D_ALLBSD_SOURCE
 
+CC_WARN += -Wno-unused-variable \
+           -Wno-unused-function \
+           -Wno-unused-but-set-variable
+
 vpath %.c $(JDK_BASE)/share/native/libzip

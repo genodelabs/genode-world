@@ -19,6 +19,10 @@ INC_DIR += $(JDK_BASE)/share/native/include \
 
 CC_C_OPT = -D__linux__ -D__GENODE__ -Dlseek64=lseek
 
+CC_WARN += -Wno-unused-variable \
+           -Wno-unused-function \
+           -Wno-unused-but-set-variable
+
 vpath %.c $(JDK_BASE)/share/native/libjli
 vpath %.c $(JDK_BASE)/unix/native/libjli
 

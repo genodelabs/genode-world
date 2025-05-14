@@ -31,6 +31,8 @@ CC_C_OPT = -D_ALLBSD_SOURCE -include netinet/in.h
 CC_OPT_net_util_md       += -include sys/socket.h
 CC_OPT_NetworkInterface  += -include sys/socket.h
 
+CC_WARN += -Wno-unused-variable
+
 vpath %.c $(JDK_BASE)/unix/native/libnet
 vpath %.c $(JDK_BASE)/share/native/libnet
 vpath %.c $(JDK_BASE)/macosx/native/libnet

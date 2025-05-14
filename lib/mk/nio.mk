@@ -39,4 +39,6 @@ CC_C_OPT = -D_ALLBSD_SOURCE -include netinet/in.h
 CC_OPT_ch/Net += -DIPV6_ADD_MEMBERSHIP=IPV6_JOIN_GROUP -DIPV6_DROP_MEMBERSHIP=IPV6_LEAVE_GROUP
 CC_OPT_net_util_md += -include sys/socket.h
 
+CC_WARN += -Wno-unused-variable
+
 vpath %.c $(JDK_BASE)/unix/native/libnio
