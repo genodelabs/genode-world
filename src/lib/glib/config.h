@@ -183,3 +183,7 @@
 
 /* Define to 1 if you have the `mmap' function. */
 #define HAVE_MMAP 1
+
+#define HAVE_RTLD_NOW 1
+
+#define HAVE_RTLD_GLOBAL 1

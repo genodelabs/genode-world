@@ -110,4 +110,3 @@ vpath %.c $(GLIB_SRC_DIR)/pcre
 vpath %.c $(GLIB_SRC_DIR)/libcharset
 
 vpath %.c $(GLIB_SRC_DIR)/../gio
-CC_CXX_WARN_STRICT =

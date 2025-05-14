@@ -14,6 +14,12 @@ default: macro_sanity
 # cannot be managed by hand.
 macro_sanity: $(DOWNLOADS)
 	$(VERBOSE)sed -i '/error/d' src/lib/glib/glib/gversionmacros.h
+	$(VERBOSE)sed -i 's/#define MAX(a, b)  (((a) > (b)) ? (a) : (b))/#define	MAX(a,b) (((a)>(b))?(a):(b))/g' src/lib/glib/glib/gmacros.h
+	$(VERBOSE)sed -i 's/#define MIN(a, b)  (((a) < (b)) ? (a) : (b))/#define	MIN(a,b) (((a)<(b))?(a):(b))/g' src/lib/glib/glib/gmacros.h
+	$(VERBOSE)sed -i 's/ngettext("Expecting 1 control message, got %d",/_("Expecting 1 control message, got %d"),/' src/lib/glib/gio/gunixconnection.c
+	$(VERBOSE)sed -i '/ "Expecting 1 control message, got %d"/,+1d' src/lib/glib/gio/gunixconnection.c
+	$(VERBOSE)sed -i 's/ngettext("Expecting one fd, but got %d\\n",/_("Expecting one fd, but got %d\\n"),/' src/lib/glib/gio/gunixconnection.c
+	$(VERBOSE)sed -i '/ "Expecting one fd/,+1d' src/lib/glib/gio/gunixconnection.c
 
 DIRS := include/glib include/glib/glib include/glib/glib/deprecated \
 	include/glib/gio include/glib/gobject
