@@ -119,15 +119,15 @@ class Udp_log::Root : public Genode::Root_component<Session_component>
 			}
 			catch (Session_policy::No_policy_defined) {
 				Genode::warning("Missing policy.");
-				return 0;
+				return Create_error::DENIED;
 			}
 			catch (Out_of_ram) {
 				Genode::warning("insufficient 'ram_quota'");
-				throw Insufficient_ram_quota();
+				return Create_error::INSUFFICIENT_RAM;
 			}
 			catch (Out_of_caps) {
 				Genode::warning("insufficient 'cap_quota'");
-				throw Insufficient_cap_quota();
+				return Create_error::INSUFFICIENT_CAPS;
 			}
 		}
 
