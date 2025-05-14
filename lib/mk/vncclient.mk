@@ -16,6 +16,8 @@ SRC_C := libvncclient/cursor.c \
          common/d3des.c \
          libvncclient/tls_none.c
 
+CC_OPT += -Wno-implicit-function-declaration
+
 SHARED_LIB = yes
 
 vpath %.c $(LIBVNCCLIENT_PORT_DIR)/src/lib/vnc

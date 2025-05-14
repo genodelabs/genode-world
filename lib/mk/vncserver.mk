@@ -36,6 +36,8 @@ SRC_C := libvncserver/main.c \
          common/turbojpeg.c \
          common/crypto_included.c
 
+CC_OPT += -Wno-implicit-function-declaration
+
 SHARED_LIB = yes
 
 vpath %.c         $(LIBVNC_PORT_DIR)/src/lib/vnc
