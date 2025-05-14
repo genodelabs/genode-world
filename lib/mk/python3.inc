@@ -191,7 +191,8 @@ CC_C_OPT = -Wno-implicit-function-declaration \
            -Wno-int-to-pointer-cast \
            -Wno-unused-but-set-variable \
            -Wno-unused-function \
-           -Wno-unused-variable
+           -Wno-unused-variable \
+           -Wno-int-conversion
 
 vpath %.c $(PYTHON_DIR)/Modules
 vpath %.c $(PYTHON_DIR)/Objects
