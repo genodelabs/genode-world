@@ -15,7 +15,7 @@ SRC_C += \
 	rr-iter.c server.c stub.c sync.c ub_loop.c util-internal.c \
 	mdns.c context.c rbtree.c select_eventloop.c version.c \
 
-CC_OPT += -D_BSD_SOURCE -D_DEFAULT_SOURCE -DHAVE_HMAC_CTX_NEW
+CC_OPT += -D_BSD_SOURCE -D_DEFAULT_SOURCE -DHAVE_HMAC_CTX_NEW -Wno-implicit-function-declaration
 
 SRC_C += $(notdir $(wildcard $(GETDNS_SRC_DIR)/gldns/*.c))
 SRC_C += $(notdir $(wildcard $(GETDNS_SRC_DIR)/jsmn/*.c))
