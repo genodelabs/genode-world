@@ -813,7 +813,7 @@ class Vcpu : public StaticReceiver<Vcpu>
 			}
 
 			switch (cpu.eax) {
-			case 0xd:
+			case 0xd: {
 				/*
 				 * This cpuid contains a lot of FPU extended state information.
 				 * Special is that it contains of a lot of subleafs
@@ -822,8 +822,35 @@ class Vcpu : public StaticReceiver<Vcpu>
 				 * see Intel Spec
 				 *  "Table 3-8. Information Returned by CPUID Instruction"
 				 */
+				auto ecx = cpu.ecx;
 				cpu.eax = Cpu::cpuid(cpu.eax, cpu.ebx, cpu.ecx, cpu.edx);
+
+				using namespace Genode;
+
+				/*
+				 * XEN (4.21) complains seeing a too large FPU size if solely
+				 * X87 (BIT 0) and SSE (BIT 1) is enabled in xcr0
+				 *
+				 * xen/arch/x86/xstate.c
+				 * -> compressed hw size 0x340 != xen size 0x240
+				 */
+				if ((cpu.xcr0 <= 3) && (ecx == 0 || ecx == 1)) {
+					if (cpu.ebx != 576) {
+						log("change xstate size: eax=0xd ecx=", Hex(ecx),
+						    " -> eax=", Hex(cpu.eax), " ebx=", Hex(cpu.ebx),
+						    " ecx=", Hex(cpu.ecx), " edx=", Hex(cpu.edx),
+						    " xcr0=", Hex(cpu.xcr0));
+
+						cpu.ebx = 576;
+
+						log("change xstate size: eax=0xd ecx=", Hex(ecx),
+						    " -> eax=", Hex(cpu.eax), " ebx=", Hex(cpu.ebx),
+						    " ecx=", Hex(cpu.ecx), " edx=", Hex(cpu.edx),
+						    " xcr0=", Hex(cpu.xcr0), " -> adjusted");
+					}
+				}
 				break;
+			}
 			default:
 				cpu.eax = cpu.ebx = cpu.ecx = cpu.edx = 0;
 				break;

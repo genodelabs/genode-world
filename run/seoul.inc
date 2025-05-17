@@ -693,6 +693,7 @@ append config {
 		<binary name="} $fb_name {"/>
 		<resource name="RAM" quantum="20M"/>
 		<route>
+			<service name="Report">   <child name="report_rom"/></service>
 			<service name="Timer">    <child name="timer"/></service>
 			<service name="Capture">  <child name="nitpicker"/></service>
 			<service name="Platform"> <any-child/></service>
