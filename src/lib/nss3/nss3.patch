@@ -1,7 +1,6 @@
 nss3.patch
 
 diff --git a/nspr/pr/include/md/_freebsd.h b/nspr/pr/include/md/_freebsd.h
-index 118cb9f..e73378f 100644
 --- a/nspr/pr/include/md/_freebsd.h
 +++ b/nspr/pr/include/md/_freebsd.h
 @@ -236,11 +236,11 @@ extern void _MD_EarlyInit(void);
@@ -18,8 +17,19 @@ index 118cb9f..e73378f 100644
  #endif
  
  /* freebsd has INADDR_LOOPBACK defined, but in /usr/include/rpc/types.h, and I didn't
+diff --git a/nspr/pr/include/prtypes.h b/nspr/pr/include/prtypes.h
+--- a/nspr/pr/include/prtypes.h
++++ b/nspr/pr/include/prtypes.h
+@@ -194,7 +194,7 @@ PR_BEGIN_EXTERN_C
+ ** to use <stdint.h>. A patch to do that is in NSPR bug 634793.
+ */
+ 
+-#if defined(__APPLE__) || defined(__OpenBSD__)
++#if defined(__APPLE__) || defined(__OpenBSD__) || defined(__GENODE__)
+ #define PR_ALTERNATE_INT64_TYPEDEF
+ #endif
+ 
 diff --git a/nspr/pr/src/pthreads/ptthread.c b/nspr/pr/src/pthreads/ptthread.c
-index 92c9c78..d299310 100644
 --- a/nspr/pr/src/pthreads/ptthread.c
 +++ b/nspr/pr/src/pthreads/ptthread.c
 @@ -931,6 +931,7 @@ void _PR_InitThreads(
@@ -39,7 +49,6 @@ index 92c9c78..d299310 100644
  
      PR_ASSERT(NULL == pt_book.ml);
 diff --git a/nss/lib/freebl/blinit.c b/nss/lib/freebl/blinit.c
-index 82375fd..a56bc10 100644
 --- a/nss/lib/freebl/blinit.c
 +++ b/nss/lib/freebl/blinit.c
 @@ -222,7 +222,7 @@ CheckARMSupport()
@@ -52,7 +61,6 @@ index 82375fd..a56bc10 100644
      if (PR_GetEnvSecure("QEMU_EMULATING") == NULL) {
          uint64_t isar0 = READ_SPECIALREG(id_aa64isar0_el1);
 diff --git a/nss/lib/nss/nssinit.c b/nss/lib/nss/nssinit.c
-index 9b60127..98febef 100644
 --- a/nss/lib/nss/nssinit.c
 +++ b/nss/lib/nss/nssinit.c
 @@ -262,7 +262,7 @@ static const char *dllname =
@@ -65,7 +73,6 @@ index 9b60127..98febef 100644
  #error "Uh! Oh! I don't know about this platform."
  #endif
 diff --git a/nss/lib/softoken/sdb.c b/nss/lib/softoken/sdb.c
-index 50625ab..f3a6216 100644
 --- a/nss/lib/softoken/sdb.c
 +++ b/nss/lib/softoken/sdb.c
 @@ -1981,6 +1981,8 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
