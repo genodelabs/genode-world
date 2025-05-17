@@ -862,7 +862,6 @@ class Vcpu : public StaticReceiver<Vcpu>
 };
 
 
-
 class Machine : public StaticReceiver<Machine>
 {
 	private:
@@ -874,7 +873,6 @@ class Machine : public StaticReceiver<Machine>
 		Clock                  _clock;
 		Motherboard            _motherboard;
 		Seoul::Guest_memory   &_guest_memory;
-		Boot_module_provider  &_boot_modules;
 		Timeouts               _timeouts { _env, _motherboard };
 		unsigned short         _vcpus_up { };
 
@@ -1106,73 +1104,33 @@ class Machine : public StaticReceiver<Machine>
 				}
 
 			case MessageHostOp::OP_GET_MODULE:
-				{
-					/*
-					 * Module indices start with 1
-					 */
-					if (msg.module == 0)
-						return false;
+			{
+				/*
+				 * Module indices start with 1
+				 */
+				if (msg.module == 0)
+					return false;
 
-					/*
-					 * Message arguments
-					 */
-					int            const index    = msg.module - 1;
-					char *         const data_dst = msg.start;
-					Genode::size_t const dst_len  = msg.size;
+				int  const index    = msg.module - 1;
+				auto const dst_len  = msg.size;
 
-					/*
-					 * Copy module data to guest RAM
-					 */
-					Genode::size_t data_len = 0;
-					try {
-						data_len = _boot_modules.data(_env, index,
-						                              data_dst, dst_len);
-					} catch (Boot_module_provider::Destination_buffer_too_small) {
-						Logging::panic("could not load module, destination buffer too small\n");
-						return false;
-					} catch (Boot_module_provider::Module_loading_failed) {
-						Logging::panic("could not load module %d,"
-						               " unknown reason\n", index);
-						return false;
-					}
+				/* by default no module is available */
+				msg.size = 0;
 
-					/*
-					 * Detect end of module list
-					 */
-					if (data_len == 0)
-						return false;
+				Boot_module_provider boot_modules { };
 
-					/*
-					 * Determine command line offset relative to the start of
-					 * the loaded boot module. The command line resides right
-					 * behind the module data, aligned on a page boundary.
-					 */
-					Genode::addr_t const cmdline_offset =
-						Genode::align_addr(data_len, PAGE_SIZE_LOG2);
+				boot_modules.import_module_to_vm(_env, index, msg.start, dst_len,
+					[&](auto const data_len,
+					    auto const cmdline,
+					    auto const cmdline_len) {
 
-					if (cmdline_offset >= dst_len) {
-						Logging::printf("destination buffer too small for command line\n");
-						return false;
-					}
-
-					/*
-					 * Copy command line to guest RAM
-					 */
-					Genode::size_t const cmdline_len =
-					        _boot_modules.cmdline(index, data_dst + cmdline_offset,
-					                          dst_len - cmdline_offset);
-
-					/*
-					 * Return module size (w/o the size of the command line,
-					 * the 'vbios_multiboot' is aware of the one-page gap
-					 * between modules.
-					 */
 					msg.size    = data_len;
-					msg.cmdline = data_dst + cmdline_offset;
+					msg.cmdline = cmdline;
 					msg.cmdlen  = cmdline_len;
+				});
 
-					return true;
-				}
+				return !!msg.size;
+			}
 			case MessageHostOp::OP_GET_MAC:
 			{
 				try {
@@ -1294,7 +1252,6 @@ class Machine : public StaticReceiver<Machine>
 		 */
 		Machine(Genode::Env &env, Genode::Heap &heap,
 		        Genode::Vm_connection &vm_con,
-		        Boot_module_provider &boot_modules,
 		        Seoul::Guest_memory &guest_memory,
 		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu, bool cpuid_native)
 		:
@@ -1302,7 +1259,6 @@ class Machine : public StaticReceiver<Machine>
 			_clock(Attached_rom_dataspace(env, "platform_info").xml().sub_node("hardware").sub_node("tsc").attribute_value("freq_khz", 0ULL) * 1000ULL),
 			_motherboard(&_clock, nullptr),
 			_guest_memory(guest_memory),
-			_boot_modules(boot_modules),
 			_map_small(map_small),
 			_rdtsc_exit(rdtsc_exit),
 			_same_cpu(vmm_vcpu_same_cpu),
@@ -1598,13 +1554,13 @@ void Component::construct(Genode::Env &env)
 	static Genode::Vm_connection vm_con(env, "Seoul vCPUs",
 	                                    Genode::Cpu_session::PRIORITY_LIMIT / 16);
 
-	static Attached_rom_dataspace config(env, "config");
+	Attached_rom_dataspace config(env, "config");
 
 	Genode::log("--- Seoul VMM starting ---");
 
-	Genode::Xml_node const node     = config.xml();
-	auto             const vmm_size = node.attribute_value("vmm_memory",
-	                                                       Genode::Number_of_bytes(12 * 1024 * 1024));
+	auto const & node     = config.xml();
+	auto const   vmm_size = node.attribute_value("vmm_memory",
+	                                             Genode::Number_of_bytes(12 * 1024 * 1024));
 
 	bool const map_small         = node.attribute_value("map_small", false);
 	bool const rdtsc_exit        = node.attribute_value("exit_on_rdtsc", false);
@@ -1653,11 +1609,9 @@ void Component::construct(Genode::Env &env)
 
 	heap_init_env(&heap);
 
-	static Boot_module_provider boot_modules(node.sub_node("multiboot"));
-
 	/* create the PC machine based on the configuration given */
-	static Machine machine(env, heap, vm_con, boot_modules, guest_memory,
-	                       map_small, rdtsc_exit, vmm_vcpu_same_cpu, cpuid_native);
+	static Machine machine(env, heap, vm_con, guest_memory, map_small,
+	                       rdtsc_exit, vmm_vcpu_same_cpu, cpuid_native);
 
 	static Seoul::Console vcon(env, heap, machine.motherboard(),
 	                           Gui::Area(width, height), guest_memory);
