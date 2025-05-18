@@ -861,8 +861,16 @@ class Machine : public StaticReceiver<Machine>
 
 		Genode::Constructible<Seoul::Xhci> _xhci { };
 
+		using Vcpus_active = Genode::Bit_array<64>;
+
 		Vcpu *                 _vcpus[16]    { nullptr };
-		Genode::Bit_array<64>  _vcpus_active { };
+		Vcpus_active           _vcpus_active { };
+
+		static bool _all_inactive(Vcpus_active const &a)
+		{
+			return a.get(0, 64).convert<bool>([] (bool v) { return !v; },
+			                                  [] (auto &) { return false; });
+		};
 
 		/*
 		 * Noncopyable
@@ -984,7 +992,7 @@ class Machine : public StaticReceiver<Machine>
 					                                 ep_name->string(),
 					                                 location);
 
-					_vcpus_active.set(_vcpus_up, 1);
+					(void)_vcpus_active.set(_vcpus_up, 1);
 
 					auto vcpu = new Vcpu(*ep, _vm_con, _heap, _env, *msg.vcpu,
 					                     _guest_memory, _motherboard,
@@ -1041,9 +1049,9 @@ class Machine : public StaticReceiver<Machine>
 					{
 						Genode::Mutex::Guard guard(_mutex);
 
-						_vcpus_active.clear(vcpu_id, 1);
+						(void)_vcpus_active.clear(vcpu_id, 1);
 
-						if (!_vcpus_active.get(0, 64)) {
+						if (_all_inactive(_vcpus_active)) {
 							MessageConsole msgcon(MessageConsole::Type::TYPE_PAUSE,
 							                      Seoul::Console::ID_VGA_VESA);
 							_motherboard.bus_console.send(msgcon);
@@ -1058,13 +1066,13 @@ class Machine : public StaticReceiver<Machine>
 					{
 						Genode::Mutex::Guard guard(_mutex);
 
-						if (!_vcpus_active.get(0, 64)) {
+						if (_all_inactive(_vcpus_active)) {
 							MessageConsole msgcon(MessageConsole::Type::TYPE_RESUME,
 							                      Seoul::Console::ID_VGA_VESA);
 							_motherboard.bus_console.send(msgcon);
 						}
 
-						_vcpus_active.set(vcpu_id, 1);
+						(void)_vcpus_active.set(vcpu_id, 1);
 					}
 
 					return true;
