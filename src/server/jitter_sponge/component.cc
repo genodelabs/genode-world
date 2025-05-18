@@ -197,7 +197,7 @@ struct Jitter_sponge::Main : Session_request_handler
 		{
 			_env.ep().dissolve(session);
 			destroy(_session_heap, &session);
-			_env.parent().session_response(pid, Parent::SESSION_CLOSED);
+			_env.parent().session_response(pid, Parent::Session_response::CLOSED);
 		});
 	}
 
