@@ -418,14 +418,12 @@ set config {
 	</default-route>
 	<default caps="100"/>
 
-	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
+	<start name="timer" ram="2M">
 		<provides><service name="Timer"/></provides>
 	</start>
 
-	<start name="platform_reports" priority="-2">
+	<start name="platform_reports" priority="-2" ram="2M" caps="200">
 		<binary name="report_rom"/>
-		<resource name="RAM" quantum="1M"/>
 		<provides>
 			<service name="Report"/>
 			<service name="ROM"/>
@@ -437,16 +435,14 @@ set config {
 		</config>
 	</start>
 
-	<start name="acpi" caps="350" priority="-1">
-		<resource name="RAM" quantum="4M"/>
+	<start name="acpi" caps="350" ram="4M" priority="-1">
 		<route>
 			<service name="Report"> <child name="platform_reports"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
 
-	<start name="pci_decode" caps="350" priority="-1">
-		<resource name="RAM" quantum="2M"/>
+	<start name="pci_decode" ram="2M" caps="350" priority="-1">
 		<route>
 			<service name="ROM" label="system"> <child name="platform_reports"/> </service>
 			<service name="Report"> <child name="platform_reports"/> </service>
@@ -454,8 +450,7 @@ set config {
 		</route>
 	</start>
 
-	<start name="platform" caps="400" managing_system="yes" priority="-2">
-		<resource name="RAM" quantum="6M"/>
+	<start name="platform" caps="400" ram="6M" managing_system="yes" priority="-2">
 		<provides>
 			<service name="Platform"/>
 		</provides>
@@ -475,21 +470,19 @@ set config {
 		</route>
 	</start>
 
-	<start name="pc_rtc" priority="-2">
-		<resource name="RAM" quantum="1M"/>
+	<start name="pc_rtc" priority="-2" ram="2M">
 		<provides><service name="Rtc"/></provides>
 	</start>
 
-	<start name="ps2" priority="-2">
-		<resource name="RAM" quantum="3M"/>
+	<start name="ps2" priority="-2" ram="3M">
 		<config/>
 		<route>
 			<service name="Event"> <child name="event_filter" label="ps2"/> </service>
-			<any-service><parent/> <any-child/> </any-service> </route>
+			<any-service><parent/> <any-child/> </any-service>
+		</route>
 	</start>
 
-	<start name="event_filter" caps="90" priority="-2">
-		<resource name="RAM" quantum="1280K"/>
+	<start name="event_filter" caps="90" priority="-2" ram="2M">
 		<provides> <service name="Event"/> </provides>
 		<route>
 			<service name="ROM" label="config"> <parent label="event_filter.config"/> </service>
@@ -499,9 +492,8 @@ set config {
 	</start>}
 
 append_if $use_usb config {
-	<start name="usb" priority="-2" caps="200">
+	<start name="usb" priority="-2" caps="200" ram="12M">
 		<binary name="pc_usb_host"/>
-		<resource name="RAM" quantum="12M"/>
 		<provides> <service name="Usb"/> </provides>
 		<config>
 			<report devices="yes"/>
@@ -514,8 +506,7 @@ append_if $use_usb config {
 		</route>
 	</start>
 
-	<start name="usb_hid" priority="-2" caps="140">
-		<resource name="RAM" quantum="11M"/>
+	<start name="usb_hid" priority="-2" caps="140" ram="11M">
 		<config use_report="yes"/>
 		<route>
 			<service name="Report"> <child name="report_rom"/> </service>
@@ -527,8 +518,7 @@ append_if $use_usb config {
 	</start>}
 
 append_if $use_audio config {
-	<start name="mixer" priority="-1">
-		<resource name="RAM" quantum="2M"/>
+	<start name="mixer" priority="-1" ram="2M">
 		<binary name="record_play_mixer"/>
 		<provides> <service name="Record"/> <service name="Play"/> </provides>
 		<config jitter_ms="10">
@@ -545,9 +535,8 @@ append_if $use_audio config {
 		</route>
 	</start>
 
-	<start name="audio" priority="-1">
+	<start name="audio" priority="-1" ram="8M">
 		<binary name="pci_audio"/>
-		<resource name="RAM" quantum="8M"/>
 		<provides>
 			<service name="Audio_in"/>
 			<service name="Audio_out"/>
@@ -567,8 +556,7 @@ append config {
 	} [config_part_block] { }
 
 append_if $use_block_ram config {
-	<start name="vfs_block" priority="-2" caps="300">
-		<resource name="RAM" quantum="300M" />
+	<start name="vfs_block" priority="-2" caps="400" ram="300M">
 		<provides><service name="Block"/></provides>
 		<config>
 			<vfs>
@@ -583,9 +571,8 @@ append_if $use_block_ram config {
 	</start>}
 
 append_if $use_fs_rump config {
-	<start name="rump_fs" priority="-2" caps="200">
+	<start name="rump_fs" priority="-2" caps="200" ram="70M">
 		<binary name="vfs"/>
-		<resource name="RAM" quantum="70M"/>
 		<provides><service name="File_system"/></provides>
 		<config ld_verbose="yes">
 			<vfs>
@@ -609,8 +596,7 @@ append_if $use_fs_rump config {
 	</start>}
 
 append_if $use_block_vdi config {
-	<start name="vdi_block" priority="-2">
-		<resource name="RAM" quantum="8M"/>
+	<start name="vdi_block" priority="-2" ram="8M">
 		<provides> <service name="Block"/> </provides>
 		<config file="/} $vdi_name {" writeable="yes">
 			<vfs> <fs buffer_size="1M"/> </vfs>
@@ -623,8 +609,7 @@ append_if $use_block_vdi config {
 	</start>}
 
 append_if $use_genode_iso config {
-	<start name="vfs_block" priority="-2" caps="100">
-		<resource name="RAM" quantum="16M" />
+	<start name="vfs_block" priority="-2" caps="100" ram="16M">
 		<provides><service name="Block"/></provides>
 		<config>
 			<vfs>
@@ -634,8 +619,7 @@ append_if $use_genode_iso config {
 		</config>
 	</start>
 
-	<start name="iso9660" priority="-2">
-		<resource name="RAM" quantum="16M"/>
+	<start name="iso9660" priority="-2" ram="16M">
 		<provides><service name="ROM"/></provides>
 		<route>
 			<service name="Block"><child name="vfs_block"/></service>
@@ -645,17 +629,15 @@ append_if $use_genode_iso config {
 
 append_if $use_nic_session config {
 
-	<start name="nic" caps="150" priority="-3">
+	<start name="nic" caps="150" priority="-3" ram="16M">
 		<binary name="pc_nic"/>
-		<resource name="RAM" quantum="16M"/>
 		<route>
 			<service name="Uplink"><child name="nic_router"/></service>
 			<any-service><parent/><any-child/></any-service>
 		</route>
 	</start>
 
-	<start name="nic_router" caps="200" priority="-2">
-		<resource name="RAM" quantum="10M"/>
+	<start name="nic_router" caps="200" priority="-2" ram="10M">
 		<provides>
 			<service name="Nic"/>
 			<service name="Uplink"/>
@@ -689,9 +671,8 @@ append_if $use_nic_session config {
 }
 
 append config {
-	<start name="fb" priority="-2" caps="200">
+	<start name="fb" priority="-2" caps="200" ram="20M">
 		<binary name="} $fb_name {"/>
-		<resource name="RAM" quantum="20M"/>
 		<route>
 			<service name="Report">   <child name="report_rom"/></service>
 			<service name="Timer">    <child name="timer"/></service>
@@ -706,9 +687,8 @@ append_if [expr ![have_include "power_on/qemu"]] config {
 append config {
 	</start>
 
-	<start name="seoul" priority="-3" caps="1200">
+	<start name="seoul" priority="-3" caps="1200" ram="} $memory_vmm_vm {">
 		<binary name="seoul"/>
-		<resource name="RAM" quantum="} $memory_vmm_vm {"/>
 		<route>
 			<service name="Timer"><child name="timer"/></service>
 			<service name="ROM" label="config">
@@ -733,8 +713,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="nitpicker" priority="-2" caps="200">
-		<resource name="RAM" quantum="12M"/>
+	<start name="nitpicker" priority="-2" caps="200" ram="12M">
 		<provides>
 			<service name="Gui"/> <service name="Capture"/> <service name="Event"/>
 		</provides>
@@ -756,8 +735,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="pointer" priority="-2">
-		<resource name="RAM" quantum="2M"/>
+	<start name="pointer" priority="-2" ram="2M">
 		<provides> <service name="Report"/> </provides>
 		<config shapes="yes" verbose="no"/>
 		<route>
@@ -768,8 +746,7 @@ append config {
 		</route>
 	</start>
 
-	<start name="report_rom" priority="-2">
-		<resource name="RAM" quantum="1M"/>
+	<start name="report_rom" priority="-2" ram="2M">
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config>
 			<policy label="pointer -> hover"  report="nitpicker -> hover"/>
@@ -778,8 +755,7 @@ append config {
 		</config>
 	</start>
 
-	<start name="wm" caps="1000" priority="-2">
-		<resource name="RAM" quantum="32M"/>
+	<start name="wm" caps="1200" priority="-2" ram="34M">
 		<binary name="init"/>
 		<provides>
 			<service name="Gui"/> <service name="Report"/> <service name="ROM"/>
@@ -793,8 +769,7 @@ append config {
 	</start>}
 
 append_if $use_top config {
-	<start name="top">
-		<resource name="RAM" quantum="2M"/>
+	<start name="top" ram="2M">
 		<config period_ms="15000"/>
 		<route>
 			<service name="TRACE"> <parent label=""/> </service>
