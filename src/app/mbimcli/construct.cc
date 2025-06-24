@@ -937,14 +937,12 @@ class Mbim
 			String ip_first  = "10.0.1.2";
 			String ip_last   = "10.0.1.200";
 
-			try {
-				Genode::Xml_node const &net = _config_rom.xml().sub_node("default-domain");
-
-				interface = net.attribute_value("interface", interface);
-				ip_first  = net.attribute_value("ip_first",  ip_first);
-				ip_last   = net.attribute_value("ip_first",  ip_last);
-
-			} catch (...) { }
+			_config_rom.xml().with_optional_sub_node("default-domain",
+				[&] (Genode::Xml_node const &net) {
+					interface = net.attribute_value("interface", interface);
+					ip_first  = net.attribute_value("ip_first",  ip_first);
+					ip_last   = net.attribute_value("ip_first",  ip_last);
+				});
 
 			_config_reporter.enabled(true);
 			_config_reporter.generate([&] (Genode::Xml_generator &xml) {
@@ -1074,18 +1072,16 @@ class Mbim
 
 		Mbim(Libc::Env &env) : _env(env)
 		{
-			try {
-				Genode::Xml_node const &xml = _config_rom.xml();
-				Genode::Xml_node const &net = xml.sub_node("network");
-
-				_network.apn      = net.attribute_value("apn", String());
-				_network.user     = net.attribute_value("user", String());
-				_network.password = net.attribute_value("password", String());
-				_network.pin      = net.attribute_value("pin", String());
-			} catch (...) {
-				Genode::error("No valid <network> configuration found");
-				exit(1);
-			}
+			_config_rom.xml().with_sub_node("network",
+				[&] (Genode::Xml_node const &net) {
+					_network.apn      = net.attribute_value("apn", String());
+					_network.user     = net.attribute_value("user", String());
+					_network.password = net.attribute_value("password", String());
+					_network.pin      = net.attribute_value("pin", String());
+				}, [] {
+					Genode::error("No valid <network> configuration found");
+					exit(1);
+				});
 
 			_init();
 			_connect();

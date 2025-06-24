@@ -995,10 +995,20 @@ class Machine : public StaticReceiver<Machine>
 
 					/* detect virtualization extension */
 					Attached_rom_dataspace const info(_env, "platform_info");
-					Genode::Xml_node const features = info.xml().sub_node("hardware").sub_node("features");
 
-					bool const has_svm = features.attribute_value("svm", false);
-					bool const has_vmx = features.attribute_value("vmx", false);
+					auto has_feature = [&] (auto const &attr)
+					{
+						return info.xml().with_sub_node("hardware",
+							[&] (Xml_node const &node) {
+								return node.with_sub_node("features",
+									[&] (Xml_node const &features) {
+										return features.attribute_value(attr, false); },
+									[] { return false; });
+							}, [&] { return false; });
+					};
+
+					bool const has_svm = has_feature("svm");
+					bool const has_vmx = has_feature("vmx");
 
 					if (!has_svm && !has_vmx) {
 						Logging::panic("no VMX nor SVM virtualization support found");
@@ -1247,6 +1257,17 @@ class Machine : public StaticReceiver<Machine>
 			return false;
 		}
 
+		static unsigned long long _tsc_from_platform_info(Xml_node const &platform_info)
+		{
+			return platform_info.with_sub_node("hardware",
+				[&] (Xml_node const &hardware) {
+					return hardware.with_sub_node("tsc",
+						[&] (Xml_node const &tsc) {
+							return tsc.attribute_value("freq_khz", 0ULL) * 1000ULL; },
+						[] { return 0ULL; }); },
+				[] { return 0ULL; });
+		}
+
 		/**
 		 * Constructor
 		 */
@@ -1256,7 +1277,7 @@ class Machine : public StaticReceiver<Machine>
 		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu, bool cpuid_native)
 		:
 			_env(env), _heap(heap), _vm_con(vm_con),
-			_clock(Attached_rom_dataspace(env, "platform_info").xml().sub_node("hardware").sub_node("tsc").attribute_value("freq_khz", 0ULL) * 1000ULL),
+			_clock(_tsc_from_platform_info(Attached_rom_dataspace(env, "platform_info").xml())),
 			_motherboard(&_clock, nullptr),
 			_guest_memory(guest_memory),
 			_map_small(map_small),
@@ -1620,7 +1641,9 @@ void Component::construct(Genode::Env &env)
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
 
-	machine.setup_devices(node, node.sub_node("machine"));
+	node.with_sub_node("machine",
+		[&] (Xml_node const &sub_node) { machine.setup_devices(node, sub_node); },
+		[&] { Genode::warning("missing 'machine' config node"); });
 
 	Genode::log("\n--- Booting VM ---");
 

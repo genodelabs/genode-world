@@ -57,13 +57,12 @@ class Genode::Session_requests_rom : public Signal_handler<Session_requests_rom>
 				typedef Session_state::Name Name;
 				typedef Session_state::Args Args;
 
-				Name name { };
-				Args args { };
+				Name const name = request.attribute_value("service", Name());
+				Args const args = request.with_sub_node("args",
+					[&] (Xml_node const &node) { return node.decoded_content<Args>(); },
+					[&]                        { return Args(); });
 
-				try {
-					name = request.attribute_value("service", Name());
-					args = request.sub_node("args").decoded_content<Args>();
-				} catch (...) {
+				if (args.length() <= 1) {
 					Genode::error("failed to parse request ", request);
 					return;
 				}
@@ -88,9 +87,12 @@ class Genode::Session_requests_rom : public Signal_handler<Session_requests_rom>
 					request.attribute_value("id", ~0UL) };
 
 				typedef Session_state::Args Args;
-				Args args { };
-				try { args = request.sub_node("args").decoded_content<Args>(); }
-				catch (...) {
+
+				Args const args = request.with_sub_node("args",
+					[&] (Xml_node const &node) { return node.decoded_content<Args>(); },
+					[&]                        { return Args(); });
+
+				if (args.length() <= 1) {
 					Genode::error("failed to parse request ", request);
 					return;
 				}
