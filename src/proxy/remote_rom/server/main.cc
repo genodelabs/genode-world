@@ -34,7 +34,9 @@ namespace Remote_rom {
 	class Rom_forwarder;
 	struct Main;
 
-	static char modulename[255];
+	using Module_name = Genode::String<255>;
+	static Module_name module_name;
+
 	static bool binary = false;
 
 };
@@ -71,7 +73,7 @@ struct Remote_rom::Rom_forwarder : Rom_forwarder_base
 				update();
 		}
 
-		const char *module_name() const override { return modulename; }
+		const char *module_name() const override { return Remote_rom::module_name.string(); }
 
 		void update()
 		{
@@ -139,7 +141,7 @@ struct Remote_rom::Main
 
 	Main(Genode::Env &env)
 		: _env(env),
-	     _rom(env, modulename),
+	     _rom(env, module_name.string()),
 	     _forwarder(_rom, backend_init_server(env, _heap, _config.xml()),
 	                _config)
 	{
@@ -154,18 +156,15 @@ namespace Component {
 
 	void construct(Genode::Env &env)
 	{
-		using Remote_rom::modulename;
-
 		Genode::Attached_rom_dataspace config = { env, "config" };
-		try {
-			Genode::Xml_node remote_rom = config.xml().sub_node("remote_rom");
-			remote_rom.attribute("name").value(modulename, sizeof(modulename));
-			try {
-				remote_rom.attribute("binary").value(&Remote_rom::binary);
-			} catch (...) { }
-		} catch (...) {
-			Genode::error("No ROM module configured!");
-		}
+		config.xml().with_sub_node("remote_rom",
+			[&] (Genode::Xml_node const &node) {
+				Remote_rom::module_name = node.attribute_value("name", Remote_rom::Module_name());
+				Remote_rom::binary      = node.attribute_value("binary", false);
+			},
+			[&] {
+				Genode::error("No ROM module configured!");
+			});
 
 		static Remote_rom::Main main(env);
 	}

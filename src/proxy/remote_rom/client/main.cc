@@ -217,26 +217,25 @@ struct Remote_rom::Main : public Rom_receiver_base
 
 	Backend_client_base &_backend;
 
-	char remotename[255];
+	using Remote_name = Genode::String<255>;
+	Remote_name const remote_name = _config.xml().with_sub_node("remote_rom",
+		[&] (Genode::Xml_node const &node) {
+			return node.attribute_value("name", Remote_name()); },
+		[] {
+			Genode::error("no ROM module configured!");
+			return Remote_name(); });
 
 	Main(Genode::Env &env) :
 	  env(env),
 	  _backend(backend_init_client(env, heap, _config.xml()))
 	{
-		try {
-			Genode::Xml_node remote_rom = _config.xml().sub_node("remote_rom");
-			remote_rom.attribute("name").value(remotename, sizeof(remotename));
-		} catch (...) {
-			Genode::error("No ROM module configured!");
-		}
-
 		env.parent().announce(env.ep().manage(remote_rom_root));
 
 		/* initialise backend */
 		_backend.register_receiver(this);
 	}
 
-	const char* module_name()  const override { return remotename; }
+	const char* module_name()  const override { return remote_name.string(); }
 	unsigned    content_hash() const override { return rom_module.hash(); }
 
 	char* start_new_content(unsigned hash, size_t len) override

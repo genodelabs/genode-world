@@ -26,10 +26,10 @@ namespace Remote_rom {
 	class Exception : public ::Genode::Exception { };
 	Backend_server_base &backend_init_server(Genode::Env &env,
 	                                         Genode::Allocator &alloc,
-	                                         Genode::Xml_node config);
+	                                         Genode::Xml_node const &config);
 	Backend_client_base &backend_init_client(Genode::Env &env,
 	                                         Genode::Allocator &alloc,
-	                                         Genode::Xml_node config);
+	                                         Genode::Xml_node const &config);
 };
 
 struct Remote_rom::Backend_server_base : Genode::Interface

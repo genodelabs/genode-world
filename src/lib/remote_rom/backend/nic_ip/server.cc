@@ -200,8 +200,8 @@ class Remote_rom::Backend_server :
 
 		Backend_server(Genode::Env &env,
 		               Genode::Allocator &alloc,
-		               Genode::Xml_node config,
-		               Genode::Xml_node policy)
+		               Genode::Xml_node const &config,
+		               Genode::Xml_node const &policy)
 		: Backend_base(env, alloc, config, policy)
 		{ }
 
@@ -229,12 +229,14 @@ namespace Remote_rom {
 
 	Backend_server_base &backend_init_server(Env &env,
 	                                         Allocator &alloc,
-	                                         Xml_node config)
+	                                         Xml_node const &config)
 	{
-		static Backend_server backend(env,
-		                              alloc,
-		                              config,
-		                              config.sub_node("remote_rom"));
+		static Backend_server backend = config.with_sub_node("remote_rom",
+			[&] (Xml_node const &sub_node) -> Backend_server {
+				return { env, alloc, config, sub_node }; },
+			[&] () -> Backend_server {
+				return { env, alloc, config, Xml_node("<empty/>") }; });
+
 		return backend;
 	}
 };

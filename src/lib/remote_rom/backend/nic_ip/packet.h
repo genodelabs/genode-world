@@ -69,7 +69,7 @@ class Remote_rom::Packet
 
 		void module_name(const char *module)
 		{
-			Genode::strncpy(_module_name, module, MAX_NAME_LEN);
+			Genode::copy_cstring(_module_name, module, MAX_NAME_LEN);
 		}
 
 		template <typename T>

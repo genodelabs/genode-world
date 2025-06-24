@@ -205,8 +205,8 @@ class Remote_rom::Backend_base : public Genode::Interface
 
 		explicit Backend_base(Genode::Env &env,
 		                      Genode::Allocator &alloc,
-		                      Genode::Xml_node config,
-		                      Genode::Xml_node policy)
+		                      Genode::Xml_node const &config,
+		                      Genode::Xml_node const &policy)
 		:
 		  _link_state_handler(env.ep(), *this, &Backend_base::_handle_link_state),
 		  _rx_packet_handler(env.ep(), *this, &Backend_base::_handle_rx_packet),
