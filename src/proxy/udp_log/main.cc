@@ -110,25 +110,15 @@ class Udp_log::Root : public Genode::Root_component<Session_component>
 		{
 			using namespace Genode;
 
-			try {
-				Session_label const label = label_from_args(args);
-				Session_policy policy(label, _config.xml());
-				
-				return *new (Root::md_alloc())
-				             Session_component(_env, _logger, label, policy);
-			}
-			catch (Session_policy::No_policy_defined) {
-				Genode::warning("Missing policy.");
-				return Create_error::DENIED;
-			}
-			catch (Out_of_ram) {
-				Genode::warning("insufficient 'ram_quota'");
-				return Create_error::INSUFFICIENT_RAM;
-			}
-			catch (Out_of_caps) {
-				Genode::warning("insufficient 'cap_quota'");
-				return Create_error::INSUFFICIENT_CAPS;
-			}
+			Session_label const label = label_from_args(args);
+
+			return with_matching_policy(label, _config.xml(),
+				[&] (Xml_node const &policy) {
+					return _alloc_obj(_env, _logger, label, policy); },
+				[&] () -> Create_result {
+					Genode::warning("Missing policy.");
+					return Create_error::DENIED;
+				});
 		}
 
 	public:

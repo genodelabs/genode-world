@@ -70,25 +70,26 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 
 		Create_result _create_session(char const * const args)
 		{
-			try {
-				Session_label const label = label_from_args(args);
-				Session_policy policy(label, _config);
+			return with_matching_policy(label_from_args(args), _config,
+				[&] (Xml_node const &policy) -> Create_result {
+					Ssh::Terminal_name const term_name =
+						policy.attribute_value("terminal_name", Ssh::Terminal_name());
 
-				Ssh::Terminal_name const term_name
-					= policy.attribute_value("terminal_name", Ssh::Terminal_name());
-				if (!term_name.valid()) { throw -1; }
+					if (!term_name.valid())
+						return Create_error::DENIED;
 
-				auto s = new (md_alloc()) Session_component(_env, 4096, term_name);
+					auto s = new (md_alloc()) Session_component(_env, 4096, term_name);
 
-				try {
-					Libc::with_libc([&] () {
-						_server.attach_terminal(*s); });
-					return *s;
-				} catch (...) {
-					_destroy_session(*s);
-					throw;
-				}
-			} catch (...) { throw Service_denied(); }
+					try {
+						Libc::with_libc([&] () { _server.attach_terminal(*s); });
+						return *s;
+					}
+					catch (...) {
+						_destroy_session(*s);
+						return Create_error::DENIED;
+					}
+				},
+				[&] () -> Create_result { return Create_error::DENIED; });
 		}
 
 		void _destroy_session(Session_component &s)

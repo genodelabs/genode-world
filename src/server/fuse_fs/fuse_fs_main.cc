@@ -491,58 +491,42 @@ class Fuse_fs::Root : public Root_component<Session_component>
 		Genode::Env                   &_env;
 		Genode::Attached_rom_dataspace _config { _env, "config" };
 
-	protected:
-
-		Create_result _create_session(const char *args) override
+		Create_result _create(const char *args, Xml_node const &policy)
 		{
-			/*
-			 * Determine client-specific policy defined implicitly by
-			 * the client's label.
-			 */
-
 			char const *root_dir  = ".";
 			bool        writeable = false;
 
 			using Root_path = Genode::String<256>;
 			Root_path root;
 
-			Session_label const label = label_from_args(args);
-			try {
-				Session_policy policy(label, _config.xml());
+			/*
+			 * Determine directory that is used as root directory of
+			 * the session.
+			 */
+			if (!policy.has_attribute("root"))
+				Genode::warning("missing \"root\" attribute in policy definition");
 
-				/*
-				 * Determine directory that is used as root directory of
-				 * the session.
-				 */
-				if (!policy.has_attribute("root"))
-					Genode::warning("missing \"root\" attribute in policy definition");
+			root = policy.attribute_value("root", Root_path());
 
-				root = policy.attribute_value("root", Root_path());
-
-					/*
-					 * Make sure the root path is specified with a
-					 * leading path delimiter. For performing the
-					 * lookup, we skip the first character.
-					 */
-					if (root.string() && root.string()[0] != '/') {
-						Genode::error("session root directory \"",
-						              root, "\" does not exist");
-						throw Service_denied();
-					}
-
-					root_dir = root.string();
-
-				/*
-				 * Determine if write access is permitted for the session.
-				 */
-				writeable = policy.attribute_value("writeable", false);
-				if (writeable)
-					Genode::warning("write support in fuse_fs is considered experimental, data-loss may occur.");
-
-			} catch (Session_policy::No_policy_defined) {
-				Genode::error("Invalid session request, no matching policy");
-				throw Genode::Service_denied();
+			/*
+			 * Make sure the root path is specified with a
+			 * leading path delimiter. For performing the
+			 * lookup, we skip the first character.
+			 */
+			if (root.string() && root.string()[0] != '/') {
+				Genode::error("session root directory \"",
+				              root, "\" does not exist");
+				throw Service_denied();
 			}
+
+			root_dir = root.string();
+
+			/*
+			 * Determine if write access is permitted for the session.
+			 */
+			writeable = policy.attribute_value("writeable", false);
+			if (writeable)
+				Genode::warning("write support in fuse_fs is considered experimental, data-loss may occur.");
 
 			size_t ram_quota =
 				Arg_string::find_arg(args, "ram_quota"  ).ulong_value(0);
@@ -550,7 +534,8 @@ class Fuse_fs::Root : public Root_component<Session_component>
 				Arg_string::find_arg(args, "tx_buf_size").ulong_value(0);
 
 			if (!tx_buf_size) {
-				Genode::error(label, " requested a session with a zero length transmission buffer");
+				Genode::error(label_from_args(args),
+				              " requested a session with a zero-length transmission buffer");
 				throw Genode::Service_denied();
 			}
 
@@ -565,6 +550,17 @@ class Fuse_fs::Root : public Root_component<Session_component>
 			}
 			return *new (md_alloc())
 				Session_component(tx_buf_size, _env, root_dir, writeable, *md_alloc());
+		}
+
+	protected:
+
+		Create_result _create_session(const char *args) override
+		{
+			using namespace Genode;
+
+			return with_matching_policy(label_from_args(args), _config.xml(),
+				[&] (Xml_node const &policy) { return _create(args, policy); },
+				[&] () -> Create_result      { return Create_error::DENIED; });
 		}
 
 	public:
