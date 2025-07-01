@@ -40,12 +40,15 @@
 		<rom label="libQt6PrintSupport.lib.so"/>
 		<rom label="libQt6Qml.lib.so"/>
 		<rom label="libQt6QmlModels.lib.so"/>
+		<rom label="libQt6QmlWorkerScript.lib.so"/>
 		<rom label="libQt6Quick.lib.so"/>
 		<rom label="libQt6QuickWidgets.lib.so"/>
 		<rom label="libQt6Sql.lib.so"/>
 		<rom label="libQt6Svg.lib.so"/>
 		<rom label="libQt6WebChannel.lib.so"/>
+		<rom label="libQt6WebChannelQuick.lib.so"/>
 		<rom label="libQt6WebEngineCore.lib.so"/>
+		<rom label="libQt6WebEngineQuick.lib.so"/>
 		<rom label="libQt6WebEngineWidgets.lib.so"/>
 		<rom label="libQt6Widgets.lib.so"/>
 		<rom label="libc.lib.so"/>
@@ -57,6 +60,8 @@
 		<rom label="libqsqlite.lib.so"/>
 		<rom label="libqsvg.lib.so"/>
 		<rom label="libqtquick2plugin.lib.so"/>
+		<rom label="libqtwebenginequickplugin.lib.so"/>
+		<rom label="libworkerscriptplugin.lib.so"/>
 		<rom label="mesa.lib.so"/>
 		<rom label="nss3.lib.so"/>
 		<rom label="nssckbi.lib.so"/>

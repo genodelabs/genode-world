@@ -19,7 +19,8 @@ LIBS = qt6_cmake ldso_so_support libc libm egl mesa qt6_component stdcxx nss3 ex
 INSTALL_LIBS = lib/libQt6WebEngineCore.lib.so \
                lib/libQt6WebEngineQuick.lib.so \
                lib/libQt6WebEngineQuickDelegatesQml.lib.so \
-               lib/libQt6WebEngineWidgets.lib.so
+               lib/libQt6WebEngineWidgets.lib.so \
+               qml/QtWebEngine/libqtwebenginequickplugin.lib.so
 
 BUILD_ARTIFACTS = $(notdir $(INSTALL_LIBS)) \
                   qt6_webengine_resources.tar \
