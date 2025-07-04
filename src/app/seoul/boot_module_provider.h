@@ -74,16 +74,6 @@ class Boot_module_provider
 				Genode::memcpy(dst, tmp.local_addr<void>(), src_len);
 
 				return src_len;
-
-			} else if (mod_node.has_type("inline")) {
-
-				/*
-				 * Copy inline content directly to destination buffer
-				 */
-				mod_node.with_raw_content([&] (char const *ptr, size_t size) {
-					Genode::memcpy(dst, ptr, size); });
-
-				return mod_node.content_size();
 			}
 
 			warning("XML node ", mod_node.type(), " in multiboot unknown");
