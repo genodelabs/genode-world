@@ -194,7 +194,7 @@ class Dataspace_file_system : public Vfs::File_system
 
 	public:
 
-		Dataspace_file_system(Vfs::Env &env, Genode::Xml_node const &) : _env(env) { }
+		Dataspace_file_system(Vfs::Env &env, Node const &) : _env(env) { }
 
 		~Dataspace_file_system() { }
 
@@ -399,7 +399,7 @@ extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
 {
 	struct Factory : Vfs::File_system_factory
 	{
-		Vfs::File_system *create(Vfs::Env &vfs_env, Genode::Xml_node const &config) override
+		Vfs::File_system *create(Vfs::Env &vfs_env, Node const &config) override
 		{
 			return new (vfs_env.alloc()) Dataspace_file_system(vfs_env, config);
 		}

@@ -273,7 +273,7 @@ struct Pci_device : public Qemu::Pci_device
 };
 
 Seoul::Xhci::Xhci(Genode::Env &env, Genode::Heap &heap,
-                  Genode::Xml_node const &config, Motherboard &mb)
+                  Genode::Node const &config, Motherboard &mb)
 {
 	static Timer_queue timer_queue { mb };
 	static Pci_device  pci_device  { mb, 13 /* XXX */ };
@@ -414,7 +414,7 @@ PARAM_HANDLER(xhci, "xhci description")
 }
 
 extern "C" void _type_init_host_webcam_register_types(Genode::Env &,
-                                                      Genode::Xml_node const &)
+                                                      Genode::Node const &)
 {
 	Genode::warning(__func__, " ignored - webcam will not work");
 }

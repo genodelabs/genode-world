@@ -22,14 +22,13 @@
 #pragma once
 
 /* Genode includes */
-#include <util/string.h>
 #include <util/misc_math.h>
-#include <util/xml_node.h>
+#include <base/node.h>
 #include <base/log.h>
 #include <rom_session/connection.h>
 
 
-using Genode::Xml_node;
+using Genode::Node;
 
 
 class Boot_module_provider
@@ -41,7 +40,7 @@ class Boot_module_provider
 		typedef Genode::String<MODULE_NAME_MAX_LEN> Name;
 
 		Genode::size_t _import_module(Genode::Env    & env,
-		                              Xml_node const & mod_node,
+		                              Node     const & mod_node,
 		                              void           * dst,
 		                              Genode::size_t dst_len) const
 		{
@@ -86,7 +85,7 @@ class Boot_module_provider
 		 *
 		 * \return length of command line in bytes, or 0 if module does not exist
 		 */
-		size_t _cmdline(Xml_node const & node, char *dst, size_t dst_len) const
+		size_t _cmdline(Node const & node, char *dst, size_t dst_len) const
 		{
 			using namespace Genode;
 
@@ -134,7 +133,7 @@ class Boot_module_provider
 			if (!config.valid())
 				return;
 
-			config.xml().with_optional_sub_node("multiboot", [&](auto const & node) {
+			config.node().with_optional_sub_node("multiboot", [&](auto const & node) {
 				int idx = 0;
 				node.for_each_sub_node([&](auto const &module_node) {
 					if (idx++ != module_index)

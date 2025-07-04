@@ -21,6 +21,7 @@
 
 #include <base/env.h>
 #include <base/heap.h>
+#include <base/node.h>
 
 #include <nul/motherboard.h>
 
@@ -33,5 +34,5 @@ class Seoul::Xhci : public StaticReceiver<Xhci>
 {
 	public:
 
-		Xhci(Genode::Env &, Genode::Heap &, Genode::Xml_node const &, Motherboard &);
+		Xhci(Genode::Env &, Genode::Heap &, Genode::Node const &, Motherboard &);
 };

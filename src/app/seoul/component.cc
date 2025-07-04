@@ -998,10 +998,10 @@ class Machine : public StaticReceiver<Machine>
 
 					auto has_feature = [&] (auto const &attr)
 					{
-						return info.xml().with_sub_node("hardware",
-							[&] (Xml_node const &node) {
+						return info.node().with_sub_node("hardware",
+							[&] (Node const &node) {
 								return node.with_sub_node("features",
-									[&] (Xml_node const &features) {
+									[&] (Node const &features) {
 										return features.attribute_value(attr, false); },
 									[] { return false; });
 							}, [&] { return false; });
@@ -1257,12 +1257,12 @@ class Machine : public StaticReceiver<Machine>
 			return false;
 		}
 
-		static unsigned long long _tsc_from_platform_info(Xml_node const &platform_info)
+		static unsigned long long _tsc_from_platform_info(Node const &platform_info)
 		{
 			return platform_info.with_sub_node("hardware",
-				[&] (Xml_node const &hardware) {
+				[&] (Node const &hardware) {
 					return hardware.with_sub_node("tsc",
-						[&] (Xml_node const &tsc) {
+						[&] (Node const &tsc) {
 							return tsc.attribute_value("freq_khz", 0ULL) * 1000ULL; },
 						[] { return 0ULL; }); },
 				[] { return 0ULL; });
@@ -1277,7 +1277,7 @@ class Machine : public StaticReceiver<Machine>
 		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu, bool cpuid_native)
 		:
 			_env(env), _heap(heap), _vm_con(vm_con),
-			_clock(_tsc_from_platform_info(Attached_rom_dataspace(env, "platform_info").xml())),
+			_clock(_tsc_from_platform_info(Attached_rom_dataspace(env, "platform_info").node())),
 			_motherboard(&_clock, nullptr),
 			_guest_memory(guest_memory),
 			_map_small(map_small),
@@ -1579,7 +1579,7 @@ void Component::construct(Genode::Env &env)
 
 	Genode::log("--- Seoul VMM starting ---");
 
-	auto const & node     = config.xml();
+	auto const & node     = config.node();
 	auto const   vmm_size = node.attribute_value("vmm_memory",
 	                                             Genode::Number_of_bytes(12 * 1024 * 1024));
 
@@ -1642,7 +1642,7 @@ void Component::construct(Genode::Env &env)
 	                         guest_memory.backing_store_size());
 
 	node.with_sub_node("machine",
-		[&] (Xml_node const &sub_node) { machine.setup_devices(node, sub_node); },
+		[&] (Node const &sub_node) { machine.setup_devices(node, sub_node); },
 		[&] { Genode::warning("missing 'machine' config node"); });
 
 	Genode::log("\n--- Booting VM ---");

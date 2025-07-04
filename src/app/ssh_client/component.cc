@@ -35,7 +35,7 @@ namespace Ssh_client {
 
 	typedef Genode::String<64> String;
 
-	String string_attr(Xml_node const &node,
+	String string_attr(Node const &node,
 	                   char const *key, char const *def = "") {
 		return node.attribute_value(key, String(def)); }
 }
@@ -157,7 +157,7 @@ struct Ssh_client::Main
 				gen.attribute("known", "yes");
 		}).with_result(
 			[&] (size_t used) {
-				log("host file format: ", Xml_node(buf, used)); },
+				log("host file format: ", Node(Const_byte_range_ptr(buf, used))); },
 			[&] (Buffer_error) {
 				warning("host info exceeds maximum buffer size");
 		});
@@ -167,7 +167,7 @@ struct Ssh_client::Main
 	{
 		using namespace Genode;
 
-		_env.with_config([&] (Xml_node const &config) {
+		_env.with_config([&] (Node const &config) {
 			int verbosity = config.attribute_value("verbose", false)
 				? SSH_LOG_FUNCTIONS : SSH_LOG_NOLOG;
 			ssh_options_set(_session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
@@ -188,7 +188,7 @@ struct Ssh_client::Main
 		size_t n = fread(buf,	1, sizeof(buf), f);
 		fclose(f);
 
-		Xml_node const host_cfg(buf, n);
+		Node const host_cfg(Const_byte_range_ptr(buf, n));
 		if (!host_cfg.has_attribute("name")) {
 			error("failed to parse host configuration");
 			error(host_cfg);
