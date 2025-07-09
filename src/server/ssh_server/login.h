@@ -127,8 +127,7 @@ struct Ssh::Login_registry : Genode::Registry<Ssh::Login>
 	/**
 	 * Import one login from node
 	 */
-	bool _import_single(Genode::Xml_node const &node,
-	                    Genode::Xml_node const &main)
+	bool _import_single(Genode::Node const &node, Genode::Node const &main)
 	{
 		User     user        = node.attribute_value("user", User());
 		Password pw          = node.attribute_value("password", Password());
@@ -156,7 +155,7 @@ struct Ssh::Login_registry : Genode::Registry<Ssh::Login>
 
 		if (allow_term) {
 			main.for_each_sub_node("policy",
-				[&] (Genode::Xml_node const &policy) {
+				[&] (Genode::Node const &policy) {
 					Ssh::Terminal_name terminal_name
 						= policy.attribute_value("terminal_name", Ssh::Terminal_name());
 					if (terminal_name == terminal) {
@@ -210,13 +209,13 @@ struct Ssh::Login_registry : Genode::Registry<Ssh::Login>
 	/**
 	 * Import all login information from config
 	 */
-	void import(Genode::Xml_node const &node)
+	void import(Genode::Node const &node)
 	{
 		_remove_all();
 
 		try {
 			node.for_each_sub_node("login",
-			[&] (Genode::Xml_node const &login) {
+			[&] (Genode::Node const &login) {
 				_import_single(login, node);
 			});
 		} catch (...) { }

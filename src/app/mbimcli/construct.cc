@@ -890,26 +890,26 @@ class Mbim
 		{
 			_state_reporter.enabled(true);
 			try {
-				(void)_state_reporter.generate([&] (Genode::Xml_generator &xml) {
-					xml.node("device", [&] () {
-						xml.attribute("sim", _state_report.sim);
+				(void)_state_reporter.generate([&] (Genode::Generator &g) {
+					g.node("device", [&] () {
+						g.attribute("sim", _state_report.sim);
 					});
 
-					xml.node("network", [&] () {
-						xml.attribute("error",      _state_report.error);
-						xml.attribute("registered", _state_report.network);
-						xml.attribute("provider",   _state_report.provider);
-						xml.attribute("data_class", _state_report.data_class);
-						xml.attribute("roaming",    _state_report.roaming);
+					g.node("network", [&] () {
+						g.attribute("error",      _state_report.error);
+						g.attribute("registered", _state_report.network);
+						g.attribute("provider",   _state_report.provider);
+						g.attribute("data_class", _state_report.data_class);
+						g.attribute("roaming",    _state_report.roaming);
 					});
 
-					xml.node("signal", [&] () {
+					g.node("signal", [&] () {
 						if (_state_report.rssi > RSSI_DISCONNECT)
-							xml.attribute("rssi_dbm", "unknown");
+							g.attribute("rssi_dbm", "unknown");
 						else
-							xml.attribute("rssi_dbm", String("-", 113-2*_state_report.rssi));
+							g.attribute("rssi_dbm", String("-", 113-2*_state_report.rssi));
 
-						xml.attribute("error_rate", _state_report.error_rate);
+						g.attribute("error_rate", _state_report.error_rate);
 						
 					});
 				});
@@ -925,10 +925,10 @@ class Mbim
 			/* handle intermediate disconnect */
 			if (!_connection.connected) {
 				_config_reporter.enabled(true);
-				(void)_config_reporter.generate([&] (Genode::Xml_generator &xml) {
-					xml.attribute("verbose", "no");
-					xml.attribute("verbose_packets", "no");
-					xml.attribute("verbose_domain_state", "yes");
+				(void)_config_reporter.generate([&] (Genode::Generator &g) {
+					g.attribute("verbose", "no");
+					g.attribute("verbose_packets", "no");
+					g.attribute("verbose_domain_state", "yes");
 				});
 				return;
 			}
@@ -937,130 +937,130 @@ class Mbim
 			String ip_first  = "10.0.1.2";
 			String ip_last   = "10.0.1.200";
 
-			_config_rom.xml().with_optional_sub_node("default-domain",
-				[&] (Genode::Xml_node const &net) {
+			_config_rom.node().with_optional_sub_node("default-domain",
+				[&] (Genode::Node const &net) {
 					interface = net.attribute_value("interface", interface);
 					ip_first  = net.attribute_value("ip_first",  ip_first);
 					ip_last   = net.attribute_value("ip_first",  ip_last);
 				});
 
 			_config_reporter.enabled(true);
-			_config_reporter.generate([&] (Genode::Xml_generator &xml) {
-				xml.attribute("verbose", "no");
-				xml.attribute("verbose_packets", "no");
-				xml.attribute("verbose_domain_state", "yes");
+			_config_reporter.generate([&] (Genode::Generator &g) {
+				g.attribute("verbose", "no");
+				g.attribute("verbose_packets", "no");
+				g.attribute("verbose_domain_state", "yes");
 
-					xml.node("default-policy", [&] () {
-						xml.attribute("domain", "default");
+					g.node("default-policy", [&] () {
+						g.attribute("domain", "default");
 					});
 
-					xml.node("policy", [&] () {
-						xml.attribute("label_prefix", "usb_net");
-						xml.attribute("domain", "uplink");
+					g.node("policy", [&] () {
+						g.attribute("label_prefix", "usb_net");
+						g.attribute("domain", "uplink");
 					});
 
 					/* uplink */
-					xml.node("domain", [&] () {
-						xml.attribute("name", "uplink");
+					g.node("domain", [&] () {
+						g.attribute("name", "uplink");
 						Genode::String<18> ip { _connection.ip, "/", _connection.mask };
-						xml.attribute("interface", ip);
+						g.attribute("interface", ip);
 						Genode::String<15> gw { _connection.gateway };
-						xml.attribute("gateway", gw);
+						g.attribute("gateway", gw);
 						/* no ARP */
-						xml.attribute("use_arp", "no");
+						g.attribute("use_arp", "no");
 
-						xml.node("nat", [&] () {
-							xml.attribute("domain", "default");
-							xml.attribute("tcp-ports", "1000");
-							xml.attribute("udp-ports", "1000");
-							xml.attribute("icmp-ids", "1000");
+						g.node("nat", [&] () {
+							g.attribute("domain", "default");
+							g.attribute("tcp-ports", "1000");
+							g.attribute("udp-ports", "1000");
+							g.attribute("icmp-ids", "1000");
 						});
-						if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
-							xml.node("nat", [&] () {
-								xml.attribute("domain", "downlink");
-								xml.attribute("tcp-ports", "1000");
-								xml.attribute("udp-ports", "1000");
-								xml.attribute("icmp-ids", "1000");
+						if (_config_rom.node().attribute_value("nic_client_enable", false)) {
+							g.node("nat", [&] () {
+								g.attribute("domain", "downlink");
+								g.attribute("tcp-ports", "1000");
+								g.attribute("udp-ports", "1000");
+								g.attribute("icmp-ids", "1000");
 							});
 						}
 					});
 
 					/* link to another nic_router */
-					if (_config_rom.xml().attribute_value("nic_client_enable", false)) {
-						xml.node("nic-client", [&] () {
-							xml.attribute("domain", "downlink");
+					if (_config_rom.node().attribute_value("nic_client_enable", false)) {
+						g.node("nic-client", [&] () {
+							g.attribute("domain", "downlink");
 						});
-						xml.node("domain", [&] () {
-							xml.attribute("name", "downlink");
+						g.node("domain", [&] () {
+							g.attribute("name", "downlink");
 
-							xml.attribute("interface", "10.0.2.1/24");
+							g.attribute("interface", "10.0.2.1/24");
 
-							xml.node("dhcp-server", [&] () {
-								xml.attribute("ip_first", "10.0.2.2");
-								xml.attribute("ip_last",  "10.0.2.3");
+							g.node("dhcp-server", [&] () {
+								g.attribute("ip_first", "10.0.2.2");
+								g.attribute("ip_last",  "10.0.2.3");
 
-								xml.node("dns-server", [&] () {
-									xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
+								g.node("dns-server", [&] () {
+									g.attribute("ip", Genode::String<15>(_connection.dns[0]));
 								});
 
-								xml.node("dns-server", [&] () {
-									xml.attribute("ip", Genode::String<15>(_connection.dns[1]));
-								});
-							});
-
-							xml.node("tcp", [&] () {
-								xml.attribute("dst", "0.0.0.0/0");
-								xml.node("permit-any", [&] () {
-									xml.attribute("domain", "uplink");
+								g.node("dns-server", [&] () {
+									g.attribute("ip", Genode::String<15>(_connection.dns[1]));
 								});
 							});
-							xml.node("udp", [&] () {
-								xml.attribute("dst", "0.0.0.0/0");
-								xml.node("permit-any", [&] () {
-									xml.attribute("domain", "uplink");
+
+							g.node("tcp", [&] () {
+								g.attribute("dst", "0.0.0.0/0");
+								g.node("permit-any", [&] () {
+									g.attribute("domain", "uplink");
 								});
 							});
-							xml.node("icmp", [&] () {
-								xml.attribute("dst", "0.0.0.0/0");
-								xml.attribute("domain", "uplink");
+							g.node("udp", [&] () {
+								g.attribute("dst", "0.0.0.0/0");
+								g.node("permit-any", [&] () {
+									g.attribute("domain", "uplink");
+								});
+							});
+							g.node("icmp", [&] () {
+								g.attribute("dst", "0.0.0.0/0");
+								g.attribute("domain", "uplink");
 							});
 						});
 					}
 
 					/* default */
-					xml.node("domain", [&] () {
-						xml.attribute("name", "default");
+					g.node("domain", [&] () {
+						g.attribute("name", "default");
 
-						xml.attribute("interface", interface);
+						g.attribute("interface", interface);
 
-						xml.node("dhcp-server", [&] () {
-							xml.attribute("ip_first", ip_first);
-							xml.attribute("ip_last",  ip_last);
+						g.node("dhcp-server", [&] () {
+							g.attribute("ip_first", ip_first);
+							g.attribute("ip_last",  ip_last);
 
-							xml.node("dns-server", [&] () {
-								xml.attribute("ip", Genode::String<15>(_connection.dns[0]));
+							g.node("dns-server", [&] () {
+								g.attribute("ip", Genode::String<15>(_connection.dns[0]));
 							});
 
-							xml.node("dns-server", [&] () {
-								xml.attribute("ip", Genode::String<15>(_connection.dns[1]));
-							});
-						});
-
-						xml.node("tcp", [&] () {
-							xml.attribute("dst", "0.0.0.0/0");
-							xml.node("permit-any", [&] () {
-								xml.attribute("domain", "uplink");
+							g.node("dns-server", [&] () {
+								g.attribute("ip", Genode::String<15>(_connection.dns[1]));
 							});
 						});
-						xml.node("udp", [&] () {
-							xml.attribute("dst", "0.0.0.0/0");
-							xml.node("permit-any", [&] () {
-								xml.attribute("domain", "uplink");
+
+						g.node("tcp", [&] () {
+							g.attribute("dst", "0.0.0.0/0");
+							g.node("permit-any", [&] () {
+								g.attribute("domain", "uplink");
 							});
 						});
-						xml.node("icmp", [&] () {
-							xml.attribute("dst", "0.0.0.0/0");
-							xml.attribute("domain", "uplink");
+						g.node("udp", [&] () {
+							g.attribute("dst", "0.0.0.0/0");
+							g.node("permit-any", [&] () {
+								g.attribute("domain", "uplink");
+							});
+						});
+						g.node("icmp", [&] () {
+							g.attribute("dst", "0.0.0.0/0");
+							g.attribute("domain", "uplink");
 						});
 					});
 				}).with_error([] (Genode::Buffer_error) {
@@ -1072,8 +1072,8 @@ class Mbim
 
 		Mbim(Libc::Env &env) : _env(env)
 		{
-			_config_rom.xml().with_sub_node("network",
-				[&] (Genode::Xml_node const &net) {
+			_config_rom.node().with_sub_node("network",
+				[&] (Genode::Node const &net) {
 					_network.apn      = net.attribute_value("apn", String());
 					_network.user     = net.attribute_value("user", String());
 					_network.password = net.attribute_value("password", String());

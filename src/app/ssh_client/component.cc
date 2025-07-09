@@ -13,12 +13,11 @@
  */
 
 /* Genode includes */
-#include <util/reconstructible.h>
 #include <libc/select.h>
 #include <terminal_session/connection.h>
 #include <libc/component.h>
-#include <util/xml_generator.h>
 #include <base/sleep.h>
+#include <base/node.h>
 
 /* Libssh includes */
 #include <libssh/libssh.h>
@@ -148,13 +147,13 @@ struct Ssh_client::Main
 	static void _log_host_usage()
 	{
 		char buf[1024];
-		Xml_generator::generate({ buf, sizeof(buf) }, "host",
-			[&] (Xml_generator &gen) {
-				gen.attribute("name", "...");
-				gen.attribute("port", 22);
-				gen.attribute("user", "...");
-				gen.attribute("pass", "...");
-				gen.attribute("known", "yes");
+		Generator::generate({ buf, sizeof(buf) }, "host",
+			[&] (Generator &g) {
+				g.attribute("name", "...");
+				g.attribute("port", 22);
+				g.attribute("user", "...");
+				g.attribute("pass", "...");
+				g.attribute("known", "yes");
 		}).with_result(
 			[&] (size_t used) {
 				log("host file format: ", Node(Const_byte_range_ptr(buf, used))); },

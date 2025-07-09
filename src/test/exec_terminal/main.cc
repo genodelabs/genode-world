@@ -39,27 +39,27 @@ class Exec_terminal::Main
 
 		void _handle_config();
 
-		void _gen_init_config(Xml_generator &, Xml_node const &config) const;
+		void _gen_init_config(Generator &, Node const &config) const;
 
-		void _gen_sub_init_config(Xml_generator &, Xml_node const &config) const;
+		void _gen_sub_init_config(Generator &, Node const &config) const;
 
-		static void _gen_service_node(Xml_generator &xml, char const *name)
+		static void _gen_service_node(Generator &g, char const *name)
 		{
-			xml.node("service",[&] () { xml.attribute("name", name); });
+			g.node("service",[&] { g.attribute("name", name); });
 		}
 
-		static void _gen_parent_provides(Xml_generator &xml)
+		static void _gen_parent_provides(Generator &g)
 		{
-			xml.node("parent-provides",[&] () {
-				_gen_service_node(xml, "CPU");
-				_gen_service_node(xml, "File_system");
-				_gen_service_node(xml, "LOG");
-				_gen_service_node(xml, "PD");
-				_gen_service_node(xml, "RM");
-				_gen_service_node(xml, "ROM");
-				_gen_service_node(xml, "Report");
-				_gen_service_node(xml, "Terminal");
-				_gen_service_node(xml, "Timer");
+			g.node("parent-provides",[&] {
+				_gen_service_node(g, "CPU");
+				_gen_service_node(g, "File_system");
+				_gen_service_node(g, "LOG");
+				_gen_service_node(g, "PD");
+				_gen_service_node(g, "RM");
+				_gen_service_node(g, "ROM");
+				_gen_service_node(g, "Report");
+				_gen_service_node(g, "Terminal");
+				_gen_service_node(g, "Timer");
 			});
 		}
 
@@ -77,7 +77,7 @@ void Exec_terminal::Main::_handle_config()
 {
 	_config.update();
 
-	Xml_node const config = _config.xml();
+	Node const config = _config.node();
 
 	log(config);
 	if (config.has_type("empty"))
@@ -85,95 +85,95 @@ void Exec_terminal::Main::_handle_config()
 
 	_version++;
 
-	_init_config_reporter.generate([&] (Xml_generator &xml) {
+	_init_config_reporter.generate([&] (Generator &g) {
 
 		if (!config.has_attribute("exit"))
-			_gen_init_config(xml, config);
+			_gen_init_config(g, config);
 	});
 }
 
 
-void Exec_terminal::Main::_gen_init_config(Xml_generator &xml, Xml_node const &config) const
+void Exec_terminal::Main::_gen_init_config(Generator &g, Node const &config) const
 {
-	_gen_parent_provides(xml);
+	_gen_parent_provides(g);
 
-	xml.node("start",[&] () {
-		xml.attribute("name",    "init");
-		xml.attribute("caps",    900);
-		xml.attribute("version", _version);
+	g.node("start",[&] {
+		g.attribute("name",    "init");
+		g.attribute("caps",    900);
+		g.attribute("version", _version);
 
-		xml.node("resource",[&] () {
-			xml.attribute("name", "RAM");
-			xml.attribute("quantum", "70M"); });
+		g.node("resource",[&] {
+			g.attribute("name", "RAM");
+			g.attribute("quantum", "70M"); });
 
-		xml.node("config", [&] () {
-			_gen_sub_init_config(xml, config); });
+		g.node("config", [&] {
+			_gen_sub_init_config(g, config); });
 
-		xml.node("route",[&] () {
-			xml.node("any-service",[&] () {
-				xml.node("parent",[&] () { }); }); });
+		g.node("route",[&] {
+			g.node("any-service",[&] {
+				g.node("parent",[&] { }); }); });
 	});
 }
 
 
-void Exec_terminal::Main::_gen_sub_init_config(Xml_generator &xml, Xml_node const &config) const
+void Exec_terminal::Main::_gen_sub_init_config(Generator &g, Node const &config) const
 {
-	xml.attribute("verbose", "no");
+	g.attribute("verbose", "no");
 
-	_gen_parent_provides(xml);
+	_gen_parent_provides(g);
 
 	auto gen_parent_route = [&] (auto name) {
-		xml.node("service",[&] () {
-			xml.attribute("name", name);
-			xml.node("parent",[&] () {}); }); };
+		g.node("service",[&] {
+			g.attribute("name", name);
+			g.node("parent",[&] {}); }); };
 
 	auto gen_ram = [&] (auto ram) {
-		xml.node("resource",[&] () {
-			xml.attribute("name", "RAM");
-			xml.attribute("quantum", ram); }); };
+		g.node("resource",[&] {
+			g.attribute("name", "RAM");
+			g.attribute("quantum", ram); }); };
 
 	auto gen_provides_service = [&] (auto name) {
-		xml.node("provides", [&] () {
-			xml.node("service", [&] () {
-				xml.attribute("name", name); }); }); };
+		g.node("provides", [&] {
+			g.node("service", [&] {
+				g.attribute("name", name); }); }); };
 
-	xml.node("start",[&] () {
-		xml.attribute("name", "vfs");
-		xml.attribute("caps", 120);
+	g.node("start",[&] {
+		g.attribute("name", "vfs");
+		g.attribute("caps", 120);
 		gen_ram("32M");
 		gen_provides_service("File_system");
-		xml.node("config",[&] () {
-			xml.node("vfs",[&] () {
-				xml.node("tar",[&] () { xml.attribute("name", "bash.tar"); });
-				xml.node("tar",[&] () { xml.attribute("name", "coreutils-minimal.tar"); });
-				xml.node("tar",[&] () { xml.attribute("name", "vim-minimal.tar"); });
-				xml.node("dir",[&] () {
-					xml.attribute("name", "rw");
-					xml.node("fs",[&] () { xml.attribute("label", "rw -> /"); });
+		g.node("config",[&] {
+			g.node("vfs",[&] {
+				g.node("tar",[&] { g.attribute("name", "bash.tar"); });
+				g.node("tar",[&] { g.attribute("name", "coreutils-minimal.tar"); });
+				g.node("tar",[&] { g.attribute("name", "vim-minimal.tar"); });
+				g.node("dir",[&] {
+					g.attribute("name", "rw");
+					g.node("fs",[&] { g.attribute("label", "rw -> /"); });
 				});
-				xml.node("dir", [&] () {
-					xml.attribute("name", "dev");
-					xml.node("terminal", [&] () { });
-					xml.node("inline", [&] () {
-						xml.attribute("name", "rtc");
-						xml.append("2018-01-01 00:01");
+				g.node("dir", [&] {
+					g.attribute("name", "dev");
+					g.node("terminal", [&] { });
+					g.node("inline", [&] {
+						g.attribute("name", "rtc");
+						g.append_quoted("2018-01-01 00:01");
 					});
 				});
-				xml.node("dir",[&] () {
-					xml.attribute("name", "tmp");
-					xml.node("ram",[&] () { });
+				g.node("dir",[&] {
+					g.attribute("name", "tmp");
+					g.node("ram",[&] { });
 				});
-				xml.node("inline", [&] () {
-					xml.attribute("name", ".bash_profile");
-					xml.append("echo Hello from Genode! > /dev/log");
+				g.node("inline", [&] {
+					g.attribute("name", ".bash_profile");
+					g.append_quoted("echo Hello from Genode! > /dev/log");
 				});
 			});
-			xml.node("default-policy", [&] () {
-				xml.attribute("root",      "/");
-				xml.attribute("writeable", "yes");
+			g.node("default-policy", [&] {
+				g.attribute("root",      "/");
+				g.attribute("writeable", "yes");
 			});
 		});
-		xml.node("route",[&] () {
+		g.node("route",[&] {
 			gen_parent_route("CPU");
 			gen_parent_route("LOG");
 			gen_parent_route("PD");
@@ -183,19 +183,19 @@ void Exec_terminal::Main::_gen_sub_init_config(Xml_generator &xml, Xml_node cons
 		});
 	});
 
-	auto gen_vfs_route = [&] () {
-		xml.node("service",[&] () {
-			xml.attribute("name", "File_system");
-			xml.node("child",[&] () { xml.attribute("name", "vfs"); }); }); };
+	auto gen_vfs_route = [&] {
+		g.node("service",[&] {
+			g.attribute("name", "File_system");
+			g.node("child",[&] { g.attribute("name", "vfs"); }); }); };
 
-	xml.node("start",[&] () {
-		xml.attribute("name", "vfs_rom");
-		xml.attribute("caps", 100);
+	g.node("start",[&] {
+		g.attribute("name", "vfs_rom");
+		g.attribute("caps", 100);
 		gen_ram("16M");
 		gen_provides_service("ROM");
-		xml.node("binary",  [&] () { xml.attribute("name", "fs_rom"); });
-		xml.node("config",  [&] () { });
-		xml.node("route",   [&] () {
+		g.node("binary",  [&] { g.attribute("name", "fs_rom"); });
+		g.node("config",  [&] { });
+		g.node("route",   [&] {
 			gen_parent_route("CPU");
 			gen_parent_route("LOG");
 			gen_parent_route("PD");
@@ -204,41 +204,41 @@ void Exec_terminal::Main::_gen_sub_init_config(Xml_generator &xml, Xml_node cons
 		});
 	});
 
-	xml.node("start",[&] () {
-		xml.attribute("name", "/bin/bash");
-		xml.attribute("caps", 500);
+	g.node("start",[&] {
+		g.attribute("name", "/bin/bash");
+		g.attribute("caps", 500);
 		gen_ram("16M");
 
 		/* exit sub init when leaving bash */
-		xml.node("exit",[&] () {
-			xml.attribute("propagate", "yes"); });
+		g.node("exit",[&] {
+			g.attribute("propagate", "yes"); });
 
-		xml.node("config",[&] () {
+		g.node("config",[&] {
 
-			xml.node("libc",[&] () {
-				xml.attribute("stdin",  "/dev/terminal");
-				xml.attribute("stdout", "/dev/terminal");
-				xml.attribute("stderr", "/dev/terminal");
-				xml.attribute("rtc",    "/dev/rtc");
+			g.node("libc",[&] {
+				g.attribute("stdin",  "/dev/terminal");
+				g.attribute("stdout", "/dev/terminal");
+				g.attribute("stderr", "/dev/terminal");
+				g.attribute("rtc",    "/dev/rtc");
 			});
 
-			xml.node("vfs",[&] () {
-				xml.node("fs",[&] () { xml.attribute("label", "rw -> /"); });
-				xml.node("dir", [&] () {
-					xml.attribute("name", "dev");
-					xml.node("null", [&] () { });
-					xml.node("log",  [&] () { });
+			g.node("vfs",[&] {
+				g.node("fs",[&] { g.attribute("label", "rw -> /"); });
+				g.node("dir", [&] {
+					g.attribute("name", "dev");
+					g.node("null", [&] { });
+					g.node("log",  [&] { });
 				});
 			});
 
 			auto gen_env = [&] (auto key, auto value) {
-				xml.node("env",[&] () {
-					xml.attribute("key",   key);
-					xml.attribute("value", value); }); };
+				g.node("env",[&] {
+					g.attribute("key",   key);
+					g.attribute("value", value); }); };
 
 			auto gen_arg = [&] (auto value) {
-				xml.node("arg",[&] () {
-					xml.attribute("value", value); }); };
+				g.node("arg",[&] {
+					g.attribute("value", value); }); };
 
 			gen_env("TERM",     "screen");
 			gen_env("HOME",     "/");
@@ -267,16 +267,16 @@ void Exec_terminal::Main::_gen_sub_init_config(Xml_generator &xml, Xml_node cons
 				gen_arg("--login");
 			}
 		});
-		xml.node("route",[&] () {
-			xml.node("service",[&] () {
-				xml.attribute("name", "ROM");
-				xml.attribute("label_last", "/bin/bash");
-				xml.node("child",[&] () { xml.attribute("name", "vfs_rom"); });
+		g.node("route",[&] {
+			g.node("service",[&] {
+				g.attribute("name", "ROM");
+				g.attribute("label_last", "/bin/bash");
+				g.node("child",[&] { g.attribute("name", "vfs_rom"); });
 			});
-			xml.node("service",[&] () {
-				xml.attribute("name", "ROM");
-				xml.attribute("label_prefix", "/bin");
-				xml.node("child",[&] () { xml.attribute("name", "vfs_rom"); });
+			g.node("service",[&] {
+				g.attribute("name", "ROM");
+				g.attribute("label_prefix", "/bin");
+				g.node("child",[&] { g.attribute("name", "vfs_rom"); });
 			});
 			gen_parent_route("CPU");
 			gen_parent_route("LOG");

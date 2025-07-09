@@ -45,10 +45,10 @@ struct Python::Main
 
 		int res = 0;
 
-		Xml_node const config = _config.xml();
+		Node const &config = _config.node();
 
 		config.with_sub_node("file",
-			[&] (Xml_node const &script) {
+			[&] (Node const &script) {
 
 				if (!script.has_attribute("name")) {
 					warning("<file> node lacks 'name' attribute");
@@ -74,12 +74,12 @@ struct Python::Main
 	{
 		using namespace Genode;
 
-		Xml_node const config = _config.xml();
+		Node const &config = _config.node();
 
 		enum { MAX_NAME_LEN = 128 };
 		wchar_t wbuf[MAX_NAME_LEN];
 
-		config.with_optional_sub_node("pythonpath", [&] (Xml_node const &pythonpath) {
+		config.with_optional_sub_node("pythonpath", [&] (Node const &pythonpath) {
 
 			typedef String<MAX_NAME_LEN> Path;
 			Path const path = pythonpath.attribute_value("name", Path());
@@ -109,10 +109,10 @@ struct Python::Main
 		_initialize();
 
 		_config.update();
-		Genode::Xml_node const config = _config.xml();
+		Genode::Node const &config = _config.node();
 
 		config.with_sub_node("file",
-			[&] (Genode::Xml_node const &file) {
+			[&] (Genode::Node const &file) {
 
 				if (file.has_attribute("on-rom-update")) {
 

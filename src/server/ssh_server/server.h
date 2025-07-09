@@ -199,7 +199,7 @@ class Ssh::Server
 		void _cleanup_session(Session &s);
 
 		void _cleanup_sessions();
-		void _parse_config(Genode::Xml_node const &config);
+		void _parse_config(Genode::Node const &config);
 		void _load_hostkey(Util::Filename const &file);
 
 		/*
@@ -222,9 +222,7 @@ class Ssh::Server
 
 	public:
 
-		Server(Genode::Env &env,
-		       Genode::Xml_node const &config,
-		       Ssh::Login_registry    &logins);
+		Server(Genode::Env &, Genode::Node const &config, Ssh::Login_registry &);
 
 		virtual ~Server();
 
@@ -247,7 +245,7 @@ class Ssh::Server
 		/**
 		 * Update config
 		 */
-		void update_config(Genode::Xml_node const &config);
+		void update_config(Genode::Node const &config);
 
 		/*******************************************************
 		 ** Methods below are only used by callback back ends **

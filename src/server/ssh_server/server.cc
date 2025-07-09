@@ -77,7 +77,7 @@ void Ssh::Terminal_session::initialize_ssh_event_fds()
 
 
 Ssh::Server::Server(Genode::Env &env,
-                    Genode::Xml_node const &config,
+                    Genode::Node const &config,
                     Ssh::Login_registry    &logins)
 :
 	_env(env), _heap(env.ram(), env.rm()), _logins(logins)
@@ -221,9 +221,9 @@ void Ssh::Server::_cleanup_session(Session &s)
 
 	try {
 		if (s.terminal_requested) {
-			_request_terminal_reporter.generate([&] (Xml_generator& xml) {
-				xml.attribute("user", s.user());
-				xml.attribute("exit", "now");
+			_request_terminal_reporter.generate([&] (Generator &g) {
+				g.attribute("user", s.user());
+				g.attribute("exit", "now");
 			});
 			s.terminal_requested = false;
 		}
@@ -246,7 +246,7 @@ void Ssh::Server::_cleanup_sessions()
 }
 
 
-void Ssh::Server::_parse_config(Genode::Xml_node const &config)
+void Ssh::Server::_parse_config(Genode::Node const &config)
 {
 	using Util::Filename;
 
@@ -412,7 +412,7 @@ void Ssh::Server::detach_terminal(Ssh::Terminal &conn)
 }
 
 
-void Ssh::Server::update_config(Genode::Xml_node const &config)
+void Ssh::Server::update_config(Genode::Node const &config)
 {
 	Util::Pthread_mutex::Guard guard(_terminals.mutex());
 
@@ -466,10 +466,10 @@ bool Ssh::Server::request_terminal(Session &session,
 	}
 
 	try {
-		_request_terminal_reporter.generate([&] (Xml_generator& xml) {
-			xml.attribute("user", session.user());
+		_request_terminal_reporter.generate([&] (Generator &g) {
+			g.attribute("user", session.user());
 			if (command) {
-				xml.attribute("command", command);
+				g.attribute("command", command);
 			}
 		});
 	} catch (...) {

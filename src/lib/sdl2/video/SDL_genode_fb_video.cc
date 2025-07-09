@@ -125,9 +125,9 @@ void Genode_GLES_DeleteContext(_THIS, SDL_GLContext context);
 			_view.front();
 
 			_config_rom.update();
-			_config_rom.xml().with_optional_sub_node("initial",
-				[&] (Genode::Xml_node const &initial) {
-					_initial_mode = Gui::Area::from_xml(initial);
+			_config_rom.node().with_optional_sub_node("initial",
+				[&] (Genode::Node const &initial) {
+					_initial_mode = Gui::Area::from_node(initial);
 				});
 
 			for (;;) {

@@ -22,13 +22,13 @@ private:
 	void _set_rtc(Genode::Expanding_reporter &reporter, Rtc::Timestamp const &ts)
 	{
 		Genode::log("_set_rtc");
-		reporter.generate([&] (Genode::Xml_generator &xml) {
-			xml.attribute("year",   ts.year);
-			xml.attribute("month",  ts.month);
-			xml.attribute("day",    ts.day);
-			xml.attribute("hour",   ts.hour);
-			xml.attribute("minute", ts.minute);
-			xml.attribute("second", ts.second);
+		reporter.generate([&] (Genode::Generator &g) {
+			g.attribute("year",   ts.year);
+			g.attribute("month",  ts.month);
+			g.attribute("day",    ts.day);
+			g.attribute("hour",   ts.hour);
+			g.attribute("minute", ts.minute);
+			g.attribute("second", ts.second);
 		});
 	}
 

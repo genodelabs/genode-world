@@ -41,7 +41,7 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 		Genode::Env &_env;
 
 		Genode::Attached_rom_dataspace _config_rom   { _env, "config" };
-		Genode::Xml_node               _config       { _config_rom.xml() };
+		Genode::Node                   _config       { _config_rom.node() };
 
 		Genode::Heap        _logins_alloc { _env.ram(), _env.rm() };
 		Ssh::Login_registry _logins       { _logins_alloc };
@@ -59,10 +59,10 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 			Libc::with_libc([&] () {
 				{
 					Util::Pthread_mutex::Guard guard(_logins.mutex());
-					_logins.import(_config_rom.xml());
+					_logins.import(_config_rom.node());
 				}
 
-				_server.update_config(_config_rom.xml());
+				_server.update_config(_config_rom.node());
 			});
 		}
 
@@ -71,7 +71,7 @@ class Terminal::Root_component : public Genode::Root_component<Session_component
 		Create_result _create_session(char const * const args)
 		{
 			return with_matching_policy(label_from_args(args), _config,
-				[&] (Xml_node const &policy) -> Create_result {
+				[&] (Node const &policy) -> Create_result {
 					Ssh::Terminal_name const term_name =
 						policy.attribute_value("terminal_name", Ssh::Terminal_name());
 
