@@ -59,7 +59,7 @@ class Genode::Session_requests_rom : public Signal_handler<Session_requests_rom>
 
 				Name const name = request.attribute_value("service", Name());
 				Args const args = request.with_sub_node("args",
-					[&] (Node const &node) { return node.decoded_content<Args>(); },
+					[&] (Node const &node) { return Args(Node::Quoted_content(node)); },
 					[&]                    { return Args(); });
 
 				if (args.length() <= 1) {
@@ -89,7 +89,7 @@ class Genode::Session_requests_rom : public Signal_handler<Session_requests_rom>
 				typedef Session_state::Args Args;
 
 				Args const args = request.with_sub_node("args",
-					[&] (Node const &node) { return node.decoded_content<Args>(); },
+					[&] (Node const &node) { return Args(Node::Quoted_content(node)); },
 					[&]                    { return Args(); });
 
 				if (args.length() <= 1) {
