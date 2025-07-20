@@ -5,8 +5,6 @@
 # \author Alexander Boettcher
 # \date   2011-11-21
 
-set use_fs_rump $use_block_vdi
-
 if {![info exists use_ahci]} { set use_ahci 0 }
 
 # for uefi boot_fb works
@@ -20,7 +18,11 @@ if {[have_cmd_switch --autopilot]} {
 
 set use_drv_ahci  [expr  $use_ahci && ($use_block_vdi || $use_block_sata)]
 set use_drv_nvme  [expr !$use_ahci && ($use_block_vdi || $use_block_sata)]
-set use_vfs_block [expr $use_block_ram || $use_genode_iso]
+
+if {![info exists use_vfs_block]} {
+	set use_vfs_block [expr $use_block_ram || $use_genode_iso] }
+
+if {![info exists use_fs_rump]} { set use_fs_rump $use_block_vdi }
 
 create_boot_directory
 
@@ -189,6 +191,7 @@ proc config_part_block { } {
 	global use_part_block
 	global use_block_sata
 	global use_block_vdi
+	global use_fs_rump
 	global partition_raw
 	global partition_rump
 
@@ -197,19 +200,19 @@ proc config_part_block { } {
 	if {!$use_part_block} { return $config_part_block }
 	if {!$use_block_sata} { return $config_part_block }
 
-	if {!$use_block_vdi && ![info exists partition_raw]} {
+	if {!$use_fs_rump && ![info exists partition_raw]} {
 		puts "\nusing part_block without partition_raw number will not work\n"
 		exit 0
 	}
 
-	if {$use_block_vdi && ![info exists partition_rump]} {
+	if {$use_fs_rump && ![info exists partition_rump]} {
 		puts "\nusing part_block without partition_rump number will not work\n"
 		exit 0
 	}
 
 	# set variable with dummies when not used
-	if {!$use_block_vdi} { set partition_rump 10000 }
-	if { $use_block_vdi} { set partition_raw  10000 }
+	if {!$use_fs_rump} { set partition_rump 10000 }
+	if { $use_fs_rump} { set partition_raw  10000 }
 
 	if {$use_drv_nvme} { set drv_name "nvme" }
 	if {$use_drv_ahci} { set drv_name "ahci" }
@@ -224,10 +227,10 @@ proc config_part_block { } {
 		</route>
 		<config>}
 
-	append_if [expr !$use_block_vdi] config_part_block {
+	append_if [expr !$use_fs_rump] config_part_block {
 			<policy label="seoul -> disk0" partition="} $partition_raw  {" writeable="yes"/>}
 
-	append_if [expr  $use_block_vdi] config_part_block {
+	append_if [expr  $use_fs_rump] config_part_block {
 			<policy label="rump_fs -> "    partition="} $partition_rump {" writeable="yes"/>}
 
 	append config_part_block {
@@ -547,7 +550,7 @@ append config {
 	} [config_nvme] {
 	} [config_part_block] { }
 
-append_if $use_block_ram config {
+append_if [expr $use_vfs_block && $use_block_ram] config {
 	<start name="vfs_block" priority="-2" caps="400" ram="300M">
 		<provides><service name="Block"/></provides>
 		<config>
@@ -562,8 +565,20 @@ append_if $use_block_ram config {
 		</config>
 	</start>}
 
+append_if [expr $use_vfs_block && $use_block_sata] config {
+	<start name="vfs_block" priority="-2" caps="300" ram="300M">
+		<provides><service name="Block"/></provides>
+		<config>
+			<vfs>
+				<fs/>
+			</vfs>
+			<default-policy file="/} $image {" block_size="512"
+			                writeable="yes"/>
+		</config>
+	</start>}
+
 append_if $use_fs_rump config {
-	<start name="rump_fs" priority="-2" caps="200" ram="70M">
+	<start name="rump_fs" priority="-2" caps="500" ram="356M">
 		<binary name="vfs"/>
 		<provides><service name="File_system"/></provides>
 		<config ld_verbose="yes">
@@ -679,7 +694,7 @@ append_if [expr ![have_include "power_on/qemu"]] config {
 append config {
 	</start>
 
-	<start name="seoul" priority="-3" caps="1200" ram="} $memory_vmm_vm {">
+	<start name="seoul" priority="-3" caps="2000" ram="} $memory_vmm_vm {">
 		<binary name="seoul"/>
 		<route>
 			<service name="Timer"><child name="timer"/></service>
@@ -691,9 +706,11 @@ append_if $use_genode_iso config {
 			<service name="ROM" unscoped_label="ld.lib.so"> <parent/> </service>
 			<service name="ROM" label="platform_info"> <parent/> </service>
 			<service name="ROM"><child name="iso9660"/></service>}
-append_if $use_block_vdi config {
+append_if [expr  $use_block_vdi && !$use_vfs_block] config {
 			<service name="Block"><child name="vdi_block"/></service>}
-append_if [expr $use_block_sata && $use_part_block] config {
+append_if [expr !$use_block_vdi &&  $use_vfs_block] config {
+			<service name="Block"><child name="vfs_block"/></service>}
+append_if [expr !$use_block_vdi && !$use_vfs_block && $use_block_sata && $use_part_block] config {
 			<service name="Block"><child name="part_block"/></service>}
 append config {
 			<service name="Gui"> <child name="wm"/> </service>
