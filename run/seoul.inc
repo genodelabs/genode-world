@@ -131,10 +131,10 @@ proc config_ahci { } {
 			<policy label="rump_fs -> " device="0" writeable="yes"/>}
 
 	append_if [expr $use_block_vdi && $use_part_block] config_ahci {
-			<policy label="part_block -> " device="0" writeable="yes"/>}
+			<policy label_prefix="part_block -> " device="0" writeable="yes"/>}
 
 	append_if [expr $use_block_sata && $use_part_block] config_ahci {
-			<policy label="part_block -> " device="0" writeable="yes"/>}
+			<policy label_prefix="part_block -> " device="0" writeable="yes"/>}
 
 	append config_ahci {
 		</config>
@@ -170,10 +170,10 @@ proc config_nvme { } {
 			<policy label="rump_fs -> "    writeable="yes"/>}
 
 	append_if [expr $use_block_vdi && $use_part_block] config_nvme {
-			<policy label="part_block -> " writeable="yes"/>}
+			<policy label_prefix="part_block -> " writeable="yes"/>}
 
 	append_if [expr $use_block_sata && $use_part_block] config_nvme {
-			<policy label="part_block -> " writeable="yes"/>}
+			<policy label_prefix="part_block -> " writeable="yes"/>}
 
 	append config_nvme {
 		</config>
