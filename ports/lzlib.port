@@ -2,8 +2,8 @@ LICENSE   := GPLv2
 VERSION   := 1.8
 DOWNLOADS := lzlib.archive
 
-URL(lzlib) := http://download.savannah.gnu.org/releases/lzip/lzlib/lzlib-$(VERSION).tar.gz
-SIG(lzlib) := http://download.savannah.gnu.org/releases/lzip/lzlib/lzlib-$(VERSION).tar.gz.sig
+URL(lzlib) := https://download.savannah.nongnu.org/releases/lzip/lzlib/lzlib-$(VERSION).tar.gz
+SIG(lzlib) := https://download.savannah.nongnu.org/releases/lzip/lzlib/lzlib-$(VERSION).tar.gz.sig
 SHA(lzlib) := 41bfa82c6ee184ed0884437dc4074ad505e64cb747432cefa97976b89045cbad
 DIR(lzlib) := src/lib/lzlib
 

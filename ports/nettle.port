@@ -2,7 +2,7 @@ LICENSE   := LGPLv3
 VERSION   := 3.7
 DOWNLOADS := nettle.archive
 
-URL(nettle) := https://ftp.gnu.org/gnu/nettle/nettle-$(VERSION).tar.gz
+URL(nettle) := https://ftpmirror.gnu.org/nettle/nettle-$(VERSION).tar.gz
 SHA(nettle) := f001f64eb444bf13dd91bceccbc20acbc60c4311d6e2b20878452eb9a9cec75a
 DIR(nettle) := src/lib/nettle
 
