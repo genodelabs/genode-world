@@ -42,7 +42,7 @@ install_config {
 		<service name="ROM"/>
 	</parent-provides>
 
-	<default caps="100"/>
+	<default caps="200"/>
 
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
@@ -127,7 +127,7 @@ install_config {
 		</route>
 	</start>
 
-	<start name="ssh_server" caps="250">
+	<start name="ssh_server" caps="350">
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="Terminal"/> </provides>
 
