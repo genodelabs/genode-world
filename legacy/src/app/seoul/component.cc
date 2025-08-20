@@ -862,24 +862,74 @@ class Vcpu : public StaticReceiver<Vcpu>
 };
 
 
+struct Vmm {
+	Genode::Env          &env;
+	Genode::Heap          heap   { env.ram(), env.rm() };
+	Genode::Vm_connection vm_con { env, "Seoul vCPUs",
+	                               Genode::Cpu_session::PRIORITY_LIMIT / 16 };
+
+	Attached_rom_dataspace config { env, "config" };
+	Attached_rom_dataspace info   { env, "platform_info" };
+
+	Genode::Number_of_bytes vmm_size { 12 * 1024 * 1024 };
+
+	bool map_small         { };
+	bool rdtsc_exit        { };
+	bool vmm_vcpu_same_cpu { };
+	bool cpuid_native      { };
+	bool memory_verbose    { };
+
+	void read_config(Genode::Node const &node)
+	{
+		map_small         = node.attribute_value("map_small", map_small);
+		rdtsc_exit        = node.attribute_value("exit_on_rdtsc", rdtsc_exit);
+		vmm_vcpu_same_cpu = node.attribute_value("vmm_vcpu_same_cpu", vmm_vcpu_same_cpu);
+		cpuid_native      = node.attribute_value("cpuid_native", cpuid_native);
+		memory_verbose    = node.attribute_value("verbose_mem", memory_verbose);
+		vmm_size          = node.attribute_value("vmm_memory", vmm_size);
+	}
+
+	Vmm(Genode::Env &env) : env(env)
+	{
+		using Genode::String;
+
+		String<16> kernel("unknown");
+
+		auto const & node_c = config.node();
+
+		/* read default values */
+		read_config(node_c);
+
+		info.node().with_optional_sub_node("kernel", [&](auto const &node) {
+			kernel = node.attribute_value("name", kernel); });
+
+		if (kernel == "unknown")
+			return;
+
+		/* read per kernel overwrites */
+		node_c.for_each_sub_node("kernel", [&](auto const &node) {
+			String<16> check("unknown");
+			check = node.attribute_value("name", check);
+			if (check != kernel)
+				return;
+
+			read_config(node);
+		});
+	}
+};
+
+
 class Machine : public StaticReceiver<Machine>
 {
 	private:
 
-		Genode::Env           &_env;
-		Genode::Heap          &_heap;
-		Genode::Vm_connection &_vm_con;
+		Vmm                   &_vmm;
 		Genode::Mutex          _mutex { };
 		Clock                  _clock;
 		Motherboard            _motherboard;
 		Seoul::Guest_memory   &_guest_memory;
-		Timeouts               _timeouts { _env, _motherboard };
+		Timeouts               _timeouts { _vmm.env, _motherboard };
 		unsigned short         _vcpus_up { };
-
-		bool                   _map_small    { false   };
-		bool                   _rdtsc_exit   { false   };
-		bool                   _same_cpu     { false   };
-		bool                   _cpuid_native { false   };
 
 		Rtc::Session          *_rtc          { nullptr };
 		Seoul::Audio          *_audio        { nullptr };
@@ -930,8 +980,8 @@ class Machine : public StaticReceiver<Machine>
 				Region_map::Attr attr { };
 				attr.writeable = true;
 
-				auto const ds = _env.ram().alloc(msg.len);
-				auto const local_addr = _env.rm().attach(ds, attr).convert<addr_t>(
+				auto const ds = _vmm.env.ram().alloc(msg.len);
+				auto const local_addr = _vmm.env.rm().attach(ds, attr).convert<addr_t>(
 					[&] (Env::Local_rm::Attachment &a) {
 						a.deallocate = false; return addr_t(a.ptr); },
 					[&] (Env::Local_rm::Error) -> addr_t { return 0ul; });
@@ -941,7 +991,7 @@ class Machine : public StaticReceiver<Machine>
 
 				auto alloc_size = msg.type == MessageHostOp::OP_ALLOC_IOMEM_SMALL ?
 				                  msg.len_short : msg.len;
-				bool ok = _guest_memory.add_region(_heap, guest_addr,
+				bool ok = _guest_memory.add_region(_vmm.heap, guest_addr,
 				                                   local_addr, ds,
 				                                   alloc_size);
 				if (ok)
@@ -994,11 +1044,9 @@ class Machine : public StaticReceiver<Machine>
 					}
 
 					/* detect virtualization extension */
-					Attached_rom_dataspace const info(_env, "platform_info");
-
 					auto has_feature = [&] (auto const &attr)
 					{
-						return info.node().with_sub_node("hardware",
+						return _vmm.info.node().with_sub_node("hardware",
 							[&] (Node const &node) {
 								return node.with_sub_node("features",
 									[&] (Node const &features) {
@@ -1019,21 +1067,21 @@ class Machine : public StaticReceiver<Machine>
 					using Genode::String;
 					using Genode::Affinity;
 
-					Affinity::Space space = _env.cpu().affinity_space();
-					Affinity::Location location(space.location_of_index(_vcpus_up + (_same_cpu ? 0 : 1)));
+					Affinity::Space space = _vmm.env.cpu().affinity_space();
+					Affinity::Location location(space.location_of_index(_vcpus_up + (_vmm.vmm_vcpu_same_cpu ? 0 : 1)));
 
 					String<16> * ep_name = new String<16>("vCPU EP ", _vcpus_up);
-					Entrypoint * ep = new Entrypoint(_env, STACK_SIZE,
+					Entrypoint * ep = new Entrypoint(_vmm.env, STACK_SIZE,
 					                                 ep_name->string(),
 					                                 location);
 
 					(void)_vcpus_active.set(_vcpus_up, 1);
 
-					auto vcpu = new Vcpu(*ep, _vm_con, _heap, _env, *msg.vcpu,
-					                     _guest_memory, _motherboard,
+					auto vcpu = new Vcpu(*ep, _vmm.vm_con, _vmm.heap, _vmm.env,
+					                     *msg.vcpu, _guest_memory, _motherboard,
 					                     _vcpus_up, has_vmx, has_svm,
-					                     _map_small, _rdtsc_exit,
-					                     _cpuid_native);
+					                     _vmm.map_small, _vmm.rdtsc_exit,
+					                     _vmm.cpuid_native);
 
 					_vcpus[_vcpus_up] = vcpu;
 					msg.value = _vcpus_up;
@@ -1129,7 +1177,7 @@ class Machine : public StaticReceiver<Machine>
 
 				Boot_module_provider boot_modules { };
 
-				boot_modules.import_module_to_vm(_env, index, msg.start, dst_len,
+				boot_modules.import_module_to_vm(_vmm.env, index, msg.start, dst_len,
 					[&](auto const data_len,
 					    auto const cmdline,
 					    auto const cmdline_len) {
@@ -1148,7 +1196,8 @@ class Machine : public StaticReceiver<Machine>
 					if (msg.value >= 1ull << 32)
 						return false;
 
-					new (_heap) Seoul::Network(_env, _heap, _motherboard, msg);
+					new (_vmm.heap) Seoul::Network(_vmm.env, _vmm.heap,
+					                               _motherboard, msg);
 
 				} catch (...) {
 					Logging::printf("Creating network connection failed\n");
@@ -1163,7 +1212,7 @@ class Machine : public StaticReceiver<Machine>
 
 				_vcpus_up = 0;
 
-				_env.parent().exit(0);
+				_vmm.env.parent().exit(0);
 
 				return true;
 			}
@@ -1178,7 +1227,7 @@ class Machine : public StaticReceiver<Machine>
 		{
 			if (!_audio) {
 				try {
-					_audio = new (_heap) Seoul::Audio(_env, _motherboard);
+					_audio = new (_vmm.heap) Seoul::Audio(_vmm.env, _motherboard);
 					_audio->verbose(verbose_audio);
 				} catch (...) {
 					Genode::error("Creating audio backend failed");
@@ -1216,7 +1265,7 @@ class Machine : public StaticReceiver<Machine>
 		{
 			if (!_rtc) {
 				try {
-					_rtc = new Rtc::Connection(_env);
+					_rtc = new Rtc::Connection(_vmm.env);
 				} catch (...) {
 					Logging::printf("No RTC present, returning dummy time.\n");
 					msg.wallclocktime = msg.timestamp = 0;
@@ -1271,19 +1320,12 @@ class Machine : public StaticReceiver<Machine>
 		/**
 		 * Constructor
 		 */
-		Machine(Genode::Env &env, Genode::Heap &heap,
-		        Genode::Vm_connection &vm_con,
-		        Seoul::Guest_memory &guest_memory,
-		        bool map_small, bool rdtsc_exit, bool vmm_vcpu_same_cpu, bool cpuid_native)
+		Machine(Seoul::Guest_memory &guest_memory, Vmm &vmm)
 		:
-			_env(env), _heap(heap), _vm_con(vm_con),
-			_clock(_tsc_from_platform_info(Attached_rom_dataspace(env, "platform_info").node())),
+			_vmm(vmm),
+			_clock(_tsc_from_platform_info(_vmm.info.node())),
 			_motherboard(&_clock, nullptr),
-			_guest_memory(guest_memory),
-			_map_small(map_small),
-			_rdtsc_exit(rdtsc_exit),
-			_same_cpu(vmm_vcpu_same_cpu),
-			_cpuid_native(cpuid_native)
+			_guest_memory(guest_memory)
 		{
 			/* register host operations, called back by the VMM */
 			_motherboard.bus_hostop.add  (this, receive_static<MessageHostOp>);
@@ -1303,9 +1345,9 @@ class Machine : public StaticReceiver<Machine>
 
 
 		/**
-		 * Configure virtual machine according to the provided XML description
+		 * Configure virtual machine according to the provided config
 		 *
-		 * \param machine_node  XML node containing device-model sub nodes
+		 * \param machine_node  config node containing device-model sub nodes
 		 * \throw               Config_error
 		 *
 		 * Device models are instantiated in the order of appearance in the XML
@@ -1332,7 +1374,7 @@ class Machine : public StaticReceiver<Machine>
 						throw Config_error();
 					}
 
-					_xhci.construct(_env, _heap, config, _motherboard);
+					_xhci.construct(_vmm.env, _vmm.heap, config, _motherboard);
 				}
 
 				Device_model_info *dmi = device_model_registry()->lookup(name.string());
@@ -1568,49 +1610,33 @@ void Machine::boot(bool const cpuid_native)
 	}
 }
 
-
 void Component::construct(Genode::Env &env)
 {
-	static Genode::Heap          heap(env.ram(), env.rm());
-	static Genode::Vm_connection vm_con(env, "Seoul vCPUs",
-	                                    Genode::Cpu_session::PRIORITY_LIMIT / 16);
-
-	Attached_rom_dataspace config(env, "config");
+	static Vmm vmm(env);
 
 	Genode::log("--- Seoul VMM starting ---");
-
-	auto const & node     = config.node();
-	auto const   vmm_size = node.attribute_value("vmm_memory",
-	                                             Genode::Number_of_bytes(12 * 1024 * 1024));
-
-	bool const map_small         = node.attribute_value("map_small", false);
-	bool const rdtsc_exit        = node.attribute_value("exit_on_rdtsc", false);
-	bool const vmm_vcpu_same_cpu = node.attribute_value("vmm_vcpu_same_cpu",
-	                                                    false);
-	bool const cpuid_native      = node.attribute_value("cpuid_native", false);
-	bool const memory_verbose    = node.attribute_value("verbose_mem", false);
 
 	/* request max available memory */
 	auto vm_size = env.pd().avail_ram().value;
 	/* reserve some memory for the VMM */
-	vm_size -= vmm_size;
+	vm_size -= vmm.vmm_size;
 	/* calculate max memory for the VM */
 	vm_size = vm_size & ~((1UL << PAGE_SIZE_LOG2) - 1);
 
-	Genode::log(" VMM memory ", Genode::Number_of_bytes(vmm_size));
-	Genode::log(" using ", map_small ? "small": "large",
+	Genode::log(" VMM memory ", Genode::Number_of_bytes(vmm.vmm_size));
+	Genode::log(" using ", vmm.map_small ? "small": "large",
 	            " memory attachments for guest VM.");
-	if (rdtsc_exit)
+	if (vmm.rdtsc_exit)
 		Genode::log(" enabling VM exit on RDTSC.");
 
-	unsigned const width  = node.attribute_value("width", 1024U);
-	unsigned const height = node.attribute_value("height", 768U);
+	unsigned const width  = vmm.config.node().attribute_value("width", 1024U);
+	unsigned const height = vmm.config.node().attribute_value("height", 768U);
 
 	Genode::log(" framebuffer ", width, "x", height);
 
 	/* setup guest memory */
-	static Seoul::Guest_memory guest_memory(env, heap, vm_con, vm_size,
-	                                        memory_verbose);
+	static Seoul::Guest_memory guest_memory(env, vmm.heap, vmm.vm_con, vm_size,
+	                                        vmm.memory_verbose);
 
 	/* diagnostic messages */
 	guest_memory.dump_regions();
@@ -1628,24 +1654,23 @@ void Component::construct(Genode::Env &env)
 
 	Genode::log("\n--- Setup VM ---");
 
-	heap_init_env(&heap);
+	heap_init_env(&vmm.heap);
 
 	/* create the PC machine based on the configuration given */
-	static Machine machine(env, heap, vm_con, guest_memory, map_small,
-	                       rdtsc_exit, vmm_vcpu_same_cpu, cpuid_native);
+	static Machine machine(guest_memory, vmm);
 
-	static Seoul::Console vcon(env, heap, machine.motherboard(),
+	static Seoul::Console vcon(env, vmm.heap, machine.motherboard(),
 	                           Gui::Area(width, height), guest_memory);
 
 	static Seoul::Disk vdisk(env, machine.motherboard(),
 	                         guest_memory.backing_store_local_base(),
 	                         guest_memory.backing_store_size());
 
-	node.with_sub_node("machine",
-		[&] (Node const &sub_node) { machine.setup_devices(node, sub_node); },
+	vmm.config.node().with_sub_node("machine",
+		[&] (auto const &sub_node) { machine.setup_devices(vmm.config.node(), sub_node); },
 		[&] { Genode::warning("missing 'machine' config node"); });
 
 	Genode::log("\n--- Booting VM ---");
 
-	machine.boot(cpuid_native);
+	machine.boot(vmm.cpuid_native);
 }

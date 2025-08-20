@@ -243,23 +243,11 @@ proc config_part_block { } {
 
 assert {[have_spec x86]}
 
-set map_small         "no"
-set vmm_vcpu_same_cpu "no"
-
 if {[have_spec sel4]} {
-	set map_small  "yes"
-	set vmm_vcpu_same_cpu  "yes"
-
 	# seL4 has no AMD SVM support
 	assert {![have_include power_on/qemu]}
 }
 
-
-if {[have_spec foc]} {
-	# The performance is considerable bad when
-	# vmm and vcpu is not on same physical CPU
-	set vmm_vcpu_same_cpu  "yes"
-}
 
 set build_components {
 	driver/rtc
@@ -278,8 +266,12 @@ build $build_components
 
 # write Seoul config file
 set vm_cfg_fd [open "bin/vm_seoul.cfg" w]
-puts $vm_cfg_fd "<config map_small=\"$map_small\" vmm_vcpu_same_cpu=\"$vmm_vcpu_same_cpu\" vmm_memory=\"27M\" cpuid_native=\"$cpuid_native\" ld_verbose=\"yes\">"
-puts $vm_cfg_fd {	 <machine verbose="no">
+puts $vm_cfg_fd "<config cpuid_native=\"$cpuid_native\""
+puts $vm_cfg_fd { vmm_memory="64M" ld_verbose="yes">
+	<!-- The performance is considerable bad when vmm and vcpu is not on same physical CPU -->
+	<kernel name="foc"  vmm_vcpu_same_cpu="yes" cpuid_native="no"/>
+	<kernel name="sel4" vmm_vcpu_same_cpu="yes" cpuid_native="no" map_small="yes"/>
+	<machine verbose="no">
 		<mem start="0x0"         end="0x9a000"/>
 		<mem start="0x100000"    end="0xc0000000"/>   <!-- [1M- 3G) -->
 		<mem start="0x100000000" end="0x1100000000"/> <!-- [4G-68G) -->
