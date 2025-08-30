@@ -1,0 +1,11 @@
+--- src/lib/nettle/nettle-internal.h.orig	2025-08-30 16:44:03.404100116 +0200
++++ src/lib/nettle/nettle-internal.h	2025-06-01 20:59:41.819681876 +0200
+@@ -36,7 +36,7 @@
+ #define NETTLE_INTERNAL_H_INCLUDED
+ 
+ #include <assert.h>
+-
++#include <stdlib.h>
+ #include "nettle-meta.h"
+ 
+ /* For definition of NETTLE_MAX_HASH_CONTEXT_SIZE. */
