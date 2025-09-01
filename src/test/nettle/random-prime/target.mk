@@ -13,6 +13,6 @@ INC_DIR += $(NETTLE_EXAMPLE_DIR) \
            $(NETTLE_DIR) \
            $(REP_DIR)/src/lib/nettle
 
-CC_OPT  = -DHAVE_CONFIG_H -v
+CC_OPT  = -DHAVE_CONFIG_H
 
 CC_CXX_WARN_STRICT =

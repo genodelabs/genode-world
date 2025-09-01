@@ -312,8 +312,8 @@ SRC_O += $(SRC_ASM:.asm=.o)
 
 %.o: %.asm
 	$(MSG_ASSEM)$@ 
-	cd $(NETTLE_DIR); /usr/bin/m4 $(NETTLE_DIR)/m4-utils.m4 $(NETTLE_DIR)/asm.m4 $(REP_DIR)/src/lib/nettle/config.m4 $(REP_DIR)/src/lib/nettle/machine.m4 $< >$(NETTLE_DIR)/x86_64/$*.s
-	$(CC) -c $(NETTLE_DIR)/x86_64/$*.s
+	$(VERBOSE)cd $(NETTLE_DIR); /usr/bin/m4 $(NETTLE_DIR)/m4-utils.m4 $(NETTLE_DIR)/asm.m4 $(REP_DIR)/src/lib/nettle/config.m4 $(REP_DIR)/src/lib/nettle/machine.m4 $< >$(NETTLE_DIR)/x86_64/$*.s
+	$(VERBOSE)$(CC) -c $(NETTLE_DIR)/x86_64/$*.s
 
 vpath %.c $(NETTLE_DIR)
 vpath %.c $(NETTLE_DIR)/ecc/
@@ -325,6 +325,7 @@ INC_DIR += \
 	$(REP_DIR)/src/lib/nettle
 
 CC_OPT = -DHAVE_CONFIG_H
+CC_WARN += -Wno-maybe-uninitialized
 
 LIBS += libc gmp
 
