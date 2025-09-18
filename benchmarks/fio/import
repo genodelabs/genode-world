@@ -1,0 +1,10 @@
+LICENSE   := GPLv2
+VERSION   := 3.39
+DOWNLOADS := fio.archive
+
+BASE_URL := https://github.com/axboe/fio/archive/refs/tags
+URL(fio) := $(BASE_URL)/fio-$(VERSION).tar.gz
+SHA(fio) := e2f4ff137061b44ceb83a55eb9ca8856fe188db6d9b00cb59f8629c9162afe0a
+DIR(fio) := src/fio
+
+PATCHES := $(addprefix patches/,Makefile.patch genode.patch os-genode_c.patch)

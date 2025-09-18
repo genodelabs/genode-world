@@ -1,0 +1,41 @@
+<runtime ram="1G" caps="500" binary="fio">
+
+	<requires>
+		<rtc/>
+		<timer/>
+	</requires>
+
+	<config>
+		<arg value="fio"/>
+		<arg value="--rw=randread"/>
+		<arg value="--name=IOPS-read"/>
+		<arg value="--bs=4k"/>
+		<arg value="--direct=1"/>
+		<arg value="--size=64M"/>
+		<arg value="--filename=/fiofile"/>
+		<arg value="--numjobs=1"/>
+		<arg value="--iodepth=32"/>
+		<vfs>
+			<dir name="dev">
+				<null/> <zero/> <log/> <rtc/>
+				<jitterentropy name="random"/>
+				<dir name="pipe"> <pipe/> </dir>
+			</dir>
+			<ram/>
+		</vfs>
+		<libc stdin="/dev/null" stdout="/dev/log" stderr="/dev/log"
+		      rtc="/dev/rtc" pipe="/dev/pipe"/>
+	</config>
+
+	<content>
+		<rom label="fio"/>
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="posix.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="vfs_jitterentropy.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="zlib.lib.so"/>
+	</content>
+</runtime>

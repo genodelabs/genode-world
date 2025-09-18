@@ -1,6 +1,7 @@
 set version(_/api/ccid)           1.6.2-2025-10-10
 set version(_/src/ccid)           1.6.2-2025-10-10
 set version(_/src/chrony)         4.6.1-2025-10-02
+set version(_/src/fio)            3.39-2025-12-03
 set version(_/api/gnutls)         3.6.16-2025-10-02
 set version(_/src/gnutls)         3.6.16-2025-10-02
 set version(_/api/libestr)        0.1.11-2025-10-09
