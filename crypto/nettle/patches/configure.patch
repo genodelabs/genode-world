@@ -1,0 +1,11 @@
+--- src/configure.orig	2025-05-26 11:55:56.804068634 +0200
++++ src/configure	2025-05-26 11:58:16.972430023 +0200
+@@ -6972,7 +6972,7 @@ case "$host_os" in
+     LIBHOGWEED_FORLINK=libhogweed.so
+     LIBHOGWEED_SONAME='$(LIBHOGWEED_FORLINK).$(LIBHOGWEED_MAJOR)'
+     LIBHOGWEED_FILE='$(LIBHOGWEED_SONAME).$(LIBHOGWEED_MINOR)'
+-    LIBHOGWEED_LINK='$(CC) $(CFLAGS) $(LDFLAGS) -shared -Wl,-soname=$(LIBHOGWEED_SONAME)'
++    LIBHOGWEED_LINK='$(CC) $(LDFLAGS) $(nettle_OBJS) $(filter-out -l:posix.lib.so,$(LDLIBS_SHARED))'
+     # Requested by debian, to make linking with only -lhogweed work
+     # (does not work in general, e.g., with static linking all of
+     # -lhogweed -lgmp -lnettle are still required). Also makes dlopen

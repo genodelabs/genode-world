@@ -1,0 +1,18 @@
+--- src/examples/timing.c.orig	2022-01-28 20:14:28.628797928 +0100
++++ src/examples/timing.c	2022-01-28 20:09:49.289870970 +0100
+@@ -42,6 +42,7 @@
+ #include <string.h>
+ #include <time.h>
+ 
++#define CLOCK_PROCESS_CPUTIME_ID CLOCK_MONOTONIC
+ #if HAVE_CLOCK_GETTIME && defined CLOCK_PROCESS_CPUTIME_ID
+ #define TRY_CLOCK_GETTIME 1
+ struct timespec cgt_start;
+@@ -114,6 +115,6 @@
+       fprintf(stderr, "clock_gettime not working, falling back to clock\n");
+       time_start = clock_time_start;
+       time_end = clock_time_end;
+-    }
++   }
+ #endif
+ }

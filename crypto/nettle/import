@@ -1,0 +1,10 @@
+LICENSE   := LGPLv4
+VERSION   := 3.7
+DOWNLOADS := nettle.archive
+
+URL(nettle) := https://ftpmirror.gnu.org/gnu/nettle/nettle-$(VERSION).tar.gz
+SHA(nettle) := f001f64eb444bf13dd91bceccbc20acbc60c4311d6e2b20878452eb9a9cec75a
+DIR(nettle) := src
+
+PATCHES := $(addprefix patches/, timing.patch testutils.patch hogweed.pc.in.patch nettle.pc.in.patch Makefile.in.patch configure.patch)
+PATCH_OPT := -p1 -d src

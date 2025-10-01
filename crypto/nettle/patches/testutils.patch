@@ -1,0 +1,19 @@
+--- src/testsuite/testutils.h.orig	2025-01-30 10:00:52.000000000 +0100
++++ src/testsuite/testutils.h	2025-01-30 10:00:20.445513797 +0100
+@@ -15,6 +15,8 @@
+ #include "nettle-types.h"
+ #include "version.h"
+ 
++#include "gmp-glue.h"
++
+ #if WITH_HOGWEED
+ # include "rsa.h"
+ # include "dsa-compat.h"
+@@ -22,7 +24,6 @@
+ # include "ecc.h"
+ # include "ecc-internal.h"
+ # include "ecdsa.h"
+-# include "gmp-glue.h"
+ # if NETTLE_USE_MINI_GMP
+ #  include "knuth-lfib.h"
+ # endif

@@ -1,0 +1,15 @@
+--- src/nettle.pc.in.orig	2025-03-03 18:25:32.341214285 +0100
++++ src/nettle.pc.in	2025-03-03 18:24:05.950619451 +0100
+@@ -1,11 +1,5 @@
+-prefix=@prefix@
+-exec_prefix=@exec_prefix@
+-libdir=@libdir@
+-includedir=@includedir@
+-
+ Name: Nettle
+ Description: Nettle low-level cryptographic library (symmetric algorithms)
+ URL: http://www.lysator.liu.se/~nisse/nettle
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -lnettle
+-Cflags: -I${includedir}
++Libs: 

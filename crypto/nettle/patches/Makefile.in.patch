@@ -1,0 +1,11 @@
+--- src/Makefile.in.orig	2025-03-03 18:00:37.123079744 +0100
++++ src/Makefile.in	2025-03-03 18:00:45.870021151 +0100
+@@ -19,7 +19,7 @@ OPT_NETTLE_SOURCES = @OPT_NETTLE_SOURCES
+ 
+ FAT_TEST_LIST = @FAT_TEST_LIST@
+ 
+-SUBDIRS = tools testsuite examples
++SUBDIRS = 
+ 
+ include config.make
+ 

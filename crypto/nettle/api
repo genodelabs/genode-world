@@ -1,0 +1,3 @@
+install/include/nettle/
+nettle.pc
+hogweed.pc

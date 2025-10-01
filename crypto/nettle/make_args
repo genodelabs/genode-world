@@ -1,0 +1,5 @@
+LIBNETTLE_FORLINK=libnettle_dummy.so
+LIBHOGWEED_FORLINK=nettle.lib.so
+LIBHOGWEED_LIBS=
+nettle.lib.so
+install-headers
