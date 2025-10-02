@@ -1,0 +1,14 @@
+--with-included-unistring
+--with-included-libtasn1
+--disable-gost
+--without-idn
+--disable-cxx
+--enable-local-libopts
+--without-p11-kit
+--disable-doc
+--disable-tools
+--enable-shared
+--enable-static=no
+--enable-guile=no
+--host=x86_64-pc-genode
+ --with-default-trust-store-file=/etc/ssl/certs/ca-certificates.crt

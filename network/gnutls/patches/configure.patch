@@ -1,0 +1,94 @@
+--- src/configure.orig	2025-03-05 17:45:36.786287732 +0100
++++ src/configure	2025-03-05 17:44:47.104932984 +0100
+@@ -55425,13 +55425,15 @@ sysv4 | sysv4.3*)
+     ;;
+   esac
+   ;;
+-
+ tpf*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++genode*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -59114,6 +59116,11 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      archive_expsym_cmds=''
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
+@@ -59977,6 +59984,11 @@ $as_echo "$lt_cv_irix_exported_symbol" >
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      archive_expsym_cmds=''
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -61048,6 +61060,13 @@ uts4*)
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++genode*)
++  dynamic_linker="Genode ld.lib.so"
++  shrext_cmds=.lib.so
++  libname_spec='$name'
++  library_names_spec='$libname$shared_ext'
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -63320,6 +63339,12 @@ fi
+         ld_shlibs_CXX=no
+         ;;
+ 
++      genode*)
++        archive_cmds_CXX='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++        archive_expsym_cmds_CXX=''
++        ld_shlibs_CXX=yes
++        ;;
++
+       *)
+         # FIXME: insert proper C++ library support
+         ld_shlibs_CXX=no
+@@ -65013,6 +65038,13 @@ uts4*)
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++genode*)
++  dynamic_linker="Genode ld.lib.so"
++  shrext_cmds=.lib.so
++  libname_spec='$name'
++  library_names_spec='$libname$shared_ext'
++  #dynamic_linker=yes
++  ;;
+ *)
+   dynamic_linker=no
+   ;;
+@@ -71563,7 +71595,8 @@ lt_prog_compiler_wl_CXX='`$ECHO "$lt_pro
+ lt_prog_compiler_static_CXX='`$ECHO "$lt_prog_compiler_static_CXX" | $SED "$delay_single_quote_subst"`'
+ lt_cv_prog_compiler_c_o_CXX='`$ECHO "$lt_cv_prog_compiler_c_o_CXX" | $SED "$delay_single_quote_subst"`'
+ archive_cmds_need_lc_CXX='`$ECHO "$archive_cmds_need_lc_CXX" | $SED "$delay_single_quote_subst"`'
+-enable_shared_with_static_runtimes_CXX='`$ECHO "$enable_shared_with_static_runtimes_CXX" | $SED "$delay_single_quote_subst"`'
++enable_shared_with_static_runtimes_CXX='`$ECHO
++"$enable_shared_with_static_runtimes_CXX" | $SED "$delay_single_quote_subst"`'
+ export_dynamic_flag_spec_CXX='`$ECHO "$export_dynamic_flag_spec_CXX" | $SED "$delay_single_quote_subst"`'
+ whole_archive_flag_spec_CXX='`$ECHO "$whole_archive_flag_spec_CXX" | $SED "$delay_single_quote_subst"`'
+ compiler_needs_object_CXX='`$ECHO "$compiler_needs_object_CXX" | $SED "$delay_single_quote_subst"`'

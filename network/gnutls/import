@@ -1,0 +1,13 @@
+LICENSE        := LGPLv2.1
+VERSION_MAJOR  := 3
+VERSION_MINOR  := 6
+VERSION_PATCH  := 16
+VERSION        := $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
+DOWNLOADS      := gnutls.archive
+
+URL(gnutls) := https://www.gnupg.org/ftp/gcrypt/gnutls/v$(VERSION_MAJOR).$(VERSION_MINOR)/gnutls-$(VERSION).tar.xz
+SHA(gnutls) := 1b79b381ac283d8b054368b335c408fedcb9b7144e0c07f531e3537d4328f3b3
+DIR(gnutls) := src
+
+PATCHES := $(addprefix patches/, configure.patch gnutls.pc.in.patch)
+PATCH_OPT := -p1 -d src

@@ -1,0 +1,22 @@
+--- src/lib/gnutls.pc.in.orig	2025-03-10 18:27:38.396829484 +0100
++++ src/lib/gnutls.pc.in	2025-03-10 18:32:23.859583170 +0100
+@@ -8,17 +8,9 @@
+ # without any warranty.
+ 
+ # Author: Simon Josefsson
+-
+-prefix=@prefix@
+-exec_prefix=@exec_prefix@
+-libdir=@libdir@
+-includedir=@includedir@
+-
++#
+ Name: GnuTLS
+ Description: Transport Security Layer implementation for the GNU system
+ URL: https://www.gnutls.org/
+ Version: @VERSION@
+-Libs: -L${libdir} -lgnutls
+-Libs.private: @LIBINTL@ @LIBSOCKET@ @INET_PTON_LIB@ @LIBPTHREAD@ @LIB_SELECT@ @TSS_LIBS@ @GMP_LIBS@ @LIBUNISTRING@ @LIBATOMIC_LIBS@ @GNUTLS_LIBS_PRIVATE@
+-@GNUTLS_REQUIRES_PRIVATE@
+-Cflags: -I${includedir}
++Libs:

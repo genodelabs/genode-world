@@ -1,3 +1,5 @@
+set version(genodelabs/api/gnutls) 3.6.16-2025-10-02
+set version(genodelabs/src/gnutls) 3.6.16-2025-10-02
 set version(genodelabs/api/nettle) 3.7-2025-10-01
 set version(genodelabs/src/nettle) 3.7-2025-10-01
 set version(genodelabs/api/sqlite) 3.50.4-2025-09-18
