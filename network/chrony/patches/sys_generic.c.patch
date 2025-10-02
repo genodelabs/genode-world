@@ -1,0 +1,194 @@
+--- src/chronyd/sys_generic.c.orig	2025-03-12 15:07:49.534708120 +0100
++++ src/chronyd/sys_generic.c	2025-03-12 15:08:12.944528241 +0100
+@@ -80,9 +80,6 @@ static struct timespec slew_start;
+ /* Scheduler timeout ID for ending of the currently running slew */
+ static SCH_TimeoutID slew_timeout_id;
+ 
+-/* Scheduled duration of the currently running slew */
+-static double slew_duration;
+-
+ /* Expected delay in ending of the slew due to process scheduling and
+    execution time, tracked as a decaying maximum value */
+ static double slew_excess_duration;
+@@ -95,6 +92,9 @@ static double slew_excess_duration;
+ #define MIN_SLEW_DURATION_EXCESS_RATIO 5.0
+ #define SLEW_EXCESS_DURATION_DECAY 0.9
+ 
++#define MAX_SLEW_TIMEOUT 1.0e4
++#define MIN_SLEW_TIMEOUT 1.0
++
+ /* Suggested offset correction rate (correction time * offset) */
+ static double correction_rate;
+ 
+@@ -124,7 +124,12 @@ static void
+ handle_step(struct timespec *raw, struct timespec *cooked, double dfreq,
+             double doffset, LCL_ChangeType change_type, void *anything)
+ {
+-  if (change_type == LCL_ChangeStep) {
++	if (change_type == LCL_ChangeUnknownStep) {
++		/* Reset offset and slewing */
++		slew_start = *raw;
++		offset_register = 0.0;
++		update_slew();
++	} else if (change_type == LCL_ChangeStep) {
+     UTI_AddDoubleToTimespec(&slew_start, -doffset, &slew_start);
+   }
+ }
+@@ -179,8 +184,8 @@ clamp_freq(double freq)
+ static void
+ update_slew(void)
+ {
+-  double old_slew_freq, total_freq, corr_freq, duration, excess_duration;
+   struct timespec now, end_of_slew;
++  double old_slew_freq, total_freq, corr_freq, duration;
+ 
+   /* Remove currently running timeout */
+   SCH_RemoveTimeout(slew_timeout_id);
+@@ -193,39 +198,29 @@ update_slew(void)
+ 
+   stop_fastslew(&now);
+ 
+-  /* Update the maximum excess duration, decaying even when the slew did
+-     not time out (i.e. frequency was set or offset accrued), but add a small
+-     value to avoid denormals */
+-  slew_excess_duration = (slew_excess_duration + 1.0e-9) * SLEW_EXCESS_DURATION_DECAY;
+-  excess_duration = duration - slew_duration;
+-  if (slew_excess_duration < excess_duration &&
+-      excess_duration <= MAX_SLEW_EXCESS_DURATION)
+-    slew_excess_duration = excess_duration;
+-
+-  /* Calculate the duration of the new slew, considering the current correction
+-     rate and previous delays in stopping of the slew */
++  /* Estimate how long should the next slew take */
+   if (fabs(offset_register) < MIN_OFFSET_CORRECTION) {
+-    duration = MAX_SLEW_DURATION;
++    duration = MAX_SLEW_TIMEOUT;
+   } else {
+     duration = correction_rate / fabs(offset_register);
+-    if (duration < MIN_SLEW_DURATION)
+-      duration = MIN_SLEW_DURATION;
+-    if (duration < MIN_SLEW_DURATION_EXCESS_RATIO * slew_excess_duration)
+-      duration = MIN_SLEW_DURATION_EXCESS_RATIO * slew_excess_duration;
++    if (duration < MIN_SLEW_TIMEOUT) {
++      duration = MIN_SLEW_TIMEOUT;
++    }
+   }
+ 
+   /* Get frequency offset needed to slew the offset in the duration
+      and clamp it to the allowed maximum */
+   corr_freq = offset_register / duration;
+-  if (corr_freq < -max_corr_freq)
++  if (corr_freq < -max_corr_freq) {
+     corr_freq = -max_corr_freq;
+-  else if (corr_freq > max_corr_freq)
++  } else if (corr_freq > max_corr_freq) {
+     corr_freq = max_corr_freq;
++  }
+ 
+   /* Let the system driver perform the slew if the requested frequency
+      offset is too large for the frequency driver */
+   if (drv_accrue_offset && fabs(corr_freq) >= fastslew_max_rate &&
+-      fabs(offset_register) > fastslew_min_offset) {
++      abs(offset_register) > fastslew_min_offset) {
+     start_fastslew();
+     corr_freq = 0.0;
+   }
+@@ -245,8 +240,9 @@ update_slew(void)
+   /* Compute the dispersion introduced by changing frequency and add it
+      to all statistics held at higher levels in the system */
+   slew_error = fabs((old_slew_freq - slew_freq) * max_freq_change_delay);
+-  if (slew_error >= MIN_OFFSET_CORRECTION)
++  if (slew_error >= MIN_OFFSET_CORRECTION) {
+     lcl_InvokeDispersionNotifyHandlers(slew_error);
++  }
+ 
+   /* Compute the duration of the slew and clamp it.  If the slewing frequency
+      is zero or has wrong sign (e.g. due to rounding in the frequency driver or
+@@ -254,25 +250,25 @@ update_slew(void)
+      maximum timeout and try again on the next update. */
+   if (fabs(offset_register) < MIN_OFFSET_CORRECTION ||
+       offset_register * slew_freq <= 0.0) {
+-    duration = MAX_SLEW_DURATION;
++    duration = MAX_SLEW_TIMEOUT;
+   } else {
+     duration = offset_register / slew_freq;
+-    if (duration < MIN_SLEW_DURATION)
+-      duration = MIN_SLEW_DURATION;
+-    else if (duration > MAX_SLEW_DURATION)
+-      duration = MAX_SLEW_DURATION;
++    if (duration < MIN_SLEW_TIMEOUT) {
++      duration = MIN_SLEW_TIMEOUT;
++    }
++    else if (duration > MAX_SLEW_TIMEOUT) {
++      duration = MAX_SLEW_TIMEOUT;
++    }
+   }
+ 
+   /* Restart timer for the next update */
+   UTI_AddDoubleToTimespec(&now, duration, &end_of_slew);
+   slew_timeout_id = SCH_AddTimeout(&end_of_slew, handle_end_of_slew, NULL);
+   slew_start = now;
+-  slew_duration = duration;
+ 
+-  DEBUG_LOG("slew offset=%e corr_rate=%e base_freq=%f total_freq=%f slew_freq=%e"
+-            " duration=%f excess=%f slew_error=%e",
++  DEBUG_LOG("slew offset=%e corr_rate=%e base_freq=%f total_freq=%f slew_freq=%e duration=%f slew_error=%e",
+             offset_register, correction_rate, base_freq, total_freq, slew_freq,
+-            slew_duration, slew_excess_duration, slew_error);
++            duration, slew_error);
+ }
+ 
+ /* ================================================== */
+@@ -305,13 +301,28 @@ set_frequency(double freq_ppm)
+ 
+ /* ================================================== */
+ 
++/* Positive offset means system clock is fast of true time, therefore
++   slew backwards */
+ static void
+ accrue_offset(double offset, double corr_rate)
+ {
+-  offset_register += offset;
+-  correction_rate = corr_rate;
++  struct timeval newadj, oldadj;
++  double doldadj;
+ 
+-  update_slew();
++  UTI_DoubleToTimeval(-offset, &newadj);
++
++  if (adjtime(&newadj, &oldadj) < 0) {
++    LOG_FATAL("adjtime() failed");
++  }
++
++  /* Add the old remaining adjustment if not zero */
++  doldadj = UTI_TimevalToDouble(&oldadj);
++  if (doldadj != 0.0) {
++    UTI_DoubleToTimeval(-offset + doldadj, &newadj);
++    if (adjtime(&newadj, NULL) < 0) {
++      LOG_FATAL("adjtime() failed");
++    }
++  }
+ }
+ 
+ /* ================================================== */
+@@ -430,20 +441,6 @@ SYS_Generic_CompleteFreqDriver(double ma
+ void
+ SYS_Generic_Finalise(void)
+ {
+-  struct timespec now;
+-
+-  /* Must *NOT* leave a slew running - clock could drift way off
+-     if the daemon is not restarted */
+-
+-  SCH_RemoveTimeout(slew_timeout_id);
+-  slew_timeout_id = 0;
+-
+-  (*drv_set_freq)(clamp_freq(base_freq));
+-
+-  LCL_ReadRawTime(&now);
+-  stop_fastslew(&now);
+-
+-  LCL_RemoveParameterChangeHandler(handle_step, NULL);
+ }
+ 
+ /* ================================================== */

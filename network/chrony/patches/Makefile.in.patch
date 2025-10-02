@@ -1,0 +1,18 @@
+--- src/chronyd/Makefile.in.orig	2025-03-17 19:07:38.112320126 +0100
++++ src/chronyd/Makefile.in	2025-03-17 19:07:30.927072755 +0100
+@@ -31,7 +31,7 @@ DESTDIR =
+ CC = @CC@
+ CFLAGS = @CFLAGS@
+ CPPFLAGS = @CPPFLAGS@
+-LDFLAGS = @LDFLAGS@
++override LDFLAGS = @LDFLAGS@
+ 
+ GETDATE_CFLAGS = @GETDATE_CFLAGS@
+ 
+@@ -141,3 +141,6 @@ Makefile : Makefile.in configure
+ ifndef NODEPS
+ -include $(ALL_OBJS:%.o=.deps/%.d)
+ endif
++
++set_time_helper.o: set_time_helper.cc
++	$(CXX) $(CXXFLAGS) $(CFLAGS) -I . -c $< -o $@

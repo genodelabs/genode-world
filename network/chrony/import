@@ -1,0 +1,9 @@
+LICENSE   := GPLv2
+VERSION   := 4.6.1
+DOWNLOADS := chrony.archive
+
+URL(chrony) := https://chrony-project.org/releases/chrony-$(VERSION).tar.gz
+DIR(chrony) := src/chronyd
+SHA(chrony) := 571ff73fbf0ae3097f0604eca2e00b1d8bb2e91affe1a3494785ff21d6199c5c
+PATCHES := $(addprefix patches/, build.patch sysincl.h.patch genode_stubs.patch genode_stubs.c.patch sys_generic.c.patch sys_netbsd.c.patch Makefile.in.patch configure.patch)
+PATCH_OPT := -p1 -d src

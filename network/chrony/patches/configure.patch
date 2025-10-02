@@ -1,0 +1,11 @@
+--- src/chronyd/configure.orig	2025-03-13 14:07:19.587903215 +0100
++++ src/chronyd/configure	2025-03-13 14:07:11.393858432 +0100
+@@ -435,7 +435,7 @@ case $OPERATINGSYSTEM in
+         # recvmmsg() seems to be broken on FreeBSD 11.0 and it's just
+         # a wrapper around recvmsg()
+         try_recvmmsg=0
+-        EXTRA_OBJECTS="sys_generic.o sys_netbsd.o sys_timex.o sys_posix.o"
++        EXTRA_OBJECTS="sys_generic.o sys_netbsd.o sys_timex.o sys_posix.o genode_stubs.o set_time_helper.o set_time_helper_c.o hwclock.o"
+         try_setsched=1
+         try_lockmem=1
+         add_def FREEBSD

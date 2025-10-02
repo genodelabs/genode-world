@@ -1,0 +1,19 @@
+diff --git src/app/chronyd/sysincl.h src/app/chronyd/sysincl.h
+index e26b236..41509ce 100644
+--- src/chronyd/sysincl.h
++++ src/chronyd/sysincl.h
+@@ -53,14 +53,11 @@
+ #include <sys/time.h>
+ #include <sys/types.h>
+ #include <sys/un.h>
+-#include <sys/shm.h>
+ #include <sys/wait.h>
+ #include <time.h>
+ #include <unistd.h>
+ 
+-#if defined(LINUX) || defined(FREEBSD) || defined(NETBSD) || defined(SOLARIS) || defined(HAVE_MACOS_SYS_TIMEX)
+ #include <sys/timex.h>
+-#endif
+ 
+ #ifdef HAVE_GETRANDOM
+ #include <sys/random.h>

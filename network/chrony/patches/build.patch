@@ -1,0 +1,19 @@
+--- /dev/null	2025-03-17 08:57:28.716479328 +0100
++++ src/Makefile	2025-03-17 19:27:39.707604142 +0100
+@@ -0,0 +1,16 @@
++APP_DIR=chronyd
++
++override LDFLAGS += $(LDLIBS)
++export
++all:
++	cd $(APP_DIR) && ./configure \
++		--host-system=FreeBSD \
++		--host-release=12.0.0 \
++		--host-machine=x86_64 \
++		--disable-refclock \
++		--disable-privdrop \
++		--disable-readline \
++		--disable-ipv6 \
++		--disable-rtc \
++		--enable-debug
++	$(MAKE) -C $(APP_DIR) -f Makefile chronyd

@@ -1,0 +1,94 @@
+--- /dev/null	2025-03-13 08:55:48.917261329 +0100
++++ src/chronyd/genode_stubs.c	2025-03-13 14:44:00.640153179 +0100
+@@ -0,0 +1,91 @@
++/*
++ * \brief  OS specific implementations used by chrony
++ * \author Roland Bär
++ * \date   2022-06-06
++ */
++
++#include "config.h"
++#include "sysincl.h"
++#include "sys_timex.h"
++
++#include "set_time_helper.h"
++
++#include "logging.h"
++
++void settime(time_t time)
++{
++  set_time_via_helper(&_set_time_helper, time);
++}
++
++
++void set_time_correction(long long correction)
++{
++  // get current time
++  struct timespec ts;
++
++  if( clock_gettime( CLOCK_REALTIME, &ts) == -1 ) {
++    LOG(LOGS_ERR, "clock_gettime failed" );
++    return;
++  }
++
++  // add correction
++  time_t time = ts.tv_sec + (time_t)(((ts.tv_nsec / 1000LL) + correction) / 1000000LL);
++
++  // set time
++  settime(time);
++}
++
++
++int ntp_adjtime(struct timex *txc)
++{
++  if((txc->modes | MOD_STATUS) > 0) {
++    return 0;
++  }
++
++  long long big_sec, big_usec, new_correction = 0LL;
++
++  if((txc->modes | MOD_OFFSET) > 0) {
++    /* Adjustment required. */
++    /* Immediately jump the PDC time to the new value, and then initiate a 
++       gradual MPE time correction slew. */
++    set_time_correction(txc->offset);
++  }
++
++  return 0;
++}
++
++
++int adjtime(const struct timeval *delta, struct timeval *olddelta)
++{
++  long long big_sec, big_usec, new_correction = 0LL;
++
++  if (delta != NULL) {
++    /* Adjustment required.  Convert delta to 64-bit microseconds. */
++    big_sec = (long)delta->tv_sec;
++    big_usec = delta->tv_usec;
++    new_correction = (big_sec * 1000000LL) + big_usec;
++  }
++
++  if (delta != NULL) {
++    /* Adjustment required. */
++    /* Immediately jump the PDC time to the new value, and then initiate a 
++       gradual MPE time correction slew. */
++    set_time_correction(new_correction);
++  }
++
++  if (olddelta != NULL) {
++    /* Caller wants to know remaining amount of previous correction. */
++    olddelta->tv_sec = 0LL;
++    olddelta->tv_usec = 0LL;
++  }
++  
++  return 0;
++}
++
++
++int settimeofday(const struct timeval *tv, const struct timezone *tz)
++{
++  time_t time = tv->tv_sec;
++  settime(time);
++  return 0;
++}

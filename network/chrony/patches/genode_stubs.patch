@@ -1,0 +1,217 @@
++++ src/chronyd/config.h
+@@ -0,0 +1,45 @@
++#define NETBSD 1
++//#define LINUX 1
++#define FEAT_DEBUG 1
++#define DEBUG 1
++#define FEAT_CMDMON 1
++#define FEAT_NTP 1
++// #define FEAT_REFCLOCK 1
++#define HAVE_LONG_TIME_T 1
++#define NTP_ERA_SPLIT (1644776655LL - 18250 * 24 * 3600)
++//#define HAVE_IN_PKTINFO 1
++//#define FEAT_IPV6 1
++#define _GNU_SOURCE 1
++#define HAVE_IN6_PKTINFO 1
++#define HAVE_CLOCK_GETTIME 1
++#define FEAT_ASYNCDNS 1
++#define USE_PTHREAD_ASYNCDNS 1
++#define HAVE_GETRANDOM 1
++// #define HAVE_RECVMMSG 1
++// #define HAVE_LINUX_TIMESTAMPING 1
++//#define HAVE_LINUX_TIMESTAMPING_RXFILTER_NTP 1
++//#define HAVE_LINUX_TIMESTAMPING_OPT_PKTINFO 1
++//#define HAVE_LINUX_TIMESTAMPING_OPT_TX_SWHW 1
++//#define FEAT_RTC 1
++// #define FEAT_PHC 1
++//#define HAVE_PTHREAD_SETSCHEDPARAM 1
++// #define HAVE_MLOCKALL 1
++#define HAVE_SETRLIMIT_MEMLOCK 1
++#define FORCE_DNSRETRY 1
++#define FEAT_SECHASH 1
++#define HAVE_CMAC 1
++#define HAVE_SIV 1
++#define FEAT_NTS 1
++//#define PRIVOPS_ADJUSTTIME 1
++//S#define PRIVOPS_ADJUSTTIMEX 1
++//#define PRIVOPS_HELPER 1
++#define DEFAULT_CONF_FILE "/etc/chrony.conf"
++#define DEFAULT_HWCLOCK_FILE ""
++#define DEFAULT_PID_FILE "/var/run/chrony/chronyd.pid"
++#define DEFAULT_RTC_DEVICE "/dev/rtc"
++#define DEFAULT_USER "root"
++#define DEFAULT_COMMAND_SOCKET "/var/run/chrony/chronyd.sock"
++#define MAIL_PROGRAM "/usr/lib/sendmail"
++#define CHRONYC_FEATURES "-READLINE +SECHASH +IPV6 +DEBUG"
++#define CHRONYD_FEATURES "+CMDMON +NTP +REFCLOCK +RTC -PRIVDROP -SCFILTER -SIGND +ASYNCDNS +NTS +SECHASH +IPV6 +DEBUG"
++#define CHRONY_VERSION "DEVELOPMENT"
++++ src/chronyd/set_time_helper_c.c
+@@ -0,0 +1,15 @@
++/*
++ * \brief  C helper implementation for set time
++ * \author Roland Bär
++ * \date   2022-06-06
++ */
++
++#include <time.h>
++#include <stdio.h>
++#include "set_time_helper.h"
++
++
++void set_time_via_helper(set_time_helper* set_time_helper, time_t time)
++{
++	set_time_callback_function(set_time_helper, time);
++}
+\ No newline at end of file
++++ src/chronyd/set_time_helper.cc
+@@ -0,0 +1,84 @@
++/*
++ * \brief  helper implementation for set time
++ * \author Roland Bär
++ * \date   2022-06-06
++ */
++
++#include <base/env.h>
++#include <libc/args.h>
++#include <libc/component.h>
++#include <rtc.h>
++#include <os/reporter.h>
++#include <util/reconstructible.h>
++#include "set_time_helper.h"
++
++set_time_helper::set_time_helper()
++{
++	Genode::log("set_time_helper::ctor");
++}
++
++
++set_time_helper::~set_time_helper()
++{
++}
++
++
++void set_time_helper::init(Libc::Env &env)
++{
++	_set_time_reporter.construct(env, "set_rtc");
++}
++
++
++void set_time_helper::set_time(time_t &time)
++{
++	Rtc::Timestamp _ts { };
++
++	struct tm *utc = gmtime(&time);
++	if (utc) {
++		_ts.second = utc->tm_sec;
++		_ts.minute = utc->tm_min;
++		_ts.hour   = utc->tm_hour;
++		_ts.day    = utc->tm_mday;
++		_ts.month  = utc->tm_mon + 1;
++		_ts.year   = utc->tm_year + 1900;
++	} else {
++		Genode::error("time is not in UTC!");
++	}
++
++	_set_rtc(*_set_time_reporter, _ts);
++}
++
++
++set_time_helper* set_time_callback_function(set_time_helper* set_time_helper, time_t time)
++{
++	set_time_helper->set_time(time);
++	return set_time_helper;
++}
++
++
++/*
++ * 'main' will be called by component initialization
++ */
++extern "C" int main(int argc, char *argv[]);
++
++
++static void construct_component(Libc::Env &env)
++{
++	int argc    = 0;
++	char **argv = nullptr;
++	char **envp = nullptr;
++
++	populate_args_and_env(env, argc, argv, envp);
++
++	exit(main(argc, argv));
++}
++
++
++void Libc::Component::construct(Libc::Env &env)
++{
++	_set_time_helper.init(env);
++	Libc::with_libc([&] () { construct_component(env); });
++}
++
++
++set_time_helper _set_time_helper;
++++ src/chronyd/set_time_helper.h
+@@ -0,0 +1,64 @@
++/*
++ * \brief  helper for setting the time
++ * \author Roland Bär
++ * \date   2022-06-06
++ */
++
++#ifndef _SET_TIME_HELPER_H_
++#define _SET_TIME_HELPER_H_
++
++#ifdef __cplusplus
++
++#include <rtc.h>
++#include <rtc_session/rtc_session.h>
++#include <os/reporter.h>
++#include <util/reconstructible.h>
++
++class set_time_helper
++{
++private:
++	Genode::Constructible<Genode::Expanding_reporter> _set_time_reporter { };
++
++	void _set_rtc(Genode::Expanding_reporter &reporter, Rtc::Timestamp const &ts)
++	{
++		Genode::log("_set_rtc");
++		reporter.generate([&] (Genode::Generator &g) {
++			g.attribute("year",   ts.year);
++			g.attribute("month",  ts.month);
++			g.attribute("day",    ts.day);
++			g.attribute("hour",   ts.hour);
++			g.attribute("minute", ts.minute);
++			g.attribute("second", ts.second);
++		});
++	}
++
++public:
++	set_time_helper();
++	~set_time_helper();
++	void init(Libc::Env &env);
++	void set_time(time_t &time);
++};
++
++#else
++	typedef
++		struct set_time_helper
++			set_time_helper;
++#endif // __cplusplus
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++	extern set_time_helper _set_time_helper;
++#if defined(__STDC__) || defined(__cplusplus)
++	extern void set_time_via_helper(set_time_helper*, time_t);   /* ANSI C prototypes */
++	extern set_time_helper* set_time_callback_function(set_time_helper*, time_t);
++#else
++	extern void set_time_via_helper(time_t);        /* K&R style */
++	extern set_time_helper* set_time_callback_function(time_t);
++#endif
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif // _SET_TIME_HELPER_H_
