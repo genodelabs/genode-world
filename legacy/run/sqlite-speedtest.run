@@ -1,3 +1,5 @@
+assert {[have_spec x86_64]}
+
 create_boot_directory
 
 import_from_depot [depot_user]/src/[base_src] \
@@ -75,5 +77,4 @@ install_config $config
 
 build_boot_image [build_artifacts]
 
-run_genode_until {.*child "sqlite-speedtest" exited with exit value 0.*} 100
-
+run_genode_until {.*child "sqlite-speedtest" exited with exit value 0.*} 45
