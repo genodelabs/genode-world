@@ -9,23 +9,32 @@
 #       From the given output select the certificate from Let's Encrypt
 #       (or whatever is the root of the given certificate chain).
 
+#
+# For the moment limit the tested platforms as the test might
+# take a few minutes to finish, even in the good case.
+#
+assert {[have_spec x86_64]}
+assert {[have_board pc]}
+assert {[have_spec nova] || [have_spec hw]}
+
 create_boot_directory
 
-set packages "
-	[depot_user]/pkg/[drivers_nic_pkg]
-	[depot_user]/pkg/system_rtc-[board]
-	[depot_user]/src/[base_src]
-	[depot_user]/src/gmp
-	[depot_user]/src/init
-	[depot_user]/src/libc
-	[depot_user]/src/nic_router
-	[depot_user]/src/posix
-	[depot_user]/src/stdcxx
-	[depot_user]/src/vfs
-	[depot_user]/src/vfs_jitterentropy
-	[depot_user]/src/vfs_lxip
-	[depot_user]/src/vfs_pipe
-"
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/pkg/[drivers_nic_pkg] \
+                  [depot_user]/pkg/system_rtc-[board] \
+                  [depot_user]/src/gmp \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/nic_router \
+                  [depot_user]/src/posix \
+                  [depot_user]/src/stdcxx \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs_lxip \
+                  [depot_user]/src/vfs_pipe \
+                  [depot_user]/src/nettle/3.7-2025-10-01 \
+                  [depot_user]/src/gnutls/3.6.16-2025-10-02 \
+                  [depot_user]/src/chrony/4.6.1-2025-10-02
 
 proc rtc_driver { } {
 	switch [board] {
@@ -35,21 +44,13 @@ proc rtc_driver { } {
 	}
 }
 
-import_from_depot $packages
-
-build { app/chrony driver/rtc/spec/x86 lib/nettle lib/gnutls }
-
 #
 # Generate config
 #
 
 set lx_ip_addr "10.0.2.55"
 
-proc platform_policy {} {
-	return {<policy label_prefix="nic"> <pci class="USB"/> </policy>}
-}
-
-set config {
+append config {
 <config verbose="yes" prio_levels="2">
 	<parent-provides>
 		<service name="ROM"/>
@@ -64,14 +65,13 @@ set config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="100"/>
+	<default caps="100" ram="1M"/>
 
 	<start name="timer">
-		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
-	</start> 
-	<start name="nic" caps="1500" managing_system="yes">
-		<resource name="RAM" quantum="32M"/>
+	</start>
+
+	<start name="nic" caps="1500" ram="32M" managing_system="yes">
 		<binary name="init"/>
 		<route>
 			<service name="ROM" label="config"> <parent label="drivers.config"/> </service>
@@ -79,17 +79,16 @@ set config {
 			<service name="Uplink"> <child name="nic_router"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
-	</start> }
-append config {
+	</start>
+
 	<start name="report_rom">
-		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Report"/> <service name="ROM"/> </provides>
 		<config verbose="yes">
 			<policy label_suffix="set_rtc" report="chrony_daemon -> set_rtc"/>
 		</config>
 	</start>
+
 	<start name="rtc" ld="} [expr [have_board linux] ? "no" : "yes"] {">
-		<resource name="RAM" quantum="1M"/>
 		<binary name="} [rtc_driver] {"/>
 		<config verbose="yes" allow_setting_rtc="yes" />
 		<provides> <service name="Rtc"/> </provides>
@@ -98,39 +97,31 @@ append config {
 			<service name="ROM" label="set_rtc"> <child name="report_rom"/> </service>
 			<any-service> <parent /> </any-service>
 		</route>
-	</start>}
+	</start>
+}
 
 append config {
-	<start name="nic_router" caps="120">
-		<resource name="RAM" quantum="5M"/>
-		<provides>
-			<service name="Nic"/>
-			<service name="Uplink"/>
-		</provides>
-		<config verbose="yes" verbose_domain_state="yes" verbose_packets="yes"> 
-			<policy label_prefix="chrony_daemon" domain="server"/> 
+	<start name="nic_router" caps="120" ram="5M">
+		<provides> <service name="Nic"/> <service name="Uplink"/> </provides>
+		<config>
+			<policy label_prefix="chrony_daemon" domain="server"/>
 			<policy label_prefix="nic"           domain="uplink"/>
 			<domain name="uplink" }
 append_if [have_spec linux] config " interface=\"$lx_ip_addr/24\" gateway=\"10.0.2.1\""
 append config { >
-				<nat domain="server"
-				     tcp-ports="16384"
-				     udp-ports="16384"
-				     icmp-ids="16384"/>
+				<nat domain="server" tcp-ports="16384" udp-ports="16384" icmp-ids="16384"/>
 			</domain>
 			<domain name="server" interface="10.0.3.1/24" verbose_packets="yes">
 				<tcp dst="0.0.0.0/0"><permit-any domain="uplink" /></tcp>
 				<udp dst="0.0.0.0/0"><permit-any domain="uplink" /></udp>
-				<dhcp-server ip_first="10.0.3.2"
-				             ip_last="10.0.3.3"
-				             ip_lease_time_sec="600">
+				<dhcp-server ip_first="10.0.3.2" ip_last="10.0.3.3" ip_lease_time_sec="600">
 					<dns-server ip="8.8.8.8" />
 				</dhcp-server>
 			</domain>
 		</config>
-	</start> 
+	</start>
+
 	<start name="system_rtc">
-		<resource name="RAM" quantum="1M"/>
 		<provides><service name="Rtc"/></provides>
 		<config verbose="yes" allow_setting_rtc="true"/>
 		<route>
@@ -143,9 +134,8 @@ append config { >
 }
 
 append config {
-	<start name="chrony_daemon" caps="320" priority="-1">
+	<start name="chrony_daemon" caps="320" ram="64M" priority="-1">
 		<binary name="chronyd"/>
-		<resource name="RAM" quantum="64M"/>
 		<config ld_verbose="yes" verbose="yes">
 			<env key="GNUTLS_DEBUG_LEVEL" value="10" />
 			<arg value="chronyd"/>
@@ -178,42 +168,45 @@ log tracking
 					<!-- see note on top to update certificate -->
 					<inline name="cert_lets_encrypt.crt">
 -----BEGIN CERTIFICATE-----
-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
+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
+6EhKKXBGRKihIfP/Xg==
 -----END CERTIFICATE-----
 </inline>
 				</dir>
 				<dir name="var">
 					<dir name="run">
 						<dir name="chrony">
-							<inline name="chronyd.pid" />
-							<inline name="chronyd.sock" />
-							<inline name="drift" />
+							<inline name="chronyd.pid"></inline>
+							<inline name="chronyd.sock"></inline>
+							<inline name="drift"></inline>
 						</dir>
 					</dir>
 					<dir name="log">
@@ -223,9 +216,9 @@ KPpdzvvtTnOPlC7SQZSYmdunr3Bf9b77AiC/ZidstK36dRILKz7OA54=
 			</vfs>
 		</config>
 		<route>
-			<service name="Nic"> <child name="nic_router"/> </service>
-			<service name="Timer"> <child name="timer"/> </service>
-			<service name="Rtc"> <child name="system_rtc"/> </service>
+			<service name="Nic">   <child name="nic_router"/> </service>
+			<service name="Timer"> <child name="timer"/>      </service>
+			<service name="Rtc">   <child name="system_rtc"/> </service>
 			<any-service> <parent/> <any-child/> </any-service>
 		</route>
 	</start>
@@ -245,4 +238,4 @@ append qemu_args "  -nographic "
 
 append_qemu_nic_args "hostfwd=tcp::12865-:12865,hostfwd=tcp::49153-:49153"
 
-run_genode_until "init -> rtc] set time to" 900
+run_genode_until {.*init -> rtc] set time to.*} 600
