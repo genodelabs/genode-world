@@ -58,6 +58,8 @@ append config {
 		<config>
 			<arg value="sqlite-speedtest"/>
 			<arg value="--verify"/>
+			<arg value="--testset"/>
+			<arg value="main"/>
 			<vfs>
 				<ram/>
 				<dir name="dev"> <rtc/> <log/> <null/> </dir>
