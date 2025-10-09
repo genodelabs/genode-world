@@ -1,0 +1,72 @@
+--- src/configure.orig	2025-03-26 16:53:25.937132174 +0100
++++ src/configure	2025-03-26 16:53:22.732085733 +0100
+@@ -5258,6 +5258,9 @@ tpf*)
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++genode*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -9200,6 +9203,11 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      archive_expsym_cmds=''
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
+@@ -9647,6 +9655,10 @@ fi
+       hardcode_direct=yes
+       hardcode_shlibpath_var=no
+       ;;
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      archive_expsym_cmds=''
++      ;;
+ 
+     hpux9*)
+       if test yes = "$GCC"; then
+@@ -10064,6 +10076,10 @@ $as_echo "$lt_cv_irix_exported_symbol" >
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      ld_shlibs=yes
++      ;;
+     *)
+       ld_shlibs=no
+       ;;
+@@ -10779,6 +10795,12 @@ hpux9* | hpux10* | hpux11*)
+     sys_lib_search_path_spec="/usr/lib/pa20_64 /usr/ccs/lib/pa20_64"
+     sys_lib_dlsearch_path_spec=$sys_lib_search_path_spec
+     ;;
++  genode*)
++    dynamic_linker="Genode ld.lib.so"
++    shrext_cmds=.lib.so
++    libname_spec='$name'
++    library_names_spec='$libname$shared_ext'
++    ;;
+   *)
+     shrext_cmds='.sl'
+     dynamic_linker="$host_os dld.sl"
+@@ -11143,6 +11165,12 @@ uts4*)
+   soname_spec='$libname$release$shared_ext$major'
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
++genode*)
++  dynamic_linker="Genode ld.lib.so"
++  shrext_cmds=.lib.so
++  libname_spec='$name'
++  library_names_spec='$libname$shared_ext'
++  ;;
+ 
+ *)
+   dynamic_linker=no

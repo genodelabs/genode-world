@@ -1,0 +1,21 @@
+--- src/config.sub.orig	2025-03-26 15:31:40.507562269 +0100
++++ src/config.sub	2025-03-26 15:35:01.222155125 +0100
+@@ -118,7 +118,7 @@ case $maybe_os in
+   linux-musl* | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | netbsd*-eabi* | \
+   kopensolaris*-gnu* | cloudabi*-eabi* | \
+-  storm-chaos* | os2-emx* | rtmk-nova*)
++  storm-chaos* | os2-emx* | rtmk-nova* | genode*)
+     os=-$maybe_os
+     basic_machine=`echo "$1" | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
+@@ -1522,6 +1522,9 @@ case $os in
+ 		;;
+ 	-ios)
+ 		;;
++	-genode*)
++		os=-genode
++		;;
+ 	-none)
+ 		;;
+ 	*)

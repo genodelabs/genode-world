@@ -1,0 +1,14 @@
+--- src/libestr.pc.in.orig	2025-04-14 17:49:07.587454618 +0200
++++ src/libestr.pc.in	2025-04-14 17:49:56.400995066 +0200
+@@ -1,10 +1,4 @@
+-prefix=@prefix@
+-exec_prefix=@exec_prefix@
+-libdir=@libdir@
+-includedir=@includedir@
+-
+ Name: libestr
+ Description: some essentials for string processing
+ Version: @VERSION@
+-Libs: -L${libdir} @rt_libs@ -lestr
+-Cflags: -I${includedir}
++Libs: -l:estr.lib.so

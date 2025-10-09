@@ -1,0 +1,9 @@
+LICENSE   := GPLv3
+VERSION   := 0.1.11
+DOWNLOADS := libestr.archive
+
+URL(libestr) := http://libestr.adiscon.com/files/download/libestr-$(VERSION).tar.gz
+SHA(libestr) := 46632b2785ff4a231dcf241eeb0dcb5fc0c7d4da8ee49cf5687722cdbe8b2024
+DIR(libestr) := src/
+
+PATCHES := $(addprefix patches/, libestr.pc.in.patch configure.patch config.sub.patch)
