@@ -1,0 +1,8 @@
+LICENSE   := GPLv3
+VERSION   := 8.2502.0
+DOWNLOADS := rsyslog.archive
+
+URL(rsyslog) := https://www.rsyslog.com/files/download/rsyslog/rsyslog-$(VERSION).tar.gz
+SHA(rsyslog) := 02fa197d21d519f5a25a928deb9397cd387ba7382b9b449782ba31d8f3118206
+DIR(rsyslog) := src/
+PATCHES := $(addprefix patches/, configure.patch)

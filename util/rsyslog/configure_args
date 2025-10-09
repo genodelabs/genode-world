@@ -1,0 +1,6 @@
+--host=x86_64-pc-genode
+ac_cv_lib_pthread_pthread_create=yes
+--enable-libgcrypt=no
+--disable-uuid
+--disable-fmhttp
+--enable-imfile

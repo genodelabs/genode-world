@@ -1,0 +1,7 @@
+install/sbin/rsyslogd
+install/lib/rsyslog/imuxsock.so
+install/lib/rsyslog/imfile.so
+install/lib/rsyslog/lmnet.so
+install/lib/rsyslog/lmnetstrms.so
+install/lib/rsyslog/lmtcpclt.so
+install/lib/rsyslog/lmnsd_ptcp.so

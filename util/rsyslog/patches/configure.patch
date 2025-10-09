@@ -1,0 +1,114 @@
+--- src/configure.orig	2025-04-14 17:10:19.541899429 +0200
++++ src/configure	2025-04-14 17:10:43.770224018 +0200
+@@ -8681,6 +8681,9 @@ tpf*)
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++genode*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -12468,6 +12471,11 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      archive_expsym_cmds=''
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
+@@ -12920,6 +12928,11 @@ fi
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    genode*)
++      archive_cmds='$CC $libobjs $deplibs '$LDLIBS_SHARED' -o $lib'
++      archive_expsym_cmds=''
++      ;;
++
+     hpux9*)
+       if test yes = "$GCC"; then
+ 	archive_cmds='$RM $output_objdir/$soname~$CC -shared $pic_flag $wl+b $wl$install_libdir -o $output_objdir/$soname $libobjs $deplibs $compiler_flags~test "x$output_objdir/$soname" = "x$lib" || mv $output_objdir/$soname $lib'
+@@ -14057,6 +14070,12 @@ hpux9* | hpux10* | hpux11*)
+     sys_lib_search_path_spec="/usr/lib/pa20_64 /usr/ccs/lib/pa20_64"
+     sys_lib_dlsearch_path_spec=$sys_lib_search_path_spec
+     ;;
++  genode*)
++    dynamic_linker="Genode ld.lib.so"
++    shrext_cmds=.so
++    libname_spec='$name'
++    library_names_spec='$libname$shared_ext'
++    ;;
+   *)
+     shrext_cmds='.sl'
+     dynamic_linker="$host_os dld.sl"
+@@ -14425,6 +14444,13 @@ uts4*)
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++genode*)
++  dynamic_linker="Genode ld.lib.so"
++  shrext_cmds=.so
++  libname_spec='$name'
++  library_names_spec='$libname$shared_ext'
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;
+@@ -17354,7 +17380,7 @@ printf "%s\n" "#define OS_LINUX 1" >>con
+ 
+     os_type="linux"
+   ;;
+-  *-*-*darwin*|*-*-dragonfly*|*-*-freebsd*|*-*-netbsd*|*-*-openbsd*)
++  *-*-*darwin*|*-*-dragonfly*|*-*-freebsd*|*-*-netbsd*|*-*-openbsd*|*-*-genode*)
+ 
+ printf "%s\n" "#define OS_BSD 1" >>confdefs.h
+ 
+@@ -21175,8 +21201,6 @@ then :
+   printf %s "(cached) " >&6
+ else $as_nop
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lpthread -lpthread
+-			 $LIBS"
+ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 
+@@ -21207,14 +21231,14 @@ printf "%s\n" "$ac_cv_lib_pthread_pthrea
+ if test "x$ac_cv_lib_pthread_pthread_create" = xyes
+ then :
+ 
+-					PTHREADS_LIBS="-lpthread"
++					PTHREADS_LIBS=""
+ 					if test "$unamestr" = "AIX"; then
+ 					case "${CC}" in
+ 						*xlc*|*xlC*) PTHREADS_CFLAGS="-qthreaded" ;;
+ 						*) PTHREADS_CFLAGS="-lpthreads" ;;
+ 					esac
+ 					else
+-						PTHREADS_CFLAGS="-pthread"
++						PTHREADS_CFLAGS=""
+ 					fi
+ 
+ 
+@@ -21245,7 +21269,6 @@ then :
+   printf %s "(cached) " >&6
+ else $as_nop
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lpthread  $LIBS"
+ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 
+@@ -21288,7 +21311,6 @@ then :
+   printf %s "(cached) " >&6
+ else $as_nop
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lpthread  $LIBS"
+ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+ /* end confdefs.h.  */
+ 

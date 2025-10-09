@@ -7,5 +7,6 @@ set version(genodelabs/api/libfastjson) 1.2304.0-2025-10-09
 set version(genodelabs/src/libfastjson) 1.2304.0-2025-10-09
 set version(genodelabs/api/nettle) 3.7-2025-10-01
 set version(genodelabs/src/nettle) 3.7-2025-10-01
+set version(genodelabs/src/rsyslog) 8.2502.0-2025-10-09
 set version(genodelabs/api/sqlite) 3.50.4-2025-09-18
 set version(genodelabs/src/sqlite) 3.50.4-2025-09-18
