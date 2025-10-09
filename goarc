@@ -3,6 +3,8 @@ set version(genodelabs/api/gnutls) 3.6.16-2025-10-02
 set version(genodelabs/src/gnutls) 3.6.16-2025-10-02
 set version(genodelabs/api/libestr) 0.1.11-2025-10-09
 set version(genodelabs/src/libestr) 0.1.11-2025-10-09
+set version(genodelabs/api/libfastjson) 1.2304.0-2025-10-09
+set version(genodelabs/src/libfastjson) 1.2304.0-2025-10-09
 set version(genodelabs/api/nettle) 3.7-2025-10-01
 set version(genodelabs/src/nettle) 3.7-2025-10-01
 set version(genodelabs/api/sqlite) 3.50.4-2025-09-18

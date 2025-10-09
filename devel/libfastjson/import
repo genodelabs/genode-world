@@ -1,0 +1,13 @@
+LICENSE   := GPLv3
+VERSION   := 1.2304.0
+DOWNLOADS := libfastjson.archive
+
+URL(libfastjson) := http://download.rsyslog.com/libfastjson/libfastjson-$(VERSION).tar.gz
+SHA(libfastjson) := ef30d1e57a18ec770f90056aaac77300270c6203bbe476f4181cc83a2d5dc80c
+DIR(libfastjson) := src/
+
+DIRS := src/include
+DIR_CONTENT(src/include) := src/*.h
+
+#PATCHES := $(addprefix patches/, build.patch)
+PATCHES := $(addprefix patches/, configure.patch config.sub.patch libfastjson.pc.in.patch)

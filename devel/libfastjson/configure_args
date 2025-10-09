@@ -1,0 +1,3 @@
+--host=x86_64-pc-genode
+--enable-shared
+--enable-static=no
