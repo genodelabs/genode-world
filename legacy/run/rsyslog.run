@@ -1,0 +1,133 @@
+assert {[have_spec x86_64]}
+assert {[have_spec nova] || [have_spec hw] || [have_spec linux]}
+
+create_boot_directory
+
+import_from_depot [depot_user]/src/[base_src] \
+                  [depot_user]/src/init \
+                  [depot_user]/src/libc \
+                  [depot_user]/src/posix \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_import \
+                  [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs_pipe \
+                  [depot_user]/src/openssl \
+                  [depot_user]/src/zlib \
+                  [depot_user]/pkg/system_rtc-[board] \
+                  [depot_user]/src/libestr/0.1.11-2025-10-09 \
+                  [depot_user]/src/libfastjson/1.2304.0-2025-10-09 \
+                  [depot_user]/src/rsyslog/8.2502.0-2025-10-09
+
+#
+# Generate config
+#
+append config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<default caps="100" ram="1M"/>
+
+	<start name="timer">
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="system_rtc" caps="400" ram="6M">
+		<binary name="init"/>
+		<provides> <service name="Rtc"/> <service name="Report"/> </provides>
+		<route>
+			<service name="ROM" label="config"> <parent label="system_rtc.config"/> </service>
+			<service name="IO_MEM">  <parent/> </service>
+			<service name="IO_PORT"> <parent/> </service>
+			<service name="IRQ">     <parent/> </service>
+			<service name="LOG">     <parent/> </service>
+			<service name="PD">      <parent/> </service>
+			<service name="RM">      <parent/> </service>
+			<service name="CPU">     <parent/> </service>
+			<service name="ROM">     <parent/> </service>
+			<service name="Timer">   <child name="timer"/> </service>
+		</route>
+	</start>
+
+	<start name="vfs" caps="150">
+		<resource name="RAM" quantum="24M"/>
+		<provides><service name="File_system"/></provides>
+		<config>
+			<vfs>
+				<ram/>
+				<import>
+					<dir name="test_imfile">
+							<inline name="infile">
+Hello rsyslog!
+
+
+</inline>
+					</dir>
+				</import>
+				<dir name="dev"> <dir name="pipe"> <pipe/> </dir> </dir>
+				<dir name="var">
+					<dir name="spool"> <dir name="rsyslog"> <ram/> </dir> </dir>
+					<dir name="run"> <dir name="log"> <ram/> </dir> </dir>
+				</dir>
+			</vfs>
+			<default-policy root="/" writeable="yes"/>
+		</config>
+	</start>
+
+	<start name="rsyslogd" caps="520" ram="64M">
+		<config ld_verbose="true" verbose="yes">
+			<arg value="rsyslogd"/>
+			<arg value="-n"/>
+			<arg value="-iNONE"/>
+			<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" socket="/socket" pipe="/dev/pipe" rng="/dev/random"/>
+			<vfs>
+				<dir name="dev">
+					<rtc/> <log/> <null/>
+					<jitterentropy name="random"/>
+					<jitterentropy name="urandom"/>
+				</dir>
+				<dir name="etc">
+					<inline name="rsyslog.conf">
+module(load="imfile" PollingInterval="2")
+
+input(type="imfile"
+      File="/test_imfile/infile"
+      Tag="test_tag"
+      Severity="error"
+      Facility="local7")
+
+global(workDirectory="/test_imfile")
+action(type="omfile" File="/dev/log")
+
+*.* ~
+					</inline>
+				</dir>
+				<fs/>
+			</vfs>
+		</config>
+		<route>
+			<service name="File_system"><child name="vfs"/></service>
+			<service name="Rtc"> <child name="system_rtc"/> </service>
+			<service name="Timer"> <child name="timer"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+build_boot_image [build_artifacts]
+
+run_genode_until {.*Hello rsyslog!.*} 30
