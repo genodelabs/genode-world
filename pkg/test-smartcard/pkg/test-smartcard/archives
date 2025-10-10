@@ -1,0 +1,11 @@
+genodelabs/src/ccid
+genodelabs/src/libc
+genodelabs/src/libusb
+genodelabs/src/pcsc-lite
+genodelabs/src/posix
+genodelabs/src/vfs
+genodelabs/src/vfs_libusb
+genodelabs/src/vfs_pipe
+genodelabs/src/zlib
+genodelabs/src/test-smartcard
+genodelabs/raw/test-smartcard

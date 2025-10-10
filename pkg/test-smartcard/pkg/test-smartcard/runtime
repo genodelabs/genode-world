@@ -1,0 +1,41 @@
+<runtime ram="128M" caps="500" binary="test-smartcard">
+	<requires>
+	    <timer/>
+	    <usb/>
+	</requires>
+	<config>
+		<vfs>
+			<dir name="dev">
+				<log/>
+				<inline name="rtc">2018-01-01 00:01</inline>
+				<libusb/>
+			</dir>
+			<dir name="pipe"> <pipe/> </dir>
+			<dir name="ifd-ccid.bundle">
+				<dir name="Contents">
+					<rom name="Info.plist"/>
+				</dir>
+			</dir>
+		</vfs>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" pipe="/pipe"/>
+		<env key="LIBUSB_DEBUG" value="1"/> <!-- log libusb errors -->
+	</config>
+	<content>
+		<!-- Components -->
+		<rom label="test-smartcard"/>
+
+		<!-- Libraries -->
+		<rom label="ld.lib.so"/>
+		<rom label="libc.lib.so"/>
+		<rom label="libm.lib.so"/>
+		<rom label="libusb.lib.so"/>
+		<rom label="vfs_libusb.lib.so"/>
+		<rom label="vfs_pipe.lib.so"/>
+		<rom label="vfs.lib.so"/>
+		<rom label="pcsclite.lib.so"/>
+		<rom label="posix.lib.so"/>
+		<rom label="ccid.lib.so"/>
+		<rom label="zlib.lib.so"/>
+		<rom label="Info.plist"/>
+	</content>
+</runtime>

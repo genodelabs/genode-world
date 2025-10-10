@@ -14,3 +14,7 @@ set version(genodelabs/src/pcsc-lite) 2.3.3-2025-10-10
 set version(genodelabs/src/rsyslog) 8.2502.0-2025-10-09
 set version(genodelabs/api/sqlite) 3.50.4-2025-09-18
 set version(genodelabs/src/sqlite) 3.50.4-2025-09-18
+
+set version(genodelabs/pkg/test-smartcard) 2025-10-10
+set version(genodelabs/raw/test-smartcard) 2025-10-10
+set version(genodelabs/src/test-smartcard) 2025-10-10

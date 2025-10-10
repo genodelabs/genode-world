@@ -1,0 +1,6 @@
+genodelabs/api/libc
+genodelabs/api/libusb
+genodelabs/api/pcsc-lite
+genodelabs/api/posix
+genodelabs/api/so
+genodelabs/api/zlib
