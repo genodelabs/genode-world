@@ -1,4 +1,5 @@
 assert {[have_spec x86_64]}
+assert {[have_spec linux]}
 
 create_boot_directory
 
