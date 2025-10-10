@@ -1,0 +1,5 @@
+-Dpolkit=false
+-Dlibsystemd=false
+-Dlibudev=false
+-Dusb=true
+-Dlibusb=true

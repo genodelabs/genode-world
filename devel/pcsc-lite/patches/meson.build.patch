@@ -1,0 +1,145 @@
++++ src/meson.build
+@@ -36,9 +36,6 @@
+ if compiler.has_function('getrandom', prefix : '#include <sys/random.h>')
+   conf_data.set('HAVE_GETRANDOM', true)
+ endif
+-if compiler.has_function('secure_getenv')
+-  conf_data.set('HAVE_SECURE_GETENV', true)
+-endif
+ if compiler.has_function('getopt_long')
+   conf_data.set('HAVE_GETOPT_LONG', true)
+ endif
+@@ -47,6 +44,8 @@
+ features = []
+ if get_option('usb')
+   conf_data.set('USE_USB', true)
++  conf_data.set('PCSCLITE_STATIC_DRIVER', true)
++  conf_data.set('IFDHANDLERv3', true)
+   features += 'USB'
+ endif
+ 
+@@ -95,7 +94,7 @@
+ incdir = include_directories(['src', 'src/PCSC'])
+ 
+ # dependencies
+-threads_dep = dependency('threads')
++threads_dep = []
+ pcscd_dep = [threads_dep]
+ if get_option('libudev')
+   udev_dep = dependency('libudev')
+@@ -108,7 +107,7 @@
+   if get_option('libudev')
+     error('You can\'t use both libudev and libusb')
+   endif
+-  libusb_dep = dependency('libusb-1.0')
++  libusb_dep = dependency('libusb-1.0', required: false)
+   pcscd_dep += libusb_dep
+   conf_data.set('HAVE_LIBUSB', true)
+   features += 'libusb'
+@@ -163,12 +162,14 @@
+   install : true)
+ 
+ # libpcsclite_real library
++# Extended because we use only one library
+ libpcsclite_real_src = [
+   'src/debug.c',
+   'src/winscard_clnt.c',
+   'src/simclist.c',
+   'src/sys_unix.c',
+   'src/utils.c',
++  'src/g_defines.c',
+   'src/winscard_msg.c'
+   ]
+ shared_library('pcsclite_real',
+@@ -176,7 +177,6 @@
+   include_directories : incdir,
+   dependencies : threads_dep,
+   c_args: '-DLIBPCSCLITE -DSIMCLIST_NO_DUMPRESTORE',
+-  soversion : 1,
+   install : true)
+ 
+ # libpcsclite library
+@@ -186,23 +186,13 @@
+   'src/libredirect.c',
+   'src/sys_unix.c'
+   ]
++# We re-define the pcsclite-Library to be the real one
+ libpcsclite = shared_library('pcsclite',
+-  libpcsclite_src,
++  libpcsclite_real_src,
+   dependencies : dl_deps,
+   include_directories : incdir,
+-  soversion : 1,
+-  install : true)
+-
+-# static library
+-libpcsclite_static_src = libpcsclite_real_src + [
+-  'src/error.c',
+-  'src/g_defines.c',
+-  ]
+-libpcsclite_static = static_library('pcsclite',
+-  libpcsclite_static_src,
+-  include_directories : incdir,
+-  dependencies : threads_dep,
+-  c_args: '-DLIBPCSCLITE -DSIMCLIST_NO_DUMPRESTORE',
++  name_suffix : 'lib.so',
++  name_prefix : '',
+   install : true)
+ 
+ # libpcsclite_fake library
+@@ -224,12 +214,6 @@
+ install_data('src/spy/setup_spy.sh',
+   install_dir : 'share/doc/pcsc-lite')
+ 
+-run_command('pod2man',
+-  ['--date=2024-01-01', 'src/spy/pcsc-spy.pod', 'pcsc-spy.1'],
+-  check : true)
+-install_data('pcsc-spy.1',
+-  install_dir : join_paths(get_option('mandir'), 'man1'))
+-
+ # testpcsc program
+ executable('testpcsc',
+   sources : 'src/testpcsc.c',
+@@ -241,11 +225,6 @@
+   include_directories : incdir,
+   link_with : libpcsclite)
+ 
+-executable('pcsc_demo_static',
+-  sources : 'doc/example/pcsc_demo.c',
+-  include_directories : incdir,
+-  link_with : libpcsclite_static)
+-
+ # PC/SC headers
+ install_headers(
+   ['src/PCSC/debuglog.h',
+@@ -253,7 +232,7 @@
+    'src/PCSC/reader.h',
+    'src/PCSC/winscard.h',
+    'src/PCSC/wintypes.h'],
+-  install_dir : get_option('includedir') / 'PCSC')
++  install_dir : get_option('includedir'))
+ 
+ # data
+ if get_option('polkit')
+@@ -276,7 +255,7 @@
+ # generate from .in files
+ configure_file(output : 'pcsclite.h',
+   input : 'src/PCSC/pcsclite.h.in',
+-  install_dir : get_option('prefix') / get_option('includedir') / 'PCSC',
++  install_dir : get_option('prefix') / get_option('includedir'),
+   configuration : confgen_data)
+ configure_file(output : 'pcscd.h',
+   input : 'src/pcscd.h.in',
+@@ -308,9 +287,9 @@
+ # pkg-config libpcsclite.pc
+ pkg = import('pkgconfig')
+ pkg.generate(
+-  libraries : '-L${libdir} -lpcsclite',
+-  libraries_private : '-pthread',
+-  subdirs : 'PCSC',
++  libraries : '-l:pcsclite.lib.so',
++  libraries_private : '',
++  install_dir : get_option('prefix'),
+   version : meson.project_version(),
+   name : 'PCSC Lite',
+   filebase : 'libpcsclite',

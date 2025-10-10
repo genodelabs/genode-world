@@ -1,0 +1,11 @@
+LICENSE   := GPLv3
+VERSION   := 2.3.3
+DOWNLOADS := pcsc-lite.archive
+
+URL(pcsc-lite) := https://pcsclite.apdu.fr/files/pcsc-lite-$(VERSION).tar.xz
+# computed after checking the PGP signature
+SHA(pcsc-lite) := cdff7d7153a0b37aa74e26dfec89ec7dc5c5286aa21b91b903e38739d227e8e7
+DIR(pcsc-lite) := src/
+TAR_OPT(pcsc-lite) := --strip-components=1 --exclude=pcsc-lite-$(VERSION)/configure.ac
+
+PATCHES := $(addprefix patches/, meson.build.patch)
