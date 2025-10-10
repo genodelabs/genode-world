@@ -1,3 +1,5 @@
+set version(genodelabs/api/ccid) 1.6.2-2025-10-10
+set version(genodelabs/src/ccid) 1.6.2-2025-10-10
 set version(genodelabs/src/chrony) 4.6.1-2025-10-02
 set version(genodelabs/api/gnutls) 3.6.16-2025-10-02
 set version(genodelabs/src/gnutls) 3.6.16-2025-10-02

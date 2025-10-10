@@ -1,0 +1,11 @@
+LICENSE   := GPLv3
+VERSION   := 1.6.2
+DOWNLOADS := ccid.archive
+
+URL(ccid) := https://ccid.apdu.fr/files/ccid-$(VERSION).tar.xz
+# computed after checking the PGP signature
+SHA(ccid) := 41958410950157e622f9d91c9e78c7b708db74e22f71190c581d24d20564d449
+DIR(ccid) := src/
+TAR_OPT(ccid) := --strip-components=1 --exclude=ccid-$(VERSION)/configure.ac
+
+PATCHES := $(addprefix patches/, meson.build.patch)
