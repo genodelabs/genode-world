@@ -4,7 +4,7 @@ content: tyrian.tar
 
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/opentyrian)/src/app/opentyrian
 
-TAR_OPT := --owner=0 --group=0 --numeric-owner --mode='go=' --mtime='1970-01-01 00:00+00'
+include $(GENODE_DIR)/repos/base/recipes/content.inc
 
 tyrian.tar:
-	$(VERBOSE) tar $(TAR_OPT) -cf $@ -C $(PORT_DIR)/tyrian21 .
+	$(VERBOSE)$(TAR) -cf $@ -C $(PORT_DIR)/tyrian21 .

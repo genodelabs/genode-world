@@ -2,10 +2,10 @@ content: ubuntu-themes.tar
 
 PORT_DIR := $(call port_dir,$(REP_DIR)/ports/ubuntu-themes)
 
-TAR_OPT := --owner=0 --group=0 --numeric-owner --mode='go=' --mtime='2022-06-29 00:00+00'
+include $(GENODE_DIR)/repos/base/recipes/content.inc
 
 ubuntu-themes.tar:
-	tar $(TAR_OPT) \
+	$(TAR) \
 	    -cf $@ \
 	    --transform='s/ubuntu-themes/usr\/share\/icons/' \
 	    --transform='s/suru-icons/suru/' \
