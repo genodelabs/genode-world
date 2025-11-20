@@ -1,3 +1,5 @@
+assert {[have_spec x86_64]}
+
 #
 # Build
 #
@@ -74,4 +76,4 @@ build_boot_image [build_artifacts]
 
 append qemu_args " -nographic "
 
-run_genode_until {.*child "random-prime" exited with exit value 0} 1000
+run_genode_until {.*child "random-prime" exited with exit value 0} 60
