@@ -1,12 +1,12 @@
 <runtime ram="512M" caps="500" binary="speedtest">
 	<requires>
 		<timer/>
-                <rtc />
+		<rtc/>
 	</requires>
-	<config verbose="yes">
-		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" />
+	<config>
+		<libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
 		<vfs>
-			<ram />
+			<ram/>
 			<dir name="dev">
 				<rtc/>
 				<log/>
@@ -15,11 +15,11 @@
 		</vfs>
 		<arg value="speedtest"/>
 		<arg value="--verify"/>
+		<arg value="test.db"/>
 	</config>
 	<content>
 		<!-- Components -->
 		<rom label="speedtest"/>
-		<rom label="vfs"/>
 
 		<!-- Libraries -->
 		<rom label="ld.lib.so"/>
