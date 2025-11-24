@@ -8,55 +8,121 @@ the Genode OS Framework (https://genode.org), like ported applications,
 libraries and community-maintained components that reside outside of the base
 framework.
 
-Now, clone the _genode-world.git_ repository to a place of your choosing:
+In contrast to the components found in the mainline Genode repository, the
+components within the _genode-world_ repository are not subjected to the regular
+quality-assurance measures of Genode Labs. Hence, problems are to be expected
+while on the other hand the bar for community contributions is intentionally
+lowered.
+
+If you encounter bugs, build problems, or stability issues, please report them
+to the issue tracker [1], the Genode mailing list [2] or the Genode community
+forum [3].
+
+[1] https://github.com/genodelabs/genode-world/issues
+[2] https://genode.org/community/mailing-lists
+[3] https://genode.discourse.group
+
+
+Introduction
+------------
+
+Since Goa is required to contribute to _genode-world_, the first step
+is setting it up and making yourself comfortable using the tool. The
+[https://genode.org/documentation/genode-applications-25-04.pdf - Genode Applications book]
+will help you along the way. It describes how to install and setup Goa,
+and also contains practical tutorials encouraging you to get your feet wet.
+Keeping it close while starting your journey is strongly recommended.
+
+With the technical aspects of using Goa already covered well in the book,
+clone the _genode-world.git_ repository to a place of your choosing:
 
 ! git clone https://github.com/genodelabs/genode-world.git
 
-In its current iteration the various Goa projects are losely categorized
-by top-level directories that roughly define which type of software is to
-expected inside, e.g. 'database' contains a port of sqlite3.
+Afterwards you are free to explore the repository and 'goa import', 'build',
+'export', 'publish' and 'run' any project you like and add new ones.
 
-The notable exceptions are the 'legacy' and 'pkgs' directories:
-
-* :legacy: contains the content of the original _genode-world_ repository
-  and is going to be removed eventually
-
-* :pkgs: contains pkg archives that accumlate all dependencies for a given
-  component version. Those dependencies may be more volatile than the actual
-  component version, e.g. the sqlite3 version does not change and neither
-  does the API version of the libc but the version of the libc library
-  implementing the API changes.
+Please note that Goa expects to be used on an recent Linux distribution
+because it assumes a certain feature set in the tools it builds upon. That
+includes tools it uses directly, like bubblewrap to implement its sandboxing
+mechanism, as well as the build systems it incorporates and manages. These
+are tied to the project using them where version checks might fail or
+required features are missing in case the tool provided by the distribution
+is too old. At the time of writing Ubuntu LTS 24.04 is considered as
+base-line.
 
 
-Note of caution
----------------
+Conventions
+-----------
 
-In contrast to the components found in the mainline Genode repository, the
-components within the _world_ repository are not subjected to the regular
-quality-assurance measures of Genode Labs. Hence, problems are to be expected.
-If you encounter bugs, build problems, or stability issues, please report them
-to the issue tracker [1] or the Genode mailing list [2].
+In its current iteration the various Goa projects are loosely categorized
+by top-level directories that roughly define which type of software can be
+expected inside, e.g., _database_ contains a port of sqlite3.
 
-[1] https://github.com/genodelabs/genode-world/issues
-[2] http://genode.org/community/mailing-lists
+The notable exceptions are the 'legacy' and 'pkg' directories:
+
+:legacy: contains the content of the original _genode-world_ repository.
+
+:pkg: contains integration projects but no code. Such an integration
+  project merely consists of a list of dependencies (archives file)
+  a README, and a runtime definition. By separating integration projects
+  from the software projects, they can be updated independently.
+
+As a fitting category directory might not yet exist for a new project,
+creating one can become necessary. Categories are not always clear-cut,
+e.g., linphone could be put either into network or voip. We tend to
+consult how other projects/OSes, like the BSD ports collection, categorize
+their software.
+
+Since the _genode-world_ repository follows the current Sculpt OS release and
+for that matter depends on depot archives that are managed within the Genode
+repository, these archives are provided by the _genodelabs_ depot user.
+Among others, they include the archives required by POSIX components like
+_libc_, _libm_, and _posix_.
+The current list of the archives concerning Goa can be found in the _archives_
+file in the _pkg/goa_ depot as well as in the Goa repository itself
+under _share/goa/goarc_.
+
+These archives should primarily be used in case a project depends on one
+of them. All other dependencies and archives, referenced
+within _genode-world_ should make use of the wildcard '_' depot user because
+_genode-world_ is a shared Goa projects repository. As _pkg/goa_ contains
+only a subset of all available archives and is extended on demand, you may
+stumble upon a dependency, for which no readily available _genodelabs_
+archive exists yet. Also using '_' in this case is reasonable, but this
+circumstance should be noted to be remedied in a later release.
+
+The depot user '_' is a wildcard replaced with the depot user specified via
+the '--depot-user' Goa command-line parameter.
+The wildcard user allows different developers/publishers to provide the same
+project without any alteration to its ingredients given in the _used_apis_ and
+_archives_ files.
+
+The version information within the genode-world repository is manually managed
+via its top-level _goarc_ file and makes use of the wildcard user.
+Therefore, this information is consistently used for all developers of
+Genode world regardless of their '--depot-user' identity.
+
+The usage of the depot wildcard user is in contrast to prior private Goa
+projects where the depot user was mostly hard-coded to the
+developer providing the Goa a project.
 
 
 Note considering the old genode-world repository
 ------------------------------------------------
 
-The old content of the Genode world repository is available in the 'legacy'
-sub-directory for a finite time.
+The content of the old repository will live on until Summer 2026
+within the _legacy_ sub-directory of the repository to ease the
+ongoing transition phase. If you are still relying on software from the
+_legacy/_ directory you may have to adjust your current checkout to keep it
+operational as follows.
 
-It is currently in a transition phase to become a Goa projects focal point.
-The original _genode-world_ content can be found in the _legacy_ sub-directory
-for the time being and to keep it operable you may have to replace your current
-repository checkout.
+Replace the 'repos/world' directory with a symlink pointing to the _legacy_
+sub-directory within your checkout. In case you followed the original _README_
+file it is safe to move your direct checkout directory out of Genode's _repos_
+directory:
 
-Replace the'repos/world' directory with a symlink pointing to your checkout and
-in case you followed the original _README_ file it is safe to move your direct
-checkout directory out of Genode's _repos_ directory, .e.g.
-
-! mv genode/repos/world ../genode-world
+! mv genode/repos/world ../../genode-world
 ! ln -sf <path>/genode-world/legacy genode/repos/world
 
-Afterwards the repository can be used as before.
+Afterwards, the repository can be used as before as a regular Genode
+repository, further alterations are not necessary.
