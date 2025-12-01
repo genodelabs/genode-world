@@ -4358,9 +4358,10 @@ class Genode::Vm_region_map
 			_range.add_range(_base, VM_SIZE);
 		}
 
-		addr_t alloc_region(size_t size, int align)
+		addr_t alloc_region(size_t size, uint8_t align_log2)
 		{
-			return _range.alloc_aligned(size, align > 12 ? align : 12).convert<addr_t>(
+			Align const align { .log2 = max(align_log2, uint8_t(12)) };
+			return _range.alloc_aligned(size, align).convert<addr_t>(
 				[&] (Range_allocator::Allocation &a) {
 					a.deallocate = false;
 					return (addr_t)a.ptr; },
@@ -4530,7 +4531,7 @@ char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
 {
 	try {
 		Genode::addr_t addr =  vm_reg->reserve(bytes, (Genode::addr_t)requested_addr,
-		                       alignment_hint ? Genode::log2(alignment_hint) : 12);
+		                                       Genode::log2(alignment_hint, 12u));
 		return (char *)addr;
 	} catch (...) {
 		Genode::error(__PRETTY_FUNCTION__, " exception!");
