@@ -78,7 +78,7 @@ struct Backend_gui : Genode::List<Backend_gui>::Element
 		guis.insert(this);
 	}
 
-	size_t fb_size() { return Genode::align_addr(_mode().num_bytes(), 12); }
+	size_t fb_size() { return Genode::align_addr(_mode().num_bytes(), Genode::AT_PAGE); }
 
 	void resize(Genode::Env &env, Gui::Area const area)
 	{

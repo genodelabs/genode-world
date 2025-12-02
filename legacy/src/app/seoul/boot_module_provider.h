@@ -150,7 +150,7 @@ class Boot_module_provider
 					 * the loaded boot module. The command line resides right
 					 * behind the module data, aligned on a page boundary.
 					 */
-					auto const cmdline_offset = Genode::align_addr(data_len, 12);
+					auto const cmdline_offset = Genode::align_addr(data_len, Genode::AT_PAGE);
 
 					if (cmdline_offset >= dst_len) {
 						error("destination buffer too small for command line");
