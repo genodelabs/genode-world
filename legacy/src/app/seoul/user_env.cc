@@ -106,7 +106,7 @@ void *operator new[](size_t size)
 {
 	void * addr = heap_alloc(size);
 	if (addr)
-		Genode::memset(addr, 0, size);
+		Genode::bzero(addr, size);
 
 	return addr;
 }
@@ -117,7 +117,7 @@ void *operator new[](size_t size, Aligned const alignment)
 	size_t align = alignment.alignment;
 	void *res = heap_alloc(size + align);
 	if (res)
-		Genode::memset(res, 0, size + align);
+		Genode::bzero(res, size + align);
 	void *aligned_res = (void *)(((Genode::addr_t)res & ~(align - 1)) + align);
 	return aligned_res;
 }
@@ -127,7 +127,7 @@ void *operator new (size_t size)
 {
 	void * addr = heap_alloc(size);
 	if (addr)
-		Genode::memset(addr, 0, size);
+		Genode::bzero(addr, size);
 	return addr;
 }
 

@@ -51,7 +51,7 @@ class Udp_log::Payload
 			/* zero-out unconsumed data */
 			size_t const unconsumed = size_guard.unconsumed();
 			size_guard.consume_head(unconsumed);
-			Genode::memset(&_data[plen+len], 0, unconsumed);
+			Genode::bzero(&_data[plen+len], unconsumed);
 		}
 };
 

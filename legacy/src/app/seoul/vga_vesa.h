@@ -99,7 +99,7 @@ class Seoul::Vga_vesa
 		                    unsigned short    const  vesa_mode,
 		                    unsigned          const  area_bytes) const
 		{
-			Genode::memset(msg.info, 0, sizeof(*msg.info));
+			Genode::bzero(msg.info, sizeof(*msg.info));
 
 			auto const host_bytes = 4;
 
@@ -223,7 +223,7 @@ class Seoul::Vga_vesa
 			 * configured graphics mode 16-bit.
 			 */
 			if (msg.index == 0) {
-				Genode::memset(msg.info, 0, sizeof(*msg.info));
+				Genode::bzero(msg.info, sizeof(*msg.info));
 				msg.info->_vesa_mode = 3;
 				msg.info->attr = 0x1;
 				msg.info->resolution[0] = 80;

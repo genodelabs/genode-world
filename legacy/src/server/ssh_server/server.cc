@@ -162,7 +162,7 @@ Ssh::Server::~Server()
 
 void Ssh::Server::_initialize_channel_callbacks()
 {
-	Genode::memset(&_channel_cb, 0, sizeof(_channel_cb));
+	Genode::bzero(&_channel_cb, sizeof(_channel_cb));
 
 	_channel_cb.userdata                           = this;
 	_channel_cb.channel_data_function              = channel_data_cb;
@@ -180,7 +180,7 @@ void Ssh::Server::_initialize_channel_callbacks()
 
 void Ssh::Server::_initialize_session_callbacks()
 {
-	Genode::memset(&_session_cb, 0, sizeof(_session_cb));
+	Genode::bzero(&_session_cb, sizeof(_session_cb));
 
 	_session_cb.userdata                              = this;
 	_session_cb.auth_password_function                = session_auth_password_cb;
@@ -194,7 +194,7 @@ void Ssh::Server::_initialize_session_callbacks()
 
 void Ssh::Server::_initialize_bind_callbacks()
 {
-	Genode::memset(&_bind_cb,  0, sizeof(_bind_cb));
+	Genode::bzero(&_bind_cb, sizeof(_bind_cb));
 	_bind_cb.incoming_connection = bind_incoming_connection;
 	ssh_callbacks_init(&_bind_cb);
 	ssh_bind_set_callbacks(_ssh_bind, &_bind_cb, this);
