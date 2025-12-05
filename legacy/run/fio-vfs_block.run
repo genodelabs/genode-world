@@ -1,0 +1,164 @@
+assert {[have_spec x86_64]}
+assert {[have_spec linux]}
+
+#
+# Generate fio start node
+#
+proc fio_config { name type engine depth blocksize jobs runtime rwmix verify } {
+
+	set    config "<start name=\"fio\" caps=\"500\">\n"
+	append config "  <resource name=\"RAM\" quantum=\"1G\"/>\n"
+	append config "  <config>\n"
+	append config "    <arg value=\"fio\"/>\n"
+	append config "    <arg value=\"--randrepeat=1\"/>\n"
+	append config "    <arg value=\"--rw=$type\"/>\n"
+	append config "    <arg value=\"--name=$name\"/>\n"
+	append config "    <arg value=\"--bs=$blocksize\"/>\n"
+	append config "    <arg value=\"--direct=1\"/>\n"
+	if {$verify != 0} {
+	append config "    <arg value=\"--verify=crc32c\"/>\n"
+	}
+	if {$rwmix != 0} {
+	append config "    <arg value=\"--rwmixread=$rwmix\"/>\n"
+	}
+	append config "    <arg value=\"--size=128M\"/>\n"
+	append config "    <arg value=\"--numjobs=$jobs\"/>\n"
+	append config "    <arg value=\"--ioengine=$engine\"/>\n"
+	append config "    <arg value=\"--iodepth=$depth\"/>\n"
+	if {$verify == 0} {
+	append config "    <arg value=\"--runtime=$runtime\"/>\n"
+	}
+	append config "    <arg value=\"--refill_buffers\"/>\n"
+	append config "    <arg value=\"--group_reporting\"/>\n"
+	append config "    <arg value=\"--time_based\"/>\n"
+	append config "    <vfs>\n"
+	append config "      <dir name=\"dev\">\n"
+	append config "        <null/> <zero/> <log/>\n"
+	append config "        <inline name=\"rtc\">2025-03-25 12:00</inline>\n"
+	append config "        <jitterentropy name=\"random\"/>\n"
+	append config "        <block/>\n"
+	append config "        <dir name=\"pipe\"> <pipe/> </dir>\n"
+	append config "      </dir>\n"
+	append config "      <ram/>\n"
+	append config "    </vfs>\n"
+	append config "    <libc stdin=\"/dev/null\" stdout=\"/dev/log\" stderr=\"/dev/log\"\n"
+	append config "          rtc=\"/dev/rtc\" pipe=\"/dev/pipe\">\n"
+	append config "    </libc>\n"
+	append config "  </config>\n"
+	append config "</start>\n"
+
+	return $config
+}
+
+#
+# Build
+#
+append build_components {
+	core init timer lib/ld
+	lib/vfs
+	lib/vfs_import
+	server/vfs_block
+	server/part_block
+	lib/libc
+	app/sequence
+}
+
+build $build_components
+
+create_boot_directory
+
+import_from_depot genodelabs/pkg/fio/3.39-2025-12-03
+
+
+#
+# Generate config
+#
+append config {
+<config verbose="no">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="TRACE"/>
+	</parent-provides>
+
+	<affinity-space width="4" height="1"/>
+
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<default caps="100"/>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+
+	<start name="vfs_block" caps="2000">
+		<resource name="RAM" quantum="1100M"/>
+		<provides> <service name="Block"/> </provides>
+		<config>
+			<vfs>
+				<ram/>
+				<import>
+					<zero name="block_file" size="1G"/>
+				</import>
+			</vfs>
+			<default-policy file="/block_file" block_size="4096" writeable="yes"/>
+		</config>
+		<route>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+	<start name="part_block">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Block"/></provides>
+		<config>
+			<report partitions="no"/>
+			<policy label_prefix="sequence" partition="0" writeable="yes"/>
+		</config>
+		<route>
+			<service name="Block"> <child name="vfs_block"/> </service>
+			<any-service><parent/><any-child/></any-service>
+		</route>
+	</start>
+
+	<start name="sequence" caps="1000">
+		<resource name="RAM" quantum="1200M"/>
+		<affinity xpos="2" ypos="0" width="2" height="1"/>
+		<config>
+} [fio_config aio-iops-randread        randread  posixaio 64    4k 4 5  0 0] {
+} [fio_config aio-iops-randwrite       randwrite posixaio 64    4k 4 5  0 0] {
+} [fio_config aio-iops-read            read      posixaio 64    4k 1 5  0 0] {
+} [fio_config aio-iops-write           write     posixaio 64    4k 1 5  0 0] {
+} [fio_config aio-throughput-read      read      posixaio 64 1024k 4 5  0 0] {
+} [fio_config aio-throughput-write     write     posixaio 64 1024k 4 5  0 0] {
+} [fio_config aio-latency-read         read      posixaio 1     4k 1 5  0 0] {
+} [fio_config aio-latency-write        write     posixaio 1     4k 1 5  0 0] {
+} [fio_config aio-latency-randread     randread  posixaio 1     4k 1 5  0 0] {
+} [fio_config aio-latency-randwrite    randwrite posixaio 1     4k 1 5  0 0] {
+} [fio_config aio-latency-mixed-randrw randrw    posixaio 1     4k 1 5  0 0] {
+} [fio_config aio-iops-mixed-randrw    randrw    posixaio 64    4k 1 5 75 0] {
+<!-- currently limited to 1 job to prevent data corruption due to concurrent
+     unaligned write accesses -->
+} [fio_config aio-verify-randrw        randrw    posixaio 1    512 1 5  0 1] {
+		</config>
+		<route>
+			<service name="Block"> <child name="part_block"/> </service>
+			<any-service> <parent/> <any-child/> </any-service>
+		</route>
+	</start>
+</config>}
+
+install_config $config
+
+build_boot_image [build_artifacts]
+
+run_genode_until {.*child "sequence" exited with exit value 0.*\n} 100
