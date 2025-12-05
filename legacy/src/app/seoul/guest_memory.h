@@ -294,14 +294,22 @@ class Seoul::Guest_memory
 						    " -> ", Hex_range(region._guest_addr + ds_offset, attach_size), " ",
 						    " of region=", Hex_range(region._guest_addr, region._ds_size));
 
-					vm_con.attach(region._ds, g_phys, { .offset     = ds_offset,
-					                                    .size       = attach_size,
-					                                    .executable = true,
-					                                    .writeable  = writeable });
+					vm_con.attach(region._ds, g_phys,
+					              { .offset     = ds_offset,
+					                .size       = attach_size,
+					                .executable = true,
+					                .writeable  = writeable }).with_result(
+						[&] (auto) {
 
-					if (_verbose)
-						log(__func__, "   attached ", Hex_range(g_phys, attach_size),
-						    " of region=", Hex_range(region._guest_addr, region._ds_size));
+							if (_verbose)
+								log(__func__, "   attached ", Hex_range(g_phys, attach_size),
+								    " of region=", Hex_range(region._guest_addr, region._ds_size));
+						},
+						[&] (auto) { warning(__func__, " attach of ",
+						                     Hex_range(g_phys, attach_size),
+						                     " to ", Hex_range(region._guest_addr, region._ds_size),
+						                     "failed!");
+						});
 
 					size   -= attach_size;
 					g_phys += attach_size;

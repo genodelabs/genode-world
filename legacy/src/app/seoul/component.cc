@@ -637,16 +637,14 @@ class Vcpu : public StaticReceiver<Vcpu>
 			} else
 				state.discharge(); /* reset */
 
-			_vm_con.with_upgrade([&]() {
-				if (_map_small)
-					_guest_memory.attach_to_vm(_vm_con,
-					                           mem_region.page << PAGE_SIZE_LOG2,
-					                           1 << PAGE_SIZE_LOG2, !mem_region.read_only);
-				else
-					_guest_memory.attach_to_vm(_vm_con,
-					                           mem_region.start_page << PAGE_SIZE_LOG2,
-					                           mem_region.count << PAGE_SIZE_LOG2, !mem_region.read_only);
-			});
+			if (_map_small)
+				_guest_memory.attach_to_vm(_vm_con,
+				                           mem_region.page << PAGE_SIZE_LOG2,
+				                           1 << PAGE_SIZE_LOG2, !mem_region.read_only);
+			else
+				_guest_memory.attach_to_vm(_vm_con,
+				                           mem_region.start_page << PAGE_SIZE_LOG2,
+				                           mem_region.count << PAGE_SIZE_LOG2, !mem_region.read_only);
 
 			return true;
 		}
