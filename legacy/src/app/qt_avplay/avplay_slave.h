@@ -148,7 +148,6 @@ class Avplay_slave : public QObject
 
 				void _with_route(Genode::Service::Name     const &name,
 				                 Genode::Session_label     const &label,
-				                 Genode::Session::Diag     const  diag,
 				                 With_route::Ft    const &fn,
 				                 With_no_route::Ft const &denied_fn) override
 				{
@@ -156,11 +155,9 @@ class Avplay_slave : public QObject
 
 					_with_matching_service(name,
 						[&] (Service &service) { fn(Route { .service = service,
-						                                    .label   = label,
-						                                    .diag    = diag }); },
+						                                    .label   = label }); },
 						[&] /* denied */ {
-							Slave::Policy::_with_route(name, label, diag,
-							                           fn, denied_fn); }
+							Slave::Policy::_with_route(name, label, fn, denied_fn); }
 					);
 				}
 
