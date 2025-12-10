@@ -1,0 +1,46 @@
+--- a/src/genode/component.cc
++++ b/src/genode/component.cc
+@@ -55,7 +55,6 @@
+ #include "timeout_late.h"
+ #include "gui.h"
+ #include "audio.h"
+-#include "xhci.h"
+ 
+ 
+ enum { verbose_debug = false };
+@@ -1011,8 +1010,6 @@
+ 		Rtc::Session          *_rtc          { nullptr };
+ 		Seoul::Audio          *_audio        { nullptr };
+ 
+-		Genode::Constructible<Seoul::Xhci> _xhci { };
+-
+ 		using Vcpus_active = Genode::Bit_array<64>;
+ 
+ 		Vcpu *                 _vcpus[16]    { nullptr };
+@@ -1445,15 +1442,6 @@
+ 				if (verbose)
+ 					Genode::log("device: ", name);
+ 
+-				if (name == "xhci") {
+-					if (_xhci.constructed()) {
+-						Logging::panic("xhci can only by instantiated once");
+-						throw Config_error();
+-					}
+-
+-					_xhci.construct(_vmm.env, _vmm.heap, config, _motherboard);
+-				}
+-
+ 				Device_model_info *dmi = device_model_registry()->lookup(name.string());
+ 
+ 				if (!dmi) {
+--- a/src/genode/device_model_registry.cc
++++ b/src/genode/device_model_registry.cc
+@@ -88,8 +88,6 @@
+ MODEL_INFO(virtio_gpu,   "mem", "bdf")
+ MODEL_INFO(virtio_sound, "mem", "bdf")
+ 
+-MODEL_INFO(xhci, "mem")
+-
+ MODEL_INFO(ide, "port0", "port1", "irq", "bdf", "disk")
+ MODEL_INFO(ahci, "mem", "bdf")
+ MODEL_INFO(drive, "sigma0drive", "controller", "port", "verbose")

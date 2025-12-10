@@ -42,7 +42,8 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/acpi \
                   [depot_user]/src/pci_decode \
                   [depot_user]/src/vesa_fb \
-                  [depot_user]/src/boot_fb
+                  [depot_user]/src/boot_fb \
+                  [depot_user]/src/seoul/2025-12-11
 
 if {![info exists use_usb]}        { set use_usb        1 }
 if {![info exists use_virtio]}     { set use_virtio     0 }
@@ -254,7 +255,6 @@ if {[have_spec sel4]} {
 
 set build_components {
 	driver/rtc
-	app/seoul
 	server/record_play_mixer
 }
 

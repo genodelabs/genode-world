@@ -1,0 +1,15 @@
+_/api/base
+_/api/blit
+_/api/block_session
+_/api/format
+_/api/framebuffer_session
+_/api/gui_session
+_/api/input_session
+_/api/nic_session
+_/api/nitpicker_gfx
+_/api/os
+_/api/play_session
+_/api/report_session
+_/api/rtc_session
+_/api/timer_session
+_/api/usb_session

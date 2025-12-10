@@ -3,9 +3,12 @@ VERSION   := git
 DOWNLOADS := seoul.git
 
 URL(seoul) := https://github.com/alex-ab/seoul.git
-# branch genode_25_08
-REV(seoul) := 1d543c8445a29e3636c65599513ff1af5d6cba45
-DIR(seoul) := src/app/seoul
+REV(seoul) := genode_25_12
+DIR(seoul) := src
+
+PATCHES := $(addprefix patches/,noxhci.patch mouse_shape.patch)
+
+PATCH_OPT := -p1
 
 #
 # We need to execute some python scripts for preparing the i82576vf
@@ -19,15 +22,17 @@ missing_tool:
 	@false;
 endif
 
-I82576VF_DIR = src/app/seoul/model/intel82576vf
-EXECUTOR_DIR = src/app/seoul/executor
+I82576VF_DIR = src/model/intel82576vf
+EXECUTOR_DIR = src/executor
 
-default : additional_steps
+# XXX overwrite as used by goa install.mk
+_dirs: additional_steps
+
 additional_steps : $(DOWNLOADS)
 	echo "call code generators ... takes a while ..." && \
 	rm -f $(EXECUTOR_DIR)/build_instructions.cache && \
 	cd $(EXECUTOR_DIR) && \
-	          CROSS_DEV_PREFIX=genode-x86- \
+	          CROSS_DEV_PREFIX=$(CROSS_DEV_PREFIX) \
 	          ./build_instructions.py > instructions.inc && \
 	cd $(CURDIR)/$(I82576VF_DIR) && \
 	          ./genreg.py reg_pci.py ../../include/model/intel82576vfpci.inc && \
