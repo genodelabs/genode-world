@@ -23,9 +23,16 @@
 #include <util/list.h>
 #include <util/string.h>
 
-using namespace Vfs;
+namespace Vfs_shm {
 
-class Dataspace_file_system : public Vfs::File_system
+	using namespace Genode;
+	using namespace Genode::Vfs;
+
+	class File_system;
+}
+
+
+class Vfs_shm::File_system : public Vfs::File_system
 {
 	public:
 
@@ -33,17 +40,17 @@ class Dataspace_file_system : public Vfs::File_system
 
 	private:
 
-		class Dataspace_vfs_file : public Genode::List<Dataspace_vfs_file>::Element
+		class Dataspace_vfs_file : public List<Dataspace_vfs_file>::Element
 		{
 			private:
 
-				typedef Genode::String<MAX_NAME_LEN> Filename;
-				Filename               _filename { };
+				using Filename = String<MAX_NAME_LEN>;
+				Filename _filename { };
 
-				Genode::Allocator     &_alloc;
-				Genode::Ram_allocator &_ram;
+				Allocator     &_alloc;
+				Ram_allocator &_ram;
 
-				Vfs::file_size         _length { 0 };
+				file_size _length { 0 };
 
 			public:
 
@@ -52,13 +59,13 @@ class Dataspace_file_system : public Vfs::File_system
 
 				bool matches(const char *path)
 				{
-					return (Genode::strlen(path) == (Genode::strlen(_filename.string()))) &&
-					       (Genode::strcmp(path, _filename.string()) == 0);
+					return (strlen(path) == (strlen(_filename.string()))) &&
+					       (strcmp(path, _filename.string()) == 0);
 				}
 
-				Genode::Ram_dataspace_capability ds_cap { };
+				Ram_dataspace_capability ds_cap { };
 
-				Dataspace_vfs_file(char const *name, Genode::Allocator &alloc, Genode::Ram_allocator &ram)
+				Dataspace_vfs_file(char const *name, Allocator &alloc, Ram_allocator &ram)
 				: _filename(name), _alloc(alloc), _ram(ram) { }
 
 				~Dataspace_vfs_file()
@@ -67,14 +74,14 @@ class Dataspace_file_system : public Vfs::File_system
 						_ram.free(ds_cap);
 				}
 
-				Genode::Allocator &alloc() { return _alloc; }
+				Allocator &alloc() { return _alloc; }
 
-				Vfs::file_size length() { return _length; }
+				file_size length() { return _length; }
 
-				Ftruncate_result truncate(Vfs::file_size size)
+				Ftruncate_result truncate(file_size size)
 				{
 					if (_length > 0) {
-						Genode::error(__PRETTY_FUNCTION__, ": resizing not supported yet");
+						error(__PRETTY_FUNCTION__, ": resizing not supported yet");
 						return FTRUNCATE_ERR_NO_PERM;
 					}
 
@@ -87,11 +94,11 @@ class Dataspace_file_system : public Vfs::File_system
 		};
 
 
-		class Dataspace_vfs_handle : public Vfs::Vfs_handle
+		class Dataspace_vfs_handle : public Vfs_handle
 		{
 			public:
 
-				using Vfs::Vfs_handle::Vfs_handle;
+				using Vfs_handle::Vfs_handle;
 
 				virtual Read_result read(char *dst, file_size count,
 				                         file_size &out_count) = 0;
@@ -111,14 +118,14 @@ class Dataspace_file_system : public Vfs::File_system
 			public:
 
 				Dataspace_vfs_dir_handle(Directory_service &ds,
-				                   File_io_service   &fs,
-				                   Genode::Allocator &alloc)
+				                   File_io_service &fs,
+				                   Allocator &alloc)
 				: Dataspace_vfs_handle(ds, fs, alloc, 0) { }
 
 				Read_result read(char *dst, file_size count,
 				                 file_size &out_count) override
 				{
-					Genode::error("Dataspace_vfs_dir_handle::read() called, not implemented");
+					error("Dataspace_vfs_dir_handle::read() called, not implemented");
 
 					out_count = 0;
 
@@ -128,7 +135,7 @@ class Dataspace_file_system : public Vfs::File_system
 					Dirent &out = *(Dirent*)dst;
 
 					out = {
-						.fileno = (Genode::addr_t)this,
+						.fileno = (addr_t)this,
 						.type   = Dirent_type::END,
 						.rwx    = { },
 						.name   = { }
@@ -157,7 +164,7 @@ class Dataspace_file_system : public Vfs::File_system
 
 				Dataspace_vfs_file_handle(Directory_service &ds,
 				                    File_io_service   &fs,
-				                    Genode::Allocator &alloc,
+				                    Allocator &alloc,
 				                    Dataspace_vfs_file *file)
 				: Dataspace_vfs_handle(ds, fs, alloc, 0), _file(file) { }
 
@@ -175,8 +182,10 @@ class Dataspace_file_system : public Vfs::File_system
 		};
 
 		Vfs::Env &_env;
-		Genode::List<Dataspace_vfs_file> _files { };
-		Genode::size_t             _num_dirent { 0 };
+
+		List<Dataspace_vfs_file> _files { };
+
+		size_t _num_dirent { 0 };
 
 		bool _root(const char *path)
 		{
@@ -194,9 +203,9 @@ class Dataspace_file_system : public Vfs::File_system
 
 	public:
 
-		Dataspace_file_system(Vfs::Env &env, Node const &) : _env(env) { }
+		File_system(Vfs::Env &env, Node const &) : _env(env) { }
 
-		~Dataspace_file_system() { }
+		~File_system() { }
 
 		/*********************************
 		 ** Directory service interface **
@@ -222,7 +231,7 @@ class Dataspace_file_system : public Vfs::File_system
 		Stat_result stat(char const *path, Stat &out) override
 		{
 			out = Stat { };
-			out.device = (Genode::addr_t)this;
+			out.device = (addr_t)this;
 
 			if (_root(path)) {
 				out.type = Node_type::DIRECTORY;
@@ -270,8 +279,8 @@ class Dataspace_file_system : public Vfs::File_system
 				*handle = new (alloc) Dataspace_vfs_dir_handle(*this, *this, alloc);
 				return OPENDIR_OK;
 			}
-			catch (Genode::Out_of_ram)  { return OPENDIR_ERR_OUT_OF_RAM; }
-			catch (Genode::Out_of_caps) { return OPENDIR_ERR_OUT_OF_CAPS; }
+			catch (Out_of_ram)  { return OPENDIR_ERR_OUT_OF_RAM; }
+			catch (Out_of_caps) { return OPENDIR_ERR_OUT_OF_CAPS; }
 		}
 
 		/*
@@ -307,8 +316,8 @@ class Dataspace_file_system : public Vfs::File_system
 				file->open_count++;
 				return OPEN_OK;
 			}
-			catch (Genode::Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
-			catch (Genode::Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
+			catch (Out_of_ram)  { return OPEN_ERR_OUT_OF_RAM; }
+			catch (Out_of_caps) { return OPEN_ERR_OUT_OF_CAPS; }
 		}
 
 		void close(Vfs_handle *vfs_handle) override
@@ -395,13 +404,16 @@ class Dataspace_file_system : public Vfs::File_system
 		char const *type() override { return "qtwebengine_shm"; }
 };
 
-extern "C" Vfs::File_system_factory *vfs_file_system_factory(void)
+
+extern "C" Genode::Vfs::File_system_factory *vfs_file_system_factory(void)
 {
+	using namespace Genode;
+
 	struct Factory : Vfs::File_system_factory
 	{
 		Vfs::File_system *create(Vfs::Env &vfs_env, Node const &config) override
 		{
-			return new (vfs_env.alloc()) Dataspace_file_system(vfs_env, config);
+			return new (vfs_env.alloc()) Vfs_shm::File_system(vfs_env, config);
 		}
 	};
 
