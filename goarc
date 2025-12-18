@@ -8,8 +8,8 @@ set version(_/api/libestr)        0.1.11-2025-10-09
 set version(_/src/libestr)        0.1.11-2025-10-09
 set version(_/api/libfastjson)    1.2304.0-2025-10-09
 set version(_/src/libfastjson)    1.2304.0-2025-10-09
-set version(_/api/nettle)         3.7-2025-10-01
-set version(_/src/nettle)         3.7-2025-10-01
+set version(_/api/nettle)         3.7-2026-01-14
+set version(_/src/nettle)         3.7-2026-01-14
 set version(_/api/pcsc-lite)      2.3.3-2025-11-17
 set version(_/src/pcsc-lite)      2.3.3-2025-11-17
 set version(_/src/rsyslog)        8.2502.0-2025-10-09

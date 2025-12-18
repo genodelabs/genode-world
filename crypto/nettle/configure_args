@@ -1,1 +1,2 @@
 --enable-mini-gmp
+--disable-assembler
