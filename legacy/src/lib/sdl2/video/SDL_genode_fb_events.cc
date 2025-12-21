@@ -111,12 +111,24 @@ extern "C" {
 		return scancodes[keycode];
 	}
 
+	static SDL_TouchID const touch_id { };
+	struct Touch_state { float x, y; bool touched; };
+	static constexpr unsigned MAX_FINGERS = 10;
+	static Touch_state touch_state[MAX_FINGERS] { };
+
+	static void with_touch_state(Input::Touch_id id, auto const &fn)
+	{
+		if (id.value < MAX_FINGERS)
+			fn(touch_state[id.value]);
+	}
+
 	void Genode_Fb_PumpEvents(SDL_VideoDevice * const device)
 	{
 		if (!input.constructed()) /* XXX */ {
 			Genode_Fb_InitOSKeymap(device);
 			/* there is a default map using the scancode array */
 //			SDL_SetKeymap(0, keymap, SDL_NUM_SCANCODES);
+			SDL_AddTouch(touch_id, SDL_TOUCH_DEVICE_DIRECT, "genode touch");
 		}
 
 		Genode::Mutex::Guard guard(event_mutex);
@@ -160,6 +172,29 @@ extern "C" {
 
 			curr.handle_relative_motion([&] (int x, int y) {
 				SDL_SendMouseMotion(window, mouse_id, 1 /* relative */, x, y);
+			});
+
+			curr.handle_touch([&] (Input::Touch_id id, float x, float y) {
+				with_touch_state(id, [&] (Touch_state &state) {
+					state.x = window->w ? (x / window->w) : 0.0;
+					state.y = window->h ? (y / window->h) : 0.0;
+					if (state.touched) {
+						SDL_SendTouchMotion(touch_id, id.value, window, state.x, state.y, 1.0);
+					} else {
+						SDL_SendTouch(touch_id, id.value, window, SDL_TRUE, state.x, state.y, 1.0);
+						state.touched = true;
+					}
+				});
+			});
+
+			curr.handle_touch_release([&] (Input::Touch_id id) {
+				with_touch_state(id, [&] (Touch_state &state) {
+					if (state.touched) {
+						SDL_SendTouch(touch_id, id.value, window, SDL_FALSE,
+						              state.x, state.y, 1.0);
+						state.touched = false;
+					}
+				});
 			});
 
 			/* return true if keycode refers to a button */
