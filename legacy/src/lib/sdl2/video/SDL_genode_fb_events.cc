@@ -238,7 +238,7 @@ extern "C" {
 			{
 				Genode::Attached_rom_dataspace config_rom { *_global_env, "config" };
 				config_rom.update();
-				if (config_rom.xml().attribute_value("mouse_grab", false))
+				if (config_rom.node().attribute_value("mouse_grab", false))
 					input->exclusive(true);
 			}
 		} catch (...) {
