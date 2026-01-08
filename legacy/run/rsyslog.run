@@ -22,7 +22,7 @@ import_from_depot [depot_user]/src/[base_src] \
 # Generate config
 #
 append config {
-<config verbose="yes">
+<config verbose="yes" generate_xml="yes">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="IRQ"/>
